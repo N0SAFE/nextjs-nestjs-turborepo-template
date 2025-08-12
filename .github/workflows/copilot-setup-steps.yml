@@ -89,7 +89,7 @@ jobs:
     steps:
       # Step 1: Checkout the repository
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Step 2: Setup Node.js (required as fallback and for some tools)
       - name: Set up Node.js
