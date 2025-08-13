@@ -1,6 +1,8 @@
 # Render Deployment Guide
 
-## 🚀 Deploy your Next.js + Directus app to Render
+> This guide targets the Docker-first SaaS use case and shows how to deploy this template to Render using the provided blueprint.
+
+## 🚀 Deploy your Next.js + NestJS app to Render
 
 ### Prerequisites
 - GitHub repository with your code
@@ -18,9 +20,9 @@
 2. Connect your repository
 3. Render will automatically detect the `render.yaml` file
 4. Review the services that will be created:
-   - **directus-api**: Your Directus CMS backend
+   - **nestjs-api**: Your NestJS backend API
    - **nextjs-web**: Your Next.js frontend
-   - **directus-db**: PostgreSQL database (free tier)
+   - **api-db**: PostgreSQL database (free tier)
 
 #### 3. Update Service Names (Optional)
 The `render.yaml` uses dynamic service references, so URLs are automatically generated based on your service names:
@@ -30,12 +32,12 @@ The `render.yaml` uses dynamic service references, so URLs are automatically gen
 - key: NEXT_PUBLIC_API_URL
   fromService:
     type: web
-    name: directus-api  # Change this if you rename the service
+    name: nestjs-api  # Change this if you rename the service
     property: host
 ```
 
 If you change the service names in `render.yaml`, make sure the `fromService.name` properties match:
-- `directus-api` service → all `name: directus-api` references
+- `nestjs-api` service → all `name: nestjs-api` references
 - `nextjs-web` service → all `name: nextjs-web` references
 
 The actual URLs will be automatically:
@@ -48,10 +50,11 @@ The actual URLs will be automatically:
 3. Access your API at: `https://your-api-service.onrender.com`
 4. Access your web app at: `https://your-web-service.onrender.com`
 
-#### 5. Set Up Directus Admin
+#### 5. Configure API and Database
 1. Go to your API URL
-2. Complete Directus admin setup
-3. Create content and collections as needed
+2. Verify API health at `/health` endpoint
+3. Set up database schema with migrations
+4. Configure authentication as needed
 
 ### Deployment Optimizations
 
@@ -78,7 +81,7 @@ The blueprint automatically configures:
 
 If you prefer manual setup:
 
-#### Deploy Directus API:
+#### Deploy NestJS API:
 1. New → Web Service
 2. Connect repository
 3. Docker environment
@@ -114,7 +117,7 @@ If you prefer manual setup:
 - The next.config.ts automatically handles hostname-only values from Render's `fromService` references
 - If you see "cannot be parsed as a URL" errors, the automatic https:// prefix should resolve it
 - Ensure service names in `fromService.name` match your actual service names in render.yaml
-- The system automatically converts hostnames like "directus-api-c8pu" to "https://directus-api-c8pu.onrender.com"
+
 
 **Port scan timeout during deployment:**
 - This issue occurs when the build process takes too long
@@ -159,8 +162,8 @@ Monitor your services:
 ### Next Steps
 
 After successful deployment:
-1. Set up your Directus content model
-2. Configure authentication in Next.js
-3. Add custom domain (optional)
+1. Run database migrations and seed if needed
+2. Configure authentication providers and secrets
+3. Add custom domains (optional)
 4. Set up monitoring and backups
 5. Consider upgrading for production use

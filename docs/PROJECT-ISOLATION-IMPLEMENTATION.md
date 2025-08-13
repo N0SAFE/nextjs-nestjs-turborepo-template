@@ -7,7 +7,7 @@ This document summarizes the changes made to implement project isolation using D
 ### 1. Environment Configuration Files
 
 #### `.env.example`
-- ✅ Added `COMPOSE_PROJECT_NAME=nextjs-directus` (active variable)
+- ✅ Added `COMPOSE_PROJECT_NAME=nextjs-template` (active variable)
 - ✅ Reorganized sections with proper headers
 
 #### `.env.template`  
@@ -22,33 +22,33 @@ This document summarizes the changes made to implement project isolation using D
 - ✅ Added proper section header
 
 #### `.env` (active environment)
-- ✅ Added `COMPOSE_PROJECT_NAME=nextjs-directus`
+- ✅ Added `COMPOSE_PROJECT_NAME=nextjs-template`
 - ✅ Added section headers and organization
 
 ### 2. Docker Compose Files
 
 #### `docker-compose.yml` (Development)
-- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-directus}-*`
-- ✅ Updated network names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_app_network_dev`
-- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_api_db_data_dev`
+- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-template}-*`
+- ✅ Updated network names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-template}_app_network_dev`
+- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-template}_api_db_data_dev`
 - ✅ Service names remain static for internal Docker Compose communication
 
 #### `docker-compose.prod.yml` (Full Production)
-- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-directus}-*`
-- ✅ Updated network names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_app_network_prod`
-- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_api_db_data_prod`
+- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-template}-*`
+- ✅ Updated network names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-template}_app_network_prod`
+- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-template}_api_db_data_prod`
 
 #### `docker-compose.api.prod.yml` (API Only Production)
-- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-directus}-*`
-- ✅ Updated network names: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_api_network_prod`
-- ✅ Updated volume names: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_api_db_data_prod`
+- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-template}-*`
+- ✅ Updated network names: `${COMPOSE_PROJECT_NAME:-nextjs-template}_api_network_prod`
+- ✅ Updated volume names: `${COMPOSE_PROJECT_NAME:-nextjs-template}_api_db_data_prod`
 
 #### `docker-compose.web.prod.yml` (Web Only Production)
-- ✅ Updated `container_name` to use `${COMPOSE_PROJECT_NAME:-nextjs-directus}-web-prod`
+- ✅ Updated `container_name` to use `${COMPOSE_PROJECT_NAME:-nextjs-template}-web-prod`
 
 #### `apps/api/docker-compose.yml`
-- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-directus}-*`
-- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-directus}_mysql_data`
+- ✅ Updated all `container_name` entries to use `${COMPOSE_PROJECT_NAME:-nextjs-template}-*`
+- ✅ Updated volume names with explicit `name` property: `${COMPOSE_PROJECT_NAME:-nextjs-template}_mysql_data`
 
 ### 3. Documentation
 
@@ -75,7 +75,7 @@ This document summarizes the changes made to implement project isolation using D
 
 ### Environment Variable System
 - **`COMPOSE_PROJECT_NAME`**: Standard Docker Compose variable that prefixes all resource names
-- **Default Value**: `nextjs-directus` (maintains compatibility)
+- **Default Value**: `nextjs-template` (maintains compatibility)
 - **Custom Values**: Any unique identifier (e.g., `my-blog`, `ecommerce-store`)
 
 ### Resource Naming Pattern

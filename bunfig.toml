@@ -1,2 +1,6 @@
 [test]
 preload = "./bun-preload-script/happydom.ts"
+
+[run]
+# Use bun runtime for all scripts
+bun = true

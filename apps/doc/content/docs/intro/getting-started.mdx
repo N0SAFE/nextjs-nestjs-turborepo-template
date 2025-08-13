@@ -1,0 +1,51 @@
+---
+title: Getting Started
+description: Quick start guide for local development with Docker-first workflow.
+order: 1
+---
+
+This guide condenses and replaces the markdown in `docs/GETTING-STARTED.md`.
+
+## Prerequisites
+
+- Bun 1.2.14+
+- Node.js 20+
+- Docker + Compose
+- Git
+
+## Initialize
+
+1. Clone your repo
+2. Run the initialization wizard to generate a validated `.env`:
+
+```bash
+bun run init
+```
+
+3. Install deps:
+
+```bash
+bun install
+```
+
+## Start Dev
+
+- Full stack:
+
+```bash
+bun run dev
+```
+
+- API only / Web only:
+
+```bash
+bun run dev:api
+bun run dev:web
+```
+
+## URLs
+
+- Web: http://localhost:3000
+- API: http://localhost:3001 (health: /health)
+- DB: Postgres 5432
+- Cache: Redis 6379

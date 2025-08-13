@@ -1,0 +1,75 @@
+# syntax=docker/dockerfile:1.7
+# Development Dockerfile for Docs App with HMR
+FROM oven/bun:1.2.14-alpine AS base
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat curl bash \
+	&& bun install -g turbo@^2 \
+	&& mkdir -p $TURBO_CACHE_DIR
+WORKDIR /app
+
+# Copy root package files
+COPY package*.json ./
+COPY turbo.json ./
+
+# Copy workspace package files needed for docs app
+COPY apps/doc/package*.json ./apps/doc/
+COPY packages/ ./packages/
+
+# Install dependencies (skip postinstall scripts until sources are present)
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Development runner
+FROM base AS runner
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN set -eux; \
+		apk add --no-cache libc6-compat curl bash; \
+		# Create group "node" if it doesn't exist. Prefer requested GID unless already taken. \
+		if ! getent group node >/dev/null 2>&1; then \
+			if getent group "${GROUP_ID}" >/dev/null 2>&1; then \
+				addgroup -S node; \
+			else \
+				addgroup -S -g "${GROUP_ID}" node || addgroup -S node; \
+			fi; \
+		fi; \
+		# Create user "node" if it doesn't exist (with requested UID if free) \
+		if ! id -u node >/dev/null 2>&1; then \
+			if getent passwd "${USER_ID}" >/dev/null 2>&1; then \
+				adduser -S -G node node; \
+			else \
+				adduser -S -G node -u "${USER_ID}" node || adduser -S -G node node; \
+			fi; \
+		fi
+
+WORKDIR /app
+
+# Install Turbo globally (cached by layer reuse)
+RUN bun install -g turbo@^2
+
+# Copy dependencies
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+
+# Copy all source files
+COPY --chown=node:node . .
+
+# Ensure docs app files have proper ownership
+RUN chown --recursive node:node /app/apps/doc
+
+# Generate Fumadocs sources now that full sources are available
+RUN bun --cwd /app/apps/doc run postinstall
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Workdir inside docs app
+WORKDIR /app/apps/doc
+
+# Expose docs dev port
+EXPOSE 3020
+
+# Start the Next.js dev server binding to all interfaces for Docker
+CMD ["bun", "x", "next", "dev", "-H", "0.0.0.0", "-p", "3020"]

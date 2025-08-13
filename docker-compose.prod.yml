@@ -102,10 +102,39 @@ services:
       - NEXT_PUBLIC_API_PORT=${API_PORT:-3001}
       - NEXT_PUBLIC_APP_URL=http://localhost:${NEXT_PUBLIC_APP_PORT:-3000}
       - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+      # Docs URL (for navbar link)
+      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
+      - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:${NEXT_PUBLIC_DOC_PORT:-3020}}
       - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
       - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
     networks:
       - app_network_prod
+    volumes:
+      # Cache directories to speed rebuilds (only useful if containers are recreated frequently on same host)
+      - bun_cache_web_prod:/root/.bun/install/cache
+      - turbo_cache_web_prod:/root/.cache/turbo
+
+  # Docs service (runtime compilation variant)
+  doc-prod:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-prod
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.doc.runtime.prod
+      args:
+        - NODE_ENV=production
+    restart: unless-stopped
+    ports:
+      - "3020:3020"
+    depends_on:
+      api-prod:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app_network_prod
+    volumes:
+      - bun_cache_doc_prod:/root/.bun/install/cache
+      - turbo_cache_doc_prod:/root/.cache/turbo
 
 networks:
   app_network_prod:
@@ -115,3 +144,11 @@ networks:
 volumes:
   api_db_data_prod:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_api_db_data_prod
+  bun_cache_web_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_web_prod
+  turbo_cache_web_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_web_prod
+  bun_cache_doc_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_doc_prod
+  turbo_cache_doc_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_doc_prod

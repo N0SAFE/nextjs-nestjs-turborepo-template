@@ -1,0 +1,14 @@
+---
+title: Type-Safe Routing
+description: Declarative routing system for Next.js App Router.
+order: 5
+---
+
+Condensed from `apps/web/src/routes/README.md`.
+
+- Define `page.info.ts` next to pages
+- Generate routes: `bun run web -- dr:build` (or `:watch`)
+- Use `<Home.Link>` etc., not raw href strings
+- Hooks: `usePush`, `useParams`, `useSearchParams`
+
+See also: Development Workflow → Route Changes.

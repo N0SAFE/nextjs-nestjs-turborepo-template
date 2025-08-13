@@ -1,7 +1,8 @@
+# syntax=docker/dockerfile:1.7
 # Production Dockerfile for Web App - BUILD-TIME COMPILATION
 # This version builds the Next.js app during Docker build phase
 # Recommended for: Render, Vercel, and platforms that scan for open ports during build
-FROM oven/bun:1-alpine AS base
+FROM oven/bun:1.2.14-alpine AS base
 
 # Set build-time environment variables for Next.js
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -22,28 +23,35 @@ ENV AUTH_SECRET=$AUTH_SECRET
 
 # Install dependencies only when needed
 FROM base AS builder
-RUN apk add --no-cache libc6-compat
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
 WORKDIR /app
 
 # Install Turbo globally
-RUN bun install -g turbo@^2
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install -g turbo@^2
 
 # Copy everything and prune
 COPY . .
-RUN turbo prune web --docker
+RUN --mount=type=cache,target=/root/.cache/turbo \
+  turbo prune web --docker
 
 # Install dependencies with dev dependencies for building
 FROM base AS installer
-RUN apk add --no-cache libc6-compat
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
 WORKDIR /app
 
 # Install Turbo globally
-RUN bun install -g turbo@^2
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install -g turbo@^2
 
 # First install ALL dependencies (including dev dependencies for building)
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/full/bun.lock* ./
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  --mount=type=cache,target=/root/.cache/turbo \
+  bun install --frozen-lockfile
 
 # Copy all source files
 COPY --from=builder /app/out/full/ .
@@ -53,7 +61,9 @@ FROM installer AS web-builder
 WORKDIR /app/apps/web
 
 # Build the Next.js application
-RUN bun run build:docker
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  --mount=type=cache,target=/root/.cache/turbo \
+  bun run build:docker && bun pm cache clean
 
 # Production runner
 FROM base AS runner

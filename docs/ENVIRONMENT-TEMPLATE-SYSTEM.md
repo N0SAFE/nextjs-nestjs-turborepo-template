@@ -1,5 +1,7 @@
 # Environment Template System
 
+> Part of the Docker-first SaaS workflow: use this to generate a validated `.env` for local dev and production deployments (Docker Compose or Render).
+
 This project uses an advanced template system for environment configuration that provides an interactive setup experience with validation and smart defaults.
 
 ## Template File Format
@@ -72,7 +74,7 @@ CORS_ORIGINS={{multiselect|label=CORS Origins|options=localhost:3000,localhost:3
 
 ### URL Fields
 ```
-API_URL={{url|label=API URL|protocol=http,https|default=http://localhost:8055}}
+API_URL={{url|label=API URL|protocol=http,https|default=http://localhost:3001}}
 WEBHOOK_URL={{url|label=Webhook URL|protocol=https|hostname=example.com,api.example.com}}
 ```
 
@@ -110,8 +112,8 @@ All field types support these parameters:
 COMPOSE_PROJECT_NAME={{string|default=my-project|label=Project Name|description=Unique name for Docker containers}}
 
 # API Configuration  
-NEXT_PUBLIC_API_URL={{url|protocol=http,https|label=API URL|default=http://localhost:8055}}
-NEXT_PUBLIC_API_PORT={{number|min=1024|max=65535|default=8055|label=API Port}}
+NEXT_PUBLIC_API_URL={{url|protocol=http,https|label=API URL|default=http://localhost:3001}}
+NEXT_PUBLIC_API_PORT={{number|min=1024|max=65535|default=3001|label=API Port}}
 API_ADMIN_TOKEN={{string|generate=random|length=32|label=Admin Token|secure=true}}
 
 # Environment Settings

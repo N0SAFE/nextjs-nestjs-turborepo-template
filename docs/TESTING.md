@@ -1,5 +1,7 @@
 # Testing Setup
 
+> Works across the Docker-first SaaS template. Tests are runnable locally or in CI, with merged coverage across the monorepo.
+
 This monorepo is equipped with comprehensive testing using Vitest. Each package and app has its own containerized testing setup using the shared `@repo/vitest-config` package.
 
 ## Quick Start
@@ -71,7 +73,6 @@ Each package has its own test configuration and can be tested individually:
 # Test specific packages
 bun run test --filter=web
 bun run test --filter=@repo/ui
-bun run test --filter=@repo/directus-sdk
 ```
 
 ## Test Structure
@@ -92,7 +93,7 @@ packages/
 │   ├── components/
 │   │   └── __tests__/      # Component tests
 │   └── vitest.config.ts
-├── directus-sdk/
+├── ui/
 │   ├── __tests__/          # SDK tests
 │   └── vitest.config.ts
 └── types/

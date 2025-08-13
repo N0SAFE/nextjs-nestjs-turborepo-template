@@ -1,5 +1,7 @@
+# syntax=docker/dockerfile:1.7
 # Development Dockerfile for Web App with HMR
-FROM node:22-alpine AS base
+# Enhanced with BuildKit cache mounts for Bun & Turbo to speed up iterative builds
+FROM oven/bun:1.2.14-alpine AS base
 
 # Set build-time environment variables for Next.js
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -20,17 +22,12 @@ ENV AUTH_SECRET=$AUTH_SECRET
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat curl bash
-RUN corepack enable
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+# Simplified (no BuildKit cache mounts) for environments without BuildKit
+RUN apk add --no-cache libc6-compat curl bash \
+	&& bun install -g turbo@^2 \
+	&& mkdir -p $TURBO_CACHE_DIR
 WORKDIR /app
-
-# Install Bun
-RUN curl -fsSL https://bun.sh/install | bash && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
-
-# Install Turbo globally
-RUN bun install -g turbo@^2
 
 # Copy root package files
 COPY package*.json ./
@@ -40,21 +37,35 @@ COPY turbo.json ./
 COPY apps/web/package*.json ./apps/web/
 COPY packages/ ./packages/
 
-# Install dependencies
+# Install dependencies (cached Bun & Turbo)
 RUN bun install --frozen-lockfile
 
 # Development runner
 FROM base AS runner
-RUN apk add --no-cache libc6-compat curl bash
-RUN corepack enable
-
-RUN curl -fsSL https://bun.sh/install | bash && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN set -eux; \
+		apk add --no-cache libc6-compat curl bash; \
+		mkdir -p "$TURBO_CACHE_DIR"; \
+		if ! getent group node >/dev/null 2>&1; then \
+			if getent group "${GROUP_ID}" >/dev/null 2>&1; then \
+				addgroup -S node; \
+			else \
+				addgroup -S -g "${GROUP_ID}" node || addgroup -S node; \
+			fi; \
+		fi; \
+		if ! id -u node >/dev/null 2>&1; then \
+			if getent passwd "${USER_ID}" >/dev/null 2>&1; then \
+				adduser -S -G node node; \
+			else \
+				adduser -S -G node -u "${USER_ID}" node || adduser -S -G node node; \
+			fi; \
+		fi
 
 WORKDIR /app
 
-# Install Turbo globally
+# Install Turbo globally (layer-cached)
 RUN bun install -g turbo@^2
 
 # Copy dependencies and fix their permissions

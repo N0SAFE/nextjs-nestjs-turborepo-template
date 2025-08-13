@@ -12,6 +12,7 @@
         "paths": {
             "@/*": ["./src/*"],
             "#/*": ["./*"],
+            "@repo/nextjs-devtool": ["../../packages/nextjs-devtool/src"],
             "@repo/*": ["../../packages/*"]
         },
         "target": "ES2017"

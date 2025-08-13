@@ -1,16 +1,17 @@
 # Getting Started
 
-This guide will help you get up and running with the NextJS-Directus-Turborepo template quickly. Follow these steps to set up your development environment and start building your application.
+> This guide assumes the opinionated use case for this template:
+> Docker-first SaaS development locally, end-to-end types via ORPC and declarative routing, deploying to Render in production.
+
+This guide will help you get up and running with the NextJS-NestJS-Turborepo template quickly. Follow these steps to set up your development environment and start building your application.
 
 ## Prerequisites
 
-Before you begin, make sure you have the following installed:
-
-- **Node.js**: Version 22 or higher
-- **npm**: Version 10.8.1 or higher (comes with Node.js)
-- **Docker**: Latest version
-- **Docker Compose**: Latest version
-- **Git**: Latest version
+Install:
+- Bun 1.2.14+ (primary)
+- Node.js 20+
+- Docker + Docker Compose
+- Git
 
 ## Quick Start
 
@@ -20,13 +21,13 @@ Start by forking this template repository or cloning it directly:
 
 ```bash
 # Option 1: Fork the repository on GitHub and then clone it
-git clone https://github.com/your-username/nextjs-directus-turborepo-template.git
+git clone https://github.com/your-username/nextjs-nestjs-turborepo-template.git
 
 # Option 2: Clone directly
-git clone https://github.com/original-author/nextjs-directus-turborepo-template.git
+git clone https://github.com/N0SAFE/nextjs-nestjs-turborepo-template.git
 
 # Navigate to the project directory
-cd nextjs-directus-turborepo-template
+cd nextjs-nestjs-turborepo-template
 ```
 
 ### 2. Project Initialization
@@ -64,7 +65,7 @@ After initialization, install all project dependencies:
 bun install
 ```
 
-### 4. Start Development Environment
+### 4. Start Development Environment (Docker)
 
 After initialization and dependency installation, start the development environment:
 
@@ -74,19 +75,22 @@ bun run dev
 ```
 
 This command:
-- Starts the Directus API on the configured port (default: `8055`)
-- Starts the Next.js development server on the configured port (default: `3003`)
+- Starts the NestJS API on the configured port (default: `3001`)
+- Starts the Next.js development server on the configured port (default: `3000`)
 - Sets up hot reloading for both applications
+- Starts PostgreSQL database and Redis cache
 - Runs database migrations and seeds initial data
 
 ### 5. Access the Applications
 
 After the development servers are running:
 
-- **Next.js Web App**: http://localhost:3003
-- **Directus Admin**: http://localhost:8055/admin
-  - Default admin email: `admin@example.com`
-  - Default admin password: `password` (change this immediately in production!)
+- **Next.js Web App**: http://localhost:3000
+- **NestJS API**: http://localhost:3001
+  - API health check: http://localhost:3001/health
+  - API documentation: http://localhost:3001/api (if Swagger is enabled)
+- **Database**: PostgreSQL on localhost:5432
+- **Cache**: Redis on localhost:6379
 
 ## Environment Configuration
 
@@ -98,26 +102,30 @@ The template uses several environment files for different services and environme
 
 ### Key Environment Variables
 
-#### API (Directus):
-- `DB_ROOT_PASSWORD`: Database root password
-- `DB_DATABASE`: Database name
-- `NEXT_PUBLIC_API_URL`: URL where the API is accessible
-- `API_ADMIN_TOKEN`: Admin token for API access
+#### API (NestJS):
+- `DATABASE_URL`: PostgreSQL connection string
+- `API_PORT`: Port for the NestJS API (default: 3001)
+- `BETTER_AUTH_SECRET`: Secret key for Better Auth
+- `REDIS_URL`: Redis connection string
 
 #### Web (Next.js):
-- `NEXT_PUBLIC_API_URL`: URL to the Directus API
+- `NEXT_PUBLIC_API_URL`: URL to the NestJS API
 - `NEXT_PUBLIC_APP_URL`: URL where the web app is accessible
-- `AUTH_SECRET`: Secret key for NextAuth
+- `BETTER_AUTH_URL`: Auth callback URL
+- `NEXT_PUBLIC_APP_PORT`: Port for the Next.js app (default: 3000)
+- `NEXT_PUBLIC_DOC_URL`: URL to your documentation site (when set, a "Docs" link appears in the navbar)
+- `NEXT_PUBLIC_DOC_PORT`: Port for the docs site (optional helper used by Docker compose defaults)
 
 ## Project Structure Overview
 
 ```
-nextjs-directus-turborepo-template/
+nextjs-nestjs-turborepo-template/
 ├── apps/
-│   ├── api/              # Directus API instance
-│   └── web/              # NextJS frontend application
+│   ├── api/              # NestJS API with ORPC, Better Auth, Drizzle ORM
+│   └── web/              # NextJS frontend application with declarative routing
 ├── packages/             # Shared packages
-│   ├── ui/               # Shared UI components
+│   ├── ui/               # Shared UI components (Shadcn)
+│   ├── api-contracts/    # ORPC API contracts for type safety
 │   └── ...               # Other shared packages
 └── docs/                 # Documentation
 ```
@@ -163,14 +171,18 @@ After setup, you may want to:
    - Update the README.md with your project details
 
 2. **Configure Authentication**:
-   - Update NextAuth configuration in `apps/web/src/lib/auth.ts`
-   - Set up custom user roles in Directus
+   - Update Better Auth configuration in `apps/api/src/auth.ts`
+   - Set up custom user roles and permissions
 
 3. **Set Up Data Models**:
-   - Create content collections in Directus
-   - Generate or update types for your models
+   - Create database schemas using Drizzle ORM in `apps/api/src/db/drizzle/schema/`
+   - Generate and run migrations with `bun run api -- db:generate`
 
-4. **Customize UI**:
+4. **Define API Contracts**:
+   - Create ORPC procedures in `packages/api-contracts/`
+   - Implement API endpoints in `apps/api/src/`
+
+5. **Customize UI**:
    - Update theme settings in `packages/ui/components/theme-provider.tsx`
    - Modify default layout in `apps/web/src/app/layout.tsx`
 
@@ -178,19 +190,21 @@ After setup, you may want to:
 
 Once you have your environment set up, check out these guides:
 
-- [Development Workflow](./DEVELOPMENT-WORKFLOW.md): Day-to-day development practices
-- [Web App Structure](./WEB-APP.md): Details on the Next.js application structure
-- [API Service Configuration](./API-SERVICE.md): Working with the Directus API
-- [Authentication](./AUTHENTICATION.md): Understanding the authentication flow
+- Docs hub: ./README.md
+- Development Workflow: ./DEVELOPMENT-WORKFLOW.md
+- Architecture Overview: ./ARCHITECTURE.md
+- Technology Stack: ./TECH-STACK.md
+- Production Deployment: ./PRODUCTION-DEPLOYMENT.md
 
 ## Troubleshooting
 
 If you encounter issues during setup:
 
 - Ensure Docker is running correctly
-- Check that ports 3003 and 8055 are not used by other applications
+- Check that ports 3000 and 3001 are not used by other applications
 - Verify that environment variables are correctly set up
-- See [Troubleshooting Guide](./TROUBLESHOOTING.md) for common issues
+- Check Docker logs: `bun run dev:api:logs` or `bun run dev:web:logs`
+- For database issues, try: `bun run api -- db:push` to sync schema
 
 ---
 

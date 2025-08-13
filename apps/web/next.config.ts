@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
         // },
     },
     reactStrictMode: true,
-    transpilePackages: ['@repo/ui'],
+    transpilePackages: ['@repo/ui', '@repo/nextjs-devtool'],
     experimental: {
         // ppr: 'incremental',
         reactCompiler: true,
@@ -74,7 +74,8 @@ const nextConfig: NextConfig = {
     output: 'standalone',
 }
 
-let exp = nextConfig
+// Enable MDX and Fumadocs source generation
+let exp: NextConfig = nextConfig
 
 if (process.env.ANALYZE === 'true') {
     exp = withBundleAnalyzer()(exp)

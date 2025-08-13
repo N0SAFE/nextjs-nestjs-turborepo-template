@@ -1,4 +1,8 @@
-# Docker Configuration Migration: Directus to NestJS
+# Docker Configuration Migration: Directus to NestJS (Archived)
+
+This document is preserved for historical context of the migration. Current Docker usage is covered in:
+- docs/PRODUCTION-DEPLOYMENT.md
+- docs/DOCKER-BUILD-STRATEGIES.md
 
 This document summarizes all the changes made to migrate the Docker and Docker Compose configurations from Directus to NestJS.
 

@@ -1,0 +1,14 @@
+---
+title: ORPC Type-Safe API
+description: Shared contracts, implementations, and generated clients.
+order: 6
+---
+
+From `docs/ORPC-TYPE-CONTRACTS.md`.
+
+- Contracts in `packages/api-contracts`
+- Implement in `apps/api` with NestJS
+- Generate clients/hooks: `bun run web -- generate`
+- Usage: `api.users.getProfile.useQuery()` and `orpcClient.users.getProfile()`
+
+Benefits: compile-time safety, autocompletion, easy refactors.

@@ -1,42 +1,56 @@
+# syntax=docker/dockerfile:1.7
 # Development Dockerfile for NestJS API
 # Multi-stage build for development with hot reloading
+# Optimized for better layer caching and reduced storage usage
 
-FROM node:20-alpine AS base
+FROM oven/bun:1.2.14-alpine AS base
 
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    wget \
-    bash \
-    git \
-    python3 \
-    make \
-    g++ \
-    supervisor
+# Install system dependencies (single layer)
+RUN apk add --no-cache curl wget bash git python3 make g++ supervisor
 
 # Set working directory
 WORKDIR /app
 
-# Install bun globally first
-RUN npm install -g bun
-
-# Install NestJS CLI globally for development
+# Install NestJS CLI globally for development (bun already available)
 RUN bun install -g @nestjs/cli
 
-# Copy workspace configuration files
+# ===============================
+# Dependencies stage - cached separately
+# ===============================
+FROM base AS dependencies
+
+# Copy workspace configuration files first (changes less frequently)
 COPY package.json bun.lock* ./
 COPY turbo.json ./
 COPY tsconfig.json ./
 
-# Copy all packages to resolve workspace dependencies
-COPY packages/ ./packages/
+# Copy API package.json for better caching
 COPY apps/api/package.json ./apps/api/
 
-# Install all dependencies from workspace root (this resolves catalog references)
-RUN bun install
+# Copy all package sources (needed for workspace dependencies)
+COPY packages/ ./packages/
 
-# Copy API source code
+# Install all dependencies from workspace root
+# This layer will be cached unless dependencies change
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install
+
+# ===============================
+# Source stage - changes frequently
+# ===============================
+FROM dependencies AS source
+
+# Copy API source code (primary location)
 COPY apps/api ./apps/api
+
+# Also keep a backup copy for restoration if bind mount is empty at runtime
+RUN mkdir -p /app_image/apps/api \
+	&& cp -R ./apps/api/. /app_image/apps/api/
+
+# ===============================
+# Final stage
+# ===============================
+FROM source AS final
 
 # Copy supervisord config
 COPY apps/api/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -48,5 +62,22 @@ ENV LOG_LEVEL=debug
 # Stay in workspace root to maintain access to all packages
 WORKDIR /app
 
-# Start development server with hot reloading from workspace root
-CMD ["sh", "-c", "bun run --cwd apps/api db:migrate && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+# Add optional SKIP_MIGRATIONS env to bypass
+ENV SKIP_MIGRATIONS=""
+
+# Create user and set permissions
+RUN addgroup -S nodejs || true \
+	&& adduser -S apiuser -G nodejs || true \
+	&& mkdir -p /app/apps/api/dist \
+	&& touch /app/supervisord.log /app/supervisord.pid \
+	&& chown -R apiuser:nodejs /app/apps/api /app/supervisord.log /app/supervisord.pid \
+	&& chmod -R u+rwX /app/apps/api
+
+# NOTE: Running as root in dev to avoid host bind mount permission issues (Windows + anonymous volumes)
+USER root
+
+# Copy and setup entrypoint
+COPY scripts/api-dev-entrypoint.sh /usr/local/bin/api-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/api-dev-entrypoint.sh
+
+CMD ["/usr/local/bin/api-dev-entrypoint.sh"]

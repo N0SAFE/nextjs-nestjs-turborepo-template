@@ -50,6 +50,9 @@
         "@types/react-dom": "^19.0.0",
         "react-hook-form": "^7.53.0"
       },
+      "react-compiler": {
+        "babel-plugin-react-compiler": "^19.1.0-rc.2"
+      },
       "query": {
         "@tanstack/react-query": "^5.81.5",
         "@tanstack/react-query-devtools": "^5.81.5",
@@ -170,6 +173,11 @@
     "docker:build": "docker compose -f ./docker-compose.prod.yml build",
     "docker:build:web": "docker build -f docker/Dockerfile.web.prod . -t nextjs-directus-web:latest",
     "docker:build:api": "docker build -f docker/Dockerfile.api.prod . -t directus-api:latest",
+    "docker:cleanup": "scripts\\docker-cleanup.bat",
+    "docker:cleanup:cache": "docker builder prune -f",
+    "docker:cleanup:all": "docker system prune -a -f",
+    "docker:size": "docker system df",
+    "docker:images": "docker images --format \"table {{.Repository}}\\t{{.Tag}}\\t{{.Size}}\\t{{.CreatedAt}}\"",
     "prod": "bun --bun run prod:down && docker compose -f ./docker-compose.prod.yml up --build",
     "prod:new": "bun --bun run prod:down:volumes && docker compose -f ./docker-compose.prod.yml up --build",
     "prod:down": "docker compose -f ./docker-compose.prod.yml down",
@@ -191,6 +199,7 @@
     "kill:api": "trycli-options --command \"envcli kill-port $:{NEXT_PUBLIC_API_PORT} && envcli wait-on $:{NEXT_PUBLIC_API_URL} -r\" --silent",
     "api": "dotenv -e .env -- bun --bun --cwd=./apps/api run --",
     "web": "dotenv -e .env -- bun --bun --cwd=./apps/web run --",
+  "doc": "dotenv -e .env -- bun --bun --cwd=./apps/doc run --",
     "@repo/ui": "dotenv -e .env -- bun --bun --cwd=./packages/ui run --",
     "@repo/types": "dotenv -e .env -- bun --bun --cwd=./packages/types run --",
     "@repo/tsconfig": "dotenv -e .env -- bun --bun --cwd=./packages/tsconfig run --",

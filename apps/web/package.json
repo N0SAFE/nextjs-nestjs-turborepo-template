@@ -7,7 +7,7 @@
         "echo": "envcli echo $:{NEXT_PUBLIC_API_URL}$:{API_PING_PATH}",
         "prettify": "bun x prettier . --write --no-error-on-unmatched-pattern",
         "dev": "bun --bun wait-api && concurrently --kill-others-on-fail -n next,routing -c green,magenta \"envcli cross-env NODE_OPTIONS='--inspect' next dev -p $:{NEXT_PUBLIC_APP_PORT} --turbopack\" \"bun --bun dr:build:watch\"",
-        "dev:docker": "concurrently --kill-others-on-fail -n next,routing -c green,magenta \"envcli cross-env NODE_OPTIONS='--inspect' next dev -H 0.0.0.0 -p $:{NEXT_PUBLIC_APP_PORT} --turbopack\" \"bun --bun dr:build:watch\"",
+        "dev:docker": "bun --bun dr:build && envcli cross-env NODE_OPTIONS='--inspect' next dev -H 0.0.0.0 -p $:{NEXT_PUBLIC_APP_PORT} --turbopack",
         "dev:open": "bun --bun wait-api && concurrently --kill-others-on-fail -n next,routing -c green,magenta \"(envcli open $:{NEXT_PUBLIC_APP_URL} || envcli cmd.exe /c start $:{NEXT_PUBLIC_APP_URL}) && envcli cross-env NODE_OPTIONS='--inspect' next dev -p $:{NEXT_PUBLIC_APP_PORT} --turbopack\" \"bun --bun dr:build:watch\"",
         "wait-api": "envcli echo $:{NEXT_PUBLIC_API_URL}$:{API_PING_PATH} && envcli wait-port $:{NEXT_PUBLIC_API_URL}$:{API_PING_PATH} || wait-port api:3001",
         "analyze": "cross-env ANALYZE=true bun --bun build",
@@ -43,9 +43,10 @@
         "@orpc/tanstack-query": "catalog:orpc",
         "@repo/api-contracts": "*",
         "@repo/ui": "*",
+    "@repo/nextjs-devtool": "*",
         "@tanstack/react-query": "catalog:query",
         "@tanstack/react-query-devtools": "catalog:query",
-        "babel-plugin-react-compiler": "^19.1.0-rc.2",
+    "babel-plugin-react-compiler": "catalog:react-compiler",
         "better-auth": "catalog:auth",
         "circular-json": "^0.5.9",
         "concurrently": "catalog:dev",
@@ -92,6 +93,12 @@
         "jsdom": "catalog:testing",
         "vitest": "catalog:testing",
         "@vitest/ui": "catalog:testing",
-        "@vitest/coverage-v8": "catalog:testing"
+        "@vitest/coverage-v8": "catalog:testing",
+        "@types/mdx": "^2.0.13"
+    },
+    "optionalDependencies": {},
+    "overrides": {},
+    "pnpm": {
+        "patchedDependencies": {}
     }
 }

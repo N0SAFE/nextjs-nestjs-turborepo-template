@@ -1,27 +1,29 @@
 # GitHub Copilot Coding Agent Development Environment
 
-This repository has been configured with a custom development environment for GitHub Copilot coding agent. The agent will have access to all the necessary tools and dependencies to work effectively with this Next.js + Directus Turborepo project.
+This repository has been configured with a custom development environment for GitHub Copilot coding agent. The agent will have access to all the necessary tools and dependencies to work effectively with this Next.js + NestJS Turborepo project.
+
+For developer documentation, see the docs hub at ./README.md for the recommended journey and topic index.
 
 ## Environment Setup
 
 The Copilot coding agent environment includes:
 
 ### 🛠️ Core Tools
-- **Node.js 22** - JavaScript runtime
+- **Node.js 20** - JavaScript runtime
 - **Bun 1.2.14** - Fast package manager and bundler
 - **Turbo 2.1.2** - Monorepo build system
 - **Docker & Docker Buildx** - Containerization platform
-- **Directus CLI** - Headless CMS management
+- **NestJS CLI** - Backend framework development tools
 
 ### 🗄️ Services
-- **MySQL 8.0** - Database for Directus
-- **Redis 8** - Caching layer for Directus
+- **PostgreSQL 16** - Database for NestJS API
+- **Redis 8** - Caching layer for performance
 
 ### 📦 Project Structure
 The environment is pre-configured for this Turborepo monorepo structure:
-- `apps/web` - Next.js frontend application
-- `apps/api` - Directus CMS/API backend
-- `packages/*` - Shared packages and utilities
+- `apps/web` - Next.js frontend application with declarative routing
+- `apps/api` - NestJS API backend with ORPC and Better Auth
+- `packages/*` - Shared packages and utilities including ORPC contracts
 
 ### ⚙️ Pre-configured Environment Variables
 The agent has access to all necessary environment variables:
@@ -61,7 +63,7 @@ bun run clean        # Clean build artifacts
 
 1. **Automatic Setup**: When Copilot starts working on your repository, it automatically runs the setup workflow
 2. **Cached Dependencies**: Dependencies are cached for faster subsequent runs
-3. **Service Availability**: MySQL and Redis services are started and health-checked
+3. **Service Availability**: PostgreSQL and Redis services are started and health-checked
 4. **Tool Verification**: All tools are verified to be working correctly
 5. **Environment Ready**: The agent receives a fully configured development environment
 
@@ -113,7 +115,7 @@ If the Copilot agent encounters issues:
 
 1. **Check the workflow logs** in the Actions tab
 2. **Verify environment variables** are correctly set
-3. **Ensure services are healthy** (MySQL, Redis)
+3. **Ensure services are healthy** (PostgreSQL, Redis)
 4. **Check tool versions** match your requirements
 
 ## Security Considerations
@@ -125,4 +127,4 @@ If the Copilot agent encounters issues:
 
 ---
 
-The GitHub Copilot coding agent is now ready to work efficiently with your Next.js + Directus Turborepo project! 🚀
+The GitHub Copilot coding agent is now ready to work efficiently with your Next.js + NestJS Turborepo project! 🚀

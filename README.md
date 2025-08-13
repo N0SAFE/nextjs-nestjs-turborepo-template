@@ -1,29 +1,30 @@
-# Next.js Directus Turborepo Template
+# Next.js + NestJS Monorepo Template
 
-A modern, full-stack monorepo template featuring Next.js, Directus CMS, Shadcn UI, and TypeScript with authentication and declarative routing.
+A modern, full-stack monorepo template featuring Next.js frontend, NestJS API, Shadcn UI, and TypeScript with authentication, declarative routing, and end-to-end types.
 
 ## Features
 
-- 🚀 **Full-Stack Setup**: Next.js frontend + Directus headless CMS backend
+- 🚀 **Full-Stack Setup**: Next.js frontend + NestJS backend API
 - 📦 **Monorepo Structure**: Organized with Turborepo for efficient development
 - 🎨 **Modern UI**: Shadcn UI components with Tailwind CSS
-- 🔐 **Authentication**: Integrated NextAuth.js with Directus
+- 🔐 **Authentication**: Integrated Better Auth with NestJS
 - 🛣️ **Routing**: Declarative routing system for better organization
-- 📱 **Type Safety**: Full TypeScript support across all packages
+- 📱 **Type Safety**: Full TypeScript support across all packages with ORPC
 - 🔧 **Development Tools**: ESLint, Prettier, and TypeScript configurations
 - 🤖 **AI-Ready**: Pre-configured development environment for GitHub Copilot coding agent
 
 ## Prerequisites
 
-- Node.js 18 or later
-- npm (recommended) or yarn
+- Bun 1.2.14+ (primary)
+- Node.js 20+ (fallback)
+- Docker + Docker Compose
 
 ## Getting Started
 
 1. **Clone the Repository**
    ```bash
    git clone [your-repo-url]
-   cd nextjs-directus-turborepo-template
+   cd nextjs-nestjs-turborepo-template
    ```
 
 2. **Initialize the Project**
@@ -35,7 +36,7 @@ A modern, full-stack monorepo template featuring Next.js, Directus CMS, Shadcn U
 3. **Set Upstream Remote for Updates**
    To keep your project up to date with the original template, add an `upstream` remote:
    ```bash
-   git remote add upstream https://github.com/N0SAFE/nextjs-directus-turborepo-template.git
+   git remote add upstream https://github.com/N0SAFE/nextjs-nestjs-turborepo-template.git
    # To fetch and rebase updates from the template later:
    git fetch upstream
    git rebase upstream/main
@@ -57,28 +58,28 @@ A modern, full-stack monorepo template featuring Next.js, Directus CMS, Shadcn U
    ```bash
    bun --bun dev
    ```
-   This will start:
-   - Next.js frontend at http://localhost:3000
-   - Directus API at http://localhost:8055
+   This starts:
+   - Next.js at http://localhost:3000
+   - NestJS API at http://localhost:3001
 
 ## Project Structure
 
 ### Apps
 - `web/`: Next.js frontend application
   - Features Shadcn UI components
-  - NextAuth.js integration
+  - Better Auth integration
   - Declarative routing system
-  - API integration with Directus
+  - API integration with ORPC
 
-- `api/`: Directus backend
-  - Custom extensions
-  - Seeder functionality
-  - Database migrations
-  - File upload handling
+- `api/`: NestJS backend
+  - ORPC endpoints
+  - Better Auth configuration
+  - Database migrations with Drizzle ORM
+  - PostgreSQL integration
 
 ### Packages
 - `ui/`: Shared React component library
-- `directus-sdk/`: Custom Directus SDK wrapper
+- `api-contracts/`: ORPC type-safe API contracts
 - `eslint-config/`: Shared ESLint configurations
 - `prettier-config/`: Shared Prettier configurations
 - `tailwind-config/`: Shared Tailwind CSS configuration
@@ -144,9 +145,8 @@ A modern, full-stack monorepo template featuring Next.js, Directus CMS, Shadcn U
 - Optimized for Vercel deployment
 - Supports other platforms (AWS, DigitalOcean, etc.)
 
-### Backend (Directus)
-- Can be deployed to any Node.js hosting platform
-- Docker configuration available for containerized deployment
+### Backend (NestJS)
+- Deploy to any Node.js hosting platform or via Docker
 
 ## Contributing
 
@@ -164,16 +164,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Turborepo](https://turbo.build/)
 - [Next.js](https://nextjs.org/)
-- [Directus](https://directus.io/)
-- [Shadcn UI](https://ui.shadcn.com/)
-- [NextAuth.js](https://next-auth.js.org/)
+- [NestJS](https://nestjs.com/)
+- [ORPC](https://orpc.io/)
+- [Better Auth](https://better-auth.com/)
 - [Tailwind CSS](https://tailwindcss.com/) for styles
 - [Shadcn UI](https://ui.shadcn.com/) for ui components
 - [TypeScript](https://www.typescriptlang.org/) for static type checking
 - [ESLint](https://eslint.org/) for code linting
 - [Prettier](https://prettier.io) for code formatting
-- [next-auth](https://next-auth.js.org/) for authentication {linked with directus}
-- [directus](https://directus.io/) for headless CMS
+- [Better Auth](https://better-auth.com/) for authentication
+- [PostgreSQL](https://www.postgresql.org/) for database
+- [Drizzle ORM](https://orm.drizzle.team/) for type-safe database operations
 - [tsup](https://github.com/egoist/tsup) for bundling
 - [declarative-routing](https://github.com/ProNextJS/declarative-routing/blob/main/docs/nextjs.md) for routing
 
@@ -262,25 +263,14 @@ For detailed production deployment instructions, see [PRODUCTION-DEPLOYMENT.md](
 
 ## Documentation
 
-For comprehensive documentation on this monorepo template, please refer to the `/docs` directory:
+Start here: ./docs/README.md
 
-- [Architecture Overview](./docs/ARCHITECTURE.md) - High-level architecture and component interaction
-- [Technology Stack](./docs/TECH-STACK.md) - Detailed explanation of technology choices
-- [Getting Started](./docs/GETTING-STARTED.md) - Quick start guide
-- [Development Workflow](./docs/DEVELOPMENT-WORKFLOW.md) - Day-to-day development practices
-- [Project Isolation](./docs/PROJECT-ISOLATION.md) - Setting up multiple projects without conflicts
-- [GitHub Copilot Setup](./docs/COPILOT-SETUP.md) - AI-powered development environment configuration
-
-Additional documentation will be added to the `/docs` directory as the project evolves.
+- Architecture: ./docs/ARCHITECTURE.md
+- Tech stack: ./docs/TECH-STACK.md
+- Getting started: ./docs/GETTING-STARTED.md
+- Development workflow: ./docs/DEVELOPMENT-WORKFLOW.md
+- Concepts: ./docs/concepts
 
 ---
 
-<!-- Legacy deployment info -->
-### Legacy Single-Server Deployment
-
-For simple single-server deployment, deploy the API first, then the web app:
-
-```bash
-docker-compose up -d --build api
-docker-compose up -d --build web
-```
+<!-- Removed legacy single-server snippet in favor of PRODUCTION-DEPLOYMENT.md -->

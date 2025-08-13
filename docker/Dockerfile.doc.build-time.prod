@@ -1,0 +1,75 @@
+# Production Dockerfile for Docs App - BUILD-TIME COMPILATION
+FROM oven/bun:1.2.14-alpine AS base
+
+ENV NODE_ENV=production
+
+# Install dependencies only when needed
+FROM base AS builder
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
+WORKDIR /app
+
+# Install Turbo globally
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+
+# Copy everything and prune for docs app
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/turbo turbo prune doc --docker
+
+# Install dependencies for building
+FROM base AS installer
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
+WORKDIR /app
+
+# Install Turbo globally
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/full/bun.lock* ./
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  --mount=type=cache,target=/root/.cache/turbo \
+  bun install --frozen-lockfile --ignore-scripts
+
+# Copy all source files
+COPY --from=builder /app/out/full/ .
+
+# Run Fumadocs postinstall after sources are available
+RUN bun --cwd /app/apps/doc run postinstall
+
+# Build the docs app during Docker build
+FROM installer AS doc-builder
+WORKDIR /app/apps/doc
+RUN bun run build
+
+# Production runner
+FROM base AS runner
+WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create npm symlink to avoid warnings
+RUN ln -sf $(which bun) /usr/local/bin/npm
+
+# Non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy built application
+COPY --from=doc-builder --chown=nextjs:nodejs /app ./
+
+USER nextjs
+
+# Docs port
+EXPOSE 3020
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3020 || exit 1
+
+WORKDIR /app/apps/doc
+
+# Start already built app
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["bun", "x", "next", "start", "-H", "0.0.0.0", "-p", "3020"]

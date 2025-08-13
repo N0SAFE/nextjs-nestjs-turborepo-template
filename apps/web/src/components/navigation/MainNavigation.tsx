@@ -30,9 +30,11 @@ import {
     ChevronDown,
 } from 'lucide-react'
 import SignOutButton from '../signout/signoutButton'
+import { validateEnvPath } from '#/env'
 
 const MainNavigation: React.FC = () => {
     const pathname = usePathname()
+    const docsUrl = validateEnvPath(process.env.NEXT_PUBLIC_DOC_URL, 'NEXT_PUBLIC_DOC_URL')
     const { data: session, isPending } = useSession()
 
     const isActive = (path: string) => pathname === path
@@ -121,6 +123,18 @@ const MainNavigation: React.FC = () => {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    {docsUrl && (
+                        <a href={docsUrl} target="_blank" rel="noreferrer">
+                            <Button
+                                variant={isActive('/docs') ? 'default' : 'ghost'}
+                                size="sm"
+                                className="flex items-center space-x-2"
+                            >
+                                <Server className="h-4 w-4" />
+                                <span>Docs</span>
+                            </Button>
+                        </a>
+                    )}
                 </div>
 
                 <div className="flex items-center space-x-2">

@@ -1,0 +1,14 @@
+[build]
+# Path mappings for workspace packages
+[build.define]
+
+[install]
+# Use workspace packages
+workspaces = true
+
+[run]
+# Use bun runtime for all scripts
+bun = true
+
+# Ensure workspace package resolution
+[loaders]

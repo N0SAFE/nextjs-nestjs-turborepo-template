@@ -1,6 +1,6 @@
 # 🚀 GitHub Actions CI Setup
 
-This repository includes comprehensive CI workflows for building and testing your Next.js Directus Turborepo application.
+This repository includes comprehensive CI workflows for building and testing your Next.js NestJS Turborepo application.
 
 ## 📋 Workflows Overview
 
