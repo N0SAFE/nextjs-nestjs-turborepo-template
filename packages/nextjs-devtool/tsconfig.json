@@ -32,6 +32,8 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/components/plugins/index.ts",
+    "src/core/routes/client/components/index.ts"
   ]
 }

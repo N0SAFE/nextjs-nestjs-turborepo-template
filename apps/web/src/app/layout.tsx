@@ -14,7 +14,7 @@ import Validate from '@/lib/auth/validate'
 import Script from 'next/script'
 import { validateEnv } from '#/env'
 import MainNavigation from '@/components/navigation/MainNavigation'
-import { DevTool } from '@/components/devTool'
+import { TanStackDevTools } from '@/components/devtools/TanStackDevTools'
 
 const fontSans = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -86,7 +86,7 @@ export default async function RootLayout({
                 </NextAuthProviders>
                 
                 {/* DevTools - Only in development */}
-                <DevTool />
+                <TanStackDevTools />
             </body>
         </html>
     )
