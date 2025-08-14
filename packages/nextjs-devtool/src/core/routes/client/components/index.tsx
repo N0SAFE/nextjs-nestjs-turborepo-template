@@ -4,6 +4,8 @@
  * Central export point for all routes plugin UI components
  */
 
+import React from 'react';
+
 export { RoutesOverview } from './RoutesOverview';
 export { RouteExplorer } from './RouteExplorer';
 export { RouteTree } from './RouteTree';

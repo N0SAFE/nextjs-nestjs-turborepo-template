@@ -5,14 +5,14 @@
  * These are the actual implementation components that plugins can use.
  */
 
-import React from 'react'
-import type { PluginComponentContext } from '../../types'
+import React from 'react';
+import type { PluginComponentContext } from '@repo/nextjs-devtool/types'
 
 // Routes Plugin Components
-export { RoutesOverview } from '../../core/routes/client/components/RoutesOverview'
-export { RouteExplorer } from '../../core/routes/client/components/RouteExplorer'
-export { RouteTree } from '../../core/routes/client/components/RouteTree'
-export { RouteDetail } from '../../core/routes/client/components/RouteDetail'
+export { RoutesOverview } from '@repo/nextjs-devtool/core/routes/client/components/RoutesOverview'
+export { RouteExplorer } from '@repo/nextjs-devtool/core/routes/client/components/RouteExplorer'
+export { RouteTree } from '@repo/nextjs-devtool/core/routes/client/components/RouteTree'
+export { RouteDetail } from '@repo/nextjs-devtool/core/routes/client/components/RouteDetail'
 
 // Bundle Inspector Components (placeholder - will be implemented)
 export const BundleInspector: React.ComponentType<{ context: PluginComponentContext }> = () => {

@@ -103,3 +103,6 @@ export {
 
 // Re-export everything from types for convenience
 export * from './types'
+
+// TanStack DevTools Integration - NEW
+export * from './tanstack'

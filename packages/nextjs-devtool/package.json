@@ -41,9 +41,12 @@
     "@orpc/openapi-client": "catalog:orpc",
     "@orpc/server": "catalog:orpc",
     "@repo/ui": "*",
+    "@tanstack/devtools": "^0.4.0",
+    "@tanstack/react-devtools": "^0.4.0",
+    "@tanstack/react-query-devtools": "catalog:query",
     "lucide-react": "catalog:ui",
-    "zustand": "catalog:utils",
-    "zod": "catalog:utils"
+    "zod": "catalog:utils",
+    "zustand": "catalog:utils"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
