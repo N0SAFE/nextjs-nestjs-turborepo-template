@@ -1,72 +1,58 @@
 services:
-  # Directus API Service
+  # NestJS API Service
   - type: web
-    name: directus-api
+    name: nestjs-api
     runtime: docker
     dockerfilePath: ./docker/Dockerfile.api.prod
     plan: free
-    healthCheckPath: /server/health
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SECRET
-        generateValue: true
-      - key: DB_CLIENT
-        value: pg
+      - key: API_PORT
+        value: "3001"
+      # Database Configuration
       - key: DB_HOST
         fromDatabase:
-          name: directus-db
+          name: nestjs-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: directus-db
+          name: nestjs-db
           property: port
       - key: DB_DATABASE
         fromDatabase:
-          name: directus-db
+          name: nestjs-db
           property: database
       - key: DB_USER
         fromDatabase:
-          name: directus-db
+          name: nestjs-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: directus-db
+          name: nestjs-db
           property: password
-      # Auto-complétion de l'URL du service API dynamique
-      - key: PUBLIC_URL
+      # API Configuration
+      - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
-          name: directus-api
+          name: nestjs-api
           envVarKey: RENDER_EXTERNAL_URL
-      - key: CORS_ENABLED
-        value: "true"
-      # Référence automatique au service Next.js avec protocole
-      - key: CORS_ORIGIN
+      - key: API_PING_PATH
+        value: /health
+      - key: API_ADMIN_TOKEN
+        generateValue: true
+      # Authentication
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      # Web App URL for CORS
+      - key: NEXT_PUBLIC_APP_URL
         fromService:
           type: web
           name: nextjs-web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: CORS_METHODS
-        value: "GET,POST,PATCH,DELETE,OPTIONS"
-      - key: CORS_ALLOWED_HEADERS
-        value: "Content-Type,Authorization,X-Requested-With"
-      - key: CORS_CREDENTIALS
-        value: "true"
-      - key: ADMIN_EMAIL
-        value: admin@admin.com
-      - key: ADMIN_PASSWORD
-        value: adminadmin
-      - key: ADMIN_TOKEN
-        generateValue: true
-      - key: LOG_LEVEL
-        value: warn
-      - key: RATE_LIMITER_ENABLED
-        value: "true"
-      - key: RATE_LIMITER_POINTS
-        value: "25"
-      - key: RATE_LIMITER_DURATION
-        value: "1"
 
   # Next.js Web Service
   - type: web
@@ -74,38 +60,61 @@ services:
     runtime: docker
     dockerfilePath: ./docker/Dockerfile.web.build-time.prod
     plan: free
-    healthCheckPath: /api/server/health
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
-      # Auto-complétion de l'URL de l'API avec service dynamique
+      - key: NEXT_PUBLIC_APP_PORT
+        value: "3000"
+      # API Configuration
       - key: NEXT_PUBLIC_API_URL
         fromService:
           type: web
-          name: directus-api
+          name: nestjs-api
           envVarKey: RENDER_EXTERNAL_URL
-      # Auto-complétion de l'URL de l'app avec service dynamique
+      - key: API_URL
+        fromService:
+          type: web
+          name: nestjs-api
+          envVarKey: RENDER_EXTERNAL_URL
+      # Web App Configuration
       - key: NEXT_PUBLIC_APP_URL
         fromService:
           type: web
           name: nextjs-web
           envVarKey: RENDER_EXTERNAL_URL
-      - key: API_URL
+      # Documentation Site URL
+      - key: NEXT_PUBLIC_DOC_URL
         fromService:
           type: web
-          name: directus-api
+          name: doc-app
           envVarKey: RENDER_EXTERNAL_URL
+      # Authentication
       - key: AUTH_SECRET
         generateValue: true
       - key: API_ADMIN_TOKEN
         sync: false # Will be set manually to match API service
+      # API Configuration
       - key: API_PING_PATH
-        value: /server/health
+        value: /health
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
 
+  # Documentation Site Service  
+  - type: web
+    name: doc-app
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.doc.build-time.prod
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_DOC_PORT
+        value: "3020"
+
 databases:
-  - name: directus-db
-    databaseName: directus
-    user: directus_user
+  - name: nestjs-db
+    databaseName: nestjs_api
+    user: nestjs_user
     plan: free
