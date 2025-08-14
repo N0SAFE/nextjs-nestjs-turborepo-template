@@ -65,9 +65,9 @@
 */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-[hsl(var(--border))];
     }
-  body {
+  /* body {
     @apply bg-background text-foreground;
-    }
+    } */
 }

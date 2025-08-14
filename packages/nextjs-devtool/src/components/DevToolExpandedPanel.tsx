@@ -331,96 +331,102 @@ export const DevToolExpandedPanel = ({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 bg-background border-t shadow-lg">
-      <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <div className="flex h-96 max-h-96">
-          {/* Sidebar */}
-          <Sidebar side="left" variant="inset" className="border-r">
-            <SidebarHeader className="border-b px-4 py-2">
-              <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-lg">DevTool Plugins</h2>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
-                    {sidebarOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                  </Button>
-                </div>
-              </div>
-            </SidebarHeader>
-
-            <SidebarNavigation
-              activePluginId={activePluginId}
-              onPluginSelect={handlePluginSelect}
-              onPluginClose={handlePluginClose}
-            />
-
-            <SidebarFooter className="border-t p-2">
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="sm" onClick={onCollapse}>
-                  <ChevronDown size={16} />
-                  <span className="ml-2">Minimize</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                  <X size={16} />
-                  <span className="ml-2">Close</span>
-                </Button>
-              </div>
-            </SidebarFooter>
-          </Sidebar>
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Header */}
-            <div className="border-b px-4 py-2 bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {activePlugin && (
-                    <>
-                      {activePlugin.meta.icon && (
-                        <span className="text-lg">{activePlugin.meta.icon}</span>
-                      )}
-                      <div>
-                        <h3 className="font-medium">{activePlugin.meta?.displayName || activePlugin.name}</h3>
-                        <p className="text-sm text-gray-600">{activePlugin.meta?.description || 'DevTool Plugin'}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <Settings size={16} />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={onCollapse}>
-                    <ChevronDown size={16} />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={onClose}>
-                    <X size={16} />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Plugin Content */}
-            <div className="flex-1 overflow-y-auto">
-              {activePlugin ? (
-                <PluginContent
-                  plugin={activePlugin}
-                  context={pluginContext}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-gray-500">
-                    <Layers size={48} className="mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No Active Plugins</p>
-                    <p className="text-sm">
-                      Activate a plugin from the sidebar to get started
-                    </p>
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-[90vw] max-w-6xl">
+      {/* Nuxt-style Card Container */}
+      <div className="bg-background border border-border rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-95">
+        <SidebarProvider defaultOpen={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <div className="flex h-[32rem] max-h-[80vh]">
+            {/* Sidebar */}
+            <Sidebar side="left" variant="inset" className="border-r min-w-64 max-w-80">
+              <SidebarHeader className="border-b px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <h2 className="font-semibold text-base">DevTool Plugins</h2>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                      {sidebarOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                    </Button>
                   </div>
                 </div>
-              )}
+              </SidebarHeader>
+
+              <SidebarNavigation
+                activePluginId={activePluginId}
+                onPluginSelect={handlePluginSelect}
+                onPluginClose={handlePluginClose}
+              />
+
+              <SidebarFooter className="border-t p-3">
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="sm" onClick={onCollapse} className="text-xs">
+                    <ChevronDown size={14} />
+                    <span className="ml-1">Minimize</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-red-600 hover:text-red-700">
+                    <X size={14} />
+                    <span className="ml-1">Close</span>
+                  </Button>
+                </div>
+              </SidebarFooter>
+            </Sidebar>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {/* Header */}
+              <div className="border-b px-4 py-3 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {activePlugin && (
+                      <>
+                        {activePlugin.meta.icon && (
+                          <span className="text-xl">{activePlugin.meta.icon}</span>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-base">{activePlugin.meta?.displayName || activePlugin.name}</h3>
+                          <p className="text-xs text-muted-foreground">{activePlugin.meta?.description || 'DevTool Plugin'}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                      <Settings size={14} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={onCollapse} className="h-7 w-7 p-0">
+                      <ChevronDown size={14} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0 text-red-600 hover:text-red-700">
+                      <X size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plugin Content */}
+              <div className="flex-1 overflow-y-auto">
+                {activePlugin ? (
+                  <PluginContent
+                    plugin={activePlugin}
+                    context={pluginContext}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <Layers size={48} className="mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">No Active Plugins</p>
+                      <p className="text-sm">
+                        Activate a plugin from the sidebar to get started
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </div>
     </div>
   )
 }

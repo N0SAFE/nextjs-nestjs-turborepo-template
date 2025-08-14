@@ -67,26 +67,41 @@
 - **UI Excellence**: Comprehensive user interface with search, filtering, hierarchical visualization
 - **Developer Experience**: Full TypeScript support, proper error handling, loading states
 
-### Phase 3: UI Framework (MAJOR MILESTONE: WEB APP INTEGRATION) 🔄
-**Current Status**: Analyzing web app integration requirements
+### Phase 3: UI Framework (MAJOR MILESTONE: MODERN UI REDESIGN COMPLETED) ✅
+**Current Status**: Modern DevTool UI successfully implemented with mixed design approach
 
-**Web App Analysis Results**:
+**COMPLETED: Modern UI Redesign**:
+- ✅ **Expanded Mode**: Nuxt DevTools-style bottom-center floating card
+  - Modern card layout: `fixed bottom-4 left-1/2 transform -translate-x-1/2`
+  - Glass morphism design: `rounded-xl shadow-2xl backdrop-blur-sm bg-opacity-95`
+  - Responsive sizing: `w-[90vw] max-w-6xl h-[32rem]`
+  - Shadcn sidebar integration maintained for plugin navigation
+
+- ✅ **Reduced Mode**: Laravel Debugbar-style horizontal bottom bar
+  - Full-width positioning: `fixed bottom-0 left-0 right-0`
+  - Horizontal plugin tabs with status indicators
+  - Laravel-style active/inactive states with colored dots
+  - Right-side controls: DevTools logo, expand button, settings menu
+
+**UI Architecture Achievements**:
+- ✅ **Mixed Design Philosophy**: Successfully combined Nuxt DevTools (card) + Laravel Debugbar (horizontal) paradigms
+- ✅ **Shadcn Integration**: Maintained component consistency across both modes
+- ✅ **Responsive Design**: Mobile-first approach with desktop enhancements
+- ✅ **Modern Aesthetics**: Glass morphism, backdrop blur, sophisticated styling
+- ✅ **User Experience**: Clear mode distinction for different developer workflows
+
+**Web App Integration Status**:
 - ✅ **Package Dependency**: @repo/nextjs-devtool already added to apps/web/package.json
 - ✅ **Layout Integration**: DevTool component already imported in layout.tsx 
 - ✅ **Client Component**: DevTool wrapper created in components/devTool/index.tsx
-- ❌ **Missing Exports**: Main index.ts and UI components not yet created
-
-**Required Components for Integration**:
-1. **DevToolProvider**: Context provider for plugin system initialization
-2. **DevToolPanel**: Main floating UI panel with plugin tabs
-3. **Plugin Components**: UI implementations for routes, bundle inspector, logs, performance
-4. **ORPC Client Integration**: Connect web app's existing ORPC setup to devtool system
+- ✅ **UI Components**: DevToolExpandedPanel and DevToolReducedBar fully implemented
+- ❌ **Main Exports**: Main index.ts and provider components still needed
 
 **Next Steps**:
 - Create main export file (src/index.ts) with DevToolProvider and DevToolPanel
-- Implement floating DevTool UI with plugin tab system
+- Test new UI designs across different screen sizes and devices
 - Integrate with existing web app ORPC configuration
-- Test routes plugin with real declarative routing data
+- Validate plugin rendering in new card vs horizontal layouts
 
 ### Phase 4: Next.js Integration (PENDING) ⏳
 - Hot module replacement support

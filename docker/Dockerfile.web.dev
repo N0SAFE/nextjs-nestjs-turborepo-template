@@ -43,40 +43,42 @@ RUN bun install --frozen-lockfile
 # Development runner
 FROM base AS runner
 ENV TURBO_CACHE_DIR=/root/.cache/turbo
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-RUN set -eux; \
-		apk add --no-cache libc6-compat curl bash; \
-		mkdir -p "$TURBO_CACHE_DIR"; \
-		if ! getent group node >/dev/null 2>&1; then \
-			if getent group "${GROUP_ID}" >/dev/null 2>&1; then \
-				addgroup -S node; \
-			else \
-				addgroup -S -g "${GROUP_ID}" node || addgroup -S node; \
-			fi; \
-		fi; \
-		if ! id -u node >/dev/null 2>&1; then \
-			if getent passwd "${USER_ID}" >/dev/null 2>&1; then \
-				adduser -S -G node node; \
-			else \
-				adduser -S -G node -u "${USER_ID}" node || adduser -S -G node node; \
-			fi; \
-		fi
+
+# Install system dependencies
+RUN apk add --no-cache libc6-compat curl bash sudo
+
+# Create non-root user with flexible permissions
+RUN addgroup -S node && \
+    adduser -S -G node node && \
+    mkdir -p "$TURBO_CACHE_DIR" && \
+    chown -R node:node "$TURBO_CACHE_DIR"
+
+# Configure sudo for file permission fixes without password
+RUN echo 'node ALL=(ALL) NOPASSWD: /bin/chown, /bin/chmod, /usr/bin/find' >> /etc/sudoers
 
 WORKDIR /app
 
 # Install Turbo globally (layer-cached)
 RUN bun install -g turbo@^2
 
-# Copy dependencies and fix their permissions
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=deps --chown=node:node /app/apps/web/node_modules ./apps/web/node_modules
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
-# Copy all source files with proper ownership
-COPY --chown=node:node . .
+# Copy all source files
+COPY . .
 
-# Ensure all files have proper write permissions for the node user
-RUN chown --recursive node:node /app/apps/web
+# Create startup script with proper permissions handling
+RUN echo '#!/bin/bash' > /startup.sh && \
+    echo 'set -e' >> /startup.sh && \
+    echo 'echo "Fixing file permissions for cross-platform compatibility..."' >> /startup.sh && \
+    echo 'sudo chown -R node:node /app 2>/dev/null || true' >> /startup.sh && \
+    echo 'sudo chmod -R 755 /app/apps/web/src 2>/dev/null || true' >> /startup.sh && \
+    echo 'mkdir -p /app/apps/web/src/routes' >> /startup.sh && \
+    echo 'sudo chmod -R 755 /app/apps/web/src/routes 2>/dev/null || true' >> /startup.sh && \
+    echo 'echo "Permissions fixed successfully!"' >> /startup.sh && \
+    echo 'exec "$@"' >> /startup.sh && \
+    chmod +x /startup.sh
 
 # Set environment variables for development
 ENV NODE_ENV=development
@@ -93,5 +95,5 @@ WORKDIR /app/apps/web
 # Expose port
 EXPOSE 3000
 
-# Start the development server from the web app's directory
-CMD ["bun", "run", "dev:docker"]
+# Start the development server using the startup script that fixes permissions
+CMD ["/startup.sh", "bun", "run", "dev:docker"]

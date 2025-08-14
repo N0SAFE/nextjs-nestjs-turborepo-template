@@ -27,7 +27,7 @@ interface DevToolContainerProps {
 /**
  * Default position configuration
  */
-const defaultPosition: DevToolPosition = {
+const _defaultPosition: DevToolPosition = {
   side: 'bottom',
   size: 4, // 4rem for reduced mode
   offset: { x: 0, y: 0 }
@@ -40,7 +40,7 @@ export const DevToolContainer = ({
   className = '',
   style = {},
   defaultMode = 'none',
-  defaultPosition = defaultPosition,
+  defaultPosition = _defaultPosition,
   enableKeyboardShortcuts = true,
 }: DevToolContainerProps) => {
   const { initialized } = useDevTool()

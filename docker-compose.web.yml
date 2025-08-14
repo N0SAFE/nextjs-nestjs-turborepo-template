@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.web.dev
       args:
-        - USER_ID=${USER_ID:-1000}
-        - GROUP_ID=${GROUP_ID:-1000}
         - NODE_ENV=development
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
         - API_PORT=${API_PORT:-3001}

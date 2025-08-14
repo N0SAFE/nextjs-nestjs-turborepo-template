@@ -221,92 +221,115 @@ interface DevToolStateStore {
 }
 ```
 
-### 2.3 Interface Utilisateur DevTool
+### 2.3 Interface Utilisateur DevTool (Updated)
 
-Le système DevTool propose deux modes d'affichage principaux pour optimiser l'expérience développeur selon le contexte d'utilisation.
+Le système DevTool propose deux modes d'affichage principaux inspirés des meilleures pratiques des devtools modernes : **Nuxt DevTools** pour le mode étendu et **Laravel Debugbar** pour le mode réduit.
 
-#### 2.3.1 Mode Réduit (Reduced Display)
+#### 2.3.1 Mode Réduit (Laravel Debugbar Style)
 
-Le mode réduit présente une **barre compacte** positionnée sur l'un des côtés de l'écran (top, bottom, left, right) selon la configuration utilisateur. Cette barre propose :
+Le mode réduit présente une **barre horizontale au bas de l'écran** similaire à Laravel Debugbar, offrant un accès rapide aux plugins actifs sous forme d'onglets horizontaux.
 
-**Structure de la Barre Réduite :**
-- **Zone des plugins épinglés** : Affichage horizontal ou vertical des plugins favoris selon l'orientation
-- **Actions rapides** : Boutons d'action principaux définis par chaque plugin
-- **Indicateurs d'état** : Badges, compteurs ou status visuels (optionnels par plugin)
-- **Bouton d'expansion** : Accès au mode étendu en un clic
+**Caractéristiques du Mode Réduit :**
+- **Position fixe** : Barre horizontale en bas de l'écran (full-width)
+- **Style Laravel Debugbar** : Onglets horizontaux avec indicateurs de statut
+- **Plugins actifs** : Affichage des plugins sous forme de boutons/onglets cliquables
+- **Indicateurs visuels** : Points colorés pour montrer l'état des plugins
+- **Accès rapide** : Ajout de nouveaux plugins via bouton "+"
+- **Contrôles** : Logo DevTools, bouton d'expansion, menu settings
 
-**Caractéristiques :**
-- **Position configurable** : Dock sur n'importe quel bord de l'écran
-- **Taille ajustable** : Largeur/hauteur personnalisable selon l'orientation
-- **Plugins limités** : Affiche uniquement les plugins épinglés ou les plus utilisés
-- **Accès rapide** : Actions fréquentes accessibles sans expansion
-- **Non-intrusif** : Prend un minimum d'espace écran
-
-**Composants par Plugin (Mode Réduit) :**
-```ts
-interface ReducedModeDisplay {
-  // Composant compact affiché dans la barre
-  component?: React.ComponentType<{ context: PluginContext }>;
-  
-  // Menu contextuel avec actions rapides
-  menu?: {
-    groups: ReducedModeMenuGroup[];
-  } | {
-    items: ReducedModeMenuItem[];
+**Interface du Mode Réduit :**
+```tsx
+interface ReducedBarLayout {
+  // Zone principale avec plugins actifs
+  pluginTabs: {
+    layout: 'horizontal';
+    style: 'laravel-debugbar';
+    items: PluginTab[];
   };
   
-  // Données en temps réel (badges, compteurs)
-  getData?: () => {
-    badge?: string | number;
-    status?: 'success' | 'warning' | 'error' | 'info';
-    tooltip?: string;
+  // Zone de contrôles à droite
+  controls: {
+    devToolsBrand: ReactNode;
+    expandButton: Button;
+    settingsMenu: DropdownMenu;
   };
+}
+
+interface PluginTab {
+  icon?: ReactNode;
+  name: string;
+  status: 'active' | 'inactive' | 'error';
+  statusIndicator: ColoredDot;
 }
 ```
 
-#### 2.3.2 Mode Étendu (Expanded Display)
+#### 2.3.2 Mode Étendu (Nuxt DevTools Style)
 
-Le mode étendu déploie un **panneau principal** avec navigation complète et exploration détaillée des plugins.
+Le mode étendu déploie un **panneau type "card" centré en bas de l'écran** inspiré de Nuxt DevTools, avec une sidebar shadcn pour la navigation des plugins.
+
+**Caractéristiques du Mode Étendu :**
+- **Position centrée** : Card flottante au centre-bas de l'écran (bottom-center)
+- **Style Nuxt DevTools** : Panneau type carte avec coins arrondis et ombre
+- **Taille adaptative** : 90% de la largeur d'écran, maximum 6xl (1152px)
+- **Hauteur optimisée** : 32rem (512px) par défaut, maximum 80vh
+- **Sidebar shadcn** : Navigation avec groups (Core/Modules) et plugins
+- **Transparence** : Arrière-plan avec backdrop-blur et opacity
 
 **Architecture de l'Interface Étendue :**
 
-1. **Sidebar de Navigation (Shadcn Sidebar)**
-   - **Section Core Plugins** : Plugins système intégrés (bundle, routes, cli, logs)
-   - **Section Modules** : Plugins optionnels installés (auth, todo, tanstackQuery)
-   - **Hiérarchie** : Structure arborescente avec groupes → pages → sous-pages
-   - **Indicateurs** : Badges et statuts pour chaque plugin/page
+1. **Card Container (Nuxt Style)**
+   - **Position** : `fixed bottom-4 left-1/2 transform -translate-x-1/2`
+   - **Largeur** : `w-[90vw] max-w-6xl`
+   - **Style** : `rounded-xl shadow-2xl backdrop-blur-sm bg-opacity-95`
+   - **Hauteur** : `h-[32rem] max-h-[80vh]`
 
-2. **Zone de Contenu Principal**
-   - **Rendu dynamique** : Affichage de la page sélectionnée
-   - **Contexte typé** : Chaque composant reçoit son client ORPC spécialisé via `context.orpc`
-   - **Navigation breadcrumb** : Fil d'ariane de navigation
-   - **Actions contextuelles** : Boutons spécifiques à la page courante
+2. **Sidebar Navigation (Shadcn Sidebar)**
+   - **Largeur** : `min-w-64 max-w-80`
+   - **Header** : Indicateur de connexion (point vert) + titre
+   - **Groups** : "Core Plugins" et "Module Plugins" séparés
+   - **Footer** : Boutons Minimize et Close
 
-3. **Zone de Configuration (Section Finale)**
-   - **Bouton Settings** : Accès aux paramètres globaux du DevTool
-   - **Gestion des plugins** : Activation/désactivation, épinglage
-   - **Préférences UI** : Position, taille, thème, animations
-   - **Import/Export** : Sauvegarde/restauration de la configuration
+3. **Zone de Contenu Principal**
+   - **Header** : Icône + nom plugin + description + contrôles
+   - **Content** : Rendu dynamique du composant plugin actif
+   - **Scroll** : Overflow auto pour contenu long
 
-**Structure de Navigation (Expanded) :**
-```ts
-interface NavigationStructure {
-  core: {
-    label: "Core Plugins";
-    plugins: CorePlugin[];
+**Structure du Panneau Étendu :**
+```tsx
+interface ExpandedPanelLayout {
+  // Container principal (Nuxt card style)
+  cardContainer: {
+    position: 'bottom-center';
+    style: 'nuxt-devtools-card';
+    dimensions: {
+      width: '90vw max 6xl';
+      height: '32rem max 80vh';
+    };
+    appearance: {
+      rounded: 'xl';
+      shadow: '2xl';
+      backdrop: 'blur-sm';
+      transparency: '95%';
+    };
   };
-  modules: {
-    label: "Modules";
-    plugins: ModulePlugin[];
-  };
-  settings: {
-    label: "Settings";
-    pages: [
-      { id: 'general', label: 'General Settings' },
-      { id: 'plugins', label: 'Plugin Management' },
-      { id: 'appearance', label: 'Appearance' },
-      { id: 'about', label: 'About DevTool' }
+  
+  // Sidebar avec navigation
+  sidebar: {
+    component: 'shadcn-sidebar';
+    variant: 'inset';
+    width: 'min-64 max-80';
+    sections: [
+      'Core Plugins',
+      'Module Plugins',
+      'Available Plugins'
     ];
+  };
+  
+  // Zone de contenu
+  mainContent: {
+    header: PluginHeader;
+    content: DynamicPluginComponent;
+    overflow: 'auto';
   };
 }
 ```
@@ -314,33 +337,21 @@ interface NavigationStructure {
 #### 2.3.3 Comportements et Transitions
 
 **États d'Affichage :**
-- **`none`** : DevTool masqué, bouton flottant d'activation
-- **`normal`** : Mode réduit avec barre latérale compacte
-- **`expanded`** : Mode étendu avec panneau complet
+- **`none`** : Bouton flottant d'activation (coins arrondis avec icône 🛠️)
+- **`normal`** : Barre horizontale au bas (Laravel Debugbar style)
+- **`expanded`** : Card centrée en bas (Nuxt DevTools style)
 
 **Transitions UX :**
-- **Double-clic** sur un plugin réduit → Expansion directe sur ce plugin
-- **Event personnalisé** `devtools:expand-plugin` → Navigation programmatique
-- **Hotkeys** configurables pour basculer entre modes
-- **Auto-collapse** optionnel après inactivité
+- **Click sur plugin (mode réduit)** : Toggle activation/désactivation
+- **Click expand** : Transition fluide vers mode card centré
+- **Click minimize** : Retour au mode barre horizontale
+- **Hotkeys** : Ctrl+Shift+D pour toggle, Escape pour fermer
 
-**Persistance :**
-- **Position et taille** : localStorage avec clé projet-spécifique
-- **Plugins épinglés** : Préférences utilisateur sauvegardées
-- **Page sélectionnée** : Mémorisation de la dernière navigation
-- **Mode préféré** : Démarrage sur le dernier mode utilisé
-
-#### 2.3.4 Responsive et Adaptabilité
-
-**Adaptation selon l'écran :**
-- **Petits écrans** : Mode réduit uniquement ou overlay modal
-- **Écrans moyens** : Barre réduite repositionnable intelligemment
-- **Grands écrans** : Mode étendu avec sidebar fixe optionnelle
-
-**Gestion des conflits d'espace :**
-- **Collision détection** : Évite le chevauchement avec l'UI application
-- **Auto-reposition** : Déplacement intelligent selon l'espace disponible
-- **Minimisation forcée** : Réduction automatique si espace insuffisant
+**Design System :**
+- **Mode Réduit** : Inspiration Laravel Debugbar (horizontal tabs, status indicators)
+- **Mode Étendu** : Inspiration Nuxt DevTools (floating card, modern design)
+- **Cohérence** : Utilisation de shadcn UI components et design tokens
+- **Accessibilité** : Support tooltips, keyboard navigation, focus management
 
 Comportement UX clé:
 - Production (`NODE_ENV !== 'development'`): Provider retourne `null` (non monté).

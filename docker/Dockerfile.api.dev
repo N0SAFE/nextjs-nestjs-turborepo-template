@@ -5,8 +5,19 @@
 
 FROM oven/bun:1.2.14-alpine AS base
 
-# Install system dependencies (single layer)
+# Install system dependencies
 RUN apk add --no-cache curl wget bash git python3 make g++ supervisor
+
+# Copy Node.js 22 installation from the Node.js image (binaries + libraries)
+COPY --from=node:22-alpine /usr/local /usr/local
+
+# Create symbolic links to ensure they're in PATH
+RUN ln -sf /usr/local/bin/node /usr/bin/node && \
+    ln -sf /usr/local/bin/npm /usr/bin/npm && \
+    ln -sf /usr/local/bin/npx /usr/bin/npx
+
+# Verify Node.js installation
+RUN node --version && npm --version
 
 # Set working directory
 WORKDIR /app
@@ -73,8 +84,9 @@ RUN addgroup -S nodejs || true \
 	&& chown -R apiuser:nodejs /app/apps/api /app/supervisord.log /app/supervisord.pid \
 	&& chmod -R u+rwX /app/apps/api
 
-# NOTE: Running as root in dev to avoid host bind mount permission issues (Windows + anonymous volumes)
-USER root
+# NOTE: In dev mode, user is overridden via docker-compose user: directive
+# This allows flexibility for different host user IDs without rebuilding
+USER apiuser
 
 # Copy and setup entrypoint
 COPY scripts/api-dev-entrypoint.sh /usr/local/bin/api-dev-entrypoint.sh

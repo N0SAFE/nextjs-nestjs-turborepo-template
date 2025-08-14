@@ -1,155 +1,114 @@
-# Active Context - NextJS DevTool Implementation
+# Active Context
 
 ## Current Work Focus
 
-**Phase**: Core Plugin Components Implementation  
-**Status**: Major React components completed, moving to contracts and integration
-**Goal**: Complete ORPC contracts and plugin registration for all 4 core plugins
+### NextJS DevTool UI Redesign (LATEST)
+**COMPLETED:** Major UI overhaul to match modern devtool design patterns from Nuxt DevTools and Laravel Debugbar.
 
-## Recent Major Progress
+**Implementation Summary:**
+- ✅ **Expanded Mode:** Transformed to Nuxt DevTools-style bottom-center card
+  - Card positioning: `fixed bottom-4 left-1/2 transform -translate-x-1/2`
+  - Modern styling: `rounded-xl shadow-2xl backdrop-blur-sm bg-opacity-95`
+  - Responsive sizing: `w-[90vw] max-w-6xl h-[32rem]`
+  - Shadcn sidebar integration maintained
 
-### Core Plugin Components Completed ✅
-1. **Bundle Inspector Component**: 
-   - Interactive chunk analysis with size visualization
-   - Module inspection with dependency tracking
-   - Duplicate detection and optimization suggestions
-   - Multiple view modes (chunks, modules, duplicates)
+- ✅ **Reduced Mode:** Redesigned to Laravel Debugbar-style horizontal bar
+  - Full-width bottom positioning: `fixed bottom-0 left-0 right-0`
+  - Horizontal plugin tabs with status indicators
+  - Laravel-style active/inactive states with colored dots
+  - Right-side controls: logo, expand button, settings
 
-2. **Route Explorer Component**:
-   - Declarative routing integration with Next.js routes
-   - Dynamic route support with parameter extraction
-   - Filtering by type (pages, API, dynamic)
-   - Search functionality and route navigation
+### NextJS DevTool Development (Core)
+Building a comprehensive development tool for Next.js applications with plugin architecture and ORPC integration.
 
-3. **Log Viewer Component**:
-   - Real-time log streaming with virtual scrolling
-   - Multi-level filtering (error, warn, info, debug)
-   - Search and timestamp display
-   - Log source tracking and export capabilities
+**Current Phase:** UI polish and plugin ecosystem expansion
+- ✅ Basic plugin system with plugin manager
+- ✅ **NEW:** Modern DevTool UI inspired by Nuxt DevTools + Laravel Debugbar
+- ✅ ORPC integration with type-safe API communication
+- ✅ Shadcn UI component integration with new card-style layout
+- 🔄 **ACTIVE:** Plugin ecosystem expansion with improved UX
 
-4. **Performance Monitor Component**:
-   - Live metrics dashboard with performance data
-   - Chart visualizations for trends
-   - Alert system for performance thresholds
-   - Optimization recommendations
+## Recent Changes
 
-### Architecture Patterns Established ✅
-- **Component Context Pattern**: All components use `PluginComponentContext` with onNavigate callback
-- **Type Safety Maintained**: Zero `any` usage throughout all components
-- **Consistent UI Design**: Unified styling with loading states and error handling
-- **Mock Data Integration**: Realistic data structures for development and testing
+### Major UI Redesign (Latest Session)
+**Context:** User requested mixed design approach combining Nuxt DevTools (expanded) with Laravel Debugbar (reduced)
 
-## Next Immediate Steps
+**Changes Made:**
+1. **DevToolExpandedPanel.tsx** → Nuxt DevTools-style card layout
+   - Centered floating card design instead of full-width bottom panel
+   - Glass morphism effect with backdrop-blur and transparency
+   - Maintained shadcn sidebar for plugin navigation
+   - Responsive dimensions with mobile-friendly constraints
 
-### 1. ORPC Contract Definitions
-**Priority**: HIGH - Required for type-safe plugin communication
-- Create contract definitions for each plugin's backend operations
-- Define procedure signatures and return types
-- Ensure end-to-end type safety from server to client
+2. **DevToolReducedBar.tsx** → Laravel Debugbar-style horizontal bar
+   - Horizontal plugin tabs replacing vertical sidebar approach
+   - Status indicators with colored dots for plugin states
+   - Full-width bottom positioning for maximum plugin visibility
+   - Laravel-inspired styling with modern shadcn components
 
-### 2. Plugin Registration (router.ts files)
-**Priority**: HIGH - Required per specification architecture
-- Create src/core/router.ts with plugin exports as specified
-- Define plugin objects with contracts, components, and metadata
-- Follow the exact pattern: `export cliPlugin: ModulePlugin = {[definition]}`
+**Design Philosophy:**
+- **Expanded Mode:** Premium card experience for deep exploration (Nuxt DevTools)
+- **Reduced Mode:** Quick access horizontal bar for monitoring (Laravel Debugbar)
+- **Consistency:** Maintained shadcn UI components and design tokens throughout
 
-### 3. Registry Integration
-**Priority**: MEDIUM - Connect components to existing stores
-- Integrate plugins with the established plugin registry system  
-- Test plugin activation and component rendering
-- Validate dependency resolution and lifecycle management
+### Plugin Architecture (Previous)
+- Implemented flexible plugin system with lifecycle hooks
+- Added plugin installation and management capabilities
+- Created ORPC client integration for type-safe API communication
+
+### Core Plugins (Stable)
+- Bundle plugin for webpack analysis
+- Routes plugin for Next.js route inspection
+- CLI plugin for command execution
+- Logs plugin for application monitoring
+
+## Next Steps
+
+### Priority 1: UI Polish & Testing
+- Verify new UI design across different screen sizes
+- Test transition animations between modes
+- Ensure accessibility compliance with new layouts
+
+### Priority 2: Plugin Ecosystem Enhancement
+- Complete auth plugin implementation with new UI patterns
+- Enhance todo plugin with full CRUD operations leveraging card layout
+- Add more visualization to bundle plugin using expanded space
+
+### Priority 3: Documentation & Developer Experience
+- Update plugin development guide with new UI patterns
+- Create examples showing card vs horizontal layouts
+- Implement plugin discovery mechanism
 
 ## Active Decisions and Considerations
 
-### Implementation Strategy Refined
-- **Component-First Approach**: Build UI components before contracts (COMPLETED)
-- **Mock-Driven Development**: Use realistic mock data for component development
-- **Contract-Last Pattern**: Define contracts after understanding component needs
-- **Integration Testing Focus**: Validate entire plugin lifecycle before UI framework
+### UI Architecture Decisions
+**Card vs Full-Screen:** Chose card approach for expanded mode to maintain application context visibility while providing substantial devtool space.
 
-### Technology Choices Validated
-- **React Functional Components**: Modern hooks-based architecture throughout
-- **TypeScript Strict Mode**: Ultra-strict configuration preventing any type issues  
-- **Tailwind Styling**: Consistent design system across all components
-- **Zustand Store Integration**: Seamless state management with existing stores
+**Horizontal vs Vertical:** Selected horizontal layout for reduced mode to maximize plugin visibility and match Laravel Debugbar familiarity.
 
-### Architecture Decisions Confirmed
-- **PluginComponentContext**: Standardized context interface for all plugin components
-- **Navigation Abstraction**: onNavigate callback allows flexible routing implementation
-- **Loading State Pattern**: Consistent loading and error state handling
-- **Data Visualization**: Rich interactive displays for complex data structures
+**Shadcn Integration:** Maintained shadcn sidebar components even in card layout for consistency and component reuse.
+
+### Technical Considerations
+**TypeScript Strictness:** Maintaining zero-any policy across new UI components
+**Performance:** Card layout reduces DOM impact compared to full overlay
+**Responsive Design:** Card approach scales better across device sizes
 
 ## Important Patterns and Preferences
 
-### Component Architecture Pattern
-```typescript
-interface PluginComponentContext {
-  onNavigate: (route: string) => void;
-  // Additional context as needed
-}
+### UI Design Patterns
+- **Card-First Design:** Expanded mode uses floating card with glass morphism
+- **Horizontal Navigation:** Reduced mode prioritizes horizontal plugin access
+- **Visual Hierarchy:** Clear distinction between modes without jarring transitions
+- **Modern Aesthetics:** Backdrop blur, rounded corners, subtle shadows
 
-const PluginComponent: React.FC<{ context: PluginComponentContext }> = ({ context }) => {
-  // Component implementation with full type safety
-};
-```
+### Component Architecture
+- **Shadcn Sidebar:** Maintained for expanded mode navigation
+- **Flexible Layout:** Components adapt to card vs full-width constraints
+- **Status Indicators:** Consistent visual language across both modes
+- **Responsive Sizing:** Mobile-first approach with desktop enhancements
 
-### Plugin Registration Pattern (Next to Implement)
-```typescript
-// In src/core/router.ts
-export const bundleInspectorPlugin: CorePlugin = {
-  kind: 'core',
-  name: 'bundle-inspector',
-  contract: bundleContract,
-  exports: {
-    components: {
-      BundleInspector: () => import('./bundle/client/components/BundleInspector')
-    }
-  }
-};
-```
-
-## Learnings and Project Insights
-
-### Component Development Insights
-- **Mock Data Value**: Realistic mock data essential for component development
-- **Loading States Critical**: Proper loading states improve development experience
-- **Type Safety Benefits**: Strict TypeScript prevents runtime errors effectively
-- **UI Consistency**: Consistent patterns make components maintainable
-
-### Implementation Quality Achievements
-- **Zero Technical Debt**: All TypeScript strict mode requirements met
-- **Performance Optimization**: Lazy loading and efficient rendering patterns
-- **Error Resilience**: Comprehensive error handling and graceful degradation
-- **Developer Experience**: Full IntelliSense and auto-completion support
-
-## Current Implementation Status
-
-### Phase 1: Foundation (COMPLETED) ✅
-- ✅ Project structure and TypeScript configuration
-- ✅ Core type definitions with zero-any policy
-- ✅ ORPC system foundation and contracts framework
-- ✅ State management stores (plugin registry, UI store, hook registry)
-
-### Phase 2: Core Plugin Components (COMPLETED) ✅
-- ✅ Bundle Inspector Component with comprehensive bundle analysis
-- ✅ Route Explorer Component with declarative routing integration
-- ✅ Log Viewer Component with real-time log streaming
-- ✅ Performance Monitor Component with live metrics dashboard
-
-### Phase 3: Plugin Contracts & Integration (CURRENT) 🔄
-- [ ] **ORPC Contracts**: Define backend procedures for each plugin
-- [ ] **Plugin Registration**: Create router.ts files with plugin definitions
-- [ ] **Registry Integration**: Connect components to plugin registry system
-- [ ] **End-to-End Testing**: Validate complete plugin lifecycle
-
-### Phase 4: UI Framework (NEXT) ⏳
-- [ ] DevTool panel container system
-- [ ] Plugin activation and deactivation UI
-- [ ] Settings and preferences interface
-- [ ] Notification system integration
-
-## Working Context
-- **Current Location**: `packages/nextjs-devtool/src/core/*/client/components/`
-- **Recent Files**: BundleInspector.tsx, RouteExplorer.tsx, LogViewer.tsx, PerformanceMonitor.tsx
-- **Next Target**: src/core/router.ts and ORPC contract definitions
-- **Memory Bank**: Actively maintained in `packages/nextjs-devtool/memory-bank/`
+### Development Preferences
+- **Mixed Design Language:** Combining best practices from multiple devtools
+- **User-Centered Design:** Mode switching based on task requirements
+- **Performance Awareness:** Lightweight implementations for reduced mode
+- **Accessibility:** Keyboard navigation and screen reader support maintained

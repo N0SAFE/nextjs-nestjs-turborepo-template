@@ -102,7 +102,7 @@
 
 @layer base {
     * {
-        @apply border-border;
+        @apply border-[hsl(var(--border))];
     }
     body {
         @apply bg-background text-foreground;
