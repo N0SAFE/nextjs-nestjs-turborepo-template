@@ -17,6 +17,7 @@
         "fumadocs-core": "^15.6.3"
     },
     "devDependencies": {
+        "@repo/tsconfig": "*",
         "@tailwindcss/postcss": "catalog:styling",
         "@types/mdx": "^2.0.13",
         "@types/node": "catalog:build",
