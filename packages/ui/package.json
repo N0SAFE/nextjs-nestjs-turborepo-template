@@ -64,7 +64,7 @@
         "@radix-ui/react-tooltip": "^1.2.7",
         "class-variance-authority": "^0.7.1",
         "clsx": "catalog:styling",
-        "concurrently": "^8.2.2",
+        "concurrently": "^9.2.0",
         "framer-motion": "catalog:ui",
         "lucide-react": "^0.536.0",
         "next-themes": "catalog:next",

@@ -33,7 +33,7 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
-        "concurrently": "^8.2.2",
+        "concurrently": "^9.2.0",
         "rimraf": "catalog:build"
     }
 }
