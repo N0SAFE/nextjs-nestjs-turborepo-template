@@ -505,7 +505,7 @@ const plugins: TanStackDevtoolsReactPlugin[] = [
   LogsPlugin,
 ]
 
-interface TanStackDevToolsProps {
+export interface TanStackDevToolsProps {
   /**
    * Whether to show the devtools in production
    * @default false

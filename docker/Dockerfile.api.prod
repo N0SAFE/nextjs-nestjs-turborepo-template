@@ -3,74 +3,57 @@
 
 # syntax=docker/dockerfile:1.7
 FROM oven/bun:1.2.14-alpine AS base
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-
-WORKDIR /app
-
-# Add minimal system deps needed for native modules (bcrypt)
-RUN apk add --no-cache python3 make g++
-
-# Copy root manifest & turbo for pruning
-COPY package.json bun.lock* turbo.json tsconfig.json ./
-COPY packages ./packages
-COPY apps/api/package.json ./apps/api/package.json
-
-# Use turbo prune to create a minimal subset containing only api deps
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install -g turbo@^2 && \
-  --mount=type=cache,target=/root/.cache/turbo \
-  turbo prune api --docker
-
-FROM oven/bun:1.2.14-alpine AS installer
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-WORKDIR /app
-COPY --from=base /app/out/json/ ./
-COPY --from=base /app/out/full/bun.lock* ./
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install --frozen-lockfile --production
-COPY --from=base /app/out/full/ ./
-
-FROM oven/bun:1.2.14-alpine AS builder
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-WORKDIR /app
-COPY --from=installer /app ./
-RUN apk add --no-cache python3 make g++
-WORKDIR /app/apps/api
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install --frozen-lockfile && bun run build
-
-FROM oven/bun:1.2.14-alpine AS runtime
-
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
-ARG API_PORT=3001
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG API_PING_PATH=/health
-
-ENV API_PORT=$API_PORT
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_APP_URL
 ENV NODE_ENV=production
 
-RUN apk add --no-cache curl wget bash
-
-# Create app user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
-
-# Set working directory
+# Install dependencies only when needed
+FROM base AS builder
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk update
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/src/db ./apps/api/src/db
-COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
-COPY --from=builder --chown=nestjs:nodejs /app/bun.lock* ./
+# Install Turbo globally
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 
-# Change to API directory
-WORKDIR /app/apps/api
+# Copy everything and prune for API app
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/turbo \
+  turbo prune api --docker
+
+# Install dependencies for building
+FROM base AS installer
+RUN apk update
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# First install the dependencies (as they change less often)
+COPY --from=builder /app/out/json/ .
+RUN rm -f bun.lock # this is a workaround because when using the --frozen-lockfile i have a probleme with the way the turbo prune work with bun and it corrupt my bun.lock
+RUN bun install
+
+# Build the project
+COPY --from=builder /app/out/full/ .
+RUN bun turbo run build
+
+# Production runner
+FROM base AS runner
+WORKDIR /app
+
+# Install runtime dependencies for NestJS
+RUN apk add --no-cache curl wget bash python3 make g++
+
+# Create app user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nestjs
+
+# Copy built application
+COPY --from=installer --chown=nestjs:nodejs /app ./
 
 # Switch to non-root user
 USER nestjs
+
+# Change to API directory
+WORKDIR /app/apps/api
 
 # Expose port
 EXPOSE 3001
@@ -80,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 # Start the application with migrations
-CMD ["sh", "-c", "bun run db:migrate && node dist/main.js"]
+CMD ["sh", "-c", "bun run db:migrate && bun --bun dist/src/main"]

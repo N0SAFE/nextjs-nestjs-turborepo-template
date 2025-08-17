@@ -5,6 +5,7 @@
 FROM oven/bun:1.2.14-alpine AS base
 
 # Set build-time environment variables for Next.js
+ARG API_URL=http://localhost:3001
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ARG API_PORT=3001
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -13,6 +14,7 @@ ARG API_PING_PATH=/health
 ARG API_ADMIN_TOKEN=secret-admin-token
 ARG AUTH_SECRET=QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=
 
+ENV API_URL=$API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV API_PORT=$API_PORT
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
@@ -24,36 +26,30 @@ ENV AUTH_SECRET=$AUTH_SECRET
 # Install dependencies only when needed
 FROM base AS builder
 ENV TURBO_CACHE_DIR=/root/.cache/turbo
-RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
+RUN apk update
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install Turbo globally
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install -g turbo@^2
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 
-# Copy everything and prune
+# Copy everything and prune for web app
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune web --docker
 
-# Install dependencies with dev dependencies for building
+# Install dependencies for building
 FROM base AS installer
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-RUN apk add --no-cache libc6-compat && mkdir -p $TURBO_CACHE_DIR
+RUN apk update
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install Turbo globally
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  bun install -g turbo@^2
-
-# First install ALL dependencies (including dev dependencies for building)
+# First install the dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/full/bun.lock* ./
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-  --mount=type=cache,target=/root/.cache/turbo \
-  bun install --frozen-lockfile
+RUN rm -f bun.lock # this is a workaround because when using the --frozen-lockfile i have a probleme with the way the turbo prune work with bun and it corrupt my bun.lock
+RUN bun install
 
-# Copy all source files
+# Build the project (copy source files, but don't build yet - runtime will build)
 COPY --from=builder /app/out/full/ .
 
 # Production runner

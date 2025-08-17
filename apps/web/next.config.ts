@@ -33,7 +33,12 @@ const noCheck = process.env.CHECK_ON_BUILD !== 'true'
 
 const nextConfig: NextConfig = {
     async rewrites() {
-        console.log('redirect external orpc request from', '/api/nest/:path*', 'to', `${apiUrl.href}`);
+        console.log(
+            'redirect external orpc request from',
+            '/api/nest/:path*',
+            'to',
+            `${apiUrl.href}`
+        )
         return [
             {
                 source: '/api/auth/:path*',
@@ -42,7 +47,7 @@ const nextConfig: NextConfig = {
             {
                 source: '/api/nest/:path*',
                 destination: `${apiUrl.href}/:path*`,
-            }
+            },
         ]
     },
     eslint: {
@@ -92,4 +97,21 @@ if (
     exp = MillionLint.next(millionLintConfig)(exp)
 }
 
-module.exports = exp
+module.exports = (
+    phase: string,
+    {
+        defaultConfig,
+    }: {
+        defaultConfig: NextConfig
+    }
+) => {
+    return {
+        ...defaultConfig,
+        ...exp,
+        env: {
+            PHASE: phase,
+            ...defaultConfig.env,
+            ...exp.env,
+        },
+    }
+}

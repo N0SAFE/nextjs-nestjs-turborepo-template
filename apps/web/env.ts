@@ -9,17 +9,19 @@ const LOCAL_API_FALLBACK = 'http://localhost:3001'
 
 const guardedUrl = (name: string, fallback: string) =>
     zod
-        .string()
         .url()
-        .optional()
-        .default(fallback)
-        .transform(trimTrailingSlash)
         .superRefine((val, ctx) => {
             // If we had to use a fallback in production, surface a hard error.
-            if (val === fallback && process.env.NODE_ENV === 'production' && typeof process !== 'undefined') {
-                ctx.addIssue({ code: 'custom', message: `${name} is required in production but was not provided` })
+            if (process.env.NODE_ENV === 'production') {
+                if (!val) {
+                    ctx.addIssue({ code: 'custom', message: `${name} is required in production but was not provided` })
+                }
+                ctx.value = val;
+                return;
             }
+            ctx.value = val || fallback;
         })
+        .transform(trimTrailingSlash)
 
 export const envSchema = zod.object({
     REACT_SCAN_GIT_COMMIT_HASH: zod.string().optional(),
