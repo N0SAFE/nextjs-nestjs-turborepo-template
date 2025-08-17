@@ -14,7 +14,6 @@ import {
     AppshowcaseServer,
     BuildInfo,
 } from '@/routes'
-import Link from 'next/link'
 import {
     ArrowRight,
     Database,

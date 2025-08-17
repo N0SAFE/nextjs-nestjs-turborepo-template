@@ -19,9 +19,8 @@ import {
     AppshowcaseClient,
     AppshowcaseServer,
 } from '@/routes'
-import { useSession, signOut } from '@/lib/auth'
+import { useSession } from '@/lib/auth'
 import {
-    LogOut,
     User,
     Home as HomeIcon,
     Database,

@@ -252,6 +252,8 @@
         "zustand": "catalog:utils",
       },
       "devDependencies": {
+        "@eslint/eslintrc": "catalog:linting",
+        "@eslint/js": "catalog:linting",
         "@repo/eslint-config": "*",
         "@repo/prettier-config": "*",
         "@repo/tsconfig": "*",
@@ -347,8 +349,8 @@
         "zod": "catalog:utils",
       },
       "devDependencies": {
-        "@eslint/eslintrc": "^3.1.0",
-        "@eslint/js": "^9.7.0",
+        "@eslint/eslintrc": "catalog:linting",
+        "@eslint/js": "catalog:linting",
         "@repo/eslint-config": "*",
         "@repo/prettier-config": "*",
         "@repo/tailwind-config": "*",
@@ -439,6 +441,8 @@
       "wait-port": "^1.1.0",
     },
     "linting": {
+      "@eslint/eslintrc": "^3.1.0",
+      "@eslint/js": "^9.7.0",
       "eslint": "^9",
       "prettier": "^3.3.3",
       "prettier-plugin-tailwindcss": "^0.6.13",
