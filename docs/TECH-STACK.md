@@ -1,5 +1,7 @@
 # Technology Stack
 
+> Scope: Technologies chosen for a Docker-first SaaS workflow with Next.js + NestJS, ORPC for end-to-end types, and Render as a target platform.
+
 This document provides a detailed overview of the technologies used in this monorepo template and explains the reasoning behind these choices.
 
 ## Core Technologies
@@ -8,29 +10,31 @@ This document provides a detailed overview of the technologies used in this mono
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| [Next.js](https://nextjs.org/) | 15.1.4 | React framework for server-rendered applications |
+| [Next.js](https://nextjs.org/) | 15.x | React framework for server-rendered applications |
 | [React](https://reactjs.org/) | 19.0.0 | JavaScript library for building user interfaces |
-| [Tailwind CSS](https://tailwindcss.com/) | 3.3.x | Utility-first CSS framework |
+| [Tailwind CSS](https://tailwindcss.com/) | 4.x | Utility-first CSS framework |
 | [Shadcn UI](https://ui.shadcn.com/) | Latest | Component library built on Radix UI and Tailwind |
-| [TypeScript](https://www.typescriptlang.org/) | 5.2.x | Typed JavaScript |
-| [React Query](https://tanstack.com/query) | 5.40.x | Data fetching and caching library |
-| [Next-Auth](https://next-auth.js.org/) | 5.0.0-beta | Authentication for Next.js |
-| [Zod](https://github.com/colinhacks/zod) | 3.23.x | TypeScript-first schema validation |
-| [Zustand](https://github.com/pmndrs/zustand) | 4.5.x | State management |
+| [TypeScript](https://www.typescriptlang.org/) | 5.x | Typed JavaScript |
+| [React Query](https://tanstack.com/query) | 5.x | Data fetching and caching library |
+| [Zod](https://zod.dev/) | 4.0.0 | Type-safe schema validation |
+| [Zustand](https://github.com/pmndrs/zustand) | 5.x | State management |
 
 ### Backend
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| [Directus](https://directus.io/) | Latest | Headless CMS and API platform |
-| [MySQL](https://www.mysql.com/) | 8.x | Relational database |
+| [NestJS](https://nestjs.com/) | 10.x | Node.js framework for scalable server-side applications |
+| [ORPC](https://orpc.io/) | ^1.7.8 | Type-safe RPC framework for end-to-end type safety |
+| [Better Auth](https://better-auth.com/) | ^1.3.4 | Modern authentication library with session management |
+| [Drizzle ORM](https://orm.drizzle.team/) | ^0.39.3 | TypeScript ORM for PostgreSQL |
+| [PostgreSQL](https://www.postgresql.org/) | 16 | Relational database |
 | [Redis](https://redis.io/) | Latest | In-memory data structure store for caching |
 
 ### DevOps & Tooling
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| [Turborepo](https://turborepo.org/) | 2.1.x | Monorepo build system |
+| [Turborepo](https://turbo.build/) | 2.x | Monorepo build system |
 | [Docker](https://www.docker.com/) | Latest | Containerization platform |
 | [Docker Compose](https://docs.docker.com/compose/) | Latest | Multi-container Docker applications |
 | [ESLint](https://eslint.org/) | Latest | JavaScript/TypeScript linter |
@@ -50,16 +54,16 @@ Next.js 15.1 with React 19 provides the latest features for modern web developme
 - **API Routes**: Serverless API endpoints
 - **Incremental Static Regeneration**: Dynamic content with static performance
 
-### Directus
+### NestJS
 
-Directus serves as the backend CMS and API platform with several advantages:
+NestJS serves as the backend framework with several advantages:
 
-- **Headless Architecture**: API-first approach with flexible content models
-- **Admin Panel**: No-code interface for content management
-- **Extensibility**: Custom API endpoints, hooks, and data seed extensions
-- **Authentication**: Built-in user and role management
-- **GraphQL & REST**: Multiple API access options
-- **Self-hostable**: Full control over your data and infrastructure
+- **Scalable Architecture**: Modular architecture with dependency injection
+- **TypeScript First**: Built with TypeScript for better developer experience  
+- **ORPC Integration**: Seamless integration with ORPC for type-safe APIs
+- **Extensibility**: Rich ecosystem of modules and decorators
+- **Enterprise Ready**: Production-ready with built-in features like guards, interceptors
+- **Self-contained**: No external CMS dependency in this template
 
 ### Turborepo
 
@@ -111,14 +115,16 @@ Data fetching and state management:
 - **Prefetching**: Improve perceived performance
 - **Server-Side Rendering**: Works well with Next.js
 
-### NextAuth
+### Better Auth
 
 Authentication solution:
 
-- **Multiple Providers**: Social logins, email/password, etc.
-- **Session Management**: Secure session handling
-- **TypeScript Support**: Type-safe authentication
-- **Directus Integration**: Custom provider for Directus authentication
+- **Modern Architecture**: Serverless-first, edge-compatible design
+- **Type Safety**: Full TypeScript support throughout
+- **Multiple Providers**: Social logins, email/password, magic links
+- **Session Management**: Secure session handling with multiple storage options
+- **Framework Agnostic**: Works with any framework, not just Next.js
+- **Developer Experience**: Simple setup with sensible defaults
 
 ## Performance Considerations
 
@@ -137,7 +143,7 @@ The tech stack is optimized for performance:
 Security best practices are implemented:
 
 - **JWT Authentication**: Secure token-based auth
-- **Role-Based Access Control**: Granular permissions in Directus
+- **Role-Based Access Control**: Granular permissions in NestJS
 - **Environment Variables**: Secure storage of sensitive information
 - **HTTPS**: Encrypted communication
 - **Content Security Policy**: Protection against XSS attacks

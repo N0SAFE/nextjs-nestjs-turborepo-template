@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config'
 import * as path from 'path'
-import { createNodeConfig } from '@repo/vitest-config/node'
+// Import createNodeConfig from CJS export; TypeScript may not infer types from subpath properly in Docker context
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { createNodeConfig } = require('@repo/vitest-config/node')
 
 export default defineConfig(
   createNodeConfig({

@@ -1,6 +1,6 @@
 # Testing Implementation Summary
 
-This document provides an overview of the testing implementation across the entire nextjs-directus-turborepo project.
+This document provides historical context of the initial testing implementation across the project. See up-to-date instructions in ./TESTING.md.
 
 ## Test Commands
 
@@ -37,7 +37,7 @@ bun run api test
 - **types**: 16/16 tests ✅
 - **ui**: 54/54 tests ✅ (all component tests)
 - **web**: 22/22 tests ✅ (utils, middleware, integration)
-- **directus-sdk**: 4/4 tests ✅
+
 
 ### ❌ **REMAINING: Test Issues (15 failing tests)**
 
@@ -77,7 +77,7 @@ The test suite is now **91.8% functional** with the major configuration and comp
 
 ## ✅ Complete Testing Setup Implemented
 
-I have successfully implemented comprehensive unit testing across your NextJS-Directus-Turborepo monorepo using Vitest. Here's what has been set up:
+I have implemented comprehensive unit testing across the monorepo using Vitest. Here's what was set up at the time:
 
 ## 📁 Package Structure with Testing
 
@@ -96,7 +96,7 @@ I have successfully implemented comprehensive unit testing across your NextJS-Di
   - ✅ Integration tests (`integration.test.ts`)
   - ✅ Next.js specific mocking (router, navigation, Image, Link)
 
-- **`apps/api`** (Directus API)
+- **`apps/api`** (NestJS API)
   - ✅ Configuration tests (`config.test.ts`)
   - ✅ Node.js environment setup
 
@@ -106,9 +106,7 @@ I have successfully implemented comprehensive unit testing across your NextJS-Di
   - ✅ React Testing Library setup
   - ✅ JSdom environment configuration
 
-- **`packages/directus-sdk`** (Directus SDK)
-  - ✅ Type validation tests (`types.test.ts`)
-  - ✅ SDK functionality testing
+
 
 - **`packages/types`** (TypeScript Utilities)
   - ✅ Type transformation tests (`utils.test.ts`)
@@ -165,7 +163,7 @@ bun run coverage:report      # Just generate reports from merged data
 # Test specific packages
 bun turbo test --filter=web
 bun turbo test --filter=@repo/ui
-bun turbo test --filter=@repo/directus-sdk
+
 ```
 
 ## 🧪 Test Coverage

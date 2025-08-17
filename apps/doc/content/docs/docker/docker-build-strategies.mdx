@@ -1,0 +1,13 @@
+---
+title: Docker Build Strategies
+description: Build-time vs runtime compilation trade-offs.
+order: 11
+---
+
+From `docs/DOCKER-BUILD-STRATEGIES.md`.
+
+- Development: docker-compose.yml (hot reload)
+- Web-only or API-only compose files for partial dev
+- Production:
+  - Build-time Dockerfile (faster startup, larger image)
+  - Runtime Dockerfile (slower startup, flexible)

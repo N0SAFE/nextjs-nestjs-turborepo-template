@@ -28,6 +28,7 @@ Thumbs.db
 # Git
 .git
 .gitignore
+.github
 
 # Docker
 .dockerignore
@@ -37,6 +38,18 @@ docker-compose*.yml
 # Testing
 coverage
 .nyc_output
+**/__tests__
+vitest.config.*
+
+# Docs & examples (not needed for production images)
+docs
+README.md
+CHANGELOG.md
+
+# Developer tooling / experiments (exclude from prod context)
+_experiment
+bun-preload-script
+test-url.js
 
 # Logs
 logs

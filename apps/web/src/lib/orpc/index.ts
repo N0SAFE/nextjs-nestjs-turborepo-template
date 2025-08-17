@@ -8,7 +8,8 @@ import { validateEnvPath } from '#/env';
 const APP_URL = validateEnvPath(process.env.NEXT_PUBLIC_APP_URL!, 'NEXT_PUBLIC_APP_URL')
 
 const link = new OpenAPILink(appContract, {
-  url: `${APP_URL}/api/nest`,
+  // Use API_URL directly for server-side requests, APP_URL with /api/nest for client-side
+  url: typeof window === 'undefined' ? validateEnvPath(process.env.API_URL!, 'API_URL') : `${APP_URL}/api/nest`,
   headers: ({context}) => ({
     cookie: context.cookie || '',
   }),

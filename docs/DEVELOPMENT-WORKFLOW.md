@@ -1,6 +1,8 @@
 # Development Workflow
 
-This document outlines the recommended development workflow when working with the NextJS-Directus-Turborepo template, covering day-to-day development tasks, commands, and best practices.
+> This workflow targets the Docker-first SaaS use case: develop locally with Docker, use ORPC for end-to-end types and declarative routing for Next.js, and prepare for a Render production deployment.
+
+This document outlines the recommended development workflow when working with the NextJS-NestJS-Turborepo template, covering day-to-day development tasks, commands, and best practices.
 
 ## Development Environment Setup
 
@@ -49,49 +51,49 @@ bun run web -- dev:open
 
 ## Daily Development Tasks
 
-### 1. Content Modeling in Directus
+### 1. API Development with NestJS
 
-1. Access Directus admin at http://localhost:8055/admin
-2. Create or modify collections, fields, and relationships
-3. Set appropriate permissions for user roles
-4. Generate or update TypeScript types (see below)
-
-### 2. Backend Development
-
-#### Creating Custom Directus Extensions
-
-1. Create extension in `apps/api/extensions`
-2. Use the package manager to install dependencies:
+1. Create or modify API endpoints in `apps/api/src`
+2. Update ORPC contracts in `packages/api-contracts/`
+3. Use the package manager to install dependencies:
    ```bash
    cd apps/api
    bun install your-dependency
    ```
-3. Restart the API service to apply changes:
+4. Restart the API service to apply changes:
    ```bash
-   bun run api -- dev
+   bun run dev:api
    ```
 
-#### Working with Database Seeds
+#### Working with Database
 
-Manage test data with the seeder extension:
+Manage database schema and data with Drizzle ORM:
 
 ```bash
-# Dump current database state to seed file
-bun run api -- data:export
+# Generate migrations after schema changes
+bun run api -- db:generate
 
-# Or run the seed script directly
-bun run api -- bun ./bin/seed.ts export --help
+# Push schema changes to database
+bun run api -- db:push
 
-# Seed data will be saved to seed.json
+# Run pending migrations
+bun run api -- db:migrate
+
+# Access database studio for admin tasks
+bun run api -- db:studio
+
+# Seed development data
+bun run api -- db:seed
 ```
 
-### 3. Frontend Development
+### 2. Frontend Development
 
 #### Creating New Pages
 
 1. Create new page components in `apps/web/src/app` following Next.js App Router structure
-2. Use server components by default unless client interactivity is needed
-3. For API routes, add them to the declarative routing config
+2. Create corresponding `page.info.ts` files for declarative routing
+3. Run `bun run web -- dr:build` to generate type-safe routes
+4. Use server components by default unless client interactivity is needed
 
 #### Working with UI Components
 
@@ -99,25 +101,26 @@ bun run api -- bun ./bin/seed.ts export --help
 2. Create new shared components in `packages/ui` if they'll be reused
 3. Create page-specific components within the page directory
 
-#### Using Directus SDK
+#### Using ORPC Client
 
-Access data from Directus using the SDK:
+Access data from NestJS API using the ORPC client:
 
 ```typescript
-// In server components
-import { createDirectus, rest } from '@repo/directus-sdk';
+// In client components
+import { api } from '@/lib/api';
 
-// Create a client instance
-const client = createDirectus(process.env.NEXT_PUBLIC_API_URL!)
-  .with(rest());
+// Use generated hooks
+const { data, isLoading } = api.users.getProfile.useQuery();
 
-// Fetch data
-const data = await client.request(/* your request */);
+// In server components  
+import { orpcClient } from '@/lib/orpc-client';
+
+const userData = await orpcClient.users.getProfile();
 ```
 
 #### Authentication
 
-Use Next-Auth for authentication, which is integrated with Directus:
+Use Better Auth for authentication:
 
 ```typescript
 // Check authentication in server components
@@ -129,7 +132,7 @@ if (!session) {
 }
 ```
 
-### 4. Running Tests
+### 3. Running Tests
 
 ```bash
 # Run all tests
@@ -140,7 +143,7 @@ bun run web -- test
 bun run api -- test
 ```
 
-### 5. Building for Production
+### 4. Building for Production
 
 Create production builds for testing:
 
@@ -265,10 +268,25 @@ npm update package-name
 
 If you encounter issues during development:
 
+### Common Issues
 - Check Docker logs: `docker-compose logs -f [service-name]`
 - Restart the development environment: `bun run dev`
 - Clear caches: `bun run clean`
-- See more in [Troubleshooting](./TROUBLESHOOTING.md)
+
+### Memory Issues in Docker
+If you encounter ENOMEM (out of memory) errors during Docker development:
+- See [Memory Optimization](./MEMORY-OPTIMIZATION.md) for detailed solutions
+- The most common cause is the declarative-routing watch process consuming excessive memory
+- Memory limits have been added to containers to prevent crashes
+
+### Declarative Routing
+When route structure changes, you may need to manually rebuild routes:
+```bash
+# Rebuild declarative routes
+bun run web -- dr:build
+```
+
+For more troubleshooting guidance, see [Troubleshooting](./TROUBLESHOOTING.md)
 
 ## Advanced Development Features
 

@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile.web.dev
       args:
-        - USER_ID=${USER_ID:-1000}
-        - GROUP_ID=${GROUP_ID:-1000}
         - NODE_ENV=development
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
         - API_PORT=${API_PORT:-3001}
@@ -25,6 +23,9 @@ services:
       - /app/node_modules
       - /app/apps/web/node_modules
       - /app/apps/web/.next
+      # Persistent caches
+      - bun_cache_web_dev:/root/.bun/install/cache
+      - turbo_cache_web_dev:/root/.cache/turbo
     environment:
       - NODE_ENV=development
       - API_PING_PATH=/health
@@ -35,6 +36,8 @@ services:
       - NEXT_PUBLIC_API_PORT=${API_PORT:-3001}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
+      - NEXT_PUBLIC_DOC_URL=http://localhost:${NEXT_PUBLIC_DOC_PORT:-3020}
       - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
       - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
       # Enable hot reloading
@@ -48,3 +51,33 @@ services:
       - NEXT_PUBLIC_SHOW_AUTH_LOGS=true
     # Use host networking to easily connect to external API
     network_mode: host
+
+  # Docs app for development with HMR (standalone)
+  doc-dev:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.doc.dev
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/doc/node_modules
+      - /app/apps/doc/.next
+      - bun_cache_doc_dev:/root/.bun/install/cache
+      - turbo_cache_doc_dev:/root/.cache/turbo
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    network_mode: host
+
+volumes:
+  bun_cache_web_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_web_dev
+  turbo_cache_web_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_web_dev
+  bun_cache_doc_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_doc_dev
+  turbo_cache_doc_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_doc_dev

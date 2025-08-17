@@ -1,0 +1,32 @@
+---
+title: Development Workflow
+description: Day-to-day tasks and best practices.
+order: 4
+---
+
+From `docs/DEVELOPMENT-WORKFLOW.md`.
+
+## Start
+
+```bash
+bun run dev
+```
+
+## API
+
+- Change contracts in `packages/api-contracts`
+- Implement in `apps/api`
+- DB: `bun run api -- db:generate|push|migrate|seed` 
+
+## Web
+
+- Pages in `apps/web/src/app`, with `page.info.ts` for routes
+- Run `bun run web -- dr:build` after route changes
+- Use ORPC client hooks
+
+## Testing
+
+```bash
+bun run test
+bun run test:coverage
+```

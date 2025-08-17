@@ -2,7 +2,9 @@
 
 ## 🎉 Achievement: 100% Test Success Rate
 
-**Final Status:** ✅ **ALL TESTS PASSING**
+Note: This is a historical snapshot. For current testing commands and scope, see ./TESTING.md.
+
+**Final Status at the time:** ✅ **ALL TESTS PASSING**
 - **Test Files:** 19/19 passed (100%)
 - **Individual Tests:** 183/183 passed (100%)
 - **Success Date:** December 19, 2024
@@ -35,7 +37,7 @@ bun run test:coverage
 | @repo/ui | 44/44 | ✅ | React components tested |
 | api | 4/4 | ✅ | Configuration validated |
 | web | 16/16 | ✅ | Utilities & middleware working |
-| directus-sdk | 4/4 | ✅ | SDK exports validated |
+
 | bin | 13/13 | ✅ | CLI tools fully mocked |
 
 ## Major Issues Resolved
@@ -114,7 +116,7 @@ Environment: 25.67s, prepare 9.12s
 
 Package Distribution:
 - Fastest: types (18ms for 16 tests)
-- Slowest: directus-sdk (2745ms for 4 tests - external dependency loading)
+
 - Average: ~274ms per package
 ```
 
@@ -172,7 +174,7 @@ npx vitest
 
 ## Conclusion
 
-The nextjs-directus-turborepo template now has a **100% reliable test suite** covering all major functionality:
+This template now has a **100% reliable test suite** covering all major functionality:
 
 - ✅ Configuration validation across all packages
 - ✅ TypeScript type safety verification  

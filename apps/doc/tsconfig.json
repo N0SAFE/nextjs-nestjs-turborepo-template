@@ -1,0 +1,30 @@
+{
+  "extends": "@repo/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "types": [
+      "mdx"
+    ],
+    "skipLibCheck": true,
+    "paths": {
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/.source": [
+        "./.source/index.ts"
+      ],
+      "#site/*": [
+        "./.source/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.mdx",
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+  ]
+}

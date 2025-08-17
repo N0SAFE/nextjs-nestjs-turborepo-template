@@ -1,0 +1,121 @@
+---
+title: Docker Compose
+description: Run the full stack locally and in production using Docker Compose.
+order: 10
+---
+
+This page explains how to work with the provided Docker Compose files for both development and production, without repeating the build strategy or deployment specifics. For deeper context, see:
+
+- Docker Build Strategies → /docs/docker-build-strategies
+- Production Deployment → /docs/production-deployment
+- Development (Web only): `docker-compose.web.yml`
+- Production (both): `docker-compose.prod.yml`
+- Production (API): `docker-compose.api.prod.yml`
+- Production (Web): `docker-compose.web.prod.yml`
+
+## Quick start (development)
+
+Use the root scripts which wrap Compose and manage env for you.
+
+```bash
+# Full stack (API + Web + DB + Redis)
+ bun run dev
+
+# API only
+ bun run dev:api
+
+# Web only
+ bun run dev:web
+
+# View logs (follow)
+ bun run dev:api:logs
+ bun run dev:web:logs
+
+# Stop stacks
+ bun run dev:api:down
+ bun run dev:web:down
+```
+
+Notes:
+- Hot reloading is enabled for both apps in dev.
+- Services share an internal Docker network.
+- Route generation and ORPC generation are handled by the app scripts.
+
+## Partial development
+
+You can run API and Web separately. The Web dev file connects to an external API URL. Ensure the API is running and that your `.env` points the web service to it.
+
+## Production with Compose
+
+You can run production using the prod files, or deploy to your platform (see Render page). The prod files split API and Web so they can be hosted independently.
+
+```bash
+# API (prod)
+ bun run prod:api         # compose up
+ bun run prod:api:build   # rebuild and up
+ bun run prod:api:down    # down (add :volumes to remove volumes)
+
+# Web (prod)
+ bun run prod:web         # compose up
+ bun run prod:web:build   # rebuild and up
+ bun run prod:web:down    # down (add :volumes to remove volumes)
+
+# Combined (both)
+ bun run start            # uses docker-compose.prod.yml
+```
+
+Environment files:
+- API prod: copy `.env.api.prod.example` → `.env` and edit values.
+- Web prod: copy `.env.web.prod.example` → `.env` and edit values.
+
+## Environment variables
+
+Common keys used by Compose services (examples):
+- `NEXT_PUBLIC_API_URL` – base URL of the API for the web app
+- `NEXT_PUBLIC_APP_URL` – URL of the web app (for links/callbacks)
+- `API_PORT` / `NEXT_PUBLIC_APP_PORT` – exposed host ports
+- `DATABASE_URL` – Postgres connection string (API)
+- `REDIS_URL` – Redis connection (API)
+
+See the Environment Template System → /docs/environment-template-system for a guided way to generate `.env`.
+
+## Project isolation (multiple instances)
+
+To avoid name collisions when running multiple copies on the same machine, set a project prefix in `.env`:
+
+```bash
+COMPOSE_PROJECT_NAME=my-project
+```
+
+All container, network, and volume names will be prefixed. See Project Isolation → /docs/project-isolation.
+
+## Useful commands
+
+```bash
+# Show all running containers for this project
+ docker ps --filter "name=${COMPOSE_PROJECT_NAME:-nextjs-directus}"
+
+# Tail logs directly via compose files
+ docker compose -f ./docker-compose.api.yml logs -f
+ docker compose -f ./docker-compose.web.yml logs -f
+
+# Rebuild images
+ docker compose -f ./docker-compose.api.yml up --build
+ docker compose -f ./docker-compose.web.yml up --build
+
+# Exec into a container shell (root scripts provided)
+ bun run dev:api:run
+```
+
+## Troubleshooting
+
+- Ports in use: stop other services using 3000/3001 or edit the env ports.
+- Env mismatch: ensure `.env` is present and values are correct (URLs, secrets, DB).
+- Recreate fresh dev data: use `:down:volumes` scripts to drop volumes and re-create.
+- API not reachable from Web: confirm Docker network reachability and correct `NEXT_PUBLIC_API_URL` (use container hostname for server-to-server, localhost for browser).
+
+## When to use which Compose file
+
+- Build-time vs Runtime build options are explained in Docker Build Strategies.
+- For local dev: prefer `docker-compose.yml` (and the API/Web splits for focused work).
+- For self-hosted prod: choose `docker-compose.prod.yml` or the split API/Web prod files to deploy separately.

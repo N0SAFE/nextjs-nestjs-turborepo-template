@@ -1,0 +1,23 @@
+---
+title: Architecture Overview
+description: High-level system design and component interactions.
+order: 2
+---
+
+Summarized from `docs/ARCHITECTURE.md`.
+
+- Monorepo (Turbo): apps/api, apps/web, packages/*
+- API: NestJS + ORPC + Better Auth + Drizzle (PostgreSQL)
+- Web: Next.js App Router + React 19 + Tailwind + Shadcn + Declarative Routing
+- Shared: UI, api-contracts, configs
+- Infra: Docker services (web, api, db, redis)
+
+## Data Flow
+
+- Client uses ORPC hooks/clients
+- API implements ORPC contracts
+- Auth via Better Auth (JWT/session)
+
+## Docker Topology
+
+- Containers: web, api, postgres, redis

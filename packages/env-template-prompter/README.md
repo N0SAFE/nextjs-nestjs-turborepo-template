@@ -177,7 +177,7 @@ For detailed documentation, see:
 
 ## 🤝 Contributing
 
-This package is part of the nextjs-directus-turborepo template. Please see the main repository for contribution guidelines.
+This package is part of the nextjs-nestjs-turborepo template. Please see the main repository for contribution guidelines.
 
 ## 📄 License
 

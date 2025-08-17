@@ -1,89 +1,59 @@
 # Production Dockerfile for NestJS API
 # Multi-stage build for optimized production image
 
-FROM node:20-alpine AS base
-
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    wget \
-    bash \
-    python3 \
-    make \
-    g++
-
-# Set working directory
-WORKDIR /app
-
-# Copy package.json and lock files for better caching
-COPY package.json bun.lock* ./
-COPY apps/api/package.json ./apps/api/
-COPY packages/ ./packages/
-COPY turbo.json ./
-COPY tsconfig.json ./
-
-# Install dependencies using bun
-RUN npm install -g bun
-
-# Stage 1: Build dependencies
-FROM base AS deps
-RUN bun install --production
-
-# Stage 2: Build the application
-FROM base AS builder
-COPY apps/api ./apps/api
-
-# Install all dependencies (including dev dependencies for build)
-RUN bun install
-
-# Change to API directory and build
-WORKDIR /app/apps/api
-RUN bun run build
-
-# Stage 3: Production runtime
-FROM node:20-alpine AS runtime
-
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
-ARG API_PORT=3001
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG API_PING_PATH=/health
-
-ENV API_PORT=$API_PORT
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_APP_URL
+# syntax=docker/dockerfile:1.7
+FROM oven/bun:1.2.14-alpine AS base
 ENV NODE_ENV=production
 
-# Install production dependencies
-RUN apk add --no-cache curl wget bash
-
-# Install bun for running migration scripts
-RUN npm install -g bun
-
-# Create app user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
-
-# Set working directory
+# Install dependencies only when needed
+FROM base AS builder
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+RUN apk update
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy production dependencies
-COPY --from=deps --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=nestjs:nodejs /app/apps/api/node_modules ./apps/api/node_modules
+# Install Turbo globally
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+
+# Copy everything and prune for API app
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/turbo \
+  turbo prune api --docker
+
+# Install dependencies for building
+FROM base AS installer
+RUN apk update
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# First install the dependencies (as they change less often)
+COPY --from=builder /app/out/json/ .
+RUN rm -f bun.lock # this is a workaround because when using the --frozen-lockfile i have a probleme with the way the turbo prune work with bun and it corrupt my bun.lock
+RUN bun install
+
+# Build the project
+COPY --from=builder /app/out/full/ .
+RUN bun turbo run build
+
+# Production runner
+FROM base AS runner
+WORKDIR /app
+
+# Install runtime dependencies for NestJS
+RUN apk add --no-cache curl wget bash python3 make g++
+
+# Create app user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nestjs
 
 # Copy built application
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/src/db ./apps/api/src/db
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/tsconfig.json ./apps/api/
-
-# Copy packages if needed
-COPY --from=builder --chown=nestjs:nodejs /app/packages ./packages
-
-# Change to API directory
-WORKDIR /app/apps/api
+COPY --from=installer --chown=nestjs:nodejs /app ./
 
 # Switch to non-root user
 USER nestjs
+
+# Change to API directory
+WORKDIR /app/apps/api
 
 # Expose port
 EXPOSE 3001
@@ -93,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 # Start the application with migrations
-CMD ["sh", "-c", "bun run db:migrate && node dist/main.js"]
+CMD ["sh", "-c", "bun run db:migrate && bun --bun dist/src/main"]

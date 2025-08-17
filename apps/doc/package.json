@@ -1,0 +1,30 @@
+{
+    "name": "doc",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbopack -p 3020",
+        "build": "next build",
+        "start": "next start -p 3020",
+        "postinstall": "fumadocs-mdx"
+    },
+    "dependencies": {
+        "next": "catalog:next",
+        "react": "catalog:react",
+        "react-dom": "catalog:react",
+        "babel-plugin-react-compiler": "catalog:react-compiler",
+        "fumadocs-ui": "^15.6.3",
+        "fumadocs-core": "^15.6.3"
+    },
+    "devDependencies": {
+        "@repo/tsconfig": "*",
+        "@tailwindcss/postcss": "catalog:styling",
+        "@types/mdx": "^2.0.13",
+        "@types/node": "catalog:build",
+        "@types/react": "catalog:react",
+        "@types/react-dom": "catalog:react",
+        "fumadocs-mdx": "^11.7.4",
+        "tailwindcss": "catalog:styling",
+        "typescript": "catalog:build"
+    }
+}

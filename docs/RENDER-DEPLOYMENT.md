@@ -1,6 +1,8 @@
 # Render Deployment Guide
 
-## 🚀 Deploy your Next.js + Directus app to Render
+> This guide shows how to deploy the Next.js + NestJS + Documentation stack to Render using the provided blueprint.
+
+## 🚀 Deploy your Next.js + NestJS + Docs app to Render
 
 ### Prerequisites
 - GitHub repository with your code
@@ -18,9 +20,10 @@
 2. Connect your repository
 3. Render will automatically detect the `render.yaml` file
 4. Review the services that will be created:
-   - **directus-api**: Your Directus CMS backend
-   - **nextjs-web**: Your Next.js frontend
-   - **directus-db**: PostgreSQL database (free tier)
+   - **nestjs-api**: Your NestJS backend API
+   - **nextjs-web**: Your Next.js frontend web application  
+   - **doc-app**: Your documentation site (using Fumadocs)
+   - **nestjs-db**: PostgreSQL database (free tier)
 
 #### 3. Update Service Names (Optional)
 The `render.yaml` uses dynamic service references, so URLs are automatically generated based on your service names:
@@ -30,55 +33,99 @@ The `render.yaml` uses dynamic service references, so URLs are automatically gen
 - key: NEXT_PUBLIC_API_URL
   fromService:
     type: web
-    name: directus-api  # Change this if you rename the service
-    property: host
+    name: nestjs-api  # Change this if you rename the service
+    envVarKey: RENDER_EXTERNAL_URL
 ```
 
 If you change the service names in `render.yaml`, make sure the `fromService.name` properties match:
-- `directus-api` service → all `name: directus-api` references
-- `nextjs-web` service → all `name: nextjs-web` references
+- `nestjs-api` service → all `name: nestjs-api` references
+- `nextjs-web` service → all `name: nextjs-web` references  
+- `doc-app` service → all `name: doc-app` references
 
 The actual URLs will be automatically:
-- API: `https://your-actual-service-name.onrender.com`
-- Web: `https://your-actual-web-service-name.onrender.com`
+- API: `https://your-nestjs-api-service.onrender.com`
+- Web: `https://your-nextjs-web-service.onrender.com`
+- Docs: `https://your-doc-app-service.onrender.com`
 
 #### 4. Deploy and Configure
 1. Click **"Apply"** to start deployment
 2. Wait for services to build and deploy (10-15 minutes)
 3. Access your API at: `https://your-api-service.onrender.com`
 4. Access your web app at: `https://your-web-service.onrender.com`
+5. Access your documentation at: `https://your-doc-service.onrender.com`
 
-#### 5. Set Up Directus Admin
+#### 5. Configure API and Database
 1. Go to your API URL
-2. Complete Directus admin setup
-3. Create content and collections as needed
+2. Verify API health at `/health` endpoint
+3. The database schema will be automatically migrated on startup
+4. Configure authentication as needed
+
+### Service Architecture
+
+**Three-Service Deployment:**
+
+1. **NestJS API** (`nestjs-api`)
+   - Handles backend logic, database operations, authentication
+   - Uses ORPC for type-safe API contracts
+   - Includes Drizzle ORM for database operations
+   - Automatically runs migrations on startup
+
+2. **Next.js Web App** (`nextjs-web`)  
+   - Frontend user interface
+   - Consumes API through type-safe ORPC contracts
+   - Includes authentication and state management
+   - Links to documentation site
+
+3. **Documentation Site** (`doc-app`)
+   - Built with Fumadocs for documentation
+   - Independent deployment for better performance
+   - Accessible via docs URL from web app
+
+4. **PostgreSQL Database** (`nestjs-db`)
+   - Shared database for the NestJS API
+   - Free tier includes 90-day retention
+   - Automatic backups included
 
 ### Deployment Optimizations
 
 **Build Performance:**
-- The web service Dockerfile builds the Next.js app during the Docker build phase
-- This prevents Render from timing out while scanning for open ports
-- Uses `SKIP_STATIC_GENERATION=true` to speed up the build process
-- Static generation happens after the service starts to avoid build timeouts
+- All services use build-time compilation to prevent Render timeouts
+- Docker builds compile applications during build phase, not startup
+- Uses caching for faster subsequent builds
+- Static generation happens after service starts to avoid build timeouts
 
 **Health Checks:**
 - Extended health check start period (120s) to allow for proper service initialization
-- Health check endpoint configured at root path (`/`)
+- NestJS API health check at `/health` endpoint
+- Web app health check at root path (`/`)
+- Documentation site health check at root path (`/`)
 - Automatic retry mechanism for service stability
 
 ### Environment Variables
 
 The blueprint automatically configures:
-- Database connection
-- CORS settings
-- Authentication secrets
-- Service URLs
+
+**API Service:**
+- Database connection (auto-configured from PostgreSQL service)
+- API configuration (port, health check path)
+- Authentication secrets (auto-generated)
+- Cross-service URL references
+
+**Web App Service:**
+- API URL reference (auto-generated from API service)
+- App URL reference (self-referencing)
+- Documentation URL reference (auto-generated from docs service)
+- Authentication secrets (shared with API)
+
+**Documentation Service:**
+- Minimal configuration (port and Node environment)
+- Independent of other services
 
 ### Manual Deployment (Alternative)
 
 If you prefer manual setup:
 
-#### Deploy Directus API:
+#### Deploy NestJS API:
 1. New → Web Service
 2. Connect repository
 3. Docker environment
@@ -90,13 +137,20 @@ If you prefer manual setup:
 1. New → Web Service  
 2. Connect repository
 3. Docker environment
-4. Dockerfile path: `./docker/Dockerfile.web.prod`
+4. Dockerfile path: `./docker/Dockerfile.web.build-time.prod`
+5. Configure environment variables
+
+#### Deploy Documentation Site:
+1. New → Web Service
+2. Connect repository  
+3. Docker environment
+4. Dockerfile path: `./docker/Dockerfile.doc.build-time.prod`
 5. Configure environment variables
 
 ### Free Tier Limitations
 
 **Render Free Tier includes:**
-- 750 hours/month web service usage
+- 750 hours/month web service usage (per service)
 - Services sleep after 15 minutes of inactivity
 - 90-day PostgreSQL database (then requires upgrade)
 - 512MB RAM per service
@@ -114,53 +168,70 @@ If you prefer manual setup:
 - The next.config.ts automatically handles hostname-only values from Render's `fromService` references
 - If you see "cannot be parsed as a URL" errors, the automatic https:// prefix should resolve it
 - Ensure service names in `fromService.name` match your actual service names in render.yaml
-- The system automatically converts hostnames like "directus-api-c8pu" to "https://directus-api-c8pu.onrender.com"
 
 **Port scan timeout during deployment:**
 - This issue occurs when the build process takes too long
-- Our Dockerfile now builds the app during Docker build phase (not startup)
-- Uses `SKIP_STATIC_GENERATION=true` to speed up builds
+- Our Dockerfiles now build apps during Docker build phase (not startup)
 - If you still see timeouts, consider upgrading to a paid plan for faster builds
 
 **Service won't start:**
 - Check build logs in Render dashboard
 - Verify Dockerfile paths in render.yaml
 - Ensure all environment variables are set
-- Wait for the health check start period (120s for web service)
+- Wait for the health check start period (120s for web services)
 
 **Database connection issues:**
 - Verify PostgreSQL service is running
-- Check database environment variables
+- Check database environment variables in API service
 - Wait for database to be fully initialized
+- Database migrations run automatically on API startup
 
 **CORS errors:**
-- Update CORS_ORIGIN in API service
+- API automatically gets the web app URL for CORS configuration
 - Ensure URLs match your actual service URLs
+- Check that service references in render.yaml are correct
 
 **Build takes too long:**
-- The web service is configured with `SKIP_STATIC_GENERATION=true`
-- Build happens during Docker build phase, not at startup
+- All services are configured to build during Docker build phase
+- Build happens before startup to prevent timeouts
 - Consider using a paid plan for faster build resources
+
+### Inter-Service Communication
+
+**Automatic URL Generation:**
+- Web app automatically gets API URL from `nestjs-api` service
+- Web app automatically gets docs URL from `doc-app` service  
+- API automatically gets web app URL for CORS configuration
+
+**Service Dependencies:**
+- Web app depends on API service for backend functionality
+- Documentation is independent and can deploy separately
+- All services share the same PostgreSQL database (API only)
 
 ### Custom Domains
 
-Both services support custom domains:
+All three services support custom domains:
 1. Go to service settings in Render
-2. Add custom domain
+2. Add custom domain for each service
 3. Configure DNS records as instructed
+4. Update environment variables if needed
 
 ### Monitoring
 
 Monitor your services:
-- Check logs in Render dashboard
+- Check logs in Render dashboard for each service
 - Set up alerts for service health
 - Monitor usage to avoid free tier limits
+- Use health check endpoints to verify service status
 
 ### Next Steps
 
 After successful deployment:
-1. Set up your Directus content model
-2. Configure authentication in Next.js
-3. Add custom domain (optional)
-4. Set up monitoring and backups
-5. Consider upgrading for production use
+1. Verify all three services are running and accessible
+2. Test API endpoints at `/health` and other routes
+3. Check that web app can communicate with API
+4. Verify documentation site is accessible and up-to-date
+5. Configure authentication providers and secrets
+6. Add custom domains (optional)
+7. Set up monitoring and backups
+8. Consider upgrading for production use

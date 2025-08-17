@@ -1,5 +1,7 @@
 # Docker Build Strategies
 
+> Optimized for the Docker-first SaaS workflow in this template. Use these strategies to choose between fast startup (build-time) and flexible runtime compilation, including Render deployment compatibility.
+
 This project provides multiple Docker compose configurations optimized for different development and deployment scenarios.
 
 ## Development Environment
@@ -11,8 +13,8 @@ This project provides multiple Docker compose configurations optimized for diffe
 
 **What it includes:**
 - Next.js web app with hot reloading
-- Directus API with hot reloading  
-- MySQL database
+- NestJS API with hot reloading  
+- PostgreSQL database
 - Redis cache
 
 **Usage:**
@@ -33,8 +35,8 @@ For independent development, you can run API and Web services separately:
 - `docker/Dockerfile.api.dev`
 
 **What it includes:**
-- Directus API with development tools
-- MySQL database (exposed on port 3306)
+- NestJS API with development tools
+- PostgreSQL database (exposed on port 5432)
 - Redis cache (exposed on port 6379)
 
 **Usage:**
@@ -48,7 +50,7 @@ docker-compose -f docker-compose.api.dev.yml up
 - ✅ **Independent API development** - work on backend without frontend
 - ✅ **External connections** - database and Redis exposed for external tools
 - ✅ **Development tools** - curl, wget, bash, nano, git included
-- ✅ **Hot reloading** - extensions auto-reload on changes
+- ✅ **Hot reloading** - NestJS auto-reloads on changes
 
 #### Web Development Only
 
@@ -181,9 +183,8 @@ Both strategies support the same environment variables:
 **Build-time arguments (for build-time compilation):**
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_APP_URL` 
-- `AUTH_SECRET`
-- `API_ADMIN_TOKEN`
-- `API_PING_PATH`
+- `BETTER_AUTH_SECRET`
+- `API_PORT`
 
 **Runtime environment variables (for both strategies):**
 - All the above variables can be overridden at runtime

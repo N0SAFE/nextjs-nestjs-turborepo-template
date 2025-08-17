@@ -1,10 +1,12 @@
 # Production Docker Compose Deployments
 
+> Context: Docker-first SaaS template deploying to production. Use this when deploying with Docker Compose on your own infrastructure. For Render-specific steps, see ./RENDER-DEPLOYMENT.md.
+
 This document describes how to deploy the API and Web applications separately in a production environment.
 
 ## Files
 
-- `docker-compose.api.prod.yml` - Runs only the Directus API with database and cache
+- `docker-compose.api.prod.yml` - Runs only the NestJS API with database and cache
 - `docker-compose.web.prod.yml` - Runs only the Next.js web application
 
 ## Production Deployment Usage
@@ -19,8 +21,8 @@ cp .env.api.prod.example .env
 # Start the API services
 docker-compose -f docker-compose.api.prod.yml up -d
 
-# The API will be available at your configured URL (default: http://localhost:8055)
-# Admin panel: http://your-api-domain.com/admin
+# The API will be available at your configured URL (default: http://localhost:3001)
+# Health check: http://your-api-domain.com/health
 ```
 
 ### 2. Deploy Web App in Production (requires running API)
@@ -54,20 +56,24 @@ Create a `.env` file with:
 
 ```env
 # Database
-DB_ROOT_PASSWORD=use-a-secure-password-in-production
-DB_DATABASE=directus
+DB_USER=postgres
+DB_PASSWORD=use-a-secure-password-in-production
+DB_DATABASE=nestjs_api
+DATABASE_URL=postgresql://postgres:your-password@api-db-prod:5432/nestjs_api
 
 # API Security
-SECRET=generate-a-secure-random-value-for-production
+BETTER_AUTH_SECRET=generate-a-secure-random-value-for-production
 
 # API
-NEXT_PUBLIC_API_PORT=8055
-API_ADMIN_TOKEN=your-secure-admin-token
+API_PORT=3001
 NEXT_PUBLIC_API_URL=https://api.your-domain.com/
+
+# Redis
+REDIS_URL=redis://api-cache-prod:6379
 
 # Production Optimizations
 LOG_LEVEL=warn
-RATE_LIMITER_ENABLED=true
+NODE_ENV=production
 ```
 
 ### Web Production Deployment
@@ -77,18 +83,17 @@ Create a `.env` file with:
 ```env
 # API Connection (point to your production API)
 NEXT_PUBLIC_API_URL=https://api.your-domain.com/
-NEXT_PUBLIC_API_PORT=443
-API_ADMIN_TOKEN=your-secure-admin-token
 
 # Web App
 NEXT_PUBLIC_APP_URL=https://www.your-domain.com
-NEXT_PUBLIC_APP_PORT=3003
-AUTH_SECRET=your-secure-auth-secret
+NEXT_PUBLIC_APP_PORT=3000
+
+# Authentication
+BETTER_AUTH_URL=https://www.your-domain.com
+BETTER_AUTH_SECRET=your-secure-auth-secret
 
 # Production Mode Configuration
-USE_LOCALHOST_CLIENT=false
-NEXT_PUBLIC_USE_PROXY=false
-DIRECTUS_SERVER_URL=https://api.your-domain.com/
+NODE_ENV=production
 ```
 
 ## Key Production Configuration Features
@@ -119,7 +124,6 @@ docker-compose -f docker-compose.api-only.yml up -d
 ```bash
 # On your web server, update .env to point to API server
 NEXT_PUBLIC_API_URL=https://your-api-domain.com/
-DIRECTUS_SERVER_URL=https://your-api-domain.com/
 
 # Deploy web app
 docker-compose -f docker-compose.web.prod.yml up -d

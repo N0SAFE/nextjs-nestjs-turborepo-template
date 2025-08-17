@@ -72,6 +72,9 @@ services:
       retries: 5
     networks:
       - api_network_prod
+    volumes:
+      - bun_cache_api_prod:/root/.bun/install/cache
+      - turbo_cache_api_prod:/root/.cache/turbo
 
 networks:
   api_network_prod:
@@ -81,3 +84,7 @@ networks:
 volumes:
   api_db_data_prod:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_api_db_data_prod
+  bun_cache_api_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_api_prod
+  turbo_cache_api_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_api_prod

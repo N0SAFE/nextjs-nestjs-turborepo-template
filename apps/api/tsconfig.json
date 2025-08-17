@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "incremental": true,
+    "incremental": false,
     "target": "ES2022",
     "lib": ["ES2022"],
     "emitDecoratorMetadata": true,
@@ -21,6 +21,7 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+  "noEmit": false,
     "paths": {
       "@/*": [
         "./src/*"

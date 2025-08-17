@@ -1,5 +1,7 @@
 # Project Isolation Guide
 
+> Optional add-on for the same Docker-first SaaS workflow: isolate multiple instances of this template on one machine using COMPOSE_PROJECT_NAME prefixes.
+
 This guide explains how to configure unique project prefixes to avoid Docker service name conflicts when running multiple instances of this template.
 
 ## Overview

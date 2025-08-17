@@ -1,0 +1,75 @@
+# syntax=docker/dockerfile:1.7
+# Development Dockerfile for Docs App with HMR
+FROM oven/bun:1.2.14-alpine AS base
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat curl bash \
+	&& bun install -g turbo@^2 \
+	&& mkdir -p $TURBO_CACHE_DIR
+WORKDIR /app
+
+# Copy root package files
+COPY package*.json ./
+COPY turbo.json ./
+
+# Copy workspace package files needed for docs app
+COPY apps/doc/package*.json ./apps/doc/
+COPY packages/ ./packages/
+
+# Install dependencies (skip postinstall scripts until sources are present)
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Development runner
+FROM base AS runner
+
+# Install system dependencies
+RUN apk add --no-cache libc6-compat curl bash sudo
+
+# Create non-root user with flexible permissions
+RUN addgroup -S node && \
+    adduser -S -G node node
+
+# Configure sudo for file permission fixes without password
+RUN echo 'node ALL=(ALL) NOPASSWD: /bin/chown, /bin/chmod, /usr/bin/find' >> /etc/sudoers
+
+WORKDIR /app
+
+# Install Turbo globally (cached by layer reuse)
+RUN bun install -g turbo@^2
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy all source files
+COPY . .
+
+# Create startup script with proper permissions handling
+RUN echo '#!/bin/bash' > /startup.sh && \
+    echo 'set -e' >> /startup.sh && \
+    echo 'echo "Fixing file permissions for cross-platform compatibility..."' >> /startup.sh && \
+    echo 'sudo chown -R node:node /app 2>/dev/null || true' >> /startup.sh && \
+    echo 'sudo chmod -R 755 /app/apps/doc 2>/dev/null || true' >> /startup.sh && \
+    echo 'echo "Permissions fixed successfully!"' >> /startup.sh && \
+    echo 'exec "$@"' >> /startup.sh && \
+    chmod +x /startup.sh
+
+# Generate Fumadocs sources now that full sources are available
+RUN bun --cwd /app/apps/doc run postinstall
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Switch to node user for security
+USER node
+
+# Workdir inside docs app
+WORKDIR /app/apps/doc
+
+# Expose docs dev port
+EXPOSE 3020
+
+# Start the Next.js dev server using the startup script that fixes permissions
+CMD ["/startup.sh", "bun", "x", "next", "dev", "-H", "0.0.0.0", "-p", "3020"]

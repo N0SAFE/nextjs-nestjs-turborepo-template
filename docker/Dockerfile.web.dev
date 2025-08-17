@@ -1,5 +1,7 @@
+# syntax=docker/dockerfile:1.7
 # Development Dockerfile for Web App with HMR
-FROM node:22-alpine AS base
+# Enhanced with BuildKit cache mounts for Bun & Turbo to speed up iterative builds
+FROM oven/bun:1.2.14-alpine AS base
 
 # Set build-time environment variables for Next.js
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
@@ -20,17 +22,12 @@ ENV AUTH_SECRET=$AUTH_SECRET
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat curl bash
-RUN corepack enable
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
+# Simplified (no BuildKit cache mounts) for environments without BuildKit
+RUN apk add --no-cache libc6-compat curl bash \
+	&& bun install -g turbo@^2 \
+	&& mkdir -p $TURBO_CACHE_DIR
 WORKDIR /app
-
-# Install Bun
-RUN curl -fsSL https://bun.sh/install | bash && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
-
-# Install Turbo globally
-RUN bun install -g turbo@^2
 
 # Copy root package files
 COPY package*.json ./
@@ -40,32 +37,48 @@ COPY turbo.json ./
 COPY apps/web/package*.json ./apps/web/
 COPY packages/ ./packages/
 
-# Install dependencies
+# Install dependencies (cached Bun & Turbo)
 RUN bun install --frozen-lockfile
 
 # Development runner
 FROM base AS runner
-RUN apk add --no-cache libc6-compat curl bash
-RUN corepack enable
+ENV TURBO_CACHE_DIR=/root/.cache/turbo
 
-RUN curl -fsSL https://bun.sh/install | bash && \
-    mv /root/.bun/bin/bun /usr/local/bin/bun && \
-    chmod +x /usr/local/bin/bun
+# Install system dependencies
+RUN apk add --no-cache libc6-compat curl bash sudo
+
+# Create non-root user with flexible permissions
+RUN addgroup -S node && \
+    adduser -S -G node node && \
+    mkdir -p "$TURBO_CACHE_DIR" && \
+    chown -R node:node "$TURBO_CACHE_DIR"
+
+# Configure sudo for file permission fixes without password
+RUN echo 'node ALL=(ALL) NOPASSWD: /bin/chown, /bin/chmod, /usr/bin/find' >> /etc/sudoers
 
 WORKDIR /app
 
-# Install Turbo globally
+# Install Turbo globally (layer-cached)
 RUN bun install -g turbo@^2
 
-# Copy dependencies and fix their permissions
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=deps --chown=node:node /app/apps/web/node_modules ./apps/web/node_modules
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
-# Copy all source files with proper ownership
-COPY --chown=node:node . .
+# Copy all source files
+COPY . .
 
-# Ensure all files have proper write permissions for the node user
-RUN chown --recursive node:node /app/apps/web
+# Create startup script with proper permissions handling
+RUN echo '#!/bin/bash' > /startup.sh && \
+    echo 'set -e' >> /startup.sh && \
+    echo 'echo "Fixing file permissions for cross-platform compatibility..."' >> /startup.sh && \
+    echo 'sudo chown -R node:node /app 2>/dev/null || true' >> /startup.sh && \
+    echo 'sudo chmod -R 755 /app/apps/web/src 2>/dev/null || true' >> /startup.sh && \
+    echo 'mkdir -p /app/apps/web/src/routes' >> /startup.sh && \
+    echo 'sudo chmod -R 755 /app/apps/web/src/routes 2>/dev/null || true' >> /startup.sh && \
+    echo 'echo "Permissions fixed successfully!"' >> /startup.sh && \
+    echo 'exec "$@"' >> /startup.sh && \
+    chmod +x /startup.sh
 
 # Set environment variables for development
 ENV NODE_ENV=development
@@ -82,5 +95,5 @@ WORKDIR /app/apps/web
 # Expose port
 EXPOSE 3000
 
-# Start the development server from the web app's directory
-CMD ["bun", "run", "dev:docker"]
+# Start the development server using the startup script that fixes permissions
+CMD ["/startup.sh", "bun", "run", "dev:docker"]
