@@ -1,99 +1,31 @@
 # syntax=docker/dockerfile:1.7
-# Development Dockerfile for Web App with HMR
-# Enhanced with BuildKit cache mounts for Bun & Turbo to speed up iterative builds
-FROM oven/bun:1.2.14-alpine AS base
+# Simple development Dockerfile for Next.js Web App
+# Focused on simplicity and avoiding permission issues
 
-# Set build-time environment variables for Next.js
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
-ARG API_PORT=3001
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG NEXT_PUBLIC_APP_PORT=3000
-ARG API_PING_PATH=/health
-ARG API_ADMIN_TOKEN=secret-admin-token
-ARG AUTH_SECRET=QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=
-
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV API_PORT=$API_PORT
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-ENV NEXT_PUBLIC_APP_PORT=$NEXT_PUBLIC_APP_PORT
-ENV API_PING_PATH=$API_PING_PATH
-ENV API_ADMIN_TOKEN=$API_ADMIN_TOKEN
-ENV AUTH_SECRET=$AUTH_SECRET
-
-# Install dependencies only when needed
-FROM base AS deps
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-# Simplified (no BuildKit cache mounts) for environments without BuildKit
-RUN apk add --no-cache libc6-compat curl bash \
-	&& bun install -g turbo@^2 \
-	&& mkdir -p $TURBO_CACHE_DIR
-WORKDIR /app
-
-# Copy root package files
-COPY package*.json ./
-COPY turbo.json ./
-
-# Copy workspace package files - only copy specific directories to avoid duplicates
-COPY apps/web/package*.json ./apps/web/
-COPY packages/ ./packages/
-
-# Install dependencies (cached Bun & Turbo)
-RUN bun install --frozen-lockfile
-
-# Development runner
-FROM base AS runner
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
+FROM oven/bun:1.2.14-alpine
 
 # Install system dependencies
-RUN apk add --no-cache libc6-compat curl bash sudo
+RUN apk add --no-cache libc6-compat curl bash
 
-# Create non-root user with flexible permissions
-RUN addgroup -S node && \
-    adduser -S -G node node && \
-    mkdir -p "$TURBO_CACHE_DIR" && \
-    chown -R node:node "$TURBO_CACHE_DIR"
-
-# Configure sudo for file permission fixes without password
-RUN echo 'node ALL=(ALL) NOPASSWD: /bin/chown, /bin/chmod, /usr/bin/find' >> /etc/sudoers
-
-WORKDIR /app
-
-# Install Turbo globally (layer-cached)
+# Install Turbo globally
 RUN bun install -g turbo@^2
 
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+# Set working directory
+WORKDIR /app
 
-# Copy all source files
-COPY . .
+# Copy workspace configuration files for dependency installation
+COPY package.json bun.lock* ./
+COPY turbo.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/ ./packages/
 
-# Create startup script with proper permissions handling
-RUN echo '#!/bin/bash' > /startup.sh && \
-    echo 'set -e' >> /startup.sh && \
-    echo 'echo "Fixing file permissions for cross-platform compatibility..."' >> /startup.sh && \
-    echo 'sudo chown -R node:node /app 2>/dev/null || true' >> /startup.sh && \
-    echo 'sudo chmod -R 755 /app/apps/web/src 2>/dev/null || true' >> /startup.sh && \
-    echo 'mkdir -p /app/apps/web/src/routes' >> /startup.sh && \
-    echo 'sudo chmod -R 755 /app/apps/web/src/routes 2>/dev/null || true' >> /startup.sh && \
-    echo 'echo "Permissions fixed successfully!"' >> /startup.sh && \
-    echo 'exec "$@"' >> /startup.sh && \
-    chmod +x /startup.sh
+# Install dependencies (this layer will be cached)
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install
 
-# Set environment variables for development
+# Set development environment
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NEXT_TURBOPACK_TRACING=1
 
-# Switch to node user for security
-USER node
-
-# Ensure working directory has proper permissions for the user
-# The WORKDIR command will create the directory if it doesn't exist
-WORKDIR /app/apps/web
-
-# Expose port
-EXPOSE 3000
-
-# Start the development server using the startup script that fixes permissions
-CMD ["/startup.sh", "bun", "run", "dev:docker"]
+# The actual source code will be mounted via docker-compose volumes
+# This avoids all permission issues with bind mounts
+CMD ["bun", "run", "web", "--", "dev:docker"]
