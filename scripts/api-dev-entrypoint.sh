@@ -4,6 +4,8 @@ set -e
 echo '=== BOOTSTRAP START ==='
 date || true
 echo "User: $(whoami)"
+echo "UID: $(id -u)"
+echo "GID: $(id -g)"
 echo "PWD: $(pwd)"
 echo "NODE_ENV=$NODE_ENV"
 echo '--- Memory Info ---'
@@ -61,9 +63,8 @@ else
   echo 'SKIP_MIGRATIONS set, skipping migrations'
 fi
 
-echo 'Ensuring dist directory exists & writable'
-mkdir -p apps/api/dist
-ls -al apps/api/dist || true
+echo 'TypeScript will create the dist directory as needed'
+ls -al apps/api/ | grep dist || echo 'No dist directory yet - will be created by TypeScript'
 echo '--- dist file sample (first 40) ---'
 find apps/api/dist -maxdepth 2 -type f 2>/dev/null | head -n 40 || true
 

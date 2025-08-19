@@ -63,10 +63,10 @@ services:
             - ./apps/api/tsconfig.build.json:/app/apps/api/tsconfig.build.json
             # Keep packages in sync
             - ./packages:/app/packages
-            # Anonymous volumes for dependencies and build artifacts
+            # Anonymous volumes for dependencies only (not dist)
             - /app/node_modules
             - /app/apps/api/node_modules
-            - /app/apps/api/dist
+            # No dist volume - let TypeScript create it on the fly
             # Persistent caches (shared with web/doc for faster cold starts)
             - bun_cache_dev:/root/.bun/install/cache
             - turbo_cache_dev:/root/.cache/turbo
