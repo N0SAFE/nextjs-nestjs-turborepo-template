@@ -2,7 +2,7 @@
 # Production Dockerfile for Web App - BUILD-TIME COMPILATION
 # This version builds the Next.js app during Docker build phase
 # Recommended for: Render, Vercel, and platforms that scan for open ports during build
-FROM oven/bun:1.2.14-alpine AS base
+FROM oven/bun:1.2.20-alpine AS base
 
 ENV NODE_ENV=production
 
