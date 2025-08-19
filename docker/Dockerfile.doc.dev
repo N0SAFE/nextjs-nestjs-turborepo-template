@@ -2,7 +2,7 @@
 # Simple development Dockerfile for Docs App
 # Focused on simplicity and avoiding permission issues
 
-FROM oven/bun:1.2.14-alpine
+FROM oven/bun:1.2.20-alpine
 
 # Install system dependencies
 RUN apk add --no-cache libc6-compat curl bash
