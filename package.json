@@ -232,7 +232,7 @@
   "packageManager": "bun@1.2.14",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "dotenv-cli": "^7.4.2",
+    "dotenv-cli": "^10.0.0",
     "dotenv-expand": "^11.0.6",
     "kill-port-process": "^3.2.1",
     "wait-on": "^8.0.1",
