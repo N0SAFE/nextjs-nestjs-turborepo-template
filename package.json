@@ -218,7 +218,7 @@
     "@n0safe/rununtil": "^1.0.5",
     "@n0safe/trycli": "^1.0.4",
     "@types/bun": "latest",
-    "nyc": "^15.1.0",
+    "nyc": "^17.1.0",
     "prompts": "catalog:utils",
     "rimraf": "catalog:build",
     "turbo": "^2.1.2",
