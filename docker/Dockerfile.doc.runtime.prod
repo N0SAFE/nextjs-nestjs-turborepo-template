@@ -1,5 +1,5 @@
 # Production Dockerfile for Docs App - RUNTIME COMPILATION
-FROM oven/bun:1.2.14-alpine AS base
+FROM oven/bun:1.2.21-alpine AS base
 
 ENV NODE_ENV=production
 
