@@ -236,7 +236,7 @@
     "dependencies": {
         "@nestjs/swagger": "^11.2.0",
         "@orpc/zod": "^1.8.5",
-        "dotenv": "^16.4.5",
+        "dotenv": "^17.2.1",
         "dotenv-cli": "^7.4.2",
         "dotenv-expand": "^11.0.6",
         "kill-port-process": "^3.2.1",
