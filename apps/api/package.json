@@ -22,7 +22,8 @@
     "db:reset": "drizzle-kit reset",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/db/drizzle/schema/auth.ts --y && bun run db:generate"
+    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/db/drizzle/schema/auth.ts --y && bun run db:generate",
+    "openapi:print": "bun --bun ./scripts/generate-openapi.ts > openapi.json && echo 'openapi.json generated'"
   },
   "dependencies": {
     "@mguay/nestjs-better-auth": "catalog:auth",
@@ -36,6 +37,7 @@
     "@orpc/server": "catalog:orpc",
     "@orpc/shared": "catalog:orpc",
     "@repo/api-contracts": "*",
+    "@scalar/nestjs-api-reference": "^0.5.14",
     "@vitest/coverage-istanbul": "^3.2.4",
     "bcrypt": "catalog:database",
     "better-auth": "catalog:auth",

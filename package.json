@@ -231,6 +231,8 @@
   },
   "packageManager": "bun@1.2.14",
   "dependencies": {
+    "@nestjs/swagger": "^11.2.0",
+    "@orpc/zod": "^1.8.5",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
     "dotenv-expand": "^11.0.6",
