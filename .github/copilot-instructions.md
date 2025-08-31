@@ -1,5 +1,29 @@
 # AI Coding Agent Instructions
 
+IMPORTANT: Before doing anything, you MUST use the MCP Repo Manager and AGENTS.md files to load context and rules.
+
+Required first steps for every task:
+1. Fetch repo overview via MCP resources:
+   - `repo://summary`, `repo://apps`, `repo://packages`
+2. Fetch the agents index: `repo://agents` and open relevant AGENTS.md
+   - Root: `repo://agent/root`
+   - Scoped: `repo://agent/apps/<name>` or `repo://agent/packages/<name>`
+3. Use MCP tools to inspect and act (do not directly edit unless unavoidable):
+   - Inspect: `show-app-dependencies`, `show-package-dependencies`, `list-internal-dependencies`
+   - Change: `add-dependency`, `remove-dependency`, `add-script`, `bump-version`, `create-app`, `create-package`
+   - Run: `run-script`
+
+Error handling protocol (CRITICAL):
+- When an MCP repo management action returns an error, you must attempt to fix it immediately, then retry.
+- Prefer the smallest corrective action first. Examples:
+   - Missing script: add it via `add-script` and retry
+   - Missing dependency: add via `add-dependency` (use internal workspace version `*` when applicable) and retry
+   - Service not available: start required stack using root scripts (`bun run dev`, `bun run dev:api`, or `bun run dev:web`) with the appropriate compose file
+   - Inconsistent graph: inspect with `repo://graph/uses/{name}` and `repo://graph/used-by/{name}` then adjust
+- Retry up to two times before escalating; surface the exact tool call, parameters, and error message in your report.
+- Validate readiness with `repo://commit/plan` or the `commit-plan` prompt before finalizing changes.
+
+
 This Next.js + NestJS turborepo uses modern patterns and conventions that require specific knowledge for effective development.
 
 ## Architecture Overview
@@ -18,7 +42,7 @@ bun run dev              # Full stack (API + Web + DB + Redis)
 bun run dev:api          # API only with database
 bun run dev:web          # Web only (requires running API)
 ```
-Never run `next dev` or `nest start` directly - services are containerized with proper networking.
+Prefer Docker-first via these root scripts; local app-level scripts exist for host-mode development when appropriate.
 
 ### 2. Declarative Routing System
 **Routes are type-safe and generated**, not manually written:
@@ -100,9 +124,8 @@ bun run api -- db:seed        # Seed development data
 
 ## Testing Strategy
 
-- **Unit Tests**: Vitest with coverage thresholds (75%)
-- **Integration**: ORPC contracts ensure API compatibility
-- **E2E**: Via declarative routes for type-safe navigation
+- Unit tests: Vitest across apps/packages
+- Integration: ORPC contracts ensure API compatibility
 
 ## Debugging Tips
 
