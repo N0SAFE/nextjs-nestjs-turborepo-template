@@ -2,7 +2,7 @@
 # Production Dockerfile for Web App - RUNTIME COMPILATION
 # This version builds the Next.js app during container startup
 # Recommended for: Docker Compose, self-hosted deployments where build time is flexible
-FROM oven/bun:1.2.14-alpine AS base
+FROM oven/bun:1.2.21-alpine AS base
 
 # Set build-time environment variables for Next.js
 ARG API_URL=http://localhost:3001
