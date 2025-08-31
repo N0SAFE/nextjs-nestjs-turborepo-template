@@ -76,7 +76,6 @@ const nextConfig: NextConfig = {
             },
         ],
     },
-    output: 'standalone',
 }
 
 // Enable MDX and Fumadocs source generation

@@ -138,13 +138,13 @@
     }
   },
   "scripts": {
-    "dev": "docker compose down && docker compose up",
-    "dev:api": "bun --bun run dev:api:down && docker compose -f ./docker-compose.api.yml up",
-    "dev:web": "bun --bun run dev:web:down && docker compose -f ./docker-compose.web.yml up",
-    "dev:api:build": "bun --bun run dev:api:down && docker compose -f ./docker-compose.api.yml up --build",
-    "dev:web:build": "bun --bun run dev:web:down && docker compose -f ./docker-compose.web.yml up --build",
-    "dev:api:new": "bun --bun run dev:api:down:volumes && docker compose -f ./docker-compose.api.yml up --build",
-    "dev:web:new": "bun --bun run dev:web:down:volumes && docker compose -f ./docker-compose.web.yml up --build",
+    "dev": "docker compose up",
+    "dev:api": "docker compose -f ./docker-compose.api.yml up",
+    "dev:web": "docker compose -f ./docker-compose.web.yml up",
+    "dev:api:build": "docker compose -f ./docker-compose.api.yml up --build",
+    "dev:web:build": "docker compose -f ./docker-compose.web.yml up --build",
+    "dev:api:new": "docker compose -f ./docker-compose.api.yml up --build",
+    "dev:web:new": "docker compose -f ./docker-compose.web.yml up --build",
     "dev:api:down": "docker compose -f ./docker-compose.api.yml down",
     "dev:web:down": "docker compose -f ./docker-compose.web.yml down",
     "dev:api:down:volumes": "docker compose -f ./docker-compose.api.yml down --volumes",
@@ -208,6 +208,7 @@
     "@repo/tsconfig": "dotenv -e .env -- bun --bun --cwd=./packages/tsconfig run --",
     "@repo/tailwind-config": "dotenv -e .env -- bun --bun --cwd=./packages/tailwind-config run --",
     "@repo/eslint-config": "dotenv -e .env -- bun --bun --cwd=./packages/eslint-config run --",
+  "@repo/mcp-repo-manager": "dotenv -e .env -- bun --bun --cwd=./packages/mcp-repo-manager run --",
     ".": "dotenv -e .env -- bun --bun --cwd=./ run --",
     "rm:node_modules": "concurrently \"bun --bun x rimraf node_modules\" \"bun --bun x rimraf --glob packages/*/node_modules\" \"bun --bun x rimraf --glob apps/*/node_modules\"",
     " ": " "
@@ -231,6 +232,8 @@
   },
   "packageManager": "bun@1.2.14",
   "dependencies": {
+    "@nestjs/swagger": "^11.2.0",
+    "@orpc/zod": "^1.8.5",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
     "dotenv-expand": "^11.0.6",

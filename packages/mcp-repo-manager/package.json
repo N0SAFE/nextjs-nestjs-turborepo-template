@@ -1,0 +1,44 @@
+{
+  "name": "@repo/mcp-repo-manager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server to manage this monorepo: list apps/packages, show dependencies, and scaffold new apps/packages.",
+  "type": "module",
+  "main": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "bin": {
+    "mcp-repo-manager": "dist/main.js"
+  },
+  "scripts": {
+    "build": "bun --bun nest build",
+    "dev": "bun run start:dev:inspector",
+    "start": "bun --bun nest start --preserveWatchOutput",
+    "start:dev": "bun --bun nest start --watch --preserveWatchOutput",
+    "start:debug": "bun --bun nest start --debug --watch --preserveWatchOutput",
+    "start:prod": "bun --bun dist/main.js",
+    "start:dev:inspector": "npx @modelcontextprotocol/inspector bun --bun nest start --watch --preserveWatchOutput",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.2.0",
+    "@nestjs/common": "catalog:api:nest",
+    "@nestjs/core": "catalog:api:nest",
+    "@nestjs/platform-express": "catalog:api:nest",
+    "@rekog/mcp-nest": "^1.8.1",
+    "reflect-metadata": "catalog:api:nest",
+    "rxjs": "catalog:api:nest",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@types/node": "catalog:build",
+    "@nestjs/cli": "catalog:api:nest",
+    "rimraf": "catalog:build",
+    "tsx": "^4.16.2",
+    "typescript": "catalog:build"
+  },
+  "engines": {
+    "bun": ">=1.2.14"
+  }
+}
