@@ -1,9 +1,12 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "ui": "tui",
+    "remoteCache": {
+        "enabled": true
+    },
     "globalDependencies": ["**/.env.*local", "**/.env", ".env.local"],
-    "globalPassThroughEnv": [".env.local"],
-    "globalEnv": ["NEXT_PUBLIC_API_URL", "API_PING_PATH", "API_ADMIN_TOKEN", "TEMP_APP_NEXTAUTH_URL", "NEXT_AUTH"],
+    "globalPassThroughEnv": [".env.local", "TURBO_TOKEN", "TURBO_TEAM"],
+    "globalEnv": ["API_URL", "API_PING_PATH", "API_ADMIN_TOKEN", "TEMP_APP_NEXTAUTH_URL", "NEXT_AUTH", "TURBO_TOKEN", "TURBO_TEAM"],
     "tasks": {
         "dev": {
             "cache": false,
@@ -12,6 +15,11 @@
         },
         "build": {
             "dependsOn": ["^build"],
+            "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+            "inputs": ["src/**", "public/**", "*.config.*", "package.json"]
+        },
+        "compile": {
+            "dependsOn": ["^compile"],
             "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
             "inputs": ["src/**", "public/**", "*.config.*", "package.json"]
         },
@@ -61,12 +69,10 @@
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "lint": {
-            "cache": false,
             "inputs": ["src/**", "*.config.*", "package.json"]
         },
         "prettify": {
-            "dependsOn": ["^lint"],
-            "cache": false
+            "dependsOn": ["^lint"]
         },
         "clean": {
             "cache": false

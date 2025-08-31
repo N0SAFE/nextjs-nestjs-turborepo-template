@@ -13,78 +13,106 @@ import {
 import { orpcServer } from '@/lib/orpc'
 import { toAbsoluteUrl } from '@/lib/utils'
 import { MiddlewareerrorhealthCheck } from '@/routes'
+import { createDebug } from '@/lib/debug'
+
+const debugHealthCheck = createDebug('middleware/healthcheck')
+const debugHealthCheckError = createDebug('middleware/healthcheck/error')
 
 const NODE_ENV = validateEnvPath(process.env.NODE_ENV, 'NODE_ENV')
 const errorPageRenderingPath = '/middleware/error/healthCheck'
 
 const withHealthCheck: MiddlewareFactory = (next: NextMiddleware) => {
     return async (request: NextRequest, _next: NextFetchEvent) => {
-        console.log(
-            `Health Check Middleware: Checking server health for ${request.nextUrl.pathname}`,
-            request.nextUrl.pathname
-        )
+        debugHealthCheck('Health check middleware initiated', {
+            path: request.nextUrl.pathname,
+            environment: NODE_ENV
+        })
+        
         if (NODE_ENV === 'development') {
             try {
-                console.log('Checking API health via ORPC...')
+                debugHealthCheck('Checking API health via ORPC in development mode')
                 try {
                     const data = await orpcServer.health.check({})
-                    console.log('Health Check Response:', data)
+                    debugHealthCheck('Health check response received', { data })
+                    
                     if (!(data.status === 'ok')) {
-                        if (
-                            request.nextUrl.pathname === errorPageRenderingPath
-                        ) {
+                        if (request.nextUrl.pathname === errorPageRenderingPath) {
+                            debugHealthCheck('Already on error page, proceeding')
                             return NextResponse.next()
                         } else {
-                            return NextResponse.redirect(
-                                toAbsoluteUrl(
-                                    MiddlewareerrorhealthCheck({}, {
-                                        json: JSON.stringify(data),
-                                        from: request.url
-                                    })
-                                )
+                            const errorUrl = toAbsoluteUrl(
+                                MiddlewareerrorhealthCheck({}, {
+                                    json: JSON.stringify(data),
+                                    from: request.url
+                                })
                             )
+                            debugHealthCheckError('API health check failed, redirecting to error page', {
+                                from: request.url,
+                                to: errorUrl,
+                                healthData: data
+                            })
+                            return NextResponse.redirect(errorUrl)
                         }
                     }
                 } catch (e: unknown) {
-                    console.log('Health Check Error:', e)
                     const errorData = {
                         status: 'error',
                         message: (e as Error).message || 'Unknown error',
                         timestamp: new Date().toISOString(),
                     }
+                    debugHealthCheckError('Health check error caught', {
+                        error: e,
+                        errorData
+                    })
+                    
                     if (request.nextUrl.pathname === errorPageRenderingPath) {
+                        debugHealthCheck('Already on error page, proceeding')
                         return NextResponse.next()
                     } else {
-                        return NextResponse.redirect(
-                            toAbsoluteUrl(
-                                MiddlewareerrorhealthCheck({}, {
-                                    json: JSON.stringify(errorData),
-                                    from: request.url
-                                })
-                            )
-                        )
-                    }
-                }
-            } catch {
-                if (request.nextUrl.pathname === errorPageRenderingPath) {
-                    return NextResponse.next()
-                } else {
-                    return NextResponse.redirect(
-                        toAbsoluteUrl(
+                        const errorUrl = toAbsoluteUrl(
                             MiddlewareerrorhealthCheck({}, {
+                                json: JSON.stringify(errorData),
                                 from: request.url
                             })
                         )
+                        debugHealthCheckError('Redirecting to error page due to health check exception', {
+                            from: request.url,
+                            to: errorUrl
+                        })
+                        return NextResponse.redirect(errorUrl)
+                    }
+                }
+            } catch {
+                debugHealthCheckError('Unexpected error in health check middleware')
+                if (request.nextUrl.pathname === errorPageRenderingPath) {
+                    debugHealthCheck('Already on error page, proceeding')
+                    return NextResponse.next()
+                } else {
+                    const errorUrl = toAbsoluteUrl(
+                        MiddlewareerrorhealthCheck({}, {
+                            from: request.url
+                        })
                     )
+                    debugHealthCheckError('Redirecting to error page due to unexpected error', {
+                        from: request.url,
+                        to: errorUrl
+                    })
+                    return NextResponse.redirect(errorUrl)
                 }
             }
         }
+        
         if (request.nextUrl.pathname === errorPageRenderingPath) {
-            return NextResponse.redirect(
-                request.nextUrl.searchParams.get('from') ||
-                    request.nextUrl.origin + '/'
-            )
+            const redirectUrl = request.nextUrl.searchParams.get('from') ||
+                request.nextUrl.origin + '/'
+            debugHealthCheck('Redirecting from health check error page to origin', {
+                from: errorPageRenderingPath,
+                to: redirectUrl
+            })
+            return NextResponse.redirect(redirectUrl)
         }
+        
+        debugHealthCheck('Health check passed, proceeding to next middleware')
         return await next(request, _next)
     }
 }

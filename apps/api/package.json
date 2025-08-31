@@ -5,6 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "bun --bun nest build",
+    "compile": "bun run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev": "bun run start:dev",
     "start": "bun --bun nest start --preserveWatchOutput",
@@ -17,13 +18,12 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun --bun src/db/drizzle/seed.ts",
+    "db:seed": "bun --bun src/core/modules/db/drizzle/seed.ts",
     "db:push": "drizzle-kit push",
     "db:reset": "drizzle-kit reset",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/db/drizzle/schema/auth.ts --y && bun run db:generate",
-    "openapi:print": "bun --bun ./scripts/generate-openapi.ts > openapi.json && echo 'openapi.json generated'"
+    "auth:generate": "npx @better-auth/cli generate --config src/auth.ts --output src/core/modules/db/drizzle/schema/auth.ts --y && bun run db:generate"
   },
   "dependencies": {
     "@mguay/nestjs-better-auth": "catalog:auth",

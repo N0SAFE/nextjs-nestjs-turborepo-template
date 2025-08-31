@@ -70,6 +70,8 @@
         "next-themes": "catalog:next",
         "react-hook-form": "catalog:react",
         "rimraf": "catalog:build",
+        "sonner": "catalog:ui",
+        "tw-animate-css": "catalog:ui",
         "tailwind-merge": "catalog:styling",
         "tailwindcss-animate": "catalog:styling",
         "zod": "catalog:utils"

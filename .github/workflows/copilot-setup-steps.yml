@@ -175,6 +175,19 @@ jobs:
           fi
           echo "✅ Environment configuration ready"
 
+      # Step 9: Build MCP Repo Manager (MCP server)
+      - name: Build MCP Repo Manager (MCP server)
+        run: |
+          echo "🛠 Building MCP Repo Manager (MCP server)..."
+          if [ -d packages/mcp-repo-manager ] && [ -f packages/mcp-repo-manager/package.json ]; then
+            bun --bun --cwd=packages/mcp-repo-manager run type-check || true
+            bun --bun --cwd=packages/mcp-repo-manager run build
+            ls -la packages/mcp-repo-manager/dist || true
+            echo "✅ MCP Repo Manager built successfully"
+          else
+            echo "ℹ️ packages/mcp-repo-manager not found — skipping MCP server build"
+          fi
+
       # Step 10: Verify the setup
       - name: Verify setup
         run: |
@@ -219,6 +232,8 @@ jobs:
           echo "- bun run lint         # Run linting"
           echo "- bun run format       # Format code"
           echo "- bun run clean        # Clean build artifacts"
+          echo "- bun --bun --cwd packages/mcp-repo-manager run build    # Build MCP Repo Manager (MCP server)"
+          echo "- bun --bun --cwd packages/mcp-repo-manager run dev      # Run MCP Inspector (optional)"
           echo ""
           echo "🔧 Development environment features:"
           echo "- ✅ Bun package manager"

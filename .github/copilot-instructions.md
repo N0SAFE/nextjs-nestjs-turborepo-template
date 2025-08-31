@@ -86,6 +86,7 @@ bun run api -- db:studio      # Database admin UI
 bun run build                  # Build all apps and packages
 bun run test                   # Run all tests
 bun run test:coverage          # Coverage across monorepo
+
 ```
 
 ### Database Operations

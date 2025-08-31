@@ -23,6 +23,28 @@ const guardedUrl = (name: string, fallback: string) =>
         })
         .transform(trimTrailingSlash)
 
+// Debug scope parser - transforms comma-separated scopes into structured format
+// Supports patterns like:
+// - "middleware/auth" (exact match)
+// - "middleware/*" (match all direct children)
+// - "middleware/**" (match all nested children)
+// - "middleware/{auth,router,cors}/*" (match multiple specific sub-scopes)
+// - "*" (match everything)
+// - "middleware/*,auth/test,api/{users,posts}/**" (multiple patterns)
+const parseDebugScopes = (input: string): { patterns: string[], enableAll: boolean } => {
+    if (!input || input.trim() === '') {
+        return { patterns: [], enableAll: false }
+    }
+    
+    const scopes = input.split(',').map(s => s.trim()).filter(Boolean)
+    const enableAll = scopes.includes('*')
+    
+    return {
+        patterns: scopes,
+        enableAll
+    }
+}
+
 export const envSchema = zod.object({
     REACT_SCAN_GIT_COMMIT_HASH: zod.string().optional(),
     REACT_SCAN_GIT_BRANCH: zod.string().optional(),
@@ -30,6 +52,18 @@ export const envSchema = zod.object({
     // Provide dev/test fallback; production guard above will error if missing.
     NEXT_PUBLIC_APP_URL: guardedUrl('NEXT_PUBLIC_APP_URL', LOCAL_APP_FALLBACK),
     NEXT_PUBLIC_SHOW_AUTH_LOGS: zod.coerce.boolean().optional().default(false),
+    // Debug configuration - supports advanced patterns:
+    // - "middleware/auth" (exact match)
+    // - "middleware/*" (direct children only) 
+    // - "middleware/**" (all nested children)
+    // - "middleware/{auth,router,cors}/*" (multiple sub-scopes)
+    // - "*" (everything)
+    // - "middleware/*,auth/test,api/{users,posts}/**" (multiple patterns)
+    NEXT_PUBLIC_DEBUG: zod
+        .string()
+        .optional()
+        .default('')
+        .transform(parseDebugScopes),
     // Optional docs site config; when set, used to render a Docs link in the navbar
     NEXT_PUBLIC_DOC_URL: zod
         .string()

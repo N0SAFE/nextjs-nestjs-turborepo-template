@@ -5,7 +5,7 @@
 FROM oven/bun:1.2.14-alpine
 
 # Install system dependencies
-RUN apk add --no-cache libc6-compat curl bash
+RUN apk add --no-cache libc6-compat curl bash supervisor
 
 # Install Turbo globally
 RUN bun install -g turbo@^2
@@ -22,10 +22,13 @@ COPY packages/ ./packages/
 # Install dependencies (this layer will be cached)
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install
 
+# Copy supervisord configuration to a location outside the mount
+COPY apps/web/supervisord.dev.conf /etc/supervisord.conf
+
 # Set development environment
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["bun", "run", "web", "--", "dev:docker"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

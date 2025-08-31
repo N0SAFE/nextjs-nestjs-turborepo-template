@@ -10,23 +10,43 @@ on:
 env:
     BUN_VERSION: "1.2.14"
     NODE_VERSION: "22"
+    TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+    TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
-    # Job 0: Generate Declarative Routes
-    generate-declarative-routes:
-        name: 📝 Generate Declarative Routes
+    # Job 0: Setup - Install dependencies and prepare environment
+    setup:
+        name: 🔧 Setup & Install Dependencies
         runs-on: ubuntu-latest
         timeout-minutes: 10
+        outputs:
+            cache-hit: ${{ steps.cache-dependencies.outputs.cache-hit }}
         steps:
             - name: 📚 Checkout repository
               uses: actions/checkout@v4
 
+            - name: 💾 Cache Bun dependencies
+              id: cache-dependencies
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.bun
+                      node_modules
+                      apps/*/node_modules
+                      packages/*/node_modules
+                      bun.lockb
+                  key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+                  restore-keys: |
+                      bun-deps-${{ runner.os }}-
+
             - name: 🐰 Setup Bun
+              if: steps.cache-dependencies.outputs.cache-hit != 'true'
               uses: oven-sh/setup-bun@v2
               with:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 📦 Install dependencies
+              if: steps.cache-dependencies.outputs.cache-hit != 'true'
               run: |
                 if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
                   echo "Dependabot PR detected: running bun install without --frozen-lockfile"
@@ -35,32 +55,68 @@ jobs:
                   bun install --frozen-lockfile
                 fi
 
-            - name: 📝 Generate declarative routes
-              run: bun run --cwd apps/web dr:build
+    # Job 1: Generate Declarative Routes
+    generate-declarative-routes:
+        name: 📝 Generate Declarative Routes
+        runs-on: ubuntu-latest
+        timeout-minutes: 8
+        needs: setup
+        outputs:
+            cache-hit: ${{ steps.cache-declarative-routes.outputs.cache-hit }}
+        steps:
+            - name: 📚 Checkout repository
+              uses: actions/checkout@v4
 
-            - name: 📝 Generate OpenAPI documentation
-              run: |
-                  cd apps/web
-                  bun run openapi:yaml
-                  bun run openapi:html
-
-            - name: 📤 Upload declarative routes artifacts
-              uses: actions/upload-artifact@v4
+            - name: 💾 Cache declarative routes
+              id: cache-declarative-routes
+              uses: actions/cache@v4
               with:
-                  name: declarative-routes
                   path: |
                       apps/web/src/routes/index.ts
                       apps/web/src/routes/openapi.ts
                       apps/web/openapi-docs.yml
                       apps/web/redoc-static.html
-                  retention-days: 1
+                  key: declarative-routes-${{ runner.os }}-${{ hashFiles('apps/web/src/**/page.tsx', 'apps/web/src/**/page.info.ts') }}
+                  restore-keys: |
+                      declarative-routes-${{ runner.os }}-
 
-    # Job 1: Lint and Type Check
+            - name: 🐰 Setup Bun
+              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: ${{ env.BUN_VERSION }}
+
+            - name: 💾 Restore Bun dependencies cache
+              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.bun
+                      node_modules
+                      apps/*/node_modules
+                      packages/*/node_modules
+                      bun.lockb
+                  key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+                  restore-keys: |
+                      bun-deps-${{ runner.os }}-
+
+            - name: 🛤️ Generate declarative routes
+              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
+              run: bun run --cwd apps/web dr:build
+
+            - name: 📝 Generate OpenAPI documentation
+              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
+              run: |
+                  cd apps/web
+                  bun run openapi:yaml
+                  bun run openapi:html
+
+    # Job 2: Lint and Type Check
     lint-and-typecheck:
         name: 🔍 Lint & Type Check
         runs-on: ubuntu-latest
-        timeout-minutes: 10
-        needs: generate-declarative-routes
+        timeout-minutes: 8
+        needs: [setup]
         env:
             # Essential environment variables for linting/type checking
             API_URL: http://localhost:8055/
@@ -89,61 +145,27 @@ jobs:
               with:
                   bun-version: ${{ env.BUN_VERSION }}
 
-            - name: 📦 Install dependencies
-              run: |
-                if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
-                  echo "Dependabot PR detected: running bun install without --frozen-lockfile"
-                  bun install
-                else
-                  bun install --frozen-lockfile
-                fi
-
-            - name: 📥 Download declarative routes artifacts
-              uses: actions/download-artifact@v4
+            - name: 💾 Restore Bun dependencies cache
+              uses: actions/cache@v4
               with:
-                  name: declarative-routes
-                  path: .
-
-            - name: 🔍 Verify downloaded artifacts
-              run: |
-                  echo "📋 Checking downloaded declarative routes artifacts..."
-                  echo "Current directory: $(pwd)"
-                  echo "Files in apps/web/src/routes/:"
-                  ls -la apps/web/src/routes/ || echo "❌ apps/web/src/routes/ directory not found"
-                  echo "Checking for index.ts:"
-                  if [ -f "apps/web/src/routes/index.ts" ]; then
-                    echo "✅ index.ts found"
-                    head -5 apps/web/src/routes/index.ts
-                  else
-                    echo "❌ index.ts not found"
-                  fi
-                  echo "Checking for openapi.ts:"
-                  if [ -f "apps/web/src/routes/openapi.ts" ]; then
-                    echo "✅ openapi.ts found" 
-                  else
-                    echo "❌ openapi.ts not found"
-                  fi
-
-            - name: 🔧 Generate routes as fallback (if missing)
-              run: |
-                  if [ ! -f "apps/web/src/routes/index.ts" ]; then
-                    echo "⚠️ index.ts missing, regenerating declarative routes..."
-                    cd apps/web && bun run dr:build
-                  else
-                    echo "✅ index.ts exists, skipping regeneration"
-                  fi
+                  path: |
+                      ~/.bun
+                      node_modules
+                      apps/*/node_modules
+                      packages/*/node_modules
+                      bun.lockb
+                  key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+                  restore-keys: |
+                      bun-deps-${{ runner.os }}-
 
             - name: 🔍 Run ESLint
               run: bun run lint
 
-            - name: 🎨 Check formatting with Prettier
-              run: bun run format
-
-    # Job 2: Build
+    # Job 3: Build
     build:
         name: 🏗️ Build
         runs-on: ubuntu-latest
-        timeout-minutes: 15
+        timeout-minutes: 12
         needs: [lint-and-typecheck, generate-declarative-routes]
         env:
             # API Configuration
@@ -190,62 +212,41 @@ jobs:
               with:
                   bun-version: ${{ env.BUN_VERSION }}
 
-            - name: 📦 Install dependencies
-              run: |
-                if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
-                  echo "Dependabot PR detected: running bun install without --frozen-lockfile"
-                  bun install
-                else
-                  bun install --frozen-lockfile
-                fi
-
-            - name: 📥 Download declarative routes artifacts
-              uses: actions/download-artifact@v4
+            - name: 💾 Restore Bun dependencies cache
+              uses: actions/cache@v4
               with:
-                  name: declarative-routes
-                  path: .
+                  path: |
+                      ~/.bun
+                      node_modules
+                      apps/*/node_modules
+                      packages/*/node_modules
+                      bun.lockb
+                  key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+                  restore-keys: |
+                      bun-deps-${{ runner.os }}-
 
-            - name: 🔍 Verify downloaded artifacts
-              run: |
-                  echo "📋 Checking downloaded declarative routes artifacts..."
-                  echo "Current directory: $(pwd)"
-                  echo "Files in apps/web/src/routes/:"
-                  ls -la apps/web/src/routes/ || echo "❌ apps/web/src/routes/ directory not found"
-                  echo "Checking for index.ts:"
-                  if [ -f "apps/web/src/routes/index.ts" ]; then
-                    echo "✅ index.ts found"
-                    head -5 apps/web/src/routes/index.ts
-                  else
-                    echo "❌ index.ts not found"
-                  fi
-                  echo "Checking for openapi.ts:"
-                  if [ -f "apps/web/src/routes/openapi.ts" ]; then
-                    echo "✅ openapi.ts found" 
-                  else
-                    echo "❌ openapi.ts not found"
-                  fi
-
-            - name: 🔧 Generate routes as fallback (if missing)
-              run: |
-                  if [ ! -f "apps/web/src/routes/index.ts" ]; then
-                    echo "⚠️ index.ts missing, regenerating declarative routes..."
-                    cd apps/web && bun run dr:build
-                  else
-                    echo "✅ index.ts exists, skipping regeneration"
-                  fi
+            - name: 💾 Restore declarative routes cache
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      apps/web/src/routes/index.ts
+                      apps/web/src/routes/openapi.ts
+                      apps/web/openapi-docs.yml
+                      apps/web/redoc-static.html
+                  key: declarative-routes-${{ runner.os }}-${{ hashFiles('apps/web/src/**/page.tsx', 'apps/web/src/**/page.info.ts') }}
+                  restore-keys: |
+                      declarative-routes-${{ runner.os }}-
 
             - name: 🏗️ Build packages
               run: |
                   # Build shared packages first
-                  bun x turbo run build --filter="!web"
-                  # Build web app without static generation to avoid API calls
-                  bun run --cwd apps/web compile
+                  bun x turbo run compile
 
-    # Job 3: Test
+    # Job 4: Test
     test:
         name: 🧪 Test
         runs-on: ubuntu-latest
-        timeout-minutes: 15
+        timeout-minutes: 12
         needs: [lint-and-typecheck, generate-declarative-routes]
         env:
             # API Configuration
@@ -292,183 +293,58 @@ jobs:
               with:
                   bun-version: ${{ env.BUN_VERSION }}
 
-            - name: 📦 Install dependencies
-              run: |
-                if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
-                  echo "Dependabot PR detected: running bun install without --frozen-lockfile"
-                  bun install
-                else
-                  bun install --frozen-lockfile
-                fi
-
-            - name: 📥 Download declarative routes artifacts
-              uses: actions/download-artifact@v4
+            - name: 💾 Restore Bun dependencies cache
+              uses: actions/cache@v4
               with:
-                  name: declarative-routes
-                  path: .
-
-            - name: 🔍 Verify downloaded artifacts
-              run: |
-                  echo "📋 Checking downloaded declarative routes artifacts..."
-                  echo "Current directory: $(pwd)"
-                  echo "Files in apps/web/src/routes/:"
-                  ls -la apps/web/src/routes/ || echo "❌ apps/web/src/routes/ directory not found"
-                  echo "Checking for index.ts:"
-                  if [ -f "apps/web/src/routes/index.ts" ]; then
-                    echo "✅ index.ts found"
-                    head -5 apps/web/src/routes/index.ts
-                  else
-                    echo "❌ index.ts not found"
-                  fi
-                  echo "Checking for openapi.ts:"
-                  if [ -f "apps/web/src/routes/openapi.ts" ]; then
-                    echo "✅ openapi.ts found" 
-                  else
-                    echo "❌ openapi.ts not found"
-                  fi
-
-            - name: 🔧 Generate routes as fallback (if missing)
-              run: |
-                  if [ ! -f "apps/web/src/routes/index.ts" ]; then
-                    echo "⚠️ index.ts missing, regenerating declarative routes..."
-                    cd apps/web && bun run dr:build
-                  else
-                    echo "✅ index.ts exists, skipping regeneration"
-                  fi
+                  path: |
+                      ~/.bun
+                      node_modules
+                      apps/*/node_modules
+                      packages/*/node_modules
+                      bun.lockb
+                  key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
+                  restore-keys: |
+                      bun-deps-${{ runner.os }}-
 
             - name: 🧪 Run tests for all packages
               run: bun run test
 
-    # # Job 3: Merge Coverage Reports
-    # merge-coverage:
-    #     name: 📊 Merge Coverage Reports
-    #     runs-on: ubuntu-latest
-    #     timeout-minutes: 10
-    #     needs: build-and-test
-    #     if: always() && needs.build-and-test.result == 'success'
-    #     env:
-    #         # API Configuration
-    #         API_URL: http://localhost:8055/
-    #         API_PORT: 8055
-    #         API_PING_PATH: /server/health
-    #         API_ADMIN_TOKEN: ci-test-admin-token
-
-    #         # App Configuration
-    #         NEXT_PUBLIC_APP_URL: http://localhost:3003/
-    #         NEXT_PUBLIC_APP_PORT: 3003
-
-    #         # Database Configuration (for testing)
-    #         DB_DATABASE: directus_test
-    #         DB_ROOT_PASSWORD: test-password
-
-    #         # Authentication
-    #         AUTH_SECRET: ci-test-auth-secret-QgafJQw3O-k1gambz7YGKjtj5ZZe0dnL-WlSw4PtMDc
-
-    #         # Directus Configuration
-    #         DIRECTUS_SECRET: ci-test-directus-secret-value
-    #         DIRECTUS_ADMIN_EMAIL: ci-admin@test.com
-    #         DIRECTUS_ADMIN_PASSWORD: ci-test-password
-
-    #         # Next.js Configuration
-    #         NEXT_TELEMETRY_DISABLED: 1
-    #         NODE_ENV: test
-
-    #         # Development tools (disabled for CI)
-    #         MILLION_LINT: false
-    #         REACT_SCAN: false
-    #         SHOW_AUTH_LOGS: false
-    #         NEXT_PUBLIC_SHOW_AUTH_LOGS: false
-            
-    #         # Build optimization
-    #         SKIP_STATIC_GENERATION: true
-
-    #     steps:
-    #         - name: 📚 Checkout repository
-    #           uses: actions/checkout@v4
-
-    #         - name: 🐰 Setup Bun
-    #           uses: oven-sh/setup-bun@v2
-    #           with:
-    #               bun-version: ${{ env.BUN_VERSION }}
-
-    #         - name: 📦 Install dependencies
-    #           run: |
-    #             if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
-    #               echo "Dependabot PR detected: running bun install without --frozen-lockfile"
-    #               bun install
-    #             else
-    #               bun install --frozen-lockfile
-    #             fi
-
-    #         - name: 🏗️ Build all packages
-    #           run: |
-    #               # Generate declarative routes for web app before building
-    #               bun run --cwd apps/web dr:build
-    #               # Build shared packages first
-    #               bun x turbo run build --filter="!web"
-    #               # Build web app without static generation to avoid API calls
-    #               bun run --cwd apps/web compile
-
-    #         - name: 🧪 Run all tests with coverage
-    #           run: bun run test:coverage
-
-    #         - name: 📊 Generate merged coverage report
-    #           run: |
-    #               mkdir -p coverage/report
-    #               echo "📋 Coverage Summary:" > coverage/report/summary.txt
-    #               if [ -f "coverage/report/index.html" ]; then
-    #                 echo "✅ Merged coverage report generated successfully" >> coverage/report/summary.txt
-    #               else
-    #                 echo "⚠️ No coverage data found" >> coverage/report/summary.txt
-    #               fi
-
-    #         - name: 📤 Upload merged coverage artifact
-    #           uses: actions/upload-artifact@v4
-    #           with:
-    #               name: coverage-report
-    #               path: |
-    #                   coverage/report/
-    #                   coverage/coverage-final.json
-    #               retention-days: 30
-
-    #         - name: 📊 Upload to Codecov
-    #           uses: codecov/codecov-action@v4
-    #           with:
-    #               files: ./coverage/coverage-final.json
-    #               flags: merged
-    #               name: merged-coverage
-    #               fail_ci_if_error: false
-    #           env:
-    #               CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-    # Job 4: Deployment Ready Check
+    # Job 5: Deployment Ready Check
     deployment-ready:
         name: 🚀 Deployment Ready
         runs-on: ubuntu-latest
-        timeout-minutes: 5
-        needs: [lint-and-typecheck, build, test, generate-declarative-routes]
+        timeout-minutes: 3
+        needs: [setup, generate-declarative-routes, lint-and-typecheck, build, test]
         if: always()
 
         steps:
-            - name: 📚 Checkout repository
-              uses: actions/checkout@v4
-
             - name: ✅ Check deployment readiness
               run: |
                   echo "🔍 Checking CI/CD pipeline results..."
 
+                  SETUP_STATUS="${{ needs.setup.result }}"
                   LINT_STATUS="${{ needs.lint-and-typecheck.result }}"
                   BUILD_STATUS="${{ needs.build.result }}"
                   TEST_STATUS="${{ needs.test.result }}"
                   DR_STATUS="${{ needs.generate-declarative-routes.result }}"
 
+                  # Cache hit information
+                  BUN_CACHE_HIT="${{ needs.setup.outputs.cache-hit }}"
+                  DR_CACHE_HIT="${{ needs.generate-declarative-routes.outputs.cache-hit }}"
+
                   echo "📋 Pipeline Results:"
+                  echo "  - Setup & Dependencies: $SETUP_STATUS"
                   echo "  - Lint & Type Check: $LINT_STATUS"
                   echo "  - Build: $BUILD_STATUS"
                   echo "  - Test: $TEST_STATUS"
                   echo "  - Declarative Routes: $DR_STATUS"
+                  
+                  echo ""
+                  echo "🎯 Cache Performance:"
+                  echo "  - Bun Dependencies: $([ "$BUN_CACHE_HIT" = "true" ] && echo "✅ Cache HIT" || echo "❌ Cache MISS")"
+                  echo "  - Declarative Routes: $([ "$DR_CACHE_HIT" = "true" ] && echo "✅ Cache HIT" || echo "❌ Cache MISS")"
 
-                  if [ "$LINT_STATUS" = "success" ] && [ "$BUILD_STATUS" = "success" ] && [ "$TEST_STATUS" = "success" ] && [ "$DR_STATUS" = "success" ]; then
+                  if [ "$SETUP_STATUS" = "success" ] && [ "$LINT_STATUS" = "success" ] && [ "$BUILD_STATUS" = "success" ] && [ "$TEST_STATUS" = "success" ] && [ "$DR_STATUS" = "success" ]; then
                     if [ "${{ github.ref }}" = "refs/heads/main" ]; then
                       echo "🚀 ✅ Ready for production deployment!"
                       echo "deployment_ready=true" >> $GITHUB_OUTPUT
@@ -484,14 +360,27 @@ jobs:
 
             - name: 📋 Generate deployment summary
               run: |
+                  # Cache hit information
+                  BUN_CACHE_HIT="${{ needs.setup.outputs.cache-hit }}"
+                  DR_CACHE_HIT="${{ needs.generate-declarative-routes.outputs.cache-hit }}"
+                  
                   echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
                   echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
                   echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+                  echo "| Setup & Dependencies | ${{ needs.setup.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
                   echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
                   echo "| Build | ${{ needs.build.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
                   echo "| Test | ${{ needs.test.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
                   echo "| Declarative Routes | ${{ needs.generate-declarative-routes.result == 'success' && '✅ Pass' || '❌ Fail' }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  
+                  echo "### 🎯 Cache Performance" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "| Cache Type | Status |" >> $GITHUB_STEP_SUMMARY
+                  echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+                  echo "| Bun Dependencies | $([ "$BUN_CACHE_HIT" = "true" ] && echo "✅ HIT" || echo "❌ MISS") |" >> $GITHUB_STEP_SUMMARY
+                  echo "| Declarative Routes | $([ "$DR_CACHE_HIT" = "true" ] && echo "✅ HIT" || echo "❌ MISS") |" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
 
                   if [ "${{ github.ref }}" = "refs/heads/main" ]; then

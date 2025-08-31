@@ -40,6 +40,8 @@ services:
       - NEXT_PUBLIC_DOC_URL=http://localhost:${NEXT_PUBLIC_DOC_PORT:-3020}
       - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
       - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
+      # Debug configuration
+      - NEXT_PUBLIC_DEBUG=${NEXT_PUBLIC_DEBUG}
       # Enable hot reloading
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true

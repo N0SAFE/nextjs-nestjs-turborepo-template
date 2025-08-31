@@ -89,7 +89,7 @@ services:
         - API_PING_PATH=${API_PING_PATH:-/health}
     restart: unless-stopped
     ports:
-      - "${NEXT_PUBLIC_APP_PORT:-3000}:3000"
+      - "${NEXT_PUBLIC_APP_PORT:-3000}:${NEXT_PUBLIC_APP_PORT:-3000}"
     depends_on:
       api-prod:
         condition: service_healthy

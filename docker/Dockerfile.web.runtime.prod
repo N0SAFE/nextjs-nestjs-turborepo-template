@@ -51,6 +51,7 @@ RUN bun install
 
 # Build the project (copy source files, but don't build yet - runtime will build)
 COPY --from=builder /app/out/full/ .
+RUN bun turbo run generate
 
 # Production runner
 FROM base AS runner

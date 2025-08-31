@@ -10,40 +10,62 @@ import { $Infer } from '@/lib/auth'
 import { matcherHandler } from './utils/utils'
 import { validateEnvSafe } from '#/env'
 import { toAbsoluteUrl } from '@/lib/utils'
-import { betterFetch } from '@better-fetch/fetch'
 import { Authsignin } from '@/routes/index'
+import { createDebug } from '@/lib/debug'
+import { getServerSession } from '@/lib/auth/actions'
+import { getCookieCache, getSessionCookie } from "better-auth/cookies";
+
+const debugAuth = createDebug('middleware/auth')
+const debugAuthError = createDebug('middleware/auth/error')
 
 const env = validateEnvSafe(process.env).data
 
 const showcaseRegexpAndChildren = /^\/showcase(\/.*)?$/
+const dashboardRegexpAndChildren = /^\/dashboard(\/.*)?$/
 
 const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
     if (!env) {
+        debugAuthError('Environment variables are not valid')
         throw new Error('env is not valid')
     }
     return async (request: NextRequest, _next: NextFetchEvent) => {
-        console.log(
-            `Auth Middleware: Checking authentication for ${request.nextUrl.pathname}`,
-            request.nextUrl.pathname
-        )
+        debugAuth(`Checking authentication for ${request.nextUrl.pathname}`, {
+            path: request.nextUrl.pathname
+        })
 
-        // Get session using Better Auth
-        const { data: session } = await betterFetch<typeof $Infer.Session>(
-            '/api/auth/get-session',
-            {
-                baseURL: request.nextUrl.origin,
-                headers: {
-                    cookie: request.headers.get('cookie') || '', // Forward the cookies from the request
-                },
-            }
-        )
+        // Get session using Better Auth directly
+        let sessionCookie: string | null = null
+        let sessionError: Error | unknown = null
+        const startTime = Date.now()
 
-        const isAuth = !!session
+        try {
+            debugAuth('Getting session using Better Auth')
+            
+            sessionCookie = getSessionCookie(request);
+            
+            debugAuth('Session processed:', {
+                hasSession: !!sessionCookie,
+            })
+            
+        } catch (error) {
+            console.error('Error getting session from Better Auth:', error)
+            sessionError = error
+            const duration = Date.now() - startTime
+            debugAuthError('Error getting session from Better Auth:', {
+                error: error instanceof Error ? error.message : error,
+                stack: error instanceof Error ? error.stack : undefined,
+                duration: `${duration}ms`,
+                errorType: error instanceof Error ? error.constructor.name : typeof error,
+            })
+        }
 
-        console.log(
-            `Auth Middleware: isAuth: ${isAuth}`,
-            request.nextUrl.pathname
-        )
+        const isAuth = !!sessionCookie
+
+        debugAuth(`Session result - isAuth: ${isAuth}, hasError: ${!!sessionError}`, {
+            path: request.nextUrl.pathname,
+            isAuth,
+            hasError: !!sessionError
+        })
 
         if (isAuth) {
             const matcher = matcherHandler(request.nextUrl.pathname, [
@@ -72,7 +94,8 @@ const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
             }
             return next(request, _next) // call the next middleware because the route is good
         } else {
-            // this else is hit when the user is not authenticated and on the routes listed on the export matcher
+            // User is not authenticated, redirect to login for protected routes
+            debugAuth(`Redirecting unauthenticated user from ${request.nextUrl.pathname} to signin`)
             return NextResponse.redirect(
                 toAbsoluteUrl(
                     Authsignin(
@@ -84,7 +107,7 @@ const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
                         }
                     )
                 )
-            ) // not authenticated, redirect to login
+            )
         }
     }
 }
@@ -99,7 +122,7 @@ export const matcher: Matcher = [
             {
                 or: [
                     showcaseRegexpAndChildren,
-                    '/dashboard',
+                    dashboardRegexpAndChildren,
                     '/settings',
                     '/profile',
                 ],

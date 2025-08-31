@@ -53,6 +53,7 @@ RUN bun install
 
 # Build the project
 COPY --from=builder /app/out/full/ .
+RUN bun turbo run generate
 RUN bun turbo run build
 
 # Production runner

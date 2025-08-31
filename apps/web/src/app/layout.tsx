@@ -10,7 +10,6 @@ import ReactQueryProviders from '@/utils/providers/ReactQueryProviders'
 import { Suspense, type JSX } from 'react'
 import NextAuthProviders from '@/utils/providers/NextAuthProviders/index'
 import NextTopLoader from 'nextjs-toploader'
-import Validate from '@/lib/auth/validate'
 import Script from 'next/script'
 import { validateEnv } from '#/env'
 import MainNavigation from '@/components/navigation/MainNavigation'
@@ -59,7 +58,6 @@ export default async function RootLayout({
                         <></>
                     )}
                 <NextAuthProviders>
-                    <Validate>
                         <ThemeProvider
                             attribute="class"
                             defaultTheme="system"
@@ -84,7 +82,6 @@ export default async function RootLayout({
                                 <DynamicTanstackDevTools />
                             </ReactQueryProviders>
                         </ThemeProvider>
-                    </Validate>
                 </NextAuthProviders>
             </body>
         </html>
