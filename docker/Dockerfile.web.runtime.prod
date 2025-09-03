@@ -2,7 +2,7 @@
 # Production Dockerfile for Web App - RUNTIME COMPILATION
 # This version builds the Next.js app during container startup
 # Recommended for: Docker Compose, self-hosted deployments where build time is flexible
-FROM oven/bun:1.2.14-alpine AS base
+FROM oven/bun:1.2.21-alpine AS base
 
 # Set build-time environment variables for Next.js
 ARG API_URL=http://localhost:3001
@@ -60,6 +60,11 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
+# Install Node.js to run Next.js in production (workaround for Bun segfault)
+RUN apk add --no-cache nodejs
+# Prefer system Node.js over any Bun-provided shim
+ENV PATH="/usr/bin:${PATH}"
+
 # Create npm symlink to avoid "npm not found" warnings during Next.js build
 RUN ln -sf $(which bun) /usr/local/bin/npm
 
@@ -89,4 +94,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
 WORKDIR /app/apps/web
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "bun run build:docker && bun --bun start:production"]
+CMD ["sh", "-c", "bun run build:docker && /usr/bin/node ./node_modules/.bin/next start -p ${NEXT_PUBLIC_APP_PORT}"]

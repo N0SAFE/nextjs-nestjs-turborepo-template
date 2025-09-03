@@ -14,7 +14,7 @@ import {
 import {
     Home,
     Authsignin,
-    Authme,
+    AuthMe,
     Appshowcase,
     AppshowcaseClient,
     AppshowcaseServer,
@@ -141,7 +141,7 @@ const MainNavigation: React.FC = () => {
                         <div className="bg-muted h-8 w-8 animate-pulse rounded-md" />
                     ) : session ? (
                         <div className="flex items-center space-x-2">
-                            <Authme.Link>
+                            <AuthMe.Link>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -150,7 +150,7 @@ const MainNavigation: React.FC = () => {
                                     <User className="h-4 w-4" />
                                     <span>Profile</span>
                                 </Button>
-                            </Authme.Link>
+                            </AuthMe.Link>
                             <SignOutButton />
                         </div>
                     ) : (
