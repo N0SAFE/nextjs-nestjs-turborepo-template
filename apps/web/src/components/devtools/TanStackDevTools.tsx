@@ -8,6 +8,8 @@ import {
 import {
     ReactQueryDevtoolsPanel,
 } from '@tanstack/react-query-devtools'
+import { orpc } from '@/lib/orpc'
+import { SeededUser } from '@repo/api-contracts'
 
 // Plugin Components
 const ReactQueryPlugin: TanStackDevtoolsReactPlugin = {
@@ -391,6 +393,47 @@ const AuthPluginComponent = () => {
         trustHost: true,
     })
     const [loading, setLoading] = useState(false)
+    const [autoLogin, setAutoLogin] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('devtools-auto-login') === 'true'
+        }
+        return false
+    })
+    const [seededUsers, setSeededUsers] = useState<SeededUser[]>([])
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+    const [loginLoading, setLoginLoading] = useState(false)
+
+    const fetchSeededUsers = async () => {
+        setIsLoadingUsers(true)
+        try {
+            const result = await orpcServer.devAuth.getSeededUsers({})
+            setSeededUsers(result)
+        } catch (error) {
+            console.error('Failed to fetch seeded users:', error)
+            setSeededUsers([])
+        } finally {
+            setIsLoadingUsers(false)
+        }
+    }
+
+    const handleAutoLogin = async (user: SeededUser) => {
+        if (loginLoading) return
+        setLoginLoading(true)
+        try {
+            const result = await orpcServer.devAuth.loginWithApiKey({ apiKey: user.apiKey })
+            if (result.success) {
+                console.log('✅ Auto-login successful:', result.user)
+                // Trigger a page reload to update auth state
+                window.location.reload()
+            } else {
+                console.error('❌ Auto-login failed:', result.error)
+            }
+        } catch (error) {
+            console.error('❌ Auto-login error:', error)
+        } finally {
+            setLoginLoading(false)
+        }
+    }
 
     const fetchAuthConfig = async () => {
         setLoading(true)
@@ -416,8 +459,17 @@ const AuthPluginComponent = () => {
         }
     }
 
+    const toggleAutoLogin = () => {
+        const newValue = !autoLogin
+        setAutoLogin(newValue)
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('devtools-auto-login', newValue.toString())
+        }
+    }
+
     React.useEffect(() => {
         fetchAuthConfig()
+        fetchSeededUsers()
     }, [])
 
     return (
@@ -465,6 +517,86 @@ const AuthPluginComponent = () => {
                     </div>
                 ) : (
                     <div>No authentication configuration available</div>
+                )}
+            </div>
+
+            {/* Auto-Login Toggle */}
+            <div className="rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h4 className="text-sm font-medium">Auto-Login (Development)</h4>
+                        <p className="text-xs text-gray-500">
+                            Store auto-login preference in localStorage
+                        </p>
+                    </div>
+                    <button
+                        onClick={toggleAutoLogin}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            autoLogin ? 'bg-blue-600' : 'bg-gray-200'
+                        }`}
+                    >
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                autoLogin ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                        />
+                    </button>
+                </div>
+            </div>
+
+            {/* Seeded Users with API Keys */}
+            <div className="rounded-lg border p-4">
+                <div className="mb-2 flex items-center justify-between">
+                    <h4 className="text-sm font-medium">Development Users</h4>
+                    <button
+                        onClick={fetchSeededUsers}
+                        className="rounded bg-gray-500 px-2 py-1 text-xs text-white hover:bg-gray-600"
+                        disabled={isLoadingUsers}
+                    >
+                        {isLoadingUsers ? 'Loading...' : 'Refresh'}
+                    </button>
+                </div>
+                {isLoadingUsers ? (
+                    <div className="text-sm text-gray-500">Loading users...</div>
+                ) : seededUsers.length > 0 ? (
+                    <div className="space-y-2">
+                        {seededUsers.map((user) => (
+                            <div
+                                key={user.id}
+                                className="flex items-center justify-between rounded bg-gray-50 p-3 dark:bg-gray-800"
+                            >
+                                <div className="flex items-center space-x-3">
+                                    {user.image && (
+                                        <img
+                                            src={user.image}
+                                            alt={user.name}
+                                            className="h-8 w-8 rounded-full"
+                                        />
+                                    )}
+                                    <div>
+                                        <div className="text-sm font-medium">{user.name}</div>
+                                        <div className="text-xs text-gray-500">{user.email}</div>
+                                        <div className="text-xs text-gray-400 font-mono">
+                                            API Key: {user.apiKey.slice(0, 12)}...
+                                        </div>
+                                    </div>
+                                </div>
+                                {autoLogin && (
+                                    <button
+                                        onClick={() => handleAutoLogin(user)}
+                                        disabled={loginLoading}
+                                        className="rounded bg-blue-500 px-3 py-1 text-xs text-white hover:bg-blue-600 disabled:opacity-50"
+                                    >
+                                        {loginLoading ? 'Logging in...' : 'Auto Login'}
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-sm text-gray-500">
+                        No seeded users found. Run the seed script to populate development users.
+                    </div>
                 )}
             </div>
 

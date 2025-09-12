@@ -81,3 +81,22 @@ export const passkey = pgTable("passkey", {
   createdAt: timestamp("created_at"),
   aaguid: text("aaguid"),
 });
+
+export const apiKey = pgTable("api_key", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  key: text("key").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  updatedAt: timestamp("updated_at")
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active")
+    .$defaultFn(() => true)
+    .notNull(),
+});
