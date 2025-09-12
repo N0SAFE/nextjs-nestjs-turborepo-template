@@ -5,20 +5,16 @@ import {
     TanStackDevtools,
     type TanStackDevtoolsReactPlugin,
 } from '@tanstack/react-devtools'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import {
+    ReactQueryDevtoolsPanel,
+} from '@tanstack/react-query-devtools'
 
 // Plugin Components
 const ReactQueryPlugin: TanStackDevtoolsReactPlugin = {
     id: 'react-query',
     name: 'React Query',
     render: () => (
-        <div style={{ height: '100%', width: '100%' }}>
-            <ReactQueryDevtools
-                initialIsOpen={false}
-                buttonPosition="bottom-left"
-                position="bottom"
-            />
-        </div>
+        <ReactQueryDevtoolsPanel style={{ height: '100%', width: '100%' }} />
     ),
 }
 
