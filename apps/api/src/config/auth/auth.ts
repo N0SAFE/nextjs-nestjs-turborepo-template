@@ -3,31 +3,30 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
 import { passkey } from "better-auth/plugins/passkey";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { ConfigService } from "@nestjs/config";
-import type { AppConfig } from "../app.config";
 import type { BetterAuthPlugin } from "better-auth";
 import { devTokenAuth } from "./plugins/devTokenAuth";
+import { EnvService } from "../env/env.service";
 
 export const betterAuthFactory = (...args: unknown[]) => {
-  const [database, configService] = args as [unknown, ConfigService<AppConfig>];
+  const [database, envService] = args as [unknown, EnvService];
   const dbInstance = database as NodePgDatabase<any>;
 
   const plugins = [
     passkey({
-      rpID: configService.get("passkeyRpId", { infer: true }),
-      rpName: configService.get("passkeyRpName", { infer: true }),
-      origin: configService.get("passkeyOrigin", { infer: true }),
+      rpID: envService.get("PASSKEY_RPID"),
+      rpName: envService.get("PASSKEY_RPNAME"),
+      origin: envService.get("PASSKEY_ORIGIN"),
     }),
     admin(),
   ] satisfies BetterAuthPlugin[];
 
   // Only add dev token auth in development mode AND if DEV_AUTH_KEY is set
-  if (configService.get("nodeEnv", { infer: true }) === "development") {
-    if (configService.get("devAuthKey", { infer: true })) {
+  if (envService.get("NODE_ENV") === "development") {
+    if (envService.get("DEV_AUTH_KEY")) {
       (plugins as BetterAuthPlugin[]).push(
         devTokenAuth({
           database: dbInstance,
-          configService,
+          envService,
         })
       );
     }

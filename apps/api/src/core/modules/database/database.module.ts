@@ -1,11 +1,10 @@
 import { Module, Global } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { DatabaseService } from "./services/database.service";
 import { DATABASE_CONNECTION } from "./database-connection";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "../../../config/drizzle/schema";
-import type { AppConfig } from "../../../config/app.config";
+import { EnvService } from "../../../config/env/env.service";
 
 @Global()
 @Module({
@@ -13,15 +12,15 @@ import type { AppConfig } from "../../../config/app.config";
         DatabaseService,
         {
             provide: DATABASE_CONNECTION,
-            useFactory: (configService: ConfigService<AppConfig>) => {
+            useFactory: (envService: EnvService) => {
                 const pool = new Pool({
-                    connectionString: configService.get('databaseUrl', { infer: true })
+                    connectionString: envService.get('DATABASE_URL')
                 });
                 return drizzle(pool, {
                     schema: schema
                 });
             },
-            inject: [ConfigService]
+            inject: [EnvService]
         }
     ],
     exports: [DatabaseService, DATABASE_CONNECTION]

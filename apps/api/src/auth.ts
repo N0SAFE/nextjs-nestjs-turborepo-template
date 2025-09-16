@@ -1,25 +1,17 @@
 import { betterAuthFactory } from "./config/auth/auth";
-import type { AppConfig } from "./config/app.config";
-import { configuration } from "./config/app.config";
+import { envSchema } from "./config/env/env";
 
 export type Auth = ReturnType<typeof betterAuthFactory>["auth"];
 
 // Create a minimal config service for standalone auth instance
-class SimpleConfigService {
-  private config: AppConfig;
+class SimpleEnvService {
+  private env = envSchema.parse(process.env);
 
-  constructor() {
-    this.config = configuration();
-  }
-
-  get<K extends keyof AppConfig>(
-    key: K,
-    _options?: { infer: true }
-  ): AppConfig[K] {
-    return this.config[key];
+  get<K extends keyof typeof this.env>(key: K) {
+    return this.env[key];
   }
 }
 
 // Export an auth instance using the factory with config service but no database
-const simpleConfigService = new SimpleConfigService();
-export const auth = betterAuthFactory(null, simpleConfigService as any).auth;
+const simpleEnvService = new SimpleEnvService();
+export const auth = betterAuthFactory(null, simpleEnvService).auth;

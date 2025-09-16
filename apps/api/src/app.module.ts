@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { ConfigModule } from "./config/config.module";
 import { DatabaseModule } from "./core/modules/database/database.module";
 import { HealthModule } from "./modules/health/health.module";
@@ -11,6 +10,7 @@ import { LoggerMiddleware } from "./core/middlewares/logger.middleware";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./core/modules/auth/guards/auth.guard";
 import { betterAuthFactory } from "./config/auth/auth";
+import { EnvService } from "./config/env/env.service";
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { betterAuthFactory } from "./config/auth/auth";
     AuthModule.forRootAsync({
       imports: [DatabaseModule, ConfigModule],
       useFactory: betterAuthFactory,
-      inject: [DATABASE_CONNECTION, ConfigService],
+      inject: [DATABASE_CONNECTION, EnvService],
     }),
     ORPCModule.forRoot({
       interceptors: [

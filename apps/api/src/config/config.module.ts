@@ -1,24 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
-import { configuration, configValidationSchema } from './app.config';
+import { envSchema } from './env/env';
+import { EnvModule } from './env/env.module';
 import * as path from 'path';
 
 @Module({
   imports: [
     NestConfigModule.forRoot({
-      load: [configuration],
-      validationSchema: configValidationSchema,
-      validationOptions: {
-        allowUnknown: true,
-        abortEarly: true,
-      },
+      validate: (env) => envSchema.parse(env),
       isGlobal: true,
       envFilePath: [
         path.resolve(process.cwd(), '.env'),
         path.resolve(process.cwd(), '..', '..', '.env'),
       ],
     }),
+    EnvModule,
   ],
-  exports: [NestConfigModule],
+  exports: [NestConfigModule, EnvModule],
 })
 export class ConfigModule {}

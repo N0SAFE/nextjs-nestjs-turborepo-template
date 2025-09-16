@@ -3,8 +3,7 @@ import { createAuthMiddleware } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { user as userTable } from "../../drizzle/schema/auth";
-import type { ConfigService } from "@nestjs/config";
-import type { AppConfig } from "../../app.config";
+import { EnvService } from "../../env/env.service";
 
 export interface DevTokenAuthOptions {
   /**
@@ -12,9 +11,9 @@ export interface DevTokenAuthOptions {
    */
   database: NodePgDatabase<any>;
   /**
-   * Config service for accessing environment variables
+   * Environment service for accessing environment variables
    */
-  configService: ConfigService<AppConfig>;
+  envService: EnvService;
   /**
    * Admin user email to authenticate
    */
@@ -30,13 +29,13 @@ export const devTokenAuth = (
 ): BetterAuthPlugin => {
   const {
     database,
-    configService,
+    envService,
     adminEmail = "admin@admin.com",
     tokenPrefix = "Bearer ",
   } = options;
 
-  // Get the dev auth key from config service
-  const devAuthKey = configService.get("devAuthKey", { infer: true });
+  // Get the dev auth key from environment service
+  const devAuthKey = envService.get("DEV_AUTH_KEY");
 
   const getAdminUser = async (): Promise<User | null> => {
     try {
@@ -59,7 +58,7 @@ export const devTokenAuth = (
         {
           matcher: (_context) => {
             // Only apply in development mode
-            return configService.get("nodeEnv", { infer: true }) === "development";
+            return envService.get("NODE_ENV") === "development";
           },
           handler: createAuthMiddleware(async (ctx) => {
             let authHeader: string | undefined;
