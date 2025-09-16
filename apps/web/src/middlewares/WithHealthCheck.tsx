@@ -32,7 +32,8 @@ const withHealthCheck: MiddlewareFactory = (next: NextMiddleware) => {
             try {
                 debugHealthCheck('Checking API health via ORPC in development mode')
                 try {
-                    const data = await orpcServer.health.check({})
+                    const client = await orpcServer();
+                    const data = await client.health.check({})
                     debugHealthCheck('Health check response received', { data })
                     
                     if (!(data.status === 'ok')) {

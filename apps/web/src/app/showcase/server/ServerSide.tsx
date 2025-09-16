@@ -6,7 +6,8 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
     const startTime = Date.now()
 
     try {
-        const result = await orpcServer.user.list({
+        const client = await orpcServer();
+        const result = await client.user.list({
             pagination: {
                 limit: 10,
                 offset: 0,

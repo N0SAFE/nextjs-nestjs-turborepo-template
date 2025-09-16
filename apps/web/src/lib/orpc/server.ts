@@ -1,4 +1,3 @@
-import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { createORPCClientWithCookies } from './client'
 
 // Pre-import next/headers to cache the module
@@ -10,8 +9,8 @@ export async function createServerORPCClient() {
   
   try {
     if (typeof window !== 'undefined') {
-      // Client-side: return regular client with TanStack Query utils
-      return createTanstackQueryUtils(createORPCClientWithCookies());
+      // Client-side: return regular client without TanStack Query utils
+      return createORPCClientWithCookies();
     }
     
     // Server-side: use pre-imported cookies function
@@ -23,7 +22,6 @@ export async function createServerORPCClient() {
       
       const clientStart = performance.now();
       const serverClient = createORPCClientWithCookies(cookieString);
-      const result = createTanstackQueryUtils(serverClient);
       const clientTime = performance.now() - clientStart;
       
       const totalTime = performance.now() - startTime;
@@ -33,29 +31,23 @@ export async function createServerORPCClient() {
         console.log(`🚀 ORPC Server Client created in ${totalTime.toFixed(2)}ms (cookies: ${cookiesTime.toFixed(2)}ms, client: ${clientTime.toFixed(2)}ms)`);
       }
       
-      return result;
+      return serverClient;
     } catch {
       // If we can't access cookies (build time, etc.), use unauthenticated client
       const fallbackStart = performance.now();
       const fallbackClient = createORPCClientWithCookies();
-      const result = createTanstackQueryUtils(fallbackClient);
       const fallbackTime = performance.now() - fallbackStart;
       
       // Only log in development to avoid noise in production
       if (process.env.NODE_ENV === 'development') {
         console.warn(`⚠️ Using unauthenticated ORPC client (${fallbackTime.toFixed(2)}ms) - likely build time or invalid request context`);
       }
-      return result;
+      return fallbackClient;
     }
   } catch (error) {
     const errorTime = performance.now() - startTime;
     console.warn(`❌ Failed to create server ORPC client in ${errorTime.toFixed(2)}ms:`, error);
     const fallbackClient = createORPCClientWithCookies();
-    return createTanstackQueryUtils(fallbackClient);
+    return fallbackClient;
   }
-}
-
-// Export server-side client factory for backwards compatibility
-export async function createServerORPC() {
-  return await createServerORPCClient();
 }
