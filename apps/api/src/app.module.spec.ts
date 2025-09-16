@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { AppModule, LoggerMiddleware } from '@/app.module';
+import { AppModule } from '@/app.module';
 import { Request, Response } from 'express';
+import { LoggerMiddleware } from './core/middlewares/logger.middleware';
 
 describe('AppModule', () => {
   let appModule: AppModule;

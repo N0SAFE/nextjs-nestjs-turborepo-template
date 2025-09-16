@@ -1,26 +1,25 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { passkey } from "better-auth/plugins/passkey";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { betterAuthFactory } from "./config/auth/auth";
+import type { AppConfig } from "./config/app.config";
+import { configuration } from "./config/app.config";
 
-export const betterAuthFactory = (database: unknown) => {
-    return {
-        auth: betterAuth({
-            database: drizzleAdapter(database as NodePgDatabase, {
-                provider: "pg"
-            }),
-            emailAndPassword: {
-                enabled: true
-            },
-            plugins: [
-                passkey({
-                    rpID: process.env.PASSKEY_RPID || "localhost",
-                    rpName: process.env.PASSKEY_RPNAME || "NestJS Directus Turborepo Template",
-                    origin: process.env.PASSKEY_ORIGIN || "http://localhost:3000"
-                })
-            ]
-        }) as unknown as import("better-auth").Auth
-    };
-};
+export type Auth = ReturnType<typeof betterAuthFactory>["auth"];
 
-export const { auth } = betterAuthFactory(null);
+// Create a minimal config service for standalone auth instance
+class SimpleConfigService {
+  private config: AppConfig;
+
+  constructor() {
+    this.config = configuration();
+  }
+
+  get<K extends keyof AppConfig>(
+    key: K,
+    _options?: { infer: true }
+  ): AppConfig[K] {
+    return this.config[key];
+  }
+}
+
+// Export an auth instance using the factory with config service but no database
+const simpleConfigService = new SimpleConfigService();
+export const auth = betterAuthFactory(null, simpleConfigService as any).auth;

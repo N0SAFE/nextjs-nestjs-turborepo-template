@@ -74,6 +74,11 @@ services:
             NODE_ENV: development
             API_PORT: ${API_PORT:-3005}
             DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@api-db-dev:5432/${DB_DATABASE:-nestjs_api}
+            AUTH_SECRET: ${AUTH_SECRET:-fallback-auth-secret}
+            JWT_SECRET: ${JWT_SECRET:-fallback-jwt-secret}
+            PASSKEY_RPID: ${PASSKEY_RPID:-localhost}
+            PASSKEY_RPNAME: ${PASSKEY_RPNAME:-NestJS App}
+            PASSKEY_ORIGIN: ${PASSKEY_ORIGIN:-http://localhost:3000}
             REDIS_URL: redis://api-cache-dev:6379
             NEXT_PUBLIC_WEB_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
             # CORS Configuration for cross-origin requests from web app
@@ -84,6 +89,8 @@ services:
             CHOKIDAR_USEPOLLING: "true"
             BETTER_AUTH_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
             BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-better-auth-fallback-secret}
+            # Development authentication
+            DEV_AUTH_KEY: ${DEV_AUTH_KEY:-dev-fallback-key}
             # Traefik Configuration
             TRAEFIK_DOMAIN: ${TRAEFIK_DOMAIN:-localhost}
             TRAEFIK_ACME_EMAIL: ${TRAEFIK_ACME_EMAIL:-admin@localhost}
