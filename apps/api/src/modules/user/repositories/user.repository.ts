@@ -8,6 +8,7 @@ import {
   userListInput,
 } from "@repo/api-contracts";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 export type CreateUserInput = z.infer<typeof userCreateInput>;
 export type UpdateUserInput = z.infer<typeof userUpdateInput>;
@@ -45,7 +46,7 @@ export class UserRepository {
     const newUser = await this.databaseService.db
       .insert(user)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         name: input.name,
         email: input.email,
         image: input.image || null,

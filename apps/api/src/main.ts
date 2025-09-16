@@ -1,7 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
-import { appContract } from '@repo/api-contracts';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { generateSpec } from './openapi';
 
