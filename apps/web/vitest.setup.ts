@@ -204,18 +204,18 @@ vi.mock('@/routes', () => {
     }
 
     return {
-        // Route functions from the actual routes/index.ts
-        Middlewareerrorenv: createRouteMock('/middleware/error/env'),
-        MiddlewareerrorhealthCheck: createRouteMock('/middleware/error/healthCheck'),
-        Autherror: createRouteMock('/auth/error'),
-        Authme: createRouteMock('/auth/me'),
-        Authsignin: createRouteMock('/auth/signin'),
-        Authsignup: createRouteMock('/auth/signup'),
-        Dashboard: createRouteMock('/dashboard'),
-        DashboardProjects: createRouteMock('/dashboard/projects'),
-        DashboardProjectsId: createRouteMock('/dashboard/projects/[id]'),
-        Profile: createRouteMock('/profile'),
-        Home: createRouteMock('/'), // Assuming there's a home route
+        // Route functions that match the actual routes/index.ts exports
+        Middlewareerrorenv: createRouteMock('Middlewareerrorenv'),
+        MiddlewareerrorhealthCheck: createRouteMock('MiddlewareerrorhealthCheck'),
+        Autherror: createRouteMock('Autherror'),
+        Authme: createRouteMock('Authme'),
+        Authsignin: createRouteMock('Authsignin'),
+        Authsignup: createRouteMock('Authsignup'),
+        Dashboard: createRouteMock('Dashboard'),
+        DashboardProjects: createRouteMock('DashboardProjects'),
+        DashboardProjectsId: createRouteMock('DashboardProjectsId'),
+        Profile: createRouteMock('Profile'),
+        Home: createRouteMock('Home'),
         
         // API route functions
         getApiServerHealth: vi.fn().mockReturnValue('/api/server/health'),
@@ -259,22 +259,25 @@ vi.mock('@/routes/index', () => {
         return routeFunction
     }
 
-    // Return a Proxy that creates route mocks for any accessed property
-    return new Proxy({} as Record<string, unknown>, {
-        get(target, prop) {
-            if (typeof prop !== 'string') {
-                return undefined
-            }
-            
-            // Check if we already have a cached mock for this property
-            if (!(prop in target)) {
-                // Create a route mock using the key as the path
-                target[prop] = createRouteMock(prop)
-            }
-            
-            return target[prop]
-        }
-    })
+    // Return static pre-defined routes to avoid proxy performance issues
+    return {
+        // Common routes that are actually used in the codebase (matching @/routes mock)
+        Middlewareerrorenv: createRouteMock('Middlewareerrorenv'),
+        MiddlewareerrorhealthCheck: createRouteMock('MiddlewareerrorhealthCheck'),
+        Autherror: createRouteMock('Autherror'),
+        Authme: createRouteMock('Authme'),
+        Authsignin: createRouteMock('Authsignin'),
+        Authsignup: createRouteMock('Authsignup'),
+        Dashboard: createRouteMock('Dashboard'),
+        DashboardProjects: createRouteMock('DashboardProjects'),
+        DashboardProjectsId: createRouteMock('DashboardProjectsId'),
+        Profile: createRouteMock('Profile'),
+        Home: createRouteMock('Home'),
+        
+        // API route functions
+        getApiServerHealth: vi.fn().mockReturnValue('/api/server/health'),
+        getApiServerPing: vi.fn().mockReturnValue('/api/server/ping'),
+    }
 })
 
 // Mock @/routes/hooks for route hooks
@@ -282,4 +285,31 @@ vi.mock('@/routes/hooks', () => ({
     useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),
     usePush: vi.fn().mockReturnValue(vi.fn()),
     useParams: vi.fn().mockReturnValue({}),
+}))
+
+// Mock @/lib/debug to prevent timeout issues
+vi.mock('@/lib/debug', () => ({
+    createDebug: vi.fn().mockReturnValue(vi.fn()),
+}))
+
+// Mock @/lib/utils to prevent timeout issues
+vi.mock('@/lib/utils', () => ({
+    toAbsoluteUrl: vi.fn().mockImplementation((path) => `http://localhost:3000${path}`),
+    cn: vi.fn().mockImplementation((...args) => args.filter(Boolean).join(' ')),
+}))
+
+// Mock middleware utilities to prevent timeout issues
+vi.mock('../middlewares/utils/utils', () => ({
+    matcherHandler: vi.fn().mockReturnValue({ hit: false }),
+}))
+
+vi.mock('../middlewares/utils/static', () => ({
+    nextjsRegexpPageOnly: [],
+    nextNoApi: [],
+    noPublic: [],
+}))
+
+// Mock the WithEnv middleware specifically to prevent timeout issues
+vi.mock('../middlewares/WithEnv', () => ({
+    default: vi.fn().mockReturnValue(vi.fn().mockResolvedValue(undefined)),
 }))
