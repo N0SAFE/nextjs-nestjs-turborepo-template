@@ -1,9 +1,6 @@
 import { createORPCClientWithCookies } from './client'
 
-// Pre-import next/headers to cache the module
-import { cookies } from 'next/headers'
-
-// Create server-side client factory with cached next/headers import
+// Create server-side client factory with dynamic next/headers import
 export async function createServerORPCClient() {
   const startTime = performance.now();
   
@@ -13,9 +10,11 @@ export async function createServerORPCClient() {
       return createORPCClientWithCookies();
     }
     
-    // Server-side: use pre-imported cookies function
+    // Server-side: dynamically import and use cookies function
     try {
       const cookiesStart = performance.now();
+      // Dynamic import to avoid build-time issues
+      const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
       const cookieString = cookieStore.toString();
       const cookiesTime = performance.now() - cookiesStart;
