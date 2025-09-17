@@ -151,6 +151,8 @@ services:
             # Auth configuration
             - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-better-auth-fallback-secret}
             - BETTER_AUTH_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+            # Development authentication
+            - NEXT_PUBLIC_DEV_AUTH_KEY=${NEXT_PUBLIC_DEV_AUTH_KEY:-${DEV_AUTH_KEY:-dev-fallback-key}}
             # Docs URL (for navbar link)
             - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
             - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:${NEXT_PUBLIC_DOC_PORT:-3020}}

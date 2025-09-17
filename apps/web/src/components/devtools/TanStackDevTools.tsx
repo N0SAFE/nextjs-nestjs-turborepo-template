@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import {
     TanStackDevtools,
     type TanStackDevtoolsReactPlugin,
@@ -9,7 +10,8 @@ import {
     ReactQueryDevtoolsPanel,
 } from '@tanstack/react-query-devtools'
 import { orpc } from '@/lib/orpc'
-import { SeededUser } from '@repo/api-contracts'
+import { getDevAuthEnabled, setDevAuthEnabled, clearDevAuth } from '@/lib/dev-auth-cookie'
+import { useQuery } from '@tanstack/react-query'
 
 // Plugin Components
 const ReactQueryPlugin: TanStackDevtoolsReactPlugin = {
@@ -393,47 +395,38 @@ const AuthPluginComponent = () => {
         trustHost: true,
     })
     const [loading, setLoading] = useState(false)
-    const [autoLogin, setAutoLogin] = useState<boolean>(() => {
+    const [devAuthEnabled, setDevAuthEnabledState] = useState<boolean>(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('devtools-auto-login') === 'true'
+            return getDevAuthEnabled()
         }
         return false
     })
-    const [seededUsers, setSeededUsers] = useState<SeededUser[]>([])
-    const [isLoadingUsers, setIsLoadingUsers] = useState(false)
-    const [loginLoading, setLoginLoading] = useState(false)
 
-    const fetchSeededUsers = async () => {
-        setIsLoadingUsers(true)
-        try {
-            const result = await orpcServer.devAuth.getSeededUsers({})
-            setSeededUsers(result)
-        } catch (error) {
-            console.error('Failed to fetch seeded users:', error)
-            setSeededUsers([])
-        } finally {
-            setIsLoadingUsers(false)
-        }
-    }
+    // User datatable state - simplified for useQuery
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+    })
+    const [sortBy, setSortBy] = useState<'name' | 'email' | 'createdAt' | 'updatedAt'>('createdAt')
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-    const handleAutoLogin = async (user: SeededUser) => {
-        if (loginLoading) return
-        setLoginLoading(true)
-        try {
-            const result = await orpcServer.devAuth.loginWithApiKey({ apiKey: user.apiKey })
-            if (result.success) {
-                console.log('✅ Auto-login successful:', result.user)
-                // Trigger a page reload to update auth state
-                window.location.reload()
-            } else {
-                console.error('❌ Auto-login failed:', result.error)
+    // Use TanStack Query for user data
+    const usersQuery = useQuery(
+        orpc.user.list.queryOptions({
+            input: {
+                pagination: {
+                    limit: pagination.limit,
+                    offset: (pagination.page - 1) * pagination.limit,
+                },
+                sort: {
+                    field: sortBy,
+                    direction: sortOrder,
+                },
             }
-        } catch (error) {
-            console.error('❌ Auto-login error:', error)
-        } finally {
-            setLoginLoading(false)
-        }
-    }
+        })
+    )
+
+    const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = usersQuery
 
     const fetchAuthConfig = async () => {
         setLoading(true)
@@ -459,21 +452,61 @@ const AuthPluginComponent = () => {
         }
     }
 
-    const toggleAutoLogin = () => {
-        const newValue = !autoLogin
-        setAutoLogin(newValue)
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('devtools-auto-login', newValue.toString())
+    const handlePageChange = (newPage: number) => {
+        setPagination(prev => ({ ...prev, page: newPage }))
+    }
+
+    const handleSort = (field: 'name' | 'email' | 'createdAt' | 'updatedAt') => {
+        const newOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
+        setSortBy(field)
+        setSortOrder(newOrder)
+    }
+
+    const toggleDevAuth = () => {
+        const newValue = !devAuthEnabled
+        setDevAuthEnabledState(newValue)
+        setDevAuthEnabled(newValue)
+        
+        if (newValue) {
+            console.log('🔑 Dev auth token mode enabled - future requests will use Bearer token authentication')
+        } else {
+            console.log('🔓 Dev auth token mode disabled - using normal cookie authentication')
         }
     }
 
     React.useEffect(() => {
         fetchAuthConfig()
-        fetchSeededUsers()
+        
+        // Log dev auth configuration status
+        if (process.env.NODE_ENV === 'development') {
+            const hasDevAuthKey = !!process.env.NEXT_PUBLIC_DEV_AUTH_KEY;
+            console.log('🔧 DevTools Auth Plugin initialized:', {
+                devAuthEnabled: devAuthEnabled,
+                hasDevAuthKey: hasDevAuthKey,
+                devAuthKey: hasDevAuthKey ? `${process.env.NEXT_PUBLIC_DEV_AUTH_KEY?.slice(0, 8)}...` : 'Not configured'
+            });
+        }
     }, [])
 
     return (
         <div className="space-y-4 p-4">
+            {/* Dev Auth Status Banner */}
+            {devAuthEnabled && (
+                <div className="rounded-lg border-orange-200 bg-orange-50 border p-4 dark:bg-orange-900/20 dark:border-orange-800">
+                    <div className="flex items-center space-x-2">
+                        <span className="text-orange-600 dark:text-orange-400">🔑</span>
+                        <div>
+                            <h4 className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                                Dev Auth Token Mode Active
+                            </h4>
+                            <p className="text-xs text-orange-600 dark:text-orange-400">
+                                All API requests are using Bearer token authentication with admin privileges
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             <div className="rounded-lg border p-4">
                 <h3 className="mb-2 text-lg font-semibold">
                     Authentication Configuration
@@ -520,82 +553,186 @@ const AuthPluginComponent = () => {
                 )}
             </div>
 
-            {/* Auto-Login Toggle */}
+            {/* Dev Auth Token Toggle */}
             <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h4 className="text-sm font-medium">Auto-Login (Development)</h4>
+                        <h4 className="text-sm font-medium">Dev Auth Token Mode</h4>
                         <p className="text-xs text-gray-500">
-                            Store auto-login preference in localStorage
+                            Use Bearer token for all API requests (bypasses normal auth)
                         </p>
+                        {devAuthEnabled && (
+                            <p className="text-xs text-orange-600 mt-1">
+                                ⚠️ Active: All requests use admin Bearer token
+                            </p>
+                        )}
                     </div>
                     <button
-                        onClick={toggleAutoLogin}
+                        onClick={toggleDevAuth}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            autoLogin ? 'bg-blue-600' : 'bg-gray-200'
+                            devAuthEnabled ? 'bg-orange-600' : 'bg-gray-200'
                         }`}
                     >
                         <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                autoLogin ? 'translate-x-6' : 'translate-x-1'
+                                devAuthEnabled ? 'translate-x-6' : 'translate-x-1'
                             }`}
                         />
                     </button>
                 </div>
             </div>
 
-            {/* Seeded Users with API Keys */}
+            {/* User Datatable */}
             <div className="rounded-lg border p-4">
-                <div className="mb-2 flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Development Users</h4>
-                    <button
-                        onClick={fetchSeededUsers}
-                        className="rounded bg-gray-500 px-2 py-1 text-xs text-white hover:bg-gray-600"
-                        disabled={isLoadingUsers}
-                    >
-                        {isLoadingUsers ? 'Loading...' : 'Refresh'}
-                    </button>
-                </div>
-                {isLoadingUsers ? (
-                    <div className="text-sm text-gray-500">Loading users...</div>
-                ) : seededUsers.length > 0 ? (
-                    <div className="space-y-2">
-                        {seededUsers.map((user) => (
-                            <div
-                                key={user.id}
-                                className="flex items-center justify-between rounded bg-gray-50 p-3 dark:bg-gray-800"
-                            >
-                                <div className="flex items-center space-x-3">
-                                    {user.image && (
-                                        <img
-                                            src={user.image}
-                                            alt={user.name}
-                                            className="h-8 w-8 rounded-full"
-                                        />
-                                    )}
-                                    <div>
-                                        <div className="text-sm font-medium">{user.name}</div>
-                                        <div className="text-xs text-gray-500">{user.email}</div>
-                                        <div className="text-xs text-gray-400 font-mono">
-                                            API Key: {user.apiKey.slice(0, 12)}...
-                                        </div>
-                                    </div>
-                                </div>
-                                {autoLogin && (
-                                    <button
-                                        onClick={() => handleAutoLogin(user)}
-                                        disabled={loginLoading}
-                                        className="rounded bg-blue-500 px-3 py-1 text-xs text-white hover:bg-blue-600 disabled:opacity-50"
-                                    >
-                                        {loginLoading ? 'Logging in...' : 'Auto Login'}
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                <div className="mb-4 flex items-center justify-between">
+                    <h4 className="text-lg font-semibold">Users</h4>
+                    <div className="flex items-center space-x-2">
+                        <select
+                            value={pagination.limit}
+                            onChange={(e) => setPagination(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
+                            className="rounded border px-2 py-1 text-sm"
+                        >
+                            <option value={5}>5 per page</option>
+                            <option value={10}>10 per page</option>
+                            <option value={25}>25 per page</option>
+                            <option value={50}>50 per page</option>
+                        </select>
+                        <button
+                            onClick={() => refetchUsers()}
+                            className="rounded bg-gray-500 px-3 py-1 text-xs text-white hover:bg-gray-600"
+                            disabled={usersLoading}
+                        >
+                            {usersLoading ? 'Loading...' : 'Refresh'}
+                        </button>
                     </div>
-                ) : (
-                    <div className="text-sm text-gray-500">
-                        No seeded users found. Run the seed script to populate development users.
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="p-2 text-left">
+                                    <button
+                                        onClick={() => handleSort('name')}
+                                        className="flex items-center space-x-1 hover:text-blue-600"
+                                    >
+                                        <span>Name</span>
+                                        {sortBy === 'name' && (
+                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </button>
+                                </th>
+                                <th className="p-2 text-left">
+                                    <button
+                                        onClick={() => handleSort('email')}
+                                        className="flex items-center space-x-1 hover:text-blue-600"
+                                    >
+                                        <span>Email</span>
+                                        {sortBy === 'email' && (
+                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </button>
+                                </th>
+                                <th className="p-2 text-left">
+                                    <button
+                                        onClick={() => handleSort('createdAt')}
+                                        className="flex items-center space-x-1 hover:text-blue-600"
+                                    >
+                                        <span>Created</span>
+                                        {sortBy === 'createdAt' && (
+                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </button>
+                                </th>
+                                <th className="p-2 text-left">
+                                    <button
+                                        onClick={() => handleSort('updatedAt')}
+                                        className="flex items-center space-x-1 hover:text-blue-600"
+                                    >
+                                        <span>Updated</span>
+                                        {sortBy === 'updatedAt' && (
+                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                    </button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {usersLoading ? (
+                                <tr>
+                                    <td colSpan={4} className="p-4 text-center text-gray-500">
+                                        Loading users...
+                                    </td>
+                                </tr>
+                            ) : usersData?.users.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="p-4 text-center text-gray-500">
+                                        No users found
+                                    </td>
+                                </tr>
+                            ) : (
+                                usersData?.users.map((user) => (
+                                    <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                                        <td className="p-2">
+                                            <div className="flex items-center space-x-2">
+                                                {user.image && (
+                                                    <Image
+                                                        src={user.image}
+                                                        alt={user.name}
+                                                        width={24}
+                                                        height={24}
+                                                        className="h-6 w-6 rounded-full"
+                                                    />
+                                                )}
+                                                <span className="font-medium">{user.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-2">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                {user.email}
+                                            </span>
+                                            {user.emailVerified && (
+                                                <span className="ml-2 text-green-600">✓</span>
+                                            )}
+                                        </td>
+                                        <td className="p-2 text-sm text-gray-500">
+                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="p-2 text-sm text-gray-500">
+                                            {new Date(user.updatedAt).toLocaleDateString()}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Pagination */}
+                {usersData && usersData.meta.pagination.total > pagination.limit && (
+                    <div className="mt-4 flex items-center justify-between">
+                        <div className="text-sm text-gray-500">
+                            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, usersData.meta.pagination.total)} of {usersData.meta.pagination.total} users
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                                disabled={pagination.page === 1}
+                                className="rounded border px-3 py-1 text-sm disabled:opacity-50 hover:bg-gray-50"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-sm">
+                                Page {pagination.page} of {Math.ceil(usersData.meta.pagination.total / pagination.limit)}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                                disabled={pagination.page >= Math.ceil(usersData.meta.pagination.total / pagination.limit)}
+                                className="rounded border px-3 py-1 text-sm disabled:opacity-50 hover:bg-gray-50"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

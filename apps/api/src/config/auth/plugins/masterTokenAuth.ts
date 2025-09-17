@@ -1,5 +1,6 @@
 // plugins/master-token/index.ts
 import type { BetterAuthPlugin } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 
 interface MasterTokenOptions {
   masterToken: string;
@@ -38,7 +39,7 @@ export const masterTokenPlugin = (
               context.path.includes("/session")
             );
           },
-          handler: async (ctx) => {
+          handler: createAuthMiddleware(async (ctx) => {
             if (!enabled) return;
 
             // Check for master token
@@ -81,60 +82,7 @@ export const masterTokenPlugin = (
               }
             }
             return ctx;
-          },
-        },
-      ],
-      before: [
-        {
-          matcher: (context) => {
-            // For non-session endpoints that need authentication
-            const publicRoutes = [
-              "/sign-up",
-              "/sign-in",
-              "/forgot-password",
-              "/verify-email",
-            ];
-            return !publicRoutes.some((route) =>
-              context.path.startsWith(route)
-            );
-          },
-          handler: async (ctx) => {
-            if (!enabled) return;
-
-            const authHeader = ctx.headers?.get("authorization");
-
-            if (authHeader?.startsWith("Bearer ")) {
-              const token = authHeader.substring(7);
-
-              if (token === masterToken) {
-                // Inject session data into context
-                const session = {
-                  id: `master-session-${Date.now()}`,
-                  userId: masterUser.id!,
-                  expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                  userAgent: ctx.headers?.get("user-agent") || "unknown",
-                };
-
-                const user = {
-                  id: masterUser.id!,
-                  email: masterUser.email!,
-                  emailVerified: true,
-                  name: masterUser.name!,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                };
-
-                // Modify the context to include session
-                return {
-                  context: {
-                    ...ctx,
-                    session,
-                    user,
-                  },
-                };
-              }
-            }
-          },
+          }),
         },
       ],
     },
