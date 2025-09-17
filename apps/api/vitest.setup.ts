@@ -1,6 +1,17 @@
 import { beforeAll, beforeEach, afterAll, vi } from 'vitest';
 import 'reflect-metadata';
 
+// Set up test environment variables BEFORE any other imports to ensure they're available
+// when modules are loaded and the env schema is validated
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
+process.env.AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
+process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+process.env.API_PORT = '3001';
+process.env.PASSKEY_RPID = 'localhost';
+process.env.PASSKEY_RPNAME = 'NestJS Directus Turborepo Template';
+process.env.PASSKEY_ORIGIN = 'http://localhost:3000';
+
 // Global test setup for NestJS API
 beforeEach(() => {
   // Clear all mocks before each test
@@ -9,12 +20,6 @@ beforeEach(() => {
 
 // Mock environment variables for testing
 beforeAll(() => {
-  // Set up test environment variables
-  process.env.NODE_ENV = 'test';
-  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
-  process.env.BETTER_AUTH_SECRET = 'test-secret-key-for-testing-only';
-  process.env.BETTER_AUTH_URL = 'http://localhost:3000';
-
   // Mock console methods for cleaner test output
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});

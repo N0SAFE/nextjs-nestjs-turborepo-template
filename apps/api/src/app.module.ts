@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { ConfigModule } from "./config/config.module";
 import { DatabaseModule } from "./core/modules/database/database.module";
 import { HealthModule } from "./modules/health/health.module";
 import { UserModule } from "./modules/user/user.module";
@@ -7,22 +6,24 @@ import { onError, ORPCModule } from "@orpc/nest";
 import { DATABASE_CONNECTION } from "./core/modules/database/database-connection";
 import { AuthModule } from "./core/modules/auth/auth.module";
 import { LoggerMiddleware } from "./core/middlewares/logger.middleware";
-import { APP_GUARD } from "@nestjs/core";
-import { AuthGuard } from "./core/modules/auth/guards/auth.guard";
 import { betterAuthFactory } from "./config/auth/auth";
 import { EnvService } from "./config/env/env.service";
+import { EnvModule } from "./config/env/env.module";
+import { APP_GUARD } from "@nestjs/core";
+import { AuthGuard } from "./core/modules/auth/guards/auth.guard";
+import { RoleGuard } from "./core/modules/auth/guards/role.guard";
 
 @Module({
   imports: [
-    ConfigModule,
+    EnvModule,
     DatabaseModule,
-    HealthModule,
-    UserModule,
     AuthModule.forRootAsync({
-      imports: [DatabaseModule, ConfigModule],
+      imports: [DatabaseModule, EnvModule],
       useFactory: betterAuthFactory,
       inject: [DATABASE_CONNECTION, EnvService],
     }),
+    HealthModule,
+    UserModule,
     ORPCModule.forRoot({
       interceptors: [
         onError((error, ctx) => {
@@ -40,6 +41,10 @@ import { EnvService } from "./config/env/env.service";
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
     },
   ],
 })

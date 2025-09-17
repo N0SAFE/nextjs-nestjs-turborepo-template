@@ -29,6 +29,7 @@ import {
   HOOK_KEY,
 } from "./types/symbols";
 import { AuthController } from "./controllers/auth.controller";
+import { AuthGuard } from "./guards/auth.guard";
 import type { Auth } from "@/core/modules/auth/types/auth";
 
 /**
@@ -102,6 +103,7 @@ const HOOKS = [
  */
 @Module({
   imports: [DiscoveryModule],
+  providers: [AuthGuard],
 })
 export class AuthModule implements NestModule, OnModuleInit {
   private readonly logger = new Logger(AuthModule.name);
@@ -246,6 +248,7 @@ export class AuthModule implements NestModule, OnModuleInit {
         useValue: options,
       },
       AuthService,
+      AuthGuard,
     ];
 
     if (!options.disableExceptionFilter) {
@@ -270,6 +273,7 @@ export class AuthModule implements NestModule, OnModuleInit {
           useValue: options,
         },
         AuthService,
+        AuthGuard,
       ],
     };
   }
@@ -292,7 +296,7 @@ export class AuthModule implements NestModule, OnModuleInit {
       global: true,
       module: AuthModule,
       imports: options.imports || [],
-      providers: [...asyncProviders, AuthService],
+      providers: [...asyncProviders, AuthService, AuthGuard],
       controllers: [AuthController],
       exports: [
         {
@@ -304,6 +308,7 @@ export class AuthModule implements NestModule, OnModuleInit {
           useExisting: AUTH_MODULE_OPTIONS_KEY,
         },
         AuthService,
+        AuthGuard,
       ],
     };
   }

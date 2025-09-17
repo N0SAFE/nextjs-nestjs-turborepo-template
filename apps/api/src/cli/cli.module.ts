@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '../config/config.module';
+import { EnvModule } from '../config/env/env.module';
 import { DatabaseModule } from '../core/modules/database/database.module';
 import { AuthModule } from '../core/modules/auth/auth.module';
 import { DATABASE_CONNECTION } from '../core/modules/database/database-connection';
@@ -11,10 +11,10 @@ import { EnvService } from '@/config/env/env.service';
 
 @Module({
   imports: [
-    ConfigModule,
+    EnvModule,
     DatabaseModule,
     AuthModule.forRootAsync({
-      imports: [DatabaseModule, ConfigModule],
+      imports: [DatabaseModule, EnvModule],
       useFactory: betterAuthFactory,
       inject: [DATABASE_CONNECTION, EnvService],
     }),
