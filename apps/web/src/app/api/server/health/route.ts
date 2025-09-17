@@ -18,7 +18,7 @@ export async function GET() {
 
         try {
             // Check the NestJS API health endpoint using ORPC
-            const apiRes = await orpc.health.check({})
+            const apiRes = await orpc.health.check.call({})
 
             if (apiRes.status === 'ok') {
                 return NextResponse.json({

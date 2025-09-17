@@ -3,11 +3,13 @@ import { Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { AUTH_INSTANCE_KEY } from "../types/symbols";
 import type { Auth } from "@/core/modules/auth/types/auth";
+import { Public } from "../decorators/decorators";
 
 /**
  * Controller that handles all Better Auth routes using NestJS routing system
  */
 @Controller('api/auth')
+@Public()
 export class AuthController {
 	private readonly logger = new Logger(AuthController.name);
 	private handler: ReturnType<typeof toNodeHandler>;
