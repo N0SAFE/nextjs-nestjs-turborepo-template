@@ -3,6 +3,7 @@ import { createAuthClient } from 'better-auth/react'
 import { passkeyClient } from 'better-auth/client/plugins'
 import masterTokenClient from './plugins/masterToken'
 import { hasMasterTokenPlugin } from './plugins/guards'
+import { loginAsClientPlugin } from './plugins/loginAs'
 
 const appUrl = validateEnvPath(
     process.env.NEXT_PUBLIC_APP_URL!,
@@ -12,7 +13,7 @@ const appUrl = validateEnvPath(
 export const authClient = createAuthClient({
     basePath: '/api/auth',
     baseURL: appUrl,
-    plugins: [passkeyClient(), masterTokenClient()],
+    plugins: [passkeyClient(), masterTokenClient(), loginAsClientPlugin()],
 })
 
 export const {

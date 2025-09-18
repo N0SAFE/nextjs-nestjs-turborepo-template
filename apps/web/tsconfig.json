@@ -13,7 +13,8 @@
             "@/*": ["./src/*"],
             "#/*": ["./*"],
             "@repo/nextjs-devtool": ["../../packages/nextjs-devtool/src"],
-            "@repo/*": ["../../packages/*"]
+            "@repo/*": ["../../packages/*"],
+            "@api/*": ["../api/src/*"]
         },
         "target": "ES2017"
     },
