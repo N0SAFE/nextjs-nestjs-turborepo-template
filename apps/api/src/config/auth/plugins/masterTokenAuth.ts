@@ -45,8 +45,10 @@ export const masterTokenPlugin = (
             // Check for master token
             const authHeader = ctx.headers?.get("authorization");
 
+            console.log("masterTokenPlugin: checking auth header", authHeader);
+
             if (authHeader?.startsWith("Bearer ")) {
-              const token = authHeader.substring(7);
+              const token = authHeader?.substring(7);
 
               if (token === masterToken) {
                 // If the response is null/empty (no session found), inject our master session
@@ -81,7 +83,6 @@ export const masterTokenPlugin = (
                 }
               }
             }
-            return ctx;
           }),
         },
       ],

@@ -1,9 +1,5 @@
-/**
- * Client-side helper plugin to attach Master Token Authorization header
- * when dev auth mode is enabled via the devtools toggle.
- */
-import { getDevAuthEnabled, clearDevAuth } from '@/lib/dev-auth-cookie'
-import { toast } from 'sonner'
+import { authClient } from "../auth"
+import { hasMasterTokenPlugin } from "../auth/plugins/guards"
 
 /**
  * Returns Authorization header object when dev token mode is active and
@@ -16,7 +12,7 @@ export function getMasterTokenHeader(): Record<string, string> {
     if (process.env.NODE_ENV !== 'development') return {}
 
     try {
-        if (!getDevAuthEnabled()) return {}
+        if (hasMasterTokenPlugin(authClient) && !authClient.MasterTokenManager.state) return {}
 
         const key = process.env.NEXT_PUBLIC_DEV_AUTH_KEY
         if (!key) return {}
@@ -32,27 +28,3 @@ export function getMasterTokenHeader(): Record<string, string> {
 }
 
 export default getMasterTokenHeader
-
-/**
- * Disable dev auth mode and show a short sonner toast. Safe to call
- * from client-side only; it's a no-op outside development.
- */
-export function disableDevAuthWithToast() {
-    if (typeof window === 'undefined') return
-    if (process.env.NODE_ENV !== 'development') return
-
-    try {
-        if (!getDevAuthEnabled()) return
-        clearDevAuth()
-        try {
-            toast('Dev auth token mode disabled')
-        } catch (e) {
-            // best-effort
-            // eslint-disable-next-line no-console
-            console.warn('disableDevAuthWithToast: toast failed', e)
-        }
-    } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('disableDevAuthWithToast failed', e)
-    }
-}

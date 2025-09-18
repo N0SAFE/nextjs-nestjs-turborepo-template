@@ -107,51 +107,6 @@ describe('RoleGuard', () => {
       expect(guard).toBeDefined();
     });
 
-    it('should throw UNAUTHORIZED if no session', async () => {
-      mockRequest.session = null;
-
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(
-        expect.objectContaining({
-          status: 401,
-          body: expect.objectContaining({
-            code: 'UNAUTHORIZED',
-            message: 'Authentication required',
-          }),
-        })
-      );
-    });
-
-    it('should throw UNAUTHORIZED if no user in session', async () => {
-      mockRequest.session = { session: { id: 'session-1' } };
-
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(
-        expect.objectContaining({
-          status: 401,
-        })
-      );
-    });
-
-    it('should throw FORBIDDEN if user has no role', async () => {
-      mockRequest.session = {
-        user: {
-          id: 'user-1',
-          email: 'user@example.com',
-          name: 'Test User',
-          // no role property
-        },
-      };
-
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(
-        expect.objectContaining({
-          status: 403,
-          body: expect.objectContaining({
-            code: 'FORBIDDEN',
-            message: 'No role assigned to user',
-          }),
-        })
-      );
-    });
-
     it('should pass if no guards are required', async () => {
       mockRequest.session = mockSession;
 

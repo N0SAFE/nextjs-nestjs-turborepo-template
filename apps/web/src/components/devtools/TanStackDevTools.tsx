@@ -6,12 +6,12 @@ import {
     TanStackDevtools,
     type TanStackDevtoolsReactPlugin,
 } from '@tanstack/react-devtools'
-import {
-    ReactQueryDevtoolsPanel,
-} from '@tanstack/react-query-devtools'
+import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import { orpc } from '@/lib/orpc'
-import { getDevAuthEnabled, setDevAuthEnabled, clearDevAuth } from '@/lib/dev-auth-cookie'
 import { useQuery } from '@tanstack/react-query'
+import { authClient } from '@/lib/auth'
+import { useMasterToken } from '@/lib/auth/plugins/masterToken/components/provider'
+import { hasMasterTokenPlugin } from '@/lib/auth/plugins/guards'
 
 // Plugin Components
 const ReactQueryPlugin: TanStackDevtoolsReactPlugin = {
@@ -380,6 +380,10 @@ const CLIPlugin: TanStackDevtoolsReactPlugin = {
 
 // Auth Plugin Component
 const AuthPluginComponent = () => {
+    if (!hasMasterTokenPlugin(authClient)) {
+        return <div className="p-4">Auth client not configured</div>
+    }
+    const { enabled: devAuthEnabled, setEnabled } = useMasterToken()
     const [authConfig, setAuthConfig] = useState<{
         databaseUrl: string
         baseUrl: string
@@ -395,19 +399,15 @@ const AuthPluginComponent = () => {
         trustHost: true,
     })
     const [loading, setLoading] = useState(false)
-    const [devAuthEnabled, setDevAuthEnabledState] = useState<boolean>(() => {
-        if (typeof window !== 'undefined') {
-            return getDevAuthEnabled()
-        }
-        return false
-    })
 
     // User datatable state - simplified for useQuery
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 10,
     })
-    const [sortBy, setSortBy] = useState<'name' | 'email' | 'createdAt' | 'updatedAt'>('createdAt')
+    const [sortBy, setSortBy] = useState<
+        'name' | 'email' | 'createdAt' | 'updatedAt'
+    >('createdAt')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
     // Use TanStack Query for user data
@@ -422,11 +422,21 @@ const AuthPluginComponent = () => {
                     field: sortBy,
                     direction: sortOrder,
                 },
-            }
+            },
+            context: {
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY}`,
+                },
+                noRedirectOnUnauthorized: true,
+            },
         })
     )
 
-    const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = usersQuery
+    const {
+        data: usersData,
+        isLoading: usersLoading,
+        refetch: refetchUsers,
+    } = usersQuery
 
     const fetchAuthConfig = async () => {
         setLoading(true)
@@ -453,60 +463,42 @@ const AuthPluginComponent = () => {
     }
 
     const handlePageChange = (newPage: number) => {
-        setPagination(prev => ({ ...prev, page: newPage }))
+        setPagination((prev) => ({ ...prev, page: newPage }))
     }
 
-    const handleSort = (field: 'name' | 'email' | 'createdAt' | 'updatedAt') => {
-        const newOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
+    const handleSort = (
+        field: 'name' | 'email' | 'createdAt' | 'updatedAt'
+    ) => {
+        const newOrder =
+            sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
         setSortBy(field)
         setSortOrder(newOrder)
     }
 
-    const toggleDevAuth = () => {
-        const newValue = !devAuthEnabled
-        setDevAuthEnabledState(newValue)
-        setDevAuthEnabled(newValue)
-        
-        if (newValue) {
-            console.log('🔑 Dev auth token mode enabled - future requests will use Bearer token authentication')
-        } else {
-            console.log('🔓 Dev auth token mode disabled - using normal cookie authentication')
-        }
-    }
-
-    React.useEffect(() => {
-        fetchAuthConfig()
-        
-        // Log dev auth configuration status
-        if (process.env.NODE_ENV === 'development') {
-            const hasDevAuthKey = !!process.env.NEXT_PUBLIC_DEV_AUTH_KEY;
-            console.log('🔧 DevTools Auth Plugin initialized:', {
-                devAuthEnabled: devAuthEnabled,
-                hasDevAuthKey: hasDevAuthKey,
-                devAuthKey: hasDevAuthKey ? `${process.env.NEXT_PUBLIC_DEV_AUTH_KEY?.slice(0, 8)}...` : 'Not configured'
-            });
-        }
-    }, [])
+    // placeholder; actual toggle handled inside AuthPluginComponent via context
 
     return (
         <div className="space-y-4 p-4">
             {/* Dev Auth Status Banner */}
             {devAuthEnabled && (
-                <div className="rounded-lg border-orange-200 bg-orange-50 border p-4 dark:bg-orange-900/20 dark:border-orange-800">
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
                     <div className="flex items-center space-x-2">
-                        <span className="text-orange-600 dark:text-orange-400">🔑</span>
+                        <span className="text-orange-600 dark:text-orange-400">
+                            🔑
+                        </span>
                         <div>
                             <h4 className="text-sm font-medium text-orange-800 dark:text-orange-200">
                                 Dev Auth Token Mode Active
                             </h4>
                             <p className="text-xs text-orange-600 dark:text-orange-400">
-                                All API requests are using Bearer token authentication with admin privileges
+                                All API requests are using Bearer token
+                                authentication with admin privileges
                             </p>
                         </div>
                     </div>
                 </div>
             )}
-            
+
             <div className="rounded-lg border p-4">
                 <h3 className="mb-2 text-lg font-semibold">
                     Authentication Configuration
@@ -557,28 +549,30 @@ const AuthPluginComponent = () => {
             <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h4 className="text-sm font-medium">Dev Auth Token Mode</h4>
+                        <h4 className="text-sm font-medium">
+                            Dev Auth Token Mode
+                        </h4>
                         <p className="text-xs text-gray-500">
-                            Use Bearer token for all API requests (bypasses normal auth)
+                            Use Bearer token for all API requests (bypasses
+                            normal auth)
                         </p>
                         {devAuthEnabled && (
-                            <p className="text-xs text-orange-600 mt-1">
+                            <p className="mt-1 text-xs text-orange-600">
                                 ⚠️ Active: All requests use admin Bearer token
                             </p>
                         )}
                     </div>
-                    <button
-                        onClick={toggleDevAuth}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            devAuthEnabled ? 'bg-orange-600' : 'bg-gray-200'
-                        }`}
-                    >
-                        <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                devAuthEnabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                        />
-                    </button>
+                    <div>
+                        <label className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                checked={devAuthEnabled}
+                                onChange={(e) => setEnabled(e.target.checked)}
+                                className="h-4 w-4"
+                            />
+                            <span className="text-sm">Enable Dev Auth</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -589,7 +583,13 @@ const AuthPluginComponent = () => {
                     <div className="flex items-center space-x-2">
                         <select
                             value={pagination.limit}
-                            onChange={(e) => setPagination(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
+                            onChange={(e) =>
+                                setPagination((prev) => ({
+                                    ...prev,
+                                    limit: Number(e.target.value),
+                                    page: 1,
+                                }))
+                            }
                             className="rounded border px-2 py-1 text-sm"
                         >
                             <option value={5}>5 per page</option>
@@ -618,7 +618,11 @@ const AuthPluginComponent = () => {
                                     >
                                         <span>Name</span>
                                         {sortBy === 'name' && (
-                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            <span>
+                                                {sortOrder === 'asc'
+                                                    ? '↑'
+                                                    : '↓'}
+                                            </span>
                                         )}
                                     </button>
                                 </th>
@@ -629,7 +633,11 @@ const AuthPluginComponent = () => {
                                     >
                                         <span>Email</span>
                                         {sortBy === 'email' && (
-                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            <span>
+                                                {sortOrder === 'asc'
+                                                    ? '↑'
+                                                    : '↓'}
+                                            </span>
                                         )}
                                     </button>
                                 </th>
@@ -640,7 +648,11 @@ const AuthPluginComponent = () => {
                                     >
                                         <span>Created</span>
                                         {sortBy === 'createdAt' && (
-                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            <span>
+                                                {sortOrder === 'asc'
+                                                    ? '↑'
+                                                    : '↓'}
+                                            </span>
                                         )}
                                     </button>
                                 </th>
@@ -651,7 +663,11 @@ const AuthPluginComponent = () => {
                                     >
                                         <span>Updated</span>
                                         {sortBy === 'updatedAt' && (
-                                            <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                            <span>
+                                                {sortOrder === 'asc'
+                                                    ? '↑'
+                                                    : '↓'}
+                                            </span>
                                         )}
                                     </button>
                                 </th>
@@ -660,19 +676,28 @@ const AuthPluginComponent = () => {
                         <tbody>
                             {usersLoading ? (
                                 <tr>
-                                    <td colSpan={4} className="p-4 text-center text-gray-500">
+                                    <td
+                                        colSpan={4}
+                                        className="p-4 text-center text-gray-500"
+                                    >
                                         Loading users...
                                     </td>
                                 </tr>
                             ) : usersData?.users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="p-4 text-center text-gray-500">
+                                    <td
+                                        colSpan={4}
+                                        className="p-4 text-center text-gray-500"
+                                    >
                                         No users found
                                     </td>
                                 </tr>
                             ) : (
                                 usersData?.users.map((user) => (
-                                    <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <tr
+                                        key={user.id}
+                                        className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    >
                                         <td className="p-2">
                                             <div className="flex items-center space-x-2">
                                                 {user.image && (
@@ -684,7 +709,9 @@ const AuthPluginComponent = () => {
                                                         className="h-6 w-6 rounded-full"
                                                     />
                                                 )}
-                                                <span className="font-medium">{user.name}</span>
+                                                <span className="font-medium">
+                                                    {user.name}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="p-2">
@@ -692,14 +719,20 @@ const AuthPluginComponent = () => {
                                                 {user.email}
                                             </span>
                                             {user.emailVerified && (
-                                                <span className="ml-2 text-green-600">✓</span>
+                                                <span className="ml-2 text-green-600">
+                                                    ✓
+                                                </span>
                                             )}
                                         </td>
                                         <td className="p-2 text-sm text-gray-500">
-                                            {new Date(user.createdAt).toLocaleDateString()}
+                                            {new Date(
+                                                user.createdAt
+                                            ).toLocaleDateString()}
                                         </td>
                                         <td className="p-2 text-sm text-gray-500">
-                                            {new Date(user.updatedAt).toLocaleDateString()}
+                                            {new Date(
+                                                user.updatedAt
+                                            ).toLocaleDateString()}
                                         </td>
                                     </tr>
                                 ))
@@ -709,32 +742,54 @@ const AuthPluginComponent = () => {
                 </div>
 
                 {/* Pagination */}
-                {usersData && usersData.meta.pagination.total > pagination.limit && (
-                    <div className="mt-4 flex items-center justify-between">
-                        <div className="text-sm text-gray-500">
-                            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, usersData.meta.pagination.total)} of {usersData.meta.pagination.total} users
+                {usersData &&
+                    usersData.meta.pagination.total > pagination.limit && (
+                        <div className="mt-4 flex items-center justify-between">
+                            <div className="text-sm text-gray-500">
+                                Showing{' '}
+                                {(pagination.page - 1) * pagination.limit + 1}{' '}
+                                to{' '}
+                                {Math.min(
+                                    pagination.page * pagination.limit,
+                                    usersData.meta.pagination.total
+                                )}{' '}
+                                of {usersData.meta.pagination.total} users
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() =>
+                                        handlePageChange(pagination.page - 1)
+                                    }
+                                    disabled={pagination.page === 1}
+                                    className="rounded border px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm">
+                                    Page {pagination.page} of{' '}
+                                    {Math.ceil(
+                                        usersData.meta.pagination.total /
+                                            pagination.limit
+                                    )}
+                                </span>
+                                <button
+                                    onClick={() =>
+                                        handlePageChange(pagination.page + 1)
+                                    }
+                                    disabled={
+                                        pagination.page >=
+                                        Math.ceil(
+                                            usersData.meta.pagination.total /
+                                                pagination.limit
+                                        )
+                                    }
+                                    className="rounded border px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <button
-                                onClick={() => handlePageChange(pagination.page - 1)}
-                                disabled={pagination.page === 1}
-                                className="rounded border px-3 py-1 text-sm disabled:opacity-50 hover:bg-gray-50"
-                            >
-                                Previous
-                            </button>
-                            <span className="text-sm">
-                                Page {pagination.page} of {Math.ceil(usersData.meta.pagination.total / pagination.limit)}
-                            </span>
-                            <button
-                                onClick={() => handlePageChange(pagination.page + 1)}
-                                disabled={pagination.page >= Math.ceil(usersData.meta.pagination.total / pagination.limit)}
-                                className="rounded border px-3 py-1 text-sm disabled:opacity-50 hover:bg-gray-50"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
-                )}
+                    )}
             </div>
 
             <button
@@ -952,7 +1007,26 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
         return null
     }
 
-    return (
+    const providers: React.FC<{ children: React.ReactNode }>[] = []
+    if (hasMasterTokenPlugin(authClient)) {
+        const MasterTokenProvider = authClient.MasterTokenProvider
+        providers.push(({ children }) => (
+            <MasterTokenProvider>
+                {children}
+            </MasterTokenProvider>
+        ))
+    }
+
+    const handleProvider = (
+        children: React.ReactNode,
+        index: number
+    ): React.ReactNode => {
+        const Provider = providers[index]
+        if (!Provider) return children
+        return <Provider>{handleProvider(children, index + 1)}</Provider>
+    }
+
+    return handleProvider(
         <TanStackDevtools
             plugins={plugins}
             config={{
@@ -963,7 +1037,8 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
                 openHotkey: ['Shift', 'D'], // Changed from default Shift+A to Shift+D for DevTools
                 requireUrlFlag: false,
             }}
-        />
+        />,
+        0
     )
 }
 
