@@ -9,6 +9,7 @@ import redirect from '@/actions/redirect'
 import { authClient } from '../auth'
 import { hasMasterTokenPlugin } from '../auth/plugins/guards'
 import { parseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 
 const APP_URL = validateEnvPath(
     process.env.NEXT_PUBLIC_APP_URL!,
@@ -19,7 +20,7 @@ const APP_URL = validateEnvPath(
 export function createORPCClientWithCookies() {
     const link = new OpenAPILink<{
         cookie?: string | string[]
-        headers?: Record<string, string | string[] | undefined>,
+        headers?: Record<string, string | string[] | undefined>
         noRedirectOnUnauthorized?: boolean
     }>(appContract, {
         clientInterceptors: [
@@ -33,9 +34,14 @@ export function createORPCClientWithCookies() {
                 // For server-side requests, use provided cookies
                 if (typeof window === 'undefined') {
                     try {
-                        headers.cookie = (
-                            await (await import('next/headers')).cookies()
-                        ).toString()
+                        // Use an indirect dynamic import to avoid Turbopack attempting
+                        // to resolve server-only modules during client analysis.
+                        const dynamicImport = new Function('s', 'return import(s)') as (
+                            s: string
+                        ) => Promise<unknown>
+
+                        const nh = await dynamicImport('next/headers') as typeof import('next/headers')
+                        headers.cookie = (await nh.cookies()).toString()
                     } catch {
                         // Normalize existing headers.cookie and options.context.cookie into an array of strings
                         // filtering out any undefined values, then assign either a string[] or undefined.
@@ -55,8 +61,6 @@ export function createORPCClientWithCookies() {
 
                     headers['Content-Type'] = 'application/json'
                 }
-
-                console.log(hasMasterTokenPlugin(authClient))
 
                 // Check if dev auth token mode is enabled (client-side only in development)
                 if (
@@ -85,16 +89,12 @@ export function createORPCClientWithCookies() {
                             const devAuthKey =
                                 process.env.NEXT_PUBLIC_DEV_AUTH_KEY
 
-                            console.log('using dev auth key', devAuthKey)
-
                             if (devAuthKey) {
                                 headers.Authorization = `Bearer ${devAuthKey}`
                             }
                         }
                     }
                 }
-
-                console.log('calling: ', options.path, 'with', options)
 
                 return options.next({
                     ...options,
@@ -163,4 +163,31 @@ export function createORPCClientWithCookies() {
     return createORPCClient<ContractRouterClient<AppContract>>(link)
 }
 
-export const orpc = createORPCClientWithCookies()
+// Lazily initialize the ORPC + Tanstack Query utils to avoid creating
+// network clients / background resources at module import time. This
+// prevents persistent side-effects that aggravate Fast Refresh / HMR
+// churn during development.
+let _orpc: ReturnType<
+    typeof createTanstackQueryUtils<
+        ReturnType<typeof createORPCClientWithCookies>
+    >
+> | null = null
+function initOrpc() {
+    if (!_orpc) _orpc = createTanstackQueryUtils(createORPCClientWithCookies())
+    return _orpc
+}
+
+export const orpc = new Proxy(
+    {},
+    {
+        get(_, prop: keyof ReturnType<typeof initOrpc>) {
+            // Initialize on first access and forward the property access
+            const client = initOrpc()
+            return client[prop]
+        },
+    }
+) as unknown as ReturnType<
+    typeof createTanstackQueryUtils<
+        ReturnType<typeof createORPCClientWithCookies>
+    >
+>

@@ -1,13 +1,12 @@
-import { orpcServer } from '@/lib/orpc'
 import React from 'react'
 import ListItemShowcase from '../ListItem'
+import { orpc } from '@/lib/orpc'
 
 const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
     const startTime = Date.now()
 
     try {
-        const client = await orpcServer();
-        const result = await client.user.list({
+        const result = await orpc.user.list.call({
             pagination: {
                 limit: 10,
                 offset: 0,

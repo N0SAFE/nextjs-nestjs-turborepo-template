@@ -69,11 +69,6 @@ export const masterTokenClient = (): ReturnType<() => BetterAuthClientPlugin> =>
             {
                 hooks: {
                     onRequest: (ctx) => {
-                        console.log('masterTokenClientPlugin: onRequest', ctx)
-                        console.log(
-                            'DevAuthManager.state',
-                            MasterTokenManager.state
-                        )
                         if (!MasterTokenManager.state) {
                             return ctx
                         }

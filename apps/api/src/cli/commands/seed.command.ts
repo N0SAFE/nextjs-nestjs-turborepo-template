@@ -4,7 +4,7 @@ import { DATABASE_CONNECTION } from '../../core/modules/database/database-connec
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '../../config/drizzle/schema';
 import { AUTH_INSTANCE_KEY } from '@/core/modules/auth/types/symbols';
-import { Auth } from '@/auth';
+import type { Auth } from '@/auth';
 
 @Injectable()
 @Command({

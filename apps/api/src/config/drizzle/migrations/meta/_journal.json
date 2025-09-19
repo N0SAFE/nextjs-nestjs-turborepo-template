@@ -12,15 +12,15 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1754426064686,
-      "tag": "0001_swift_shard",
+      "when": 1758318581809,
+      "tag": "0001_wealthy_maelstrom",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1758014579771,
-      "tag": "0002_lean_junta",
+      "when": 1758318828427,
+      "tag": "0002_whole_sumo",
       "breakpoints": true
     }
   ]

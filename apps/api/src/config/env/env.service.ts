@@ -1,6 +1,6 @@
 import { Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Env } from "./env";
+import type { Env } from "./env";
 
 @Injectable()
 export class EnvService {

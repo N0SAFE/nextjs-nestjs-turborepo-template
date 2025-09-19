@@ -17,14 +17,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:migrate": "npx tsx src/cli.ts migrate",
-    "db:seed": "npx tsx src/cli.ts seed",
-    "db:reset": "npx tsx src/cli.ts reset",
+    "db:migrate": "bun src/cli.ts migrate",
+    "db:seed": "bun src/cli.ts seed",
+    "db:reset": "bun src/cli.ts reset",
     "db:push": "drizzle-kit push",
-    "cli": "npx tsx src/cli.ts",
+    "cli": "bun src/cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "npx @better-auth/cli generate --config src/auth.ts --output src/config/drizzle/schema/auth.ts --y && bun run db:generate"
+    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/config/drizzle/schema/auth.ts --y && bun run db:generate"
   },
   "dependencies": {
     "@mguay/nestjs-better-auth": "catalog:auth",

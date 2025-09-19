@@ -7,7 +7,7 @@ import {
 import { Matcher, MiddlewareFactory } from './utils/types'
 import { validateEnvPath } from '#/env'
 import { nextjsRegexpPageOnly, nextNoApi } from './utils/static'
-import { orpc, orpcServer } from '@/lib/orpc'
+import { orpc } from '@/lib/orpc'
 import { toAbsoluteUrl } from '@/lib/utils'
 import { MiddlewareerrorhealthCheck } from '@/routes'
 import { createDebug } from '@/lib/debug'

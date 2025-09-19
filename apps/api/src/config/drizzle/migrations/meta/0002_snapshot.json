@@ -1,6 +1,6 @@
 {
-  "id": "bd049f3a-cc4d-42a9-813d-d75e3743a984",
-  "prevId": "d276cbe2-f3db-4ece-971a-2c4422ea9f9d",
+  "id": "4919ab86-111a-4418-b32d-e914753bdb15",
+  "prevId": "dcb94759-dd2a-420c-954a-5ab6d9992c5e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -78,7 +78,8 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -228,7 +229,8 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -330,13 +332,15 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "role": {
           "name": "role",
@@ -412,13 +416,15 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},

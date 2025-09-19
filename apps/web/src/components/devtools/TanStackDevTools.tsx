@@ -74,8 +74,6 @@ const RoutesPluginComponent = () => {
                     let path = ''
                     let link: React.ReactNode | undefined
 
-                    console.log(name, fnOrValue)
-
                     if (typeof fnOrValue === 'function') {
                         try {
                             const res = fnOrValue()
@@ -158,8 +156,6 @@ const RoutesPluginComponent = () => {
             setLoading(false)
         }
     }
-
-    console.log('RoutesPluginComponent render, routesList:', routesList)
 
     React.useEffect(() => {
         void fetchRoutesData()

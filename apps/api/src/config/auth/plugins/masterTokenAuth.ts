@@ -45,11 +45,6 @@ export const masterTokenPlugin = (
             // Check for master token
             const authHeader = ctx.headers?.get("authorization");
 
-            console.log("MasterTokenAuth Hook Triggered", {
-              authHeader,
-              devAuthKey,
-            });
-
             if (authHeader?.startsWith("Bearer ")) {
               const token = authHeader?.substring(7);
 
