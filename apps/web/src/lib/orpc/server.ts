@@ -13,14 +13,12 @@ export async function createServerORPCClient() {
     // Server-side: dynamically import and use cookies function
     try {
       const cookiesStart = performance.now();
-      // Dynamic import to avoid build-time issues
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      const cookieString = cookieStore.toString();
       const cookiesTime = performance.now() - cookiesStart;
       
       const clientStart = performance.now();
-      const serverClient = createORPCClientWithCookies(cookieString);
+      console.log('Creating server ORPC client with cookies');
+      const serverClient = createORPCClientWithCookies();
+      console.log('Server ORPC client created');
       const clientTime = performance.now() - clientStart;
       
       const totalTime = performance.now() - startTime;
@@ -31,7 +29,7 @@ export async function createServerORPCClient() {
       }
       
       return serverClient;
-    } catch {
+    } catch (e) {
       // If we can't access cookies (build time, etc.), use unauthenticated client
       const fallbackStart = performance.now();
       const fallbackClient = createORPCClientWithCookies();
@@ -40,6 +38,7 @@ export async function createServerORPCClient() {
       // Only log in development to avoid noise in production
       if (process.env.NODE_ENV === 'development') {
         console.warn(`⚠️ Using unauthenticated ORPC client (${fallbackTime.toFixed(2)}ms) - likely build time or invalid request context`);
+        console.warn(e)
       }
       return fallbackClient;
     }

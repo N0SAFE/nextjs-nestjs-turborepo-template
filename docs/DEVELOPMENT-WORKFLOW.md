@@ -32,6 +32,20 @@ If you prefer to run services directly on your machine:
 bun run dev:local
 ```
 
+### Dev Auth Server-Side Support
+
+For development only, the project supports a server-side dev auth token to enable SSR requests
+to authenticate when the Dev Auth Token Mode is active in the browser.
+
+- **Environment variable**: `DEV_AUTH_KEY` (server-only, do NOT prefix with `NEXT_PUBLIC_`)
+- **Behavior**: When `NODE_ENV=development` and the incoming request contains the
+   `master-token-enabled=true` cookie, server-side ORPC requests will attach
+   `Authorization: Bearer ${DEV_AUTH_KEY}` to outgoing requests.
+- **Security**: Keep `DEV_AUTH_KEY` out of client builds and do not commit it. This is
+   strictly a convenience for local development and must never be used in production.
+
+Set the `DEV_AUTH_KEY` in your local `.env` (or Docker compose env) for development.
+
 This requires you to have all dependencies installed locally and properly configured.
 
 ### Individual Service Development

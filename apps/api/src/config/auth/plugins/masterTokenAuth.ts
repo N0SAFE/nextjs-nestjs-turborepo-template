@@ -45,14 +45,10 @@ export const masterTokenPlugin = (
             // Check for master token
             const authHeader = ctx.headers?.get("authorization");
 
-            console.log("masterTokenPlugin: checking auth header", authHeader);
-            // Diagnostic: log incoming Cookie header so we can see what the auth
-            // handler receives when /get-session is called.
-            try {
-              console.log("masterTokenPlugin: incoming Cookie:", ctx.headers?.get("cookie"));
-            } catch (e) {
-              console.error("masterTokenPlugin: failed to read cookie header", e);
-            }
+            console.log("MasterTokenAuth Hook Triggered", {
+              authHeader,
+              devAuthKey,
+            });
 
             if (authHeader?.startsWith("Bearer ")) {
               const token = authHeader?.substring(7);

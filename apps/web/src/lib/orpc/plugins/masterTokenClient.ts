@@ -1,5 +1,5 @@
-import { authClient } from "../auth"
-import { hasMasterTokenPlugin } from "../auth/plugins/guards"
+import { authClient } from "../../auth"
+import { hasMasterTokenPlugin } from "../../auth/plugins/guards"
 
 /**
  * Returns Authorization header object when dev token mode is active and

@@ -1113,7 +1113,7 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
 
     const handleProvider = (
         children: React.ReactNode,
-        index: number
+        index: number = 0
     ): React.ReactNode => {
         const Provider = providers[index]
         if (!Provider) return children
@@ -1127,8 +1127,7 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
                 position: 'bottom-right',
                 panelLocation: 'bottom',
             }}
-        />,
-        0
+        />
     )
 }
 
