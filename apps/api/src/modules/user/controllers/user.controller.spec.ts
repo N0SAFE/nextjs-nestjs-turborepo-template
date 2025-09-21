@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserController } from '@/modules/user/controllers/user.controller';
 import { UserService } from '@/modules/user/services/user.service';

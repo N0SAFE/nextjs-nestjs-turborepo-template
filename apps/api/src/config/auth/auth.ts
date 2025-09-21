@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "better-auth/plugins/passkey";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { EnvService } from "../env/env.service";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { EnvService } from "../env/env.service";
 import { masterTokenPlugin } from "./plugins/masterTokenAuth";
 import { loginAsPlugin } from "./plugins/loginAs";
 import { useAdmin } from "./permissions/index";

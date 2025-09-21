@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import type { Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppModule } from '@/app.module';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { LoggerMiddleware } from './core/middlewares/logger.middleware';
 
 describe('AppModule', () => {

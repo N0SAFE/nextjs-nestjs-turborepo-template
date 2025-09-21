@@ -1,4 +1,5 @@
 import type { statement, roles } from './statements';
+import type {createAccessControl} from 'better-auth/plugins/access'
 
 /**
  * Core type definitions for the Better Auth admin access control system
@@ -14,7 +15,7 @@ export type PermissionStatement = Record<string, readonly string[]>;
  * Access control roles type using Better Auth's actual types
  * This extracts the correct type from Better Auth's createAccessControl system
  */
-export type AccessControlRoles = Record<string, ReturnType<ReturnType<typeof import('better-auth/plugins/access')['createAccessControl']>['newRole']>>;
+export type AccessControlRoles = Record<string, ReturnType<ReturnType<typeof createAccessControl>['newRole']>>;
 
 /**
  * Extract all available resources from the statement
@@ -91,7 +92,7 @@ export type PermissionTypes = {
 /**
  * Access control instance type
  */
-export type AccessControlInstance = ReturnType<typeof import('better-auth/plugins/access')['createAccessControl']>;
+export type AccessControlInstance = ReturnType<typeof createAccessControl>;
 
 /**
  * Role permissions type for extracting permissions from roles

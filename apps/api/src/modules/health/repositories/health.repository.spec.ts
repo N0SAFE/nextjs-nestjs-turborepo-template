@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HealthRepository } from './health.repository';
 

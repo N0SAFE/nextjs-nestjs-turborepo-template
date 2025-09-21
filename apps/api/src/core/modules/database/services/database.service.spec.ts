@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DatabaseService } from '../database.service';
 import { DATABASE_CONNECTION } from '../database-connection';

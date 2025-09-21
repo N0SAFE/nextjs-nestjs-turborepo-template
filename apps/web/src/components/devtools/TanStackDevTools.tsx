@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import Image from 'next/image'
 import {
     TanStackDevtools,
     type TanStackDevtoolsReactPlugin,
@@ -63,11 +62,9 @@ const RoutesPluginComponent = () => {
     const fetchRoutesData = async () => {
         setLoading(true)
         try {
-            // Dynamically import the generated routes module
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const routesModule = await import('@/routes')
 
-            const entries = Object.entries(routesModule) as [string, any][]
+            const entries = Object.entries(routesModule) as [string, unknown][]
 
             const list = await Promise.all(
                 entries.map(async ([name, fnOrValue]) => {
@@ -77,27 +74,32 @@ const RoutesPluginComponent = () => {
                     if (typeof fnOrValue === 'function') {
                         try {
                             const res = fnOrValue()
-                            const awaited = res && typeof (res as any).then === 'function' ? await res : res
+                            let awaited: unknown = res
+                            if (res && typeof (res as { then: (...args: unknown[]) => Promise<unknown> }).then === 'function') {
+                                awaited = await res
+                            }
 
                             // If the helper returned a string, use it
                             if (typeof awaited === 'string') {
                                 path = awaited
-                            } else if (awaited && typeof awaited === 'object') {
+                            } else if (typeof awaited === 'object' && awaited !== null) {
+                                const obj = awaited as Record<string, unknown>
                                 // Common shapes: { path }, { url }, { href }, { to }, or a function getPath()
-                                if ('path' in awaited && typeof (awaited as any).path === 'string') {
-                                    path = (awaited as any).path
-                                } else if ('url' in awaited && typeof (awaited as any).url === 'string') {
-                                    path = (awaited as any).url
-                                } else if ('href' in awaited && typeof (awaited as any).href === 'string') {
-                                    path = (awaited as any).href
-                                } else if ('to' in awaited && typeof (awaited as any).to === 'string') {
-                                    path = (awaited as any).to
-                                } else if (typeof (awaited as any).getPath === 'function') {
+                                if ('path' in obj && typeof obj.path === 'string') {
+                                    path = obj.path as string
+                                } else if ('url' in obj && typeof obj.url === 'string') {
+                                    path = obj.url as string
+                                } else if ('href' in obj && typeof obj.href === 'string') {
+                                    path = obj.href as string
+                                } else if ('to' in obj && typeof obj.to === 'string') {
+                                    path = obj.to as string
+                                } else if ('getPath' in obj && typeof obj.getPath === 'function') {
                                     try {
-                                        const p = (awaited as any).getPath()
-                                        path = p && typeof p.then === 'function' ? String(await p) : String(p)
+                                        const getPath = obj.getPath as () => string | Promise<string>
+                                        const p = getPath()
+                                        path = typeof p === 'string' ? p : await p
                                     } catch (er) {
-                                        // fallthrough
+                                        console.error('getPath error:', er)
                                     }
                                 } else {
                                     const str = String(awaited)
@@ -108,11 +110,14 @@ const RoutesPluginComponent = () => {
                                 path = name
                             }
                         } catch (e) {
+                            console.error('Route inspection error:', e)
                             path = name
                         }
 
-                        if (fnOrValue.Link) {
-                            link = React.createElement(fnOrValue.Link, {}, name)
+                        // Check for Link property
+                        const fnWithProps = fnOrValue as { Link?: React.FunctionComponent<Record<string, unknown>> }
+                        if (fnWithProps.Link) {
+                            link = React.createElement(fnWithProps.Link, {}, name)
                         }
                     } else if (typeof fnOrValue === 'string') {
                         path = fnOrValue
@@ -454,9 +459,18 @@ const CLIPlugin: TanStackDevtoolsReactPlugin = {
 
 // Auth Plugin Component
 const AuthPluginComponent = () => {
-    if (!hasMasterTokenPlugin(authClient)) {
-        return <div className="p-4">Auth client not configured</div>
-    }
+    return (
+        <div className="space-y-4 p-4">
+            {hasMasterTokenPlugin(authClient) ? (
+                <ConfiguredAuth />
+            ) : (
+                <div className="p-4">Auth client not configured</div>
+            )}
+        </div>
+    )
+}
+
+const ConfiguredAuth = () => {
     const { enabled: devAuthEnabled, setEnabled } = useMasterToken()
     const [authConfig, setAuthConfig] = useState<{
         databaseUrl: string
@@ -538,7 +552,7 @@ const AuthPluginComponent = () => {
     // placeholder; actual toggle handled inside AuthPluginComponent via context
 
     return (
-        <div className="space-y-4 p-4">
+        <>
             {/* Dev Auth Status Banner */}
             {devAuthEnabled && (
                 <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
@@ -683,7 +697,6 @@ const AuthPluginComponent = () => {
                                             }
                                         )
                                         await refetch()
-                                        // eslint-disable-next-line no-alert
                                         return
                                     }
 
@@ -707,7 +720,6 @@ const AuthPluginComponent = () => {
                                             'Login as failed',
                                             resp.statusText
                                         )
-                                        // eslint-disable-next-line no-alert
                                         alert(
                                             'Login as failed: ' +
                                                 resp.statusText
@@ -716,7 +728,6 @@ const AuthPluginComponent = () => {
                                     }
 
                                     const data = await resp.json()
-                                    // eslint-disable-next-line no-alert
                                     alert(
                                         `Logged as ${data.user?.id} - session: ${data.session?.id}`
                                     )
@@ -736,7 +747,7 @@ const AuthPluginComponent = () => {
             >
                 {loading ? 'Refreshing...' : 'Refresh Auth Config'}
             </button>
-        </div>
+        </>
     )
 }
 
@@ -755,7 +766,7 @@ function UserSelector({
     onSelect,
     onSearchChange,
 }: {
-    users: any[]
+    users: Array<{ id: string; name?: string; email: string }>
     loading: boolean
     selectedUserId?: string | null
     selectedUserName?: string | null
@@ -863,12 +874,7 @@ function UserSelector({
 
 // Drizzle Studio Plugin Component
 const DrizzleStudioPluginComponent = () => {
-    const studioPort =
-        process.env.NEXT_PUBLIC_DRIZZLE_STUDIO_PORT ||
-        process.env.DRIZZLE_STUDIO_PORT ||
-        '4983'
     const studioUrl = `https://local.drizzle.studio`
-    const [loading, setLoading] = useState(false)
 
     const openStudio = () => {
         if (typeof window !== 'undefined') window.open(studioUrl, '_blank')
@@ -981,6 +987,7 @@ const ApiUrlPluginComponent = () => {
                 resp.ok ? `OK (${resp.status})` : `Error (${resp.status})`
             )
         } catch (err) {
+            console.error('Health check error:', err)
             setStatus('unreachable')
         } finally {
             setChecking(false)
@@ -989,7 +996,6 @@ const ApiUrlPluginComponent = () => {
 
     React.useEffect(() => {
         if (apiUrl) checkHealth()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiUrl])
 
     return (
