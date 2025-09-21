@@ -97,4 +97,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
 WORKDIR /app/apps/web
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "/usr/bin/node ./node_modules/.bin/next start -p ${NEXT_PUBLIC_APP_PORT}"]
+CMD ["sh", "-c", "bun run start:docker"]

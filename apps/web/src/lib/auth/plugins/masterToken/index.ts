@@ -1,5 +1,4 @@
 import type { BetterAuthClientPlugin } from 'better-auth/client'
-import dynamic from 'next/dynamic'
 import {
     getMasterTokenEnabled,
     setMasterTokenEnabled,
@@ -8,10 +7,6 @@ import {
     MasterTokenManager,
 } from './state'
 import { authClient } from '../..'
-
-export const MasterTokenProvider = dynamic(
-    () => import('./components/provider').then((m) => m.MasterTokenProvider)
-)
 
 /**
  * Better Auth client plugin to attach a master token Authorization header
@@ -32,10 +27,6 @@ export const masterTokenClient = (): ReturnType<() => BetterAuthClientPlugin> =>
                     typeof window !== 'undefined' &&
                     process.env.NODE_ENV === 'development'
                 ) {
-                    console.log(
-                        'MasterTokenManager.state',
-                        MasterTokenManager.state
-                    )
                     if (!MasterTokenManager.state) {
                         // If dev auth mode is not active, fall through to the original
                         // signOut behavior to ensure sign-out still works.
@@ -59,7 +50,6 @@ export const masterTokenClient = (): ReturnType<() => BetterAuthClientPlugin> =>
                 setMasterTokenEnabled,
                 clearMasterToken,
                 getMasterTokenKey,
-                MasterTokenProvider,
                 MasterTokenManager,
                 masterTokenSignOut,
             }

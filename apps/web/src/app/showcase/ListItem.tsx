@@ -83,14 +83,6 @@ const ListItemShowcase: React.FC<ListItemShowcaseProps> =
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        {getStatusIcon(user.status)}
-                                        <span
-                                            className={`rounded-md px-2 py-1 text-xs ${getStatusColor(user.status)}`}
-                                        >
-                                            {user.status}
-                                        </span>
-                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

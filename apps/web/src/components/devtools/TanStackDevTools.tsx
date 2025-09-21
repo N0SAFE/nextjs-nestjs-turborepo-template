@@ -10,7 +10,7 @@ import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import { orpc } from '@/lib/orpc'
 import { useQuery } from '@tanstack/react-query'
 import { authClient, useSession } from '@/lib/auth'
-import { useMasterToken } from '@/lib/auth/plugins/masterToken/components/provider'
+import MasterTokenProvider, { useMasterToken } from '@/lib/auth/plugins/masterToken/components/provider'
 import { hasMasterTokenPlugin } from '@/lib/auth/plugins/guards'
 import {
     DropdownMenu,
@@ -1101,7 +1101,6 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
 
     const providers: React.FC<{ children: React.ReactNode }>[] = []
     if (hasMasterTokenPlugin(authClient)) {
-        const MasterTokenProvider = authClient.MasterTokenProvider
         providers.push(({ children }) => (
             <MasterTokenProvider>{children}</MasterTokenProvider>
         ))

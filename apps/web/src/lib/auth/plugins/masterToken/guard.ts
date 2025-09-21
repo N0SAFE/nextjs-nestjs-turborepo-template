@@ -9,7 +9,6 @@ export type MasterTokenActions = {
   clearMasterToken: typeof import('./state').clearMasterToken
   getMasterTokenKey: typeof import('./state').getMasterTokenKey
   MasterTokenManager: typeof _MasterTokenManager
-  MasterTokenProvider: typeof import('./components/provider').MasterTokenProvider
 }
 
 /**
@@ -27,8 +26,7 @@ export function hasMasterTokenPlugin(
     'setMasterTokenEnabled' in candidate || typeof candidate.setMasterTokenEnabled !== 'undefined' ||
     'clearMasterToken' in candidate || typeof candidate.clearMasterToken !== 'undefined' ||
     'getMasterTokenKey' in candidate || typeof candidate.getMasterTokenKey !== 'undefined' ||
-    'MasterTokenManager' in candidate || typeof candidate.MasterTokenManager !== 'undefined' ||
-    'MasterTokenProvider' in candidate || typeof candidate.MasterTokenProvider !== 'undefined'
+    'MasterTokenManager' in candidate || typeof candidate.MasterTokenManager !== 'undefined'
   )
 }
 

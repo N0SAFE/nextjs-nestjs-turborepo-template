@@ -94,6 +94,7 @@ services:
       api-prod:
         condition: service_healthy
     environment:
+      - RUST_BACKTRACE=full
       - NODE_ENV=production
       - API_PING_PATH=/health
       # Server-side API URL (internal Docker network) - Use container name
