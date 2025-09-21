@@ -306,6 +306,18 @@ jobs:
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
 
+            - name: 💾 Restore declarative routes cache
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      apps/web/src/routes/index.ts
+                      apps/web/src/routes/openapi.ts
+                      apps/web/openapi-docs.yml
+                      apps/web/redoc-static.html
+                  key: declarative-routes-${{ runner.os }}-${{ hashFiles('apps/web/src/**/page.tsx', 'apps/web/src/**/page.info.ts') }}
+                  restore-keys: |
+                      declarative-routes-${{ runner.os }}-
+
             - name: 🧪 Run tests for all packages
               run: bun run test
 

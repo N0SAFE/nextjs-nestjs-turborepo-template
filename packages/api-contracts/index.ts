@@ -4,7 +4,7 @@ import { userContract, healthContract } from "./modules/index";
 // Main app contract that combines all feature contracts
 export const appContract = oc.router({
   user: userContract,
-  health: healthContract,
+  health: healthContract
 });
 
 export type AppContract = typeof appContract;

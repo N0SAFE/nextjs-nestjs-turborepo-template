@@ -44,6 +44,10 @@ describe('WithEnv Middleware', () => {
             nextNoApi: {},
             noPublic: {},
         }))
+
+        vi.doMock('@/routes', () => ({
+            Middlewareerrorenv: vi.fn().mockReturnValue('/middleware/error/env'),
+        }))
     })
 
     const mockNext = vi.fn()

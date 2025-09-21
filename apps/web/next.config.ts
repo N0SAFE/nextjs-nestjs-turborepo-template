@@ -74,6 +74,10 @@ const nextConfig: NextConfig = {
                 port: apiUrl.port,
                 protocol: apiUrl.protocol.replace(':', '') as 'http' | 'https',
             },
+            {
+                hostname: 'avatars.githubusercontent.com',
+                protocol: 'https',
+            },
         ],
     },
 }

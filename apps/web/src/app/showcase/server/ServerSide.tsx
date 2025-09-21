@@ -1,12 +1,13 @@
-import { orpcServer } from '@/lib/orpc'
 import React from 'react'
 import ListItemShowcase from '../ListItem'
+import { orpc } from '@/lib/orpc'
+import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
 
 const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
     const startTime = Date.now()
 
     try {
-        const result = await orpcServer.user.list({
+        const result = await orpc.user.list.call({
             pagination: {
                 limit: 10,
                 offset: 0,
@@ -26,6 +27,7 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
             </>
         )
     } catch (error) {
+        unstable_rethrow(error) // Ensure proper error handling in Next.js because orpc can throw redirect responses
         const endTime = Date.now()
 
         return (

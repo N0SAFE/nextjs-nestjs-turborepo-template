@@ -33,6 +33,12 @@ const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
             path: request.nextUrl.pathname
         })
 
+        const masterTokenEnabled = env.NODE_ENV === 'development' ? request.cookies.get('master-token-enabled')?.value === 'true' : false
+
+        if (masterTokenEnabled) {
+            return next(request, _next)
+        }
+
         // Get session using Better Auth directly
         let sessionCookie: string | null = null
         let sessionError: Error | unknown = null
@@ -60,6 +66,12 @@ const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
         }
 
         const isAuth = !!sessionCookie
+
+        console.log({
+            isAuth,
+            sessionError,
+            sessionCookie
+        })
 
         debugAuth(`Session result - isAuth: ${isAuth}, hasError: ${!!sessionError}`, {
             path: request.nextUrl.pathname,
@@ -96,6 +108,7 @@ const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
         } else {
             // User is not authenticated, redirect to login for protected routes
             debugAuth(`Redirecting unauthenticated user from ${request.nextUrl.pathname} to signin`)
+            console.log('redirecting from WithAuth middleware')
             return NextResponse.redirect(
                 toAbsoluteUrl(
                     Authsignin(

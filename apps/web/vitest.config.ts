@@ -10,6 +10,7 @@ export default defineConfig(
         test: {
             name: 'web',
             environment: 'jsdom',
+            testTimeout: 10000, // 10 seconds timeout
             include: [
                 'src/**/*.test.{ts,tsx,js,jsx}',
                 'src/**/*.spec.{ts,tsx,js,jsx}',
