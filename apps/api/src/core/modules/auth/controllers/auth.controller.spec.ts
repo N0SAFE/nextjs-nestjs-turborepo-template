@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthController } from './auth.controller';
 import { AUTH_INSTANCE_KEY } from '../types/symbols';
