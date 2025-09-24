@@ -164,6 +164,7 @@ services:
             - TURBO_TOKEN=${TURBO_TOKEN}
             - TURBO_TEAM=${TURBO_TEAM}
             - CHOKIDAR_USEPOLLING=true
+            - NEXT_WEBPACK_USEPOLLING=1
         networks:
             - app_network_dev
 

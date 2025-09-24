@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Tool, Resource, ResourceTemplate, Prompt } from '@rekog/mcp-nest';
 import type { Context } from '@rekog/mcp-nest';
 import { z } from 'zod';
@@ -6,6 +6,10 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { setTimeout as sleep } from 'timers/promises';
+import * as contractsMod from '@repo/api-contracts';
+import { zodToJsonSchema, extractOrpcSchema } from '../utils/schema-extractor';
+import { sql } from 'drizzle-orm';
+import * as schema from '../../../../apps/api/src/config/drizzle/schema'; // For types
 
 type PackageInfo = {
   name: string;
@@ -16,6 +20,8 @@ type PackageInfo = {
 
 @Injectable()
 export class RepoTools {
+  constructor() {}
+
   private async findRepoRoot(): Promise<string> {
     // Start from this file's directory (handling ESM import.meta.url) and crawl up until a package.json with workspaces is found
     const here = path.dirname(new URL(import.meta.url).pathname);
@@ -1482,5 +1488,546 @@ export class RepoTools {
     await this.runCommand('docker', args, repoRoot, context, `docker build ${mode}:${target}`);
     await context.reportProgress({ progress: 100, total: 100 });
     return { ok: true, file: composeFile };
+  }
+
+  private async getApiKeyForRole(role: string): Promise<string | null> {
+    // Hardcoded from seed output (update after running db:seed)
+    const keys = {
+      superAdmin: 'example_superAdmin_key_1_n4n0id32chars',
+      admin: 'example_admin_key_1_n4n0id32chars',
+      manager: 'example_manager_key_1_n4n0id32chars',
+      editor: 'example_editor_key_1_n4n0id32chars',
+      viewer: 'example_viewer_key_1_n4n0id32chars',
+      user: 'example_user_key_1_n4n0id32chars',
+    };
+    return keys[role as keyof typeof keys] || null;
+  }
+
+  @Tool({
+    name: 'api-call-as-role',
+    description: 'Make an authenticated API call as a user of the given role using pre-seeded API keys.',
+    parameters: z.object({
+      role: z.string().describe('Role: superAdmin, admin, manager, editor, viewer, user'),
+      path: z.string().describe('API path, e.g., /users/profile'),
+      method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']).describe('HTTP method'),
+      body: z.any().optional().describe('Request body for POST/PUT/PATCH'),
+      query: z.record(z.string(), z.any()).optional().describe('Query parameters'),
+      timeoutMs: z.number().default(10000).describe('Request timeout'),
+    }),
+  })
+  async apiCallAsRole(params: {
+    role: string;
+    path: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    body?: any;
+    query?: Record<string, any>;
+    timeoutMs?: number;
+  }) {
+    const apiKey = await this.getApiKeyForRole(params.role);
+    if (!apiKey) {
+      return { error: `No API key for role: ${params.role}. Run db:seed and update getApiKeyForRole with logged keys.` };
+    }
+
+    const url = new URL(params.path, 'http://localhost:3001');
+    if (params.query) {
+      Object.entries(params.query).forEach(([k, v]) => url.searchParams.append(k, String(v)));
+    }
+
+    const headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), params.timeoutMs || 10000);
+
+    try {
+      const response = await fetch(url.toString(), {
+        method: params.method,
+        headers,
+        body: params.body ? JSON.stringify(params.body) : undefined,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      const data = await response.json().catch(() => null);
+      return {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        data,
+        ok: response.ok,
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      return { error: String(error), status: 0 };
+    }
+  }
+
+  @Resource({
+    name: 'api-keys',
+    uri: 'repo://api/keys',
+    description: 'List of pre-seeded API keys per role for authenticated calls (update after seeding)',
+    mimeType: 'application/json',
+  })
+  async resourceApiKeys() {
+    // Hardcoded example; in real, query DB if api_keys table exists
+    const keys = {
+      superAdmin: [{ key: 'example_superAdmin_key_1_n4n0id32chars', userId: 'super1-id', abilities: ['*'] }],
+      admin: [{ key: 'example_admin_key_1_n4n0id32chars', userId: 'admin1-id', abilities: ['*'] }],
+      manager: [{ key: 'example_manager_key_1_n4n0id32chars', userId: 'manager1-id', abilities: ['read', 'write'] }],
+      editor: [{ key: 'example_editor_key_1_n4n0id32chars', userId: 'editor1-id', abilities: ['read', 'write'] }],
+      viewer: [{ key: 'example_viewer_key_1_n4n0id32chars', userId: 'viewer1-id', abilities: ['read'] }],
+      user: [{ key: 'example_user_key_1_n4n0id32chars', userId: 'user1-id', abilities: ['read'] }],
+    };
+    return {
+      contents: [{ uri: 'repo://api/keys', mimeType: 'application/json', text: JSON.stringify(keys, null, 2) }],
+    };
+  }
+
+  // Add private helper for OpenAPI
+  private async getOpenApiSchema(): Promise<any> {
+    try {
+      const response = await fetch('http://localhost:3001/openapi.json');
+      if (!response.ok) throw new Error(`OpenAPI fetch failed: ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.warn('OpenAPI schema fetch failed:', error);
+      return null;
+    }
+  }
+
+  @Resource({
+    name: 'api-schema-all',
+    uri: 'repo://api/schema/all',
+    description: 'Full OpenAPI schema for the API (requires API running)',
+    mimeType: 'application/json',
+  })
+  async resourceApiSchemaAll() {
+    const schema = await this.getOpenApiSchema();
+    const uri = 'repo://api/schema/all';
+    if (!schema) {
+      return { 
+        contents: [{ uri, mimeType: 'text/plain', text: 'OpenAPI schema not available. Start API with bun run dev:api and ensure /openapi.json endpoint works.' }], 
+        isError: true 
+      };
+    }
+    return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(schema, null, 2) }] };
+  }
+
+  @ResourceTemplate({
+    name: 'api-schema-route',
+    uriTemplate: 'repo://api/schema/{route}',
+    description: 'OpenAPI schema for a specific route (requires API running)',
+    mimeType: 'application/json',
+  })
+  async resourceApiSchemaRoute(params: { route: string }) {
+    const schema = await this.getOpenApiSchema();
+    const uri = `repo://api/schema/${params.route}`;
+    if (!schema) {
+      return { 
+        contents: [{ uri, mimeType: 'text/plain', text: 'Schema unavailable. Start API.' }], 
+        isError: true 
+      };
+    }
+    const pathSchema = schema.paths[params.route];
+    if (!pathSchema) {
+      return { 
+        contents: [{ uri, mimeType: 'text/plain', text: `Route not found: ${params.route}` }], 
+        isError: true 
+      };
+    }
+    return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(pathSchema, null, 2) }] };
+  }
+
+  @Resource({
+    name: 'api-routes',
+    uri: 'repo://api/routes',
+    description: 'List of all API routes with methods and summaries (requires API running)',
+    mimeType: 'application/json',
+  })
+  async resourceApiRoutes() {
+    const schema = await this.getOpenApiSchema();
+    const uri = 'repo://api/routes';
+    if (!schema) {
+      return { 
+        contents: [{ uri, mimeType: 'text/plain', text: 'Schema unavailable. Start API.' }], 
+        isError: true 
+      };
+    }
+    const routes = Object.entries(schema.paths as Record<string, any>).map(([path, def]) => ({
+      path,
+      methods: Object.keys(def),
+      summary: def.post?.summary || def.get?.summary || def.put?.summary || def.delete?.summary || 'No summary',
+    }));
+    return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(routes, null, 2) }] };
+  }
+
+  @Tool({
+    name: 'api-schema-query',
+    description: 'Query API schema for a route or full list (requires API running).',
+    parameters: z.object({
+      route: z.string().optional().describe('Specific route path, e.g., /users'),
+      method: z.string().optional().describe('HTTP method, e.g., GET'),
+      detail: z.enum(['summary', 'full']).default('full').describe('Level of detail'),
+    }),
+  })
+  async apiSchemaQuery(params: { route?: string; method?: string; detail: 'summary' | 'full' }) {
+    const schema = await this.getOpenApiSchema();
+    if (!schema) return { error: 'OpenAPI schema unavailable. Start API with bun run dev:api.' };
+
+    if (params.route) {
+      const pathDef = schema.paths[params.route as keyof typeof schema.paths];
+      if (!pathDef) return { error: `Route not found: ${params.route}` };
+      const methodDef = params.method ? pathDef[params.method.toLowerCase() as keyof typeof pathDef] : (Object.values(pathDef)[0] as any);
+      if (!methodDef) return { error: `Method ${params.method} not found for ${params.route}` };
+      const result = params.detail === 'full' ? methodDef : { 
+        summary: (methodDef as any).summary, 
+        parameters: (methodDef as any).parameters?.length || 0, 
+        hasBody: !!(methodDef as any).requestBody,
+        responses: Object.keys((methodDef as any).responses || {})
+      };
+      return { route: params.route, method: params.method, schema: result };
+    }
+
+    // Full list summary
+    const summary = Object.keys(schema.paths).map(path => {
+      const def = schema.paths[path as keyof typeof schema.paths];
+      return {
+        path,
+        methods: Object.keys(def as any),
+        summary: ((def as any).get?.summary || (def as any).post?.summary || 'Undocumented'),
+      };
+    });
+    return { routes: summary };
+  }
+
+  @Resource({
+    name: 'orpc-contracts-all',
+    uri: 'repo://orpc/contracts/all',
+    description: 'List of all ORPC contracts and their routes',
+    mimeType: 'application/json',
+  })
+  async resourceOrpcContractsAll() {
+    const contracts = {} as Record<string, { routes: string[] }>;
+    for (const key of Object.keys(contractsMod)) {
+      if (key.endsWith('Contract')) {
+        const contract = (contractsMod as any)[key];
+        if (contract && typeof contract === 'object' && contract.routes) {
+          contracts[key] = { routes: Object.keys(contract.routes) };
+        }
+      }
+    }
+    const uri = 'repo://orpc/contracts/all';
+    if (Object.keys(contracts).length === 0) {
+      return { 
+        contents: [{ uri, mimeType: 'text/plain', text: 'No ORPC contracts found. Check @repo/api-contracts.' }], 
+        isError: true 
+      };
+    }
+    return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(contracts, null, 2) }] };
+  }
+
+  @ResourceTemplate({
+    name: 'orpc-contract-route',
+    uriTemplate: 'repo://orpc/contract/{contract}/{route}',
+    description: 'Schema for a specific route in an ORPC contract',
+    mimeType: 'application/json',
+  })
+  async resourceOrpcContractRoute(params: { contract: string; route: string }) {
+    try {
+      const contractsMod = await import('@repo/api-contracts');
+      const contract = (contractsMod as any)[params.contract];
+      if (!contract || !contract.routes || !contract.routes[params.route]) {
+        const uri = `repo://orpc/contract/${params.contract}/${params.route}`;
+        return { 
+          isError: true, 
+          contents: [{ uri, mimeType: 'text/plain', text: `Contract ${params.contract} or route ${params.route} not found in @repo/api-contracts.` }] 
+        };
+      }
+      const schema = extractOrpcSchema(contract, params.route);
+      const uri = `repo://orpc/contract/${params.contract}/${params.route}`;
+      return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(schema, null, 2) }] };
+    } catch (error) {
+      const uri = `repo://orpc/contract/${params.contract}/${params.route}`;
+      return { 
+        isError: true, 
+        contents: [{ uri, mimeType: 'text/plain', text: `Error extracting schema: ${String(error)}` }] 
+      };
+    }
+  }
+
+  @Tool({
+    name: 'orpc-schema-get',
+    description: 'Get schema for an ORPC contract route.',
+    parameters: z.object({
+      contract: z.string().describe('Contract name, e.g., userContract'),
+      route: z.string().describe('Route name, e.g., getProfile'),
+      type: z.enum(['input', 'output', 'both']).default('both'),
+    }),
+  })
+  async orpcSchemaGet(params: { contract: string; route: string; type: 'input' | 'output' | 'both' }) {
+    try {
+      const contractsMod = await import('@repo/api-contracts');
+      const contract = (contractsMod as any)[params.contract];
+      if (!contract?.routes?.[params.route]) {
+        return { error: `Contract ${params.contract} or route ${params.route} not found` };
+      }
+      const fullSchema = extractOrpcSchema(contract, params.route);
+      const result: any = {};
+      if (params.type === 'input' || params.type === 'both') {
+        result.input = fullSchema.input;
+      }
+      if (params.type === 'output' || params.type === 'both') {
+        result.output = fullSchema.output;
+      }
+      return { ...result, method: fullSchema.method, path: fullSchema.path };
+    } catch (error) {
+      return { error: String(error) };
+    }
+  }
+
+  // @Resource({
+  //   name: 'web-routes',
+  //   uri: 'repo://web/routes',
+  //   description: 'Generated declarative routes from apps/web (requires dr:build run)',
+  //   mimeType: 'application/json',
+  // })
+  // async resourceWebRoutes() {
+  //   try {
+  //     const generated = await import('../../../../apps/web/src/routes/index'); // Adjust to actual generated file
+  //     const routes = Object.keys(generated).filter(k => k.endsWith('Link') || k.includes('Route')).map(k => k.replace(/Link|Route$/, ''));
+  //     const uri = 'repo://web/routes';
+  //     return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(routes, null, 2) }] };
+  //   } catch (error) {
+  //     const uri = 'repo://web/routes';
+  //     return { 
+  //       contents: [{ uri, mimeType: 'text/plain', text: `Generated routes not available: ${String(error)}. Run bun run web -- dr:build.` }], 
+  //       isError: true 
+  //     };
+  //   }
+  // }
+
+  // TODO: db-execute-query - DB connection needs to run inside API container or use separate PG connection (e.g., pg client with DATABASE_URL env)
+  /*
+  @Tool({
+    name: 'db-execute-query',
+    description: 'Execute read-only SQL query on dev DB using Drizzle (SELECT only).',
+    parameters: z.object({
+      sql: z.string().describe('SQL query (SELECT only)'),
+      params: z.array(z.any()).optional().default([]).describe('Query parameters'),
+    }),
+  })
+  async dbExecuteQuery(params: { sql: string; params?: any[] }) {
+    if (!params.sql.toUpperCase().startsWith('SELECT')) {
+      return { error: 'Only SELECT queries allowed for safety.' };
+    }
+    try {
+      const result = await this.db.$queryRaw(sql`${params.sql}`, ...(params.params || []));
+      return { rows: result, count: result.length };
+    } catch (error) {
+      return { error: String(error) };
+    }
+  }
+  */
+
+  // Alternative: Use pg client directly (add to deps if needed)
+  // Example future impl:
+  // import { Client } from 'pg';
+  // const client = new Client({ connectionString: process.env.DATABASE_URL });
+  // await client.connect();
+  // const res = await client.query(params.sql, params.params);
+  // await client.end();
+  // return res.rows;
+
+  @Resource({
+    name: 'db-schema',
+    uri: 'repo://db/schema',
+    description: 'List of database tables and columns from Drizzle schema',
+    mimeType: 'application/json',
+  })
+  async resourceDbSchema() {
+    const tables = Object.keys(schema).filter(k => k !== 'default' && typeof schema[k as keyof typeof schema] === 'object');
+    const schemaInfo = tables.map(table => ({
+      table,
+      columns: Object.keys((schema as any)[table]),
+    }));
+    return { contents: [{ uri: 'repo://db/schema', mimeType: 'application/json', text: JSON.stringify(schemaInfo, null, 2) }] };
+  }
+
+  // New Tool for tests - add after DB tool
+  @Tool({
+    name: 'run-tests',
+    description: 'Run Vitest tests on a target with optional coverage. Returns JSON summary of results.',
+    parameters: z.object({
+      targetType: z.enum(['app', 'package']).describe('Target type'),
+      targetName: z.string().describe('Target name, e.g., web or @repo/ui'),
+      filter: z.string().optional().describe('Test filter pattern'),
+      coverage: z.boolean().default(false).describe('Include coverage report'),
+      watch: z.boolean().default(false).describe('Watch mode (non-interactive)'),
+    }),
+  })
+  async runTests(params: { targetType: 'app' | 'package'; targetName: string; filter?: string; coverage?: boolean; watch?: boolean }) {
+    const target = await this.findTarget(params.targetType, params.targetName);
+    if (!target) return { error: `Target not found: ${params.targetType} ${params.targetName}` };
+
+    const args = ['--bun', 'run', 'test'];
+    if (params.filter) args.push(...params.filter.split(' ').map(f => `--filter=${f}`));
+    if (params.coverage) args.push('--coverage');
+    if (params.watch) args.push('--watch');
+
+    // Run and capture output
+    const result = await this.runCmdCapture('bun', args, target.info.path);
+    if (result.code !== 0) {
+      return { error: 'Tests failed', stdout: result.stdout, stderr: result.stderr, exitCode: result.code };
+    }
+
+    // Parse simple summary (improve with regex for pass/fail/count)
+    const summary = {
+      passed: (result.stdout.match(/Tests:\s*(\d+)/) || [0, '0'])[1],
+      total: (result.stdout.match(/Tests:\s*\d+.*?(\d+)/s) || [0, '0'])[1],
+      coverage: params.coverage ? 'Included in stdout' : false,
+    };
+
+    return { success: true, summary, stdout: result.stdout, stderr: result.stderr };
+  }
+
+  // Resource for latest test results (simulate; in real, parse coverage files)
+  @Resource({
+    name: 'tests-latest',
+    uri: 'repo://tests/results/latest',
+    description: 'Summary of last test run (placeholder; run run-tests to populate)',
+    mimeType: 'application/json',
+  })
+  async resourceTestsLatest() {
+    return { contents: [{ uri: 'repo://tests/results/latest', mimeType: 'application/json', text: JSON.stringify({ status: 'No recent run; use run-tests tool', passed: 0, total: 0 }, null, 2) }] };
+  }
+
+  // New Tool for Git history
+  @Tool({
+    name: 'git-history',
+    description: 'Get commit history for a file or path, with optional date filter.',
+    parameters: z.object({
+      path: z.string().describe('File or directory path'),
+      since: z.string().optional().describe('Since date, e.g., 2024-01-01'),
+      limit: z.number().default(10).describe('Number of commits'),
+    }),
+  })
+  async gitHistory(params: { path: string; since?: string; limit?: number }) {
+    const { repoRoot } = await this.getWorkspace();
+    const args = ['log', '--oneline', `--since=${params.since || ''}`, `-n${params.limit}`, '--', params.path];
+    const result = await this.runCmdCapture('git', args, repoRoot);
+    if (result.code !== 0) return { error: 'Git history failed', stderr: result.stderr };
+
+    const commits = result.stdout.trim().split('\n').map(line => {
+      const [hash, ...message] = line.split(' ', 2);
+      return { hash, message: message.join(' ') };
+    });
+
+    return { commits, total: commits.length };
+  }
+
+  // Resource for blame
+  @ResourceTemplate({
+    name: 'git-blame',
+    uriTemplate: 'repo://git/blame/{file}:{line?}',
+    description: 'Git blame for a file line (author, date, commit)',
+    mimeType: 'text/plain',
+  })
+  async resourceGitBlame(params: { file: string; line?: string }) {
+    const { repoRoot } = await this.getWorkspace();
+    const args = ['blame', '-L', params.line || '1,+1', '--porcelain', params.file];
+    const result = await this.runCmdCapture('git', args, repoRoot);
+    if (result.code !== 0) {
+      const uri = `repo://git/blame/${params.file}:${params.line || ''}`;
+      return { contents: [{ uri, mimeType: 'text/plain', text: `Blame failed: ${result.stderr}` }], isError: true };
+    }
+    // Parse porcelain output for author, date, hash
+    const lines = result.stdout.trim().split('\n');
+    const blame = {
+      commit: lines.find(l => l.startsWith('commit '))?.substring(7),
+      author: lines.find(l => l.startsWith('author '))?.substring(7),
+      authorTime: lines.find(l => l.startsWith('author-time '))?.substring(12),
+      summary: lines.find(l => l.startsWith('summary '))?.substring(8),
+    };
+    const uri = `repo://git/blame/${params.file}:${params.line || ''}`;
+    return { contents: [{ uri, mimeType: 'application/json', text: JSON.stringify(blame, null, 2) }] };
+  }
+
+  // New Tool for Docker logs
+  @Tool({
+    name: 'docker-logs-tail',
+    description: 'Tail Docker container logs for a service.',
+    parameters: z.object({
+      service: z.string().describe('Service name, e.g., api or web'),
+      lines: z.number().default(50).describe('Number of lines'),
+      follow: z.boolean().default(false).describe('Follow logs (tail -f)'),
+    }),
+  })
+  async dockerLogsTail(params: { service: string; lines?: number; follow?: boolean }) {
+    const { repoRoot } = await this.getWorkspace();
+    const args = ['compose', 'logs', '--tail', params.lines?.toString() || '', params.service];
+    if (params.follow) args.push('-f');
+    const result = await this.runCmdCapture('docker', args, repoRoot);
+    if (result.code !== 0) return { error: 'Logs fetch failed', stderr: result.stderr };
+
+    const logs = result.stdout.trim();
+    return { service: params.service, logs, lines: params.lines };
+  }
+
+  // Tool for health check
+  @Tool({
+    name: 'docker-health-check',
+    description: 'Check health of Docker services by pinging /health endpoints.',
+    parameters: z.object({
+      service: z.enum(['api', 'web', 'db', 'redis']).optional().describe('Specific service'),
+    }),
+  })
+  async dockerHealthCheck(params?: { service?: 'api' | 'web' | 'db' | 'redis' }) {
+    const services = params?.service ? [params.service] : ['api', 'web'];
+    const results = [];
+    for (const svc of services) {
+      const url = `http://localhost:3001/health`; // Adjust per service
+      try {
+        const response = await fetch(url);
+        results.push({ service: svc, healthy: response.ok, status: response.status });
+      } catch {
+        results.push({ service: svc, healthy: false, error: 'Unreachable' });
+      }
+    }
+    return { checks: results };
+  }
+
+  // New Tool for vuln scan
+  @Tool({
+    name: 'scan-vulns',
+    description: 'Scan dependencies for vulnerabilities using bun audit.',
+    parameters: z.object({
+      targetType: z.enum(['app', 'package', 'root']).default('root').describe('Scan scope'),
+      targetName: z.string().optional().describe('Specific target for app/package'),
+      fix: z.boolean().default(false).describe('Auto-fix if possible (bun audit --fix)'),
+    }),
+  })
+  async scanVulns(params: { targetType: 'app' | 'package' | 'root'; targetName?: string; fix?: boolean }) {
+    const { repoRoot } = await this.getWorkspace();
+    let cwd = repoRoot;
+    if (params.targetType !== 'root' && params.targetName) {
+      const target = await this.findTarget(params.targetType as any, params.targetName);
+      if (!target) return { error: `Target not found` };
+      cwd = target.info.path;
+    }
+
+    const args = ['audit'];
+    if (params.fix) args.push('--fix');
+    const result = await this.runCmdCapture('bun', args, cwd);
+
+    if (result.code !== 0) {
+      // Parse audit output for issues
+      const issues = result.stdout ? result.stdout.split('\n').filter(line => line.includes('High') || line.includes('Medium') || line.includes('Low')).map(line => line.trim()) : [];
+      return { vulns: issues.length, issues, fixed: params.fix, error: result.stderr };
+    }
+
+    return { vulns: 0, issues: [], fixed: params.fix, message: 'No vulnerabilities found' };
   }
 }

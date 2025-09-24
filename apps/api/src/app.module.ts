@@ -1,4 +1,8 @@
-import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
+import {
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+} from "@nestjs/common";
 import { DatabaseModule } from "./core/modules/database/database.module";
 import { HealthModule } from "./modules/health/health.module";
 import { UserModule } from "./modules/user/user.module";
@@ -12,6 +16,7 @@ import { EnvModule } from "./config/env/env.module";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./core/modules/auth/guards/auth.guard";
 import { RoleGuard } from "./core/modules/auth/guards/role.guard";
+import { REQUEST } from '@nestjs/core'
 
 @Module({
   imports: [
@@ -24,17 +29,21 @@ import { RoleGuard } from "./core/modules/auth/guards/role.guard";
     }),
     HealthModule,
     UserModule,
-    ORPCModule.forRoot({
-      interceptors: [
-        onError((error, ctx) => {
-          console.error(
-            "oRPC Error:",
-            JSON.stringify(error),
-            JSON.stringify(ctx)
-          );
-        }),
-      ],
-      eventIteratorKeepAliveInterval: 5000, // 5 seconds
+    ORPCModule.forRootAsync({
+      useFactory: (request: Request) => ({
+        interceptors: [
+          onError((error, ctx) => {
+            console.error(
+              "oRPC Error:",
+              JSON.stringify(error),
+              JSON.stringify(ctx)
+            );
+          })
+        ],
+        context: { request },
+        eventIteratorKeepAliveInterval: 5000, // 5 seconds
+      }),
+      inject: [REQUEST],
     }),
   ],
   providers: [

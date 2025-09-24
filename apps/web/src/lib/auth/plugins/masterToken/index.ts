@@ -6,7 +6,7 @@ import {
     getMasterTokenKey,
     MasterTokenManager,
 } from './state'
-import { authClient } from '../..'
+import type { authClient } from '../..'
 
 /**
  * Better Auth client plugin to attach a master token Authorization header
@@ -27,6 +27,7 @@ export const masterTokenClient = (): ReturnType<() => BetterAuthClientPlugin> =>
                     typeof window !== 'undefined' &&
                     process.env.NODE_ENV === 'development'
                 ) {
+                    const authClient = await import('../..').then((m) => m.authClient)
                     if (!MasterTokenManager.state) {
                         // If dev auth mode is not active, fall through to the original
                         // signOut behavior to ensure sign-out still works.

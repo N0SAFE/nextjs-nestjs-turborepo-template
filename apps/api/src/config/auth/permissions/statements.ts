@@ -41,8 +41,12 @@ import type { PermissionStatement, AccessControlRoles } from './types';
  */
 export const statement = {
   ...defaultStatements,
-  // Add your custom application-specific permissions here
-  // Example: project: ["create", "read", "update", "delete", "share"],
+  // Custom resources for the application
+  project: ["create", "read", "update", "delete", "share"] as const,
+  organization: ["create", "read", "update", "delete", "manage-members"] as const,
+  billing: ["read", "update", "manage-subscriptions"] as const,
+  analytics: ["read", "export"] as const,
+  system: ["maintenance", "backup", "restore", "monitor"] as const,
 } as const satisfies PermissionStatement;
 
 /**
@@ -124,8 +128,45 @@ export const ac = createAccessControl(statement);
  * ```
  */
 export const roles = {
-  // Define your application roles here
-  // Example:
-  // admin: ac.newRole({ ...defaultStatements }),
-  // user: ac.newRole({ project: ["read"] }),
+  // Super admin with full access to all resources
+  superAdmin: ac.newRole({ ...statement } as any), // Type assertion to bypass readonly
+
+  // Regular admin with most permissions but limited system access
+  admin: ac.newRole({
+    user: ["create", "list", "set-role", "ban", "impersonate", "delete", "set-password", "get", "update"],
+    session: ["list", "revoke", "delete"],
+    project: ["create", "read", "update", "delete", "share"],
+    organization: ["read", "update", "manage-members"],
+    billing: ["read"],
+    analytics: ["read"],
+  } as any),
+
+  // Manager with project and organization management
+  manager: ac.newRole({
+    user: ["list"],
+    session: ["list"],
+    project: ["create", "read", "update", "delete", "share"],
+    organization: ["read", "update"],
+    billing: ["read"],
+  } as any),
+
+  // Editor with content creation permissions
+  editor: ac.newRole({
+    project: ["create", "read", "update", "share"],
+    organization: ["read"],
+    analytics: ["read"],
+  } as any),
+
+  // Viewer with read-only access
+  viewer: ac.newRole({
+    project: ["read"],
+    organization: ["read"],
+    analytics: ["read"],
+  } as any),
+
+  // Basic user with minimal permissions
+  user: ac.newRole({
+    project: ["read"],
+    organization: ["read"],
+  } as any),
 } as const satisfies AccessControlRoles;

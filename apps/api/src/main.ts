@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import { FlubErrorHandler } from 'nestjs-flub';
 import { generateSpec } from './openapi';
 
 async function bootstrap() {
@@ -9,6 +10,7 @@ async function bootstrap() {
     bodyParser: false, // Disable NestJS body parser for oRPC
   });
   
+  app.useGlobalFilters(new FlubErrorHandler());
   // Enable CORS for Next.js frontend
   app.enableCors({
     origin: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000',

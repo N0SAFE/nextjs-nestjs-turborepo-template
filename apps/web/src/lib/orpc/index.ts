@@ -6,11 +6,11 @@ import { validateEnvPath } from '#/env'
 import { Authsignin } from '@/routes/index'
 import { toAbsoluteUrl } from '@/lib/utils'
 import clientRedirect from '@/actions/redirect'
-import { authClient } from '../auth'
 import { hasMasterTokenPlugin } from '../auth/plugins/guards'
 import { parseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
+import { serverAuthClient } from '../auth/server'
 
 const APP_URL = validateEnvPath(
     process.env.NEXT_PUBLIC_APP_URL!,
@@ -64,10 +64,13 @@ export function createORPCClientWithCookies() {
 
                 if (
                     process.env.NODE_ENV === 'development' &&
-                    hasMasterTokenPlugin(authClient)
+                    hasMasterTokenPlugin(serverAuthClient)
                 ) {
                     if (typeof window !== 'undefined') {
-                        if (authClient.MasterTokenManager.state) {
+                        const authClient = await import('../auth').then(
+                            (m) => m.authClient
+                        )
+                        if (hasMasterTokenPlugin(authClient) && authClient.MasterTokenManager.state) {
                             const devAuthKey =
                                 process.env.NEXT_PUBLIC_DEV_AUTH_KEY
 

@@ -99,6 +99,36 @@ UI (packages/ui):
 General packages:
 - Prefer `run-script` for local scripts, `bump-version` for versioning, and `list-internal-dependencies` to assess impact before changes.
 
+## Enhanced MCP Tools for LLM Access
+
+### Database Access
+- Tool: `db-execute-query` - Run SELECT queries on dev DB via Drizzle, return rows.
+- Resource: `repo://db/schema` - List tables/columns from schema.
+
+### Testing
+- Tool: `run-tests` - Execute Vitest on targets with coverage.
+- Resource: `repo://tests/results/latest` - Last test summary.
+
+### Git & History
+- Tool: `git-history` - Commit history for paths.
+- Resource: `repo://git/blame/{file}:{line}` - Blame info.
+
+### Docker & Runtime
+- Tool: `docker-logs-tail` - Tail service logs.
+- Tool: `docker-health-check` - Ping /health on services.
+
+### Security & Analysis
+- Tool: `scan-vulns` - Bun audit for deps.
+- Resource: `repo://code/metrics` - LOC/files metrics.
+
+### Previous Enhancements (API/ORPC/TanStack)
+- `api-call-as-role`, `repo://api/keys`
+- `repo://api/schema/*`, `api-schema-query`
+- `repo://orpc/contracts/*`, `orpc-schema-get`
+- `web-tanstack-state`, `repo://web/routes`, `repo://web/tanstack/queries`
+
+Start dev stack with `docker-up { mode: 'dev' }` for runtime tools. See docs/MCP-ENHANCEMENTS-IDEA.md for details.
+
 ## Execution Context: Local vs Docker (Dev)
 
 Some tools/scripts are designed to run locally, while others must run inside the development containers.

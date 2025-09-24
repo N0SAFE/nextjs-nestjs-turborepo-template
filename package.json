@@ -221,13 +221,13 @@
         "@n0safe/rununtil": "^1.0.5",
         "@n0safe/trycli": "^1.0.4",
         "@types/bun": "latest",
+        "concurrently": "catalog:dev",
         "nyc": "^15.1.0",
         "prompts": "catalog:utils",
         "rimraf": "catalog:build",
-        "turbo": "^2.1.2",
-        "vitest": "catalog:testing",
+        "turbo": "^2.5.6",
         "vite": "catalog:build",
-        "concurrently": "catalog:dev"
+        "vitest": "catalog:testing"
     },
     "engines": {
         "bun": ">=1.2.14"
