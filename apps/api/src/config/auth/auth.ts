@@ -6,6 +6,7 @@ import type { EnvService } from "../env/env.service";
 import { masterTokenPlugin } from "./plugins/masterTokenAuth";
 import { loginAsPlugin } from "./plugins/loginAs";
 import { useAdmin } from "./permissions/index";
+import { openAPI } from "better-auth/plugins";
 
 export const betterAuthFactory = (...args: unknown[]) => {
   const [database, envService] = args as [unknown, EnvService];
@@ -37,6 +38,7 @@ export const betterAuthFactory = (...args: unknown[]) => {
           enabled: envService.get("NODE_ENV") === "development" && !!devAuthKey,
           devAuthKey: devAuthKey || "",
         }),
+        openAPI()
       ],
     }),
   };
