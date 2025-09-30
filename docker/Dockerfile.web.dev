@@ -2,7 +2,7 @@
 # Simple development Dockerfile for Next.js Web App
 # Focused on simplicity and avoiding permission issues
 
-FROM oven/bun:1.2.21-alpine
+FROM oven/bun:1.2.23-alpine
 
 # Install system dependencies
 RUN apk add --no-cache libc6-compat curl bash supervisor
