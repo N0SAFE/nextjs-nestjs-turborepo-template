@@ -24,7 +24,10 @@
     "cli": "bun src/cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/config/drizzle/schema/auth.ts --y && bun run db:generate"
+    "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/config/drizzle/schema/auth.ts --y && bun run db:generate",
+    "typecheck": "tsc --noEmit",
+    "types-check": "bun run typecheck",
+    "typecheck:test": "tsc --noEmit --project tsconfig.test.json"
   },
   "dependencies": {
     "@mguay/nestjs-better-auth": "catalog:auth",

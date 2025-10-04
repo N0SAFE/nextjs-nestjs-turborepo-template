@@ -58,6 +58,7 @@
         "next": "catalog:next",
         "next-sitemap": "catalog:next",
         "nextjs-toploader": "catalog:next",
+        "nuqs": "^2.7.0",
         "query-string": "catalog:utils",
         "react": "catalog:react",
         "react-dom": "catalog:react",

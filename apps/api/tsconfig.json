@@ -25,8 +25,9 @@
     "noEmit": false,
     "paths": {
       "@/*": ["./src/*"],
-      "@repo/database": ["../../packages/database/src"],
-      "@repo/database/*": ["../../packages/database/src/*"]
-    }
-  }
+      "@repo/database/*": ["../../packages/database/src/*"],
+      "@repo/api-contracts/*": ["../../packages/api-contracts/*"]
+    },
+  },
+  "exclude": ["**/*.spec.ts", "test", "node_modules", "dist"],
 }
