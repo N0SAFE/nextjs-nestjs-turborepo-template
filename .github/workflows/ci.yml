@@ -17,7 +17,7 @@ jobs:
     # Job 0: Setup - Install dependencies and prepare environment
     setup:
         name: 🔧 Setup & Install Dependencies
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 10
         outputs:
             cache-hit: ${{ steps.cache-dependencies.outputs.cache-hit }}
@@ -58,7 +58,7 @@ jobs:
     # Job 1: Generate Declarative Routes
     generate-declarative-routes:
         name: 📝 Generate Declarative Routes
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 8
         needs: setup
         outputs:
@@ -114,7 +114,7 @@ jobs:
     # Job 2: Lint and Type Check
     lint-and-typecheck:
         name: 🔍 Lint & Type Check
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 8
         needs: [setup]
         env:
@@ -164,7 +164,7 @@ jobs:
     # Job 3: Build
     build:
         name: 🏗️ Build
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 12
         needs: [lint-and-typecheck, generate-declarative-routes]
         env:
@@ -245,7 +245,7 @@ jobs:
     # Job 4: Test
     test:
         name: 🧪 Test
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 12
         needs: [lint-and-typecheck, generate-declarative-routes]
         env:
@@ -324,7 +324,7 @@ jobs:
     # Job 5: Deployment Ready Check
     deployment-ready:
         name: 🚀 Deployment Ready
-        runs-on: ubuntu-latest
+        runs-on: blacksmith-4vcpu-ubuntu-2404
         timeout-minutes: 3
         needs: [setup, generate-declarative-routes, lint-and-typecheck, build, test]
         if: always()
