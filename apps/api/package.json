@@ -39,7 +39,7 @@
     "@orpc/server": "catalog:orpc",
     "@orpc/shared": "catalog:orpc",
     "@repo/api-contracts": "*",
-    "@scalar/nestjs-api-reference": "^0.5.14",
+    "@scalar/nestjs-api-reference": "^1.0.4",
     "@vitest/coverage-istanbul": "^3.2.4",
     "bcrypt": "catalog:database",
     "better-auth": "catalog:auth",
