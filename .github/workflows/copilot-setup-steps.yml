@@ -93,7 +93,7 @@ jobs:
 
       # Step 2: Setup Node.js (required as fallback and for some tools)
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
