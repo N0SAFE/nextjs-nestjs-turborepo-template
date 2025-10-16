@@ -13,6 +13,19 @@ A modern, full-stack monorepo template featuring Next.js frontend, NestJS API, S
 - 🔧 **Development Tools**: ESLint, Prettier, and TypeScript configurations
 - 🤖 **AI-Ready**: Pre-configured development environment for GitHub Copilot coding agent
 
+## 📋 Feature Roadmap & Project Tracking
+
+This template includes comprehensive feature tracking with 100+ identified enhancements:
+
+- **[Feature Roadmap](.docs/planning/FEATURE-ROADMAP.md)**: Complete list of unimplemented features organized by priority and phase
+- **[Quick Start: Project Setup](QUICK-START-PROJECT-SETUP.md)**: 25-minute guide to create GitHub Project and populate with tasks
+- **[Project Setup Summary](PROJECT-SETUP-SUMMARY.md)**: Overview of gaps and implementation phases
+- **[Issue Creation Script](scripts/create-roadmap-issues.sh)**: Automated GitHub issue generation
+
+**Categories tracked**: MCP Enhancements (20+), API Features (10+), Frontend Features (10+), Testing (5+), DevOps (5+), Documentation, Developer Experience
+
+See [QUICK-START-PROJECT-SETUP.md](QUICK-START-PROJECT-SETUP.md) to get started with project tracking!
+
 ## Prerequisites
 
 - Bun 1.2.14+ (primary)

@@ -58,6 +58,12 @@ You can still jump directly to any topic below.
 - Memory optimization (Docker): ./MEMORY-OPTIMIZATION.md
 - Project isolation (multiple projects on one machine): ./PROJECT-ISOLATION.md
 
+## Planning & Roadmap
+
+- Feature roadmap: ./planning/FEATURE-ROADMAP.md
+- Project setup guide: ../scripts/generate-project-tasks.md
+- Quick start: ../QUICK-START-PROJECT-SETUP.md
+
 ## Reference
 
 - Environment template system: ./ENVIRONMENT-TEMPLATE-SYSTEM.md
