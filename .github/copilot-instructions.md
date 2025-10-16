@@ -4,7 +4,7 @@
 
 **CRITICAL**: Before taking ANY action on this project, you MUST:
 
-1. **Read the [Documentation Hub](../docs/core-concepts/README.md)** - the source of truth for all patterns
+1. **Read the [Documentation Hub](../.docs/core-concepts/README.md)** - the source of truth for all patterns
 2. This file delegates ALL governance rules to that hub - do not rely on duplication here
 3. Only use this file for Copilot-specific setup and context  
 4. **The core-concepts hub is non-negotiable** - refer to it for every major decision
@@ -156,41 +156,41 @@ When making changes, follow this order: API contracts → API implementation →
 For detailed information on specific topics, reference these documentation files:
 
 ### 🚀 **Getting Started & Setup**
-- **Initial Setup**: [`docs/guides/GETTING-STARTED.md`](../docs/guides/GETTING-STARTED.md) - Complete setup guide with prerequisites and environment configuration
-- **Project Architecture**: [`docs/reference/ARCHITECTURE.md`](../docs/reference/ARCHITECTURE.md) - System design, component relationships, and data flows
-- **Technology Stack**: [`docs/reference/TECH-STACK.md`](../docs/reference/TECH-STACK.md) - Detailed technology choices and version information
+- **Initial Setup**: [`.docs/guides/GETTING-STARTED.md`](../.docs/guides/GETTING-STARTED.md) - Complete setup guide with prerequisites and environment configuration
+- **Project Architecture**: [`.docs/reference/ARCHITECTURE.md`](../.docs/reference/ARCHITECTURE.md) - System design, component relationships, and data flows
+- **Technology Stack**: [`.docs/reference/TECH-STACK.md`](../.docs/reference/TECH-STACK.md) - Detailed technology choices and version information
 
 ### 🛠️ **Development Workflows**
-- **Daily Development**: [`docs/guides/DEVELOPMENT-WORKFLOW.md`](../docs/guides/DEVELOPMENT-WORKFLOW.md) - Day-to-day development tasks and best practices
-- **API Contracts**: [`docs/features/ORPC-TYPE-CONTRACTS.md`](../docs/features/ORPC-TYPE-CONTRACTS.md) - ORPC type-safe API development and usage patterns
+- **Daily Development**: [`.docs/guides/DEVELOPMENT-WORKFLOW.md`](../.docs/guides/DEVELOPMENT-WORKFLOW.md) - Day-to-day development tasks and best practices
+- **API Contracts**: [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md) - ORPC type-safe API development and usage patterns
 - **Declarative Routing**: [`apps/web/src/routes/README.md`](../apps/web/src/routes/README.md) - Type-safe routing system usage and examples
 
 ### 🐳 **Docker & Deployment**
-- **Docker Strategies**: [`docs/guides/DOCKER-BUILD-STRATEGIES.md`](../docs/guides/DOCKER-BUILD-STRATEGIES.md) - Development vs production Docker configurations
-- **Production Deployment**: [`docs/guides/PRODUCTION-DEPLOYMENT.md`](../docs/guides/PRODUCTION-DEPLOYMENT.md) - Production environment setup and deployment strategies
-- **Render Deployment**: [`docs/guides/RENDER-DEPLOYMENT.md`](../docs/guides/RENDER-DEPLOYMENT.md) - Platform-specific deployment guide for Render
-- **Project Isolation**: [`docs/planning/PROJECT-ISOLATION.md`](../docs/planning/PROJECT-ISOLATION.md) - Running multiple project instances without conflicts
+- **Docker Strategies**: [`.docs/guides/DOCKER-BUILD-STRATEGIES.md`](../.docs/guides/DOCKER-BUILD-STRATEGIES.md) - Development vs production Docker configurations
+- **Production Deployment**: [`.docs/guides/PRODUCTION-DEPLOYMENT.md`](../.docs/guides/PRODUCTION-DEPLOYMENT.md) - Production environment setup and deployment strategies
+- **Render Deployment**: [`.docs/guides/RENDER-DEPLOYMENT.md`](../.docs/guides/RENDER-DEPLOYMENT.md) - Platform-specific deployment guide for Render
+- **Project Isolation**: [`.docs/planning/PROJECT-ISOLATION.md`](../.docs/planning/PROJECT-ISOLATION.md) - Running multiple project instances without conflicts
 
 ### ⚙️ **Configuration & Environment**
-- **Environment Variables**: [`docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md`](../docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md) - Environment configuration and template system
-- **GitHub Copilot Setup**: [`docs/features/COPILOT-SETUP.md`](../docs/features/COPILOT-SETUP.md) - AI development environment configuration
+- **Environment Variables**: [`.docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md`](../.docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md) - Environment configuration and template system
+- **GitHub Copilot Setup**: [`.docs/features/COPILOT-SETUP.md`](../.docs/features/COPILOT-SETUP.md) - AI development environment configuration
 
 ### 🧪 **Testing & Quality**
-- **Testing Guide**: [`docs/features/TESTING.md`](../docs/features/TESTING.md) - Testing strategies and test execution
-- **Testing Implementation**: [`docs/deprecated/TESTING-IMPLEMENTATION-SUMMARY.md`](../docs/deprecated/TESTING-IMPLEMENTATION-SUMMARY.md) - Comprehensive testing setup details
+- **Testing Guide**: [`.docs/features/TESTING.md`](../.docs/features/TESTING.md) - Testing strategies and test execution
+- **Testing Implementation**: [`.docs/deprecated/TESTING-IMPLEMENTATION-SUMMARY.md`](../.docs/deprecated/TESTING-IMPLEMENTATION-SUMMARY.md) - Comprehensive testing setup details
 
 ### 📂 **Quick Reference for Common Tasks**
 
 | Task | Documentation File | Key Section |
 |------|-------------------|-------------|
-| Setting up development environment | `docs/guides/GETTING-STARTED.md` | Quick Start |
-| Creating API endpoints | `docs/features/ORPC-TYPE-CONTRACTS.md` | API Implementation |
+| Setting up development environment | `.docs/guides/GETTING-STARTED.md` | Quick Start |
+| Creating API endpoints | `.docs/features/ORPC-TYPE-CONTRACTS.md` | API Implementation |
 | Adding new pages | `apps/web/src/routes/README.md` | Using the routes |
-| Database operations | `docs/guides/DEVELOPMENT-WORKFLOW.md` | Working with Database |
-| Docker issues | `docs/guides/DOCKER-BUILD-STRATEGIES.md` | Troubleshooting |
-| Production deployment | `docs/guides/PRODUCTION-DEPLOYMENT.md` | Production Environment Variables |
-| Environment configuration | `docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md` | Template System |
-| Testing setup | `docs/features/TESTING.md` | Running Tests |
+| Database operations | `.docs/guides/DEVELOPMENT-WORKFLOW.md` | Working with Database |
+| Docker issues | `.docs/guides/DOCKER-BUILD-STRATEGIES.md` | Troubleshooting |
+| Production deployment | `.docs/guides/PRODUCTION-DEPLOYMENT.md` | Production Environment Variables |
+| Environment configuration | `.docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md` | Template System |
+| Testing setup | `.docs/features/TESTING.md` | Running Tests |
 
 **Note**: Always check these documentation files for the most up-to-date and detailed information before implementing features or resolving issues.
 
@@ -202,14 +202,14 @@ For detailed information on specific topics, reference these documentation files
 
 Update relevant documentation whenever you:
 
-1. **Add/Modify API Endpoints**: Update `docs/ORPC-TYPE-CONTRACTS.md` and `docs/DEVELOPMENT-WORKFLOW.md`
-2. **Change Environment Variables**: Update `docs/GETTING-STARTED.md`, `docs/ENVIRONMENT-TEMPLATE-SYSTEM.md`, and relevant deployment docs
-3. **Modify Docker Configuration**: Update `docs/DOCKER-BUILD-STRATEGIES.md` and deployment guides
-4. **Update Dependencies**: Update `docs/TECH-STACK.md` with new versions and rationale
-5. **Change Database Schema**: Update `docs/DEVELOPMENT-WORKFLOW.md` database sections
+1. **Add/Modify API Endpoints**: Update `.docs/ORPC-TYPE-CONTRACTS.md` and `.docs/DEVELOPMENT-WORKFLOW.md`
+2. **Change Environment Variables**: Update `.docs/GETTING-STARTED.md`, `.docs/ENVIRONMENT-TEMPLATE-SYSTEM.md`, and relevant deployment docs
+3. **Modify Docker Configuration**: Update `.docs/DOCKER-BUILD-STRATEGIES.md` and deployment guides
+4. **Update Dependencies**: Update `.docs/TECH-STACK.md` with new versions and rationale
+5. **Change Database Schema**: Update `.docs/DEVELOPMENT-WORKFLOW.md` database sections
 6. **Add/Remove Routes**: Update `apps/web/src/routes/README.md` and routing documentation
-7. **Modify Authentication Flow**: Update `docs/ARCHITECTURE.md` and setup guides
-8. **Change Testing Setup**: Update `docs/TESTING.md` and testing documentation
+7. **Modify Authentication Flow**: Update `.docs/ARCHITECTURE.md` and setup guides
+8. **Change Testing Setup**: Update `.docs/TESTING.md` and testing documentation
 9. **Alter Deployment Procedures**: Update production and platform-specific deployment guides
 10. **Add New Features**: Create or update relevant documentation sections
 
@@ -254,13 +254,13 @@ Document whenever you add or implement:
 
 #### 1. **Determine Documentation Scope**
 - **Minor Enhancement**: Update existing documentation section
-- **Major Feature**: Create dedicated documentation file in `docs/` directory
+- **Major Feature**: Create dedicated documentation file in `.docs/` directory
 - **Cross-cutting Concern**: Update multiple related documentation files
 
 #### 2. **Create/Update Documentation**
 
 **For New Documentation Files:**
-- Use clear, descriptive naming: `docs/NEW-CONCEPT-NAME.md`
+- Use clear, descriptive naming: `.docs/NEW-CONCEPT-NAME.md`
 - Follow the established documentation structure and tone
 - Include practical examples and code snippets
 - Provide troubleshooting guidance
@@ -304,10 +304,10 @@ Links to related concepts and documentation.
 2. **Project README** (if user-facing)
    - Update feature lists or technology mentions
 
-3. **Architecture Documentation** (`docs/ARCHITECTURE.md`)
+3. **Architecture Documentation** (`.docs/ARCHITECTURE.md`)
    - Update if it affects system architecture
 
-4. **Tech Stack Documentation** (`docs/TECH-STACK.md`)
+4. **Tech Stack Documentation** (`.docs/TECH-STACK.md`)
    - Add new technologies with version information and rationale
 
 ### Copilot Instructions File Maintenance

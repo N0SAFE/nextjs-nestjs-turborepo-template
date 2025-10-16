@@ -17,8 +17,8 @@ Documentation is a **FIRST-CLASS CITIZEN** in this project. Every documentation 
 **Every documentation update triggers a cascading update protocol:**
 1. Update or create the documentation file
 2. Update the parent README.md to reference it
-3. Validate all links using `docs/bin/check-doc-links.ts`
-4. Update the main docs/README.md if needed (for new categories or major changes)
+3. Validate all links using `.docs/bin/check-doc-links.ts`
+4. Update the main .docs/README.md if needed (for new categories or major changes)
 
 **No documentation update is complete until all four steps are done.**
 
@@ -52,7 +52,7 @@ flowchart TD
     
     LinksValid -->|Yes| CheckMainREADME{Major Category<br/>or Structure Change?}
     
-    CheckMainREADME -->|Yes| UpdateMainREADME[📝 Update docs/README.md<br/>Main Documentation Hub]
+    CheckMainREADME -->|Yes| UpdateMainREADME[📝 Update .docs/README.md<br/>Main Documentation Hub]
     CheckMainREADME -->|No| Complete
     
     UpdateMainREADME --> Complete([✅ Documentation Update Complete])
@@ -71,12 +71,12 @@ flowchart TD
 **When creating a new file:**
 ```bash
 # Follow naming conventions
-docs/<category>/<DESCRIPTIVE-NAME>.md
+.docs/<category>/<DESCRIPTIVE-NAME>.md
 
 # Examples:
-docs/core-concepts/11-NEW-CORE-CONCEPT.md
-docs/guides/NEW-FEATURE-GUIDE.md
-docs/specifications/API-VERSIONING-SPEC.md
+.docs/core-concepts/11-NEW-CORE-CONCEPT.md
+.docs/guides/NEW-FEATURE-GUIDE.md
+.docs/specifications/API-VERSIONING-SPEC.md
 ```
 
 **Required sections in new documentation:**
@@ -184,14 +184,14 @@ This tells the link checker to skip validation for these example links.
 # Validate links from the updated/created file
 ```bash
 # Example command - path/to/file.md is just a placeholder
-bun run docs/bin/check-doc-links.ts --file docs/path/to/file.md
+bun run .docs/bin/check-doc-links.ts --file .docs/path/to/file.md
 ```
 
 # Validate links from parent README
-bun run docs/bin/check-doc-links.ts --file docs/path/to/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/path/to/README.md --depth 2
 
 # For major changes, validate entire documentation structure
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 3
 ```
 
 **Check for broken links in output:**
@@ -208,7 +208,7 @@ Unique files visited: 45
 2. Re-run validation
 3. Repeat until `Broken links: 0`
 
-### Step 4: Update Main docs/README.md (When Needed)
+### Step 4: Update Main .docs/README.md (When Needed)
 
 **Update the main documentation hub when:**
 - Creating a new **category** (new subdirectory)
@@ -216,7 +216,7 @@ Unique files visited: 45
 - Changing **documentation structure** or organization
 - Adding **new documentation type** (e.g., new specifications category)
 
-**How to update docs/README.md:**
+**How to update .docs/README.md:**
 
 ```markdown
 ## 📚 Documentation Structure
@@ -238,8 +238,8 @@ Unique files visited: 45
 
 | Task | Documentation File | Key Section |
 |------|-------------------|-------------|
-| Task description | `docs/existing/file.md` | Section Name |
-| <!-- example --> New task description | `docs/category/NEW-FILE.md` | Section Name | ← ADD HERE
+| Task description | `.docs/existing/file.md` | Section Name |
+| <!-- example --> New task description | `.docs/category/NEW-FILE.md` | Section Name | ← ADD HERE
 | Existing tasks... | ... | ... |
 ```
 
@@ -249,7 +249,7 @@ Unique files visited: 45
 
 ### Step 1: Create the Folder
 ```bash
-mkdir -p docs/new-category
+mkdir -p .docs/new-category
 ```
 
 ### Step 2: Create README.md in New Folder
@@ -282,7 +282,7 @@ mkdir -p docs/new-category
 **Maintainer**: Project Team
 ```
 
-### Step 3: Update Parent README (docs/README.md)
+### Step 3: Update Parent README (.docs/README.md)
 
 Add the new category to the main documentation hub:
 
@@ -301,7 +301,7 @@ Brief description of what this category covers.
 
 ### Step 4: Validate Links
 ```bash
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 2
 ```
 
 ## Reading Documentation Protocol
@@ -310,12 +310,12 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
 
 ### Protocol for Documentation Discovery
 
-1. **ALWAYS start with docs/README.md** (main hub)
+1. **ALWAYS start with .docs/README.md** (main hub)
 2. **Navigate via subdirectory structure** shown in main README
 3. **Check subdirectory READMEs** before reading individual files
 4. **Use check-doc-links.ts** to understand relationships:
    ```bash
-   bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
+   bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 2
    ```
 5. **Read specific files** only after understanding structure
 
@@ -323,25 +323,25 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
 
 ```bash
 # Understand documentation structure from a file
-bun run docs/bin/check-doc-links.ts --file docs/category/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/category/README.md --depth 2
 
 # See what a file links to (its dependencies)
-bun run docs/bin/check-doc-links.ts --file docs/category/SPECIFIC-DOC.md --depth 1
+bun run .docs/bin/check-doc-links.ts --file .docs/category/SPECIFIC-DOC.md --depth 1
 
 # Trace complete documentation tree
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3 --verbose
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 3 --verbose
 ```
 
 **Link tree shows reading order:**
 ```
-📄 docs/README.md
+📄 .docs/README.md
   → 44 link(s)
-    📄 docs/core-concepts/README.md  ← Read this first
+    📄 .docs/core-concepts/README.md  ← Read this first
       → 9 link(s)
         📄 00-EFFICIENT-EXECUTION-PROTOCOL.md  ← Then these
         📄 01-DOCUMENTATION-FIRST-WORKFLOW.md
         ...
-    📄 docs/guides/GETTING-STARTED.md  ← Then this
+    📄 .docs/guides/GETTING-STARTED.md  ← Then this
       → 3 link(s)
         ...
 ```
@@ -353,7 +353,7 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3 --verbose
 1. **NEVER create documentation without updating parent README**
 2. **ALWAYS validate links after documentation changes**
 3. **ALWAYS create README.md for new folders**
-4. **ALWAYS update docs/README.md for new categories**
+4. **ALWAYS update .docs/README.md for new categories**
 5. **ALWAYS use check-doc-links.ts to validate**
 
 ### ✅ Required Actions
@@ -361,16 +361,16 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3 --verbose
 **For Every Documentation Update:**
 - [ ] Create or modify documentation file
 - [ ] Update parent README.md (or create if missing)
-- [ ] Run `bun run docs/bin/check-doc-links.ts --file [FILE] --depth 2`
+- [ ] Run `bun run .docs/bin/check-doc-links.ts --file [FILE] --depth 2`
 - [ ] Fix any broken links (repeat validation until clean)
-- [ ] Update docs/README.md if new category or major change
+- [ ] Update .docs/README.md if new category or major change
 
 **For New Folders:**
 - [ ] Create folder structure
 - [ ] Create README.md in new folder with index
 - [ ] Update parent README.md to reference new folder
 - [ ] Validate links from parent README
-- [ ] Update docs/README.md with new category
+- [ ] Update .docs/README.md with new category
 
 ### ❌ Common Violations
 
@@ -380,7 +380,7 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3 --verbose
 - ❌ Create folders without README.md
 - ❌ Skip link validation after changes
 - ❌ Update documentation without running check-doc-links.ts
-- ❌ Add new categories without updating docs/README.md
+- ❌ Add new categories without updating .docs/README.md
 
 ## Tools Reference
 
@@ -391,16 +391,16 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 3 --verbose
 **Usage:**
 ```bash
 # Basic usage - check single file
-bun run docs/bin/check-doc-links.ts --file docs/path/to/file.md
+bun run .docs/bin/check-doc-links.ts --file .docs/path/to/file.md
 
 # Follow links deeper (2 levels)
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 2
 
 # Verbose output with link counts
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2 --verbose
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 2 --verbose
 
 # Filter specific file patterns
-bun run docs/bin/check-doc-links.ts --file docs/README.md --filter "*.md"
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --filter "*.md"
 ```
 
 **Exit Codes:**
@@ -420,14 +420,14 @@ bun run docs/bin/check-doc-links.ts --file docs/README.md --filter "*.md"
 
 **Usage:**
 ```bash
-# Generate diagram from docs/README.md
-bun run docs/bin/generate-doc-diagram.ts --start docs/README.md
+# Generate diagram from .docs/README.md
+bun run .docs/bin/generate-doc-diagram.ts --start .docs/README.md
 
 # Full diagram from copilot instructions
-bun run docs/bin/generate-doc-diagram.ts
+bun run .docs/bin/generate-doc-diagram.ts
 
 # Limited depth diagram
-bun run docs/bin/generate-doc-diagram.ts --start docs/README.md --depth 2
+bun run .docs/bin/generate-doc-diagram.ts --start .docs/README.md --depth 2
 ```
 
 **Use for:**
@@ -442,7 +442,7 @@ bun run docs/bin/generate-doc-diagram.ts --start docs/README.md --depth 2
 
 ```bash
 # 1. Create the file
-cat > docs/core-concepts/11-NEW-PATTERN.md << 'EOF'
+cat > .docs/core-concepts/11-NEW-PATTERN.md << 'EOF'
 # New Pattern
 
 > **Type**: Core Concept - Architecture
@@ -453,14 +453,14 @@ cat > docs/core-concepts/11-NEW-PATTERN.md << 'EOF'
 ...
 EOF
 
-# 2. Update parent README (docs/core-concepts/README.md)
+# 2. Update parent README (.docs/core-concepts/README.md)
 # Add to the index table:
 # | <!-- example --> [11-NEW-PATTERN.md](./11-NEW-PATTERN.md) | New Pattern | 🔴 CRITICAL | Description |
 
 # 3. Validate links
-bun run docs/bin/check-doc-links.ts --file docs/core-concepts/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/core-concepts/README.md --depth 2
 
-# 4. Update docs/README.md if this is a major addition
+# 4. Update .docs/README.md if this is a major addition
 # (Usually not needed for single core concept additions)
 ```
 
@@ -468,8 +468,8 @@ bun run docs/bin/check-doc-links.ts --file docs/core-concepts/README.md --depth 
 
 ```bash
 # 1. Create new folder with README
-mkdir -p docs/new-category
-cat > docs/new-category/README.md << 'EOF'
+mkdir -p .docs/new-category
+cat > .docs/new-category/README.md << 'EOF'
 # New Category
 
 > **Category**: Description
@@ -480,7 +480,7 @@ cat > docs/new-category/README.md << 'EOF'
 EOF
 
 # 2. Add first document
-cat > docs/new-category/FIRST-DOC.md << 'EOF'
+cat > .docs/new-category/FIRST-DOC.md << 'EOF'
 # First Document
 ...
 EOF
@@ -488,27 +488,27 @@ EOF
 # 3. Update new-category/README.md to reference FIRST-DOC.md
 # Remember to use <!-- example --> for example links if showing documentation structure
 
-# 4. Update docs/README.md to add new category
+# 4. Update .docs/README.md to add new category
 
 # 5. Validate all links
-bun run docs/bin/check-doc-links.ts --file docs/new-category/README.md --depth 2
-bun run docs/bin/check-doc-links.ts --file docs/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/new-category/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/README.md --depth 2
 ```
 
 ### Example 3: Modifying Existing Documentation
 
 ```bash
 # 1. Edit the file
-vim docs/guides/EXISTING-GUIDE.md
+vim .docs/guides/EXISTING-GUIDE.md
 
 # 2. Check if parent README needs update (if file name or purpose changed)
-# Update docs/guides/README.md if needed
+# Update .docs/guides/README.md if needed
 
 # 3. Validate links (especially if added new links in the file)
-bun run docs/bin/check-doc-links.ts --file docs/guides/EXISTING-GUIDE.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/guides/EXISTING-GUIDE.md --depth 2
 
 # 4. Validate parent README
-bun run docs/bin/check-doc-links.ts --file docs/guides/README.md --depth 2
+bun run .docs/bin/check-doc-links.ts --file .docs/guides/README.md --depth 2
 
 # 5. Fix any broken links if found
 # 6. Re-run validation until clean
@@ -531,7 +531,7 @@ Before marking documentation work as complete:
 - [ ] `check-doc-links.ts` run on modified file (0 broken links)
 - [ ] `check-doc-links.ts` run on parent README (0 broken links)
 - [ ] New folders have README.md with index structure
-- [ ] docs/README.md updated if new category added
+- [ ] .docs/README.md updated if new category added
 - [ ] All related documentation links validated
 - [ ] No broken links in entire documentation tree
 
@@ -543,9 +543,9 @@ Before marking documentation work as complete:
 
 ## Related Tools
 
-- [docs/bin/check-doc-links.ts](../../docs/bin/check-doc-links.ts) - Link validation tool
-- [docs/bin/generate-doc-diagram.ts](../../docs/bin/generate-doc-diagram.ts) - Diagram generation tool
-- [docs/bin/README.md](../../docs/bin/README.md) - Documentation tools guide
+- [.docs/bin/check-doc-links.ts](../../.docs/bin/check-doc-links.ts) - Link validation tool
+- [.docs/bin/generate-doc-diagram.ts](../../.docs/bin/generate-doc-diagram.ts) - Diagram generation tool
+- [.docs/bin/README.md](../../.docs/bin/README.md) - Documentation tools guide
 
 ---
 
