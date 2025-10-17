@@ -197,6 +197,20 @@
         "vitest": "catalog:testing",
       },
     },
+    "packages/eject-customize": {
+      "name": "@repo/eject-customize",
+      "version": "0.1.0",
+      "dependencies": {
+        "zod": "catalog:utils",
+      },
+      "devDependencies": {
+        "@repo/tsconfig": "*",
+        "@repo/vitest-config": "*",
+        "@types/node": "catalog:build",
+        "typescript": "catalog:build",
+        "vitest": "catalog:testing",
+      },
+    },
     "packages/env-template-prompter": {
       "name": "@repo/env-template-prompter",
       "version": "1.0.0",
@@ -1120,6 +1134,8 @@
     "@repo/api-contracts": ["@repo/api-contracts@workspace:packages/api-contracts"],
 
     "@repo/bin": ["@repo/bin@workspace:packages/bin"],
+
+    "@repo/eject-customize": ["@repo/eject-customize@workspace:packages/eject-customize"],
 
     "@repo/env-template-prompter": ["@repo/env-template-prompter@workspace:packages/env-template-prompter"],
 

@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Customize Module Registry Schema",
+  "description": "Catalog of available modules and framework swaps for customization",
+  "type": "object",
+  "required": ["version", "modules", "frameworkSwaps"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Registry schema version"
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "category", "version", "compatibility", "installation", "documentation"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Unique module identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable module name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this module adds to the project"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["integration", "ui-addition", "service-layer", "framework-component"],
+            "description": "Module category"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Tags for filtering and discovery"
+          },
+          "version": {
+            "type": "string",
+            "description": "Module version"
+          },
+          "compatibility": {
+            "type": "object",
+            "required": ["minTemplateVersion", "requiredFeatures", "incompatibleFeatures"],
+            "properties": {
+              "minTemplateVersion": {
+                "type": "string",
+                "description": "Minimum template version required"
+              },
+              "requiredFeatures": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Features that must be kept (e.g., 'better-auth')"
+              },
+              "incompatibleFeatures": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Features that can't be removed"
+              }
+            }
+          },
+          "installation": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["script", "file-copy", "npm-install", "manual"],
+                "description": "Installation method"
+              },
+              "script": {
+                "type": "string",
+                "description": "Path to installation script"
+              },
+              "dependencies": {
+                "type": "object",
+                "properties": {
+                  "npm": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Packages to install"
+                  },
+                  "files": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string"},
+                    "description": "Files to copy (source → destination)"
+                  }
+                }
+              }
+            }
+          },
+          "integration": {
+            "type": "object",
+            "properties": {
+              "modifiesFiles": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Files that will be modified"
+              },
+              "createsDirectories": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Directories that will be created"
+              },
+              "environmentVars": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Required environment variables"
+              }
+            }
+          },
+          "documentation": {
+            "type": "object",
+            "required": ["quickStart", "configurationSteps", "exampleUsage"],
+            "properties": {
+              "quickStart": {
+                "type": "string",
+                "description": "Quick start instructions"
+              },
+              "configurationSteps": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Configuration steps"
+              },
+              "exampleUsage": {
+                "type": "string",
+                "description": "Code example showing how to use"
+              },
+              "links": {
+                "type": "object",
+                "additionalProperties": {"type": "string"},
+                "description": "Reference links"
+              }
+            }
+          }
+        }
+      }
+    },
+    "frameworkSwaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "fromFramework", "toFramework", "version", "installation", "documentation"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Unique swap identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable swap name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this swap does"
+          },
+          "fromFramework": {
+            "type": "string",
+            "description": "Original framework (e.g., 'orpc')"
+          },
+          "toFramework": {
+            "type": "string",
+            "description": "Target framework (e.g., 'trpc')"
+          },
+          "version": {
+            "type": "string",
+            "description": "Swap version"
+          },
+          "installation": {
+            "type": "object",
+            "required": ["type", "script"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "script",
+                "description": "Framework swaps are script-based"
+              },
+              "script": {
+                "type": "string",
+                "description": "Path to swap execution script"
+              }
+            }
+          },
+          "documentation": {
+            "type": "object",
+            "required": ["preSwapChecklist", "postSwapValidation"],
+            "properties": {
+              "preSwapChecklist": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Things to check before swapping"
+              },
+              "postSwapValidation": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Validation steps after swap"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

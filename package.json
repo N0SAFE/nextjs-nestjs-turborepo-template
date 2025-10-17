@@ -211,6 +211,7 @@
         "@repo/tailwind-config": "dotenv -e .env -- bun --bun --cwd=./packages/tailwind-config run --",
         "@repo/eslint-config": "dotenv -e .env -- bun --bun --cwd=./packages/eslint-config run --",
         "@repo/mcp-repo-manager": "dotenv -e .env -- bun --bun --cwd=./packages/mcp-repo-manager run --",
+        "@repo/eject": "dotenv -e .env -- bun --bun --cwd=./packages/eject-customize run --",
         ".": "dotenv -e .env -- bun --bun --cwd=./ run --",
         "rm:node_modules": "concurrently \"bun --bun x rimraf node_modules\" \"bun --bun x rimraf --glob packages/*/node_modules\" \"bun --bun x rimraf --glob apps/*/node_modules\"",
         " ": " "

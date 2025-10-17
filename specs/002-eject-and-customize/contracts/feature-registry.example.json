@@ -1,0 +1,275 @@
+{
+  "version": "1.0",
+  "modules": [
+    {
+      "id": "stripe-integration",
+      "name": "Stripe Payment Integration",
+      "description": "Add Stripe payment processing to NestJS API and Next.js web",
+      "category": "integration",
+      "tags": ["payments", "stripe", "commerce"],
+      "version": "1.0.0",
+      "compatibility": {
+        "minTemplateVersion": "1.0.0",
+        "requiredFeatures": ["orpc", "better-auth"],
+        "incompatibleFeatures": []
+      },
+      "installation": {
+        "type": "script",
+        "script": ".customize-modules/modules/stripe-integration/install.sh",
+        "dependencies": {
+          "npm": ["stripe", "@stripe/react-stripe-js", "@stripe/stripe-js"],
+          "files": {
+            ".customize-modules/modules/stripe-integration/api-endpoints.ts": "apps/api/src/modules/payments/stripe.controller.ts",
+            ".customize-modules/modules/stripe-integration/web-component.tsx": "apps/web/src/components/PaymentForm.tsx"
+          }
+        }
+      },
+      "integration": {
+        "modifiesFiles": [
+          "apps/api/src/app.module.ts",
+          "apps/web/src/components/layout.tsx",
+          ".env"
+        ],
+        "createsDirectories": [
+          "apps/api/src/modules/payments",
+          "apps/web/src/components/payments"
+        ],
+        "environmentVars": [
+          "STRIPE_SECRET_KEY",
+          "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "STRIPE_WEBHOOK_SECRET"
+        ]
+      },
+      "documentation": {
+        "quickStart": "Add Stripe to accept payments. Set environment variables STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY from your Stripe dashboard.",
+        "configurationSteps": [
+          "Set up Stripe account at stripe.com",
+          "Get API keys from Stripe dashboard",
+          "Add environment variables to .env",
+          "Run install script to create API endpoints",
+          "Configure webhook endpoint in Stripe dashboard"
+        ],
+        "exampleUsage": "import { useStripe } from '@/lib/stripe'; const stripe = useStripe(); const paymentIntent = await stripe.createPaymentIntent({amount: 10000});",
+        "links": {
+          "stripeDocs": "https://stripe.com/docs",
+          "apiReference": "https://stripe.com/docs/api"
+        }
+      }
+    },
+    {
+      "id": "analytics-posthog",
+      "name": "PostHog Analytics",
+      "description": "Add product analytics and feature flags via PostHog",
+      "category": "service-layer",
+      "tags": ["analytics", "feature-flags", "posthog"],
+      "version": "1.0.0",
+      "compatibility": {
+        "minTemplateVersion": "1.0.0",
+        "requiredFeatures": [],
+        "incompatibleFeatures": []
+      },
+      "installation": {
+        "type": "npm-install",
+        "dependencies": {
+          "npm": ["posthog"]
+        }
+      },
+      "integration": {
+        "modifiesFiles": [
+          "apps/web/src/app/layout.tsx",
+          "apps/api/src/main.ts"
+        ],
+        "createsDirectories": [
+          "apps/web/src/lib/analytics"
+        ],
+        "environmentVars": [
+          "NEXT_PUBLIC_POSTHOG_KEY",
+          "NEXT_PUBLIC_POSTHOG_HOST"
+        ]
+      },
+      "documentation": {
+        "quickStart": "Track user events and feature flags. Configure PostHog project from https://posthog.com",
+        "configurationSteps": [
+          "Create PostHog account",
+          "Get project API key",
+          "Add NEXT_PUBLIC_POSTHOG_KEY to environment",
+          "PostHog client automatically initializes in web app"
+        ],
+        "exampleUsage": "usePostHogAnalytics().capture('user_signup', {plan: 'pro'});",
+        "links": {
+          "posthogDocs": "https://posthog.com/docs",
+          "setupGuide": "https://posthog.com/docs/getting-started"
+        }
+      }
+    },
+    {
+      "id": "graphql-federation",
+      "name": "GraphQL Federation Support",
+      "description": "Add GraphQL API alongside ORPC with Apollo Federation",
+      "category": "framework-component",
+      "tags": ["graphql", "apollo", "federation"],
+      "version": "1.0.0",
+      "compatibility": {
+        "minTemplateVersion": "1.0.0",
+        "requiredFeatures": ["orpc"],
+        "incompatibleFeatures": []
+      },
+      "installation": {
+        "type": "script",
+        "script": ".customize-modules/modules/graphql-federation/install.sh",
+        "dependencies": {
+          "npm": ["@apollo/subgraph", "graphql", "@nestjs/graphql", "apollo-server-express"]
+        }
+      },
+      "integration": {
+        "modifiesFiles": [
+          "apps/api/src/app.module.ts",
+          "apps/web/src/lib/api.ts"
+        ],
+        "createsDirectories": [
+          "apps/api/src/modules/graphql",
+          "apps/web/src/lib/graphql"
+        ],
+        "environmentVars": [
+          "GRAPHQL_ENDPOINT"
+        ]
+      },
+      "documentation": {
+        "quickStart": "Add GraphQL API federated with ORPC. Both protocols accessible simultaneously.",
+        "configurationSteps": [
+          "Run install script to generate GraphQL schema",
+          "Map ORPC resolvers to GraphQL types",
+          "Test GraphQL endpoint at /graphql"
+        ],
+        "exampleUsage": "Query endpoint available at http://api:3001/graphql with Apollo Studio",
+        "links": {
+          "apolloDocs": "https://www.apollographql.com/docs/",
+          "federationGuide": "https://www.apollographql.com/docs/apollo-server/federation/introduction"
+        }
+      }
+    },
+    {
+      "id": "redis-queue",
+      "name": "Bull Queue for Background Jobs",
+      "description": "Add Bull queue for background job processing in NestJS",
+      "category": "service-layer",
+      "tags": ["redis", "queue", "jobs", "bull"],
+      "version": "1.0.0",
+      "compatibility": {
+        "minTemplateVersion": "1.0.0",
+        "requiredFeatures": ["redis"],
+        "incompatibleFeatures": []
+      },
+      "installation": {
+        "type": "npm-install",
+        "dependencies": {
+          "npm": ["bull", "@nestjs/bull"]
+        }
+      },
+      "integration": {
+        "modifiesFiles": [
+          "apps/api/src/app.module.ts"
+        ],
+        "createsDirectories": [
+          "apps/api/src/modules/queues"
+        ],
+        "environmentVars": [
+          "REDIS_URL"
+        ]
+      },
+      "documentation": {
+        "quickStart": "Process background jobs via Bull queue. Requires Redis.",
+        "configurationSteps": [
+          "Ensure Redis is running (already included in docker-compose)",
+          "Create queue modules in apps/api/src/modules/queues",
+          "Define job handlers and processors"
+        ],
+        "exampleUsage": "await emailQueue.add({to: 'user@example.com', template: 'welcome'}, {delay: 5000});",
+        "links": {
+          "bullDocs": "https://docs.bullmq.io/",
+          "nestJsBull": "https://docs.nestjs.com/techniques/queues"
+        }
+      }
+    }
+  ],
+  "frameworkSwaps": [
+    {
+      "id": "orpc-to-trpc",
+      "name": "ORPC to tRPC Migration",
+      "description": "Replace ORPC with tRPC for API contracts",
+      "fromFramework": "orpc",
+      "toFramework": "trpc",
+      "version": "1.0.0",
+      "installation": {
+        "type": "script",
+        "script": ".customize-modules/framework-swaps/orpc-to-trpc/swap.sh"
+      },
+      "documentation": {
+        "preSwapChecklist": [
+          "No active development on ORPC endpoints",
+          "All API contracts backed up",
+          "Git repository is clean",
+          "Read tRPC documentation: https://trpc.io"
+        ],
+        "postSwapValidation": [
+          "tRPC server starts without errors",
+          "Client can call tRPC endpoints",
+          "All existing endpoints accessible",
+          "Build succeeds: bun run build"
+        ]
+      }
+    },
+    {
+      "id": "better-auth-to-nextauth",
+      "name": "Better Auth to NextAuth.js Migration",
+      "description": "Replace Better Auth with NextAuth.js for authentication",
+      "fromFramework": "better-auth",
+      "toFramework": "nextauth",
+      "version": "1.0.0",
+      "installation": {
+        "type": "script",
+        "script": ".customize-modules/framework-swaps/better-auth-to-nextauth/swap.sh"
+      },
+      "documentation": {
+        "preSwapChecklist": [
+          "No active user sessions in production",
+          "Database backed up",
+          "Understand NextAuth session structure: https://next-auth.js.org/",
+          "Prepare OAuth provider credentials"
+        ],
+        "postSwapValidation": [
+          "NextAuth session callbacks working",
+          "Login flow accessible at /auth/signin",
+          "Session persists across page reloads",
+          "Logout clears session properly"
+        ]
+      }
+    },
+    {
+      "id": "next-pages-router",
+      "name": "Next.js App Router to Pages Router",
+      "description": "Downgrade from Next.js App Router to Pages Router pattern",
+      "fromFramework": "app-router",
+      "toFramework": "pages-router",
+      "version": "1.0.0",
+      "installation": {
+        "type": "script",
+        "script": ".customize-modules/framework-swaps/next-pages-router/swap.sh"
+      },
+      "documentation": {
+        "preSwapChecklist": [
+          "Review Pages Router documentation: https://nextjs.org/docs/pages",
+          "Backup current App Router implementation",
+          "Understand route naming differences",
+          "Prepare for API routes migration"
+        ],
+        "postSwapValidation": [
+          "All routes accessible via /pages/ structure",
+          "API routes work at /api/",
+          "Build succeeds without App Router errors",
+          "Static generation working for page routes"
+        ]
+      }
+    }
+  ]
+}

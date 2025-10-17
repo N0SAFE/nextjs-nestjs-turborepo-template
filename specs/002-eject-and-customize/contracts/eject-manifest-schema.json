@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Feature Manifest Schema",
+  "description": "Defines what should be removed when a feature is ejected from the template",
+  "type": "object",
+  "required": ["version", "feature", "files", "dependencies", "configuration", "documentation", "validation", "rollback"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version"
+    },
+    "feature": {
+      "type": "object",
+      "required": ["id", "name", "description", "version", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique feature identifier (e.g., 'orpc', 'better-auth')",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable feature name"
+        },
+        "description": {
+          "type": "string",
+          "description": "User-facing description of what this feature provides"
+        },
+        "version": {
+          "type": "string",
+          "description": "Manifest version (semantic versioning)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["api-framework", "auth", "cache", "ui", "service", "utility"],
+          "description": "Feature category"
+        },
+        "category": {
+          "type": "string",
+          "description": "Optional categorization (e.g., 'backend', 'frontend')"
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "required": ["remove"],
+      "properties": {
+        "remove": {
+          "type": "object",
+          "required": ["directories", "files", "patterns"],
+          "properties": {
+            "directories": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Directories to remove recursively (relative paths)"
+            },
+            "files": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Specific files to delete (relative paths)"
+            },
+            "patterns": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Glob patterns to match files (e.g., '*.orpc.ts')"
+            }
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "required": ["remove"],
+      "properties": {
+        "remove": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "npm package names to remove"
+        },
+        "packageJsonFields": {
+          "type": "object",
+          "properties": {
+            "scripts": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Script names to remove from package.json"
+            },
+            "devDependencies": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "peerDependencies": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "required": ["remove"],
+      "properties": {
+        "remove": {
+          "type": "object",
+          "required": ["configFiles"],
+          "properties": {
+            "envVars": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Environment variable names to remove"
+            },
+            "configFiles": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Configuration files to delete"
+            },
+            "configSections": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "description": "Sections within files to remove"
+            }
+          }
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "required": ["update"],
+      "properties": {
+        "update": {
+          "type": "object",
+          "required": ["files"],
+          "properties": {
+            "readme": {
+              "type": "string",
+              "description": "Update instructions for README"
+            },
+            "files": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "Documentation files to remove or update"
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["requiredRemains", "incompatibleWith"],
+      "properties": {
+        "requiredRemains": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Paths that MUST exist after removal (core infrastructure)"
+        },
+        "incompatibleWith": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Feature IDs that can't be removed together"
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["gitCommitMessage"],
+      "properties": {
+        "gitCommitMessage": {
+          "type": "string",
+          "description": "Commit message for git rollback"
+        }
+      }
+    }
+  }
+}

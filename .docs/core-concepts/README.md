@@ -92,6 +92,7 @@ How would you like to proceed?
 | [06-README-FIRST-DOCUMENTATION-DISCOVERY.md](./06-README-FIRST-DOCUMENTATION-DISCOVERY.md) | README-First Discovery | 🔴 CRITICAL | Always read docs/README.md first, navigate via structure |
 | [08-FILE-MANAGEMENT-POLICY.md](./08-FILE-MANAGEMENT-POLICY.md) | File Management | 🔴 CRITICAL | Never delete files without permission |
 | [10-DOCUMENTATION-MAINTENANCE-PROTOCOL.md](./10-DOCUMENTATION-MAINTENANCE-PROTOCOL.md) | Documentation Maintenance | 🔴 CRITICAL | Update parent README, validate links, maintain structure |
+| [11-GITHUB-PROJECT-ISSUE-MANAGEMENT.md](./11-GITHUB-PROJECT-ISSUE-MANAGEMENT.md) | GitHub Project & Issue Management | 🔴 CRITICAL | Mandatory issue tracking, project board synchronization |
 
 ### 🏗️ Architecture Patterns
 
@@ -207,6 +208,7 @@ docs/
 | 2025-10-14 | Created core concepts system | AI Assistant |
 | 2025-10-14 | Migrated 8 core concepts from copilot-instructions.md | AI Assistant |
 | 2025-10-14 | Added 10-DOCUMENTATION-MAINTENANCE-PROTOCOL.md | AI Assistant |
+| 2025-10-16 | Added 11-GITHUB-PROJECT-ISSUE-MANAGEMENT.md | AI Assistant |
 
 ## Questions?
 
