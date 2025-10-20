@@ -11,7 +11,7 @@ export type ResourceActions = {
   [K in Resource]: string[];
 };
 
-export type ActionsForResource<T extends Resource> = string;
+export type ActionsForResource = string;
 
 export type Permission<T extends Resource = Resource> = {
   [K in T]?: string[];
