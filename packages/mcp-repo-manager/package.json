@@ -26,6 +26,7 @@
     "@nestjs/core": "catalog:api:nest",
     "@nestjs/platform-express": "catalog:api:nest",
     "@rekog/mcp-nest": "^1.8.1",
+    "drizzle-orm": "^0.44.6",
     "reflect-metadata": "catalog:api:nest",
     "rxjs": "catalog:api:nest",
     "zod": "3.23.8"

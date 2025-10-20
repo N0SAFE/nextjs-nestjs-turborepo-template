@@ -6,7 +6,7 @@ import * as schema from '../../config/drizzle/schema'; // Runtime import
 import { AUTH_INSTANCE_KEY } from '@/core/modules/auth/types/symbols';
 import type { Auth } from '@/auth';
 import { nanoid } from 'nanoid';
-import { roles } from '../../config/auth/permissions/statements'; // Correct relative path
+import { roles } from '@/config/auth/permissions'; // Correct relative path
 
 @Injectable()
 @Command({

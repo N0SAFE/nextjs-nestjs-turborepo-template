@@ -13,7 +13,11 @@
     "declarationMap": true,
     "noEmit": false,
     "types": ["node"],
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@repo/api-contracts/*": ["../../packages/api-contracts/*"],
+      "@repo/api-contracts": ["../../packages/api-contracts/"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

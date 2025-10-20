@@ -63,8 +63,8 @@
             },
             "styling": {
                 "tailwindcss": "^4",
+                "tailwind-merge": "^3.3.1",
                 "@tailwindcss/postcss": "^4",
-                "tailwind-merge": "^2.0.0",
                 "tailwind-variants": "^0.1.18",
                 "tailwindcss-animate": "^1.0.7",
                 "postcss": "^8.4.31",
