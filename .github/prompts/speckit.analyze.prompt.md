@@ -14,6 +14,46 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 Identify inconsistencies, duplications, ambiguities, and underspecified items across the three core artifacts (`spec.md`, `plan.md`, `tasks.md`) before implementation. This command MUST run only after `/tasks` has successfully produced a complete `tasks.md`.
 
+## Core Concepts Compliance
+
+**CRITICAL**: All analysis MUST validate compliance with core concepts defined in `.docs/core-concepts/`.
+
+**Mandatory Patterns to Validate**:
+
+1. **ORPC Contract-First (Core Concept 09 - NON-NEGOTIABLE)**:
+   - Every API endpoint MUST have 3 sequential tasks:
+     - Task A: Define contract in `packages/api-contracts/`
+     - Task B: Implement controller with `@Implement(contract)`
+     - Task C: Generate ORPC client: `bun run web -- generate`
+   - Flag any endpoint implementation without contract-first pattern
+   - Report as CRITICAL violation if pattern missing
+
+2. **Service-Adapter Pattern (Core Concept 02)**:
+   - Verify Controllers → Services → Repositories → DatabaseService flow
+   - Flag any controller directly accessing DatabaseService
+   - Check that adapters transform entities to contracts
+   - Report architecture violations as HIGH severity
+
+3. **Better Auth Integration (Core Concept 07)**:
+   - All auth operations MUST use `AuthService.api` wrapper
+   - Flag any direct `betterAuth.*` calls in application code
+   - Verify auth configuration uses centralized service
+   - Report as HIGH severity violation
+
+4. **Repository Ownership (Core Concept 03)**:
+   - Repositories MUST be domain-specific, not generic
+   - Flag any shared repository patterns
+   - Verify each domain owns its data access layer
+   - Report as MEDIUM severity issue
+
+5. **Documentation Maintenance (Core Concept 10)**:
+   - Documentation changes MUST include parent README updates
+   - Verify link integrity when structure changes
+   - Check that new concepts are documented
+   - Report as MEDIUM severity if missing
+
+**Validation Approach**: Use `/speckit.validate-core-concepts` for comprehensive pre-implementation audit.
+
 ## Operating Constraints
 
 **STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).

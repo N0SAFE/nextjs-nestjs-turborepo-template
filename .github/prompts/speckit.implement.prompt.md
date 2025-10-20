@@ -125,4 +125,79 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Confirm the implementation follows the technical plan
    - Report final status with summary of completed work
 
+## Core Concepts Compliance During Implementation
+
+**CRITICAL**: Implementation MUST strictly follow core concepts. Validate compliance at every step.
+
+**Implementation Enforcement**:
+
+1. **ORPC Contract-First (Core Concept 09 - BLOCKING)**:
+   - **BEFORE implementing any endpoint**:
+     1. ✅ Contract MUST exist in `packages/api-contracts/`
+     2. ✅ Controller MUST use `@Implement(contract)` decorator
+     3. ✅ Client MUST be generated: `bun run web -- generate`
+   - **NEVER implement endpoint without contract first**
+   - **Validation**: Check contract file exists before controller creation
+   - **Error**: Stop implementation if contract missing
+
+2. **Service-Adapter Pattern (Core Concept 02 - BLOCKING)**:
+   - **Architecture layers** (MUST follow this order):
+     1. Repositories: `src/repositories/[domain].repository.ts`
+     2. Services: `src/services/[domain].service.ts`
+     3. Adapters: `src/adapters/[domain].adapter.ts`
+     4. Controllers: `src/controllers/[domain].controller.ts`
+   - **NEVER allow**:
+     - Controllers accessing `DatabaseService` directly
+     - Business logic in controllers
+     - Data access logic outside repositories
+   - **Validation**: Check import statements, flag violations
+   - **Correction**: Refactor before proceeding
+
+3. **Better Auth Integration (Core Concept 07 - BLOCKING)**:
+   - **ALL auth operations** MUST use `AuthService.api`:
+     ```typescript
+     // ✅ CORRECT
+     await this.authService.api.signIn.email(...)
+     
+     // ❌ WRONG - STOP IMPLEMENTATION
+     await betterAuth.signIn.email(...)
+     ```
+   - **Configuration**: Centralized in `apps/api/src/auth.ts`
+   - **Validation**: Search for `betterAuth.` calls, flag violations
+   - **Error**: Refactor to use wrapper before proceeding
+
+4. **Repository Ownership (Core Concept 03)**:
+   - **Domain-specific repositories**:
+     - `UserRepository` for user domain
+     - `CapsuleRepository` for capsule domain
+     - NOT `GenericRepository` or `SharedRepository`
+   - **File location**: `src/repositories/[domain].repository.ts`
+   - **Validation**: Check repository names match domain
+
+5. **File Management Policy (Core Concept 08 - BLOCKING)**:
+   - **NEVER delete files** without explicit user permission
+   - **ALWAYS ask first**: "This requires deleting X. Proceed? (yes/no)"
+   - **Wait for approval** before any deletion
+   - **Alternative**: Suggest refactoring instead of deletion
+
+6. **Documentation Maintenance (Core Concept 10)**:
+   - **After implementation**:
+     - Update parent README if structure changed
+     - Validate all documentation links
+     - Document new patterns/concepts
+     - Update quickstart guide if needed
+   - **Validation**: Check README accuracy after implementation
+
+**Continuous Validation**:
+- Check compliance BEFORE each file creation/modification
+- Flag violations immediately, stop implementation
+- Provide correction guidance with core concept reference
+- Re-validate after corrections applied
+- Final compliance audit before marking tasks complete
+
+**Error Handling**:
+- **CRITICAL violations** (ORPC, Service-Adapter, Better Auth, File Deletion): STOP implementation, require fix
+- **HIGH violations** (Repository Ownership, Documentation): Flag, suggest fix, can continue with user approval
+- **Document all violations** in implementation notes
+
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/tasks` first to regenerate the task list.

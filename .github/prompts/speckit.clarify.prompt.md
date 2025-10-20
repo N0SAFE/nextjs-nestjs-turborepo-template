@@ -16,6 +16,39 @@ Goal: Detect and reduce ambiguity or missing decision points in the active featu
 
 Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/speckit.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
 
+## Core Concepts Compliance
+
+**CRITICAL**: Clarifications MUST consider core concepts to avoid downstream violations.
+
+**Core Concepts to Consider**:
+
+1. **ORPC Contract-First (Core Concept 09)**:
+   - If clarifying API design: Mention contract-first approach
+   - Ask about type safety needs → suggest ORPC pattern
+   - Ensure frontend/backend type sharing is considered
+
+2. **Service-Adapter Pattern (Core Concept 02)**:
+   - If clarifying architecture: Reference layered approach
+   - Controllers → Services → Repositories pattern
+   - Avoid direct database access in controllers
+
+3. **Better Auth Integration (Core Concept 07)**:
+   - If clarifying auth: Reference `AuthService.api` wrapper
+   - Centralized auth configuration preferred
+   - Avoid scattered auth logic
+
+4. **Repository Ownership (Core Concept 03)**:
+   - If clarifying data access: Domain-specific repositories
+   - Each feature owns its data layer
+   - Avoid generic shared repositories
+
+5. **Documentation Maintenance (Core Concept 10)**:
+   - If clarifying docs: Include README update requirements
+   - Validate link integrity for structural changes
+   - Parent README updates for new features
+
+**Clarification Strategy**: When multiple options exist, prefer options that align with core concepts. Document chosen patterns in clarifications.
+
 Execution steps:
 
 1. Run `.specify/scripts/bash/check-prerequisites.sh --json --paths-only` from repo root **once** (combined `--json --paths-only` mode / `-Json -PathsOnly`). Parse minimal JSON payload fields:

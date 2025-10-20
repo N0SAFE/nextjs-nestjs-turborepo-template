@@ -21,6 +21,37 @@ description: Generate a custom checklist for the current feature based on user r
 
 **Metaphor**: If your spec is code written in English, the checklist is its unit test suite. You're testing whether the requirements are well-written, complete, unambiguous, and ready for implementation - NOT whether the implementation works.
 
+## Core Concepts Compliance
+
+**CRITICAL**: Generated checklists MUST include items validating core concepts compliance.
+
+**Mandatory Checklist Categories**:
+
+1. **ORPC Contract-First (Core Concept 09)**:
+   - "Are API contracts defined in `packages/api-contracts/` before implementation? [Gap]"
+   - "Does each endpoint have 3-step pattern (define → implement → generate)? [Completeness]"
+   - "Are contract types used consistently across frontend/backend? [Consistency]"
+
+2. **Service-Adapter Pattern (Core Concept 02)**:
+   - "Is the architecture documented as Controller → Service → Repository → Database? [Completeness]"
+   - "Are adapter layers specified for entity-to-contract transformation? [Gap]"
+   - "Are database access patterns isolated to repository layer? [Architecture]"
+
+3. **Better Auth Integration (Core Concept 07)**:
+   - "Are all auth operations routed through `AuthService.api`? [Consistency]"
+   - "Is direct `betterAuth.*` usage prohibited in requirements? [Policy]"
+   - "Are auth configuration requirements centralized? [Completeness]"
+
+4. **Repository Ownership (Core Concept 03)**:
+   - "Are repositories domain-specific rather than generic? [Architecture]"
+   - "Does each domain own its data access requirements? [Ownership]"
+
+5. **Documentation Maintenance (Core Concept 10)**:
+   - "Are parent README update requirements included for new features? [Completeness]"
+   - "Are documentation structure changes validated for link integrity? [Quality]"
+
+**Integration**: Add these items to appropriate checklist categories (Architecture, API Design, Authentication, Documentation).
+
 ## User Input
 
 ```text

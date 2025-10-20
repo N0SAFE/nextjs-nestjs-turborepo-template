@@ -163,11 +163,49 @@ Given that feature description, do this:
 
 7. Report completion with branch name, spec file path, checklist results, and readiness for the next phase (`/speckit.clarify` or `/speckit.plan`).
 
-**NOTE:** The script creates and checks out the new branch and initializes the spec file before writing.
+   **NOTE:** The script creates and checks out the new branch and initializes the spec file before writing.
 
-## General Guidelines
+## Core Concepts Compliance
 
-## Quick Guidelines
+**CRITICAL**: Specifications MUST align with core concepts from the start.
+
+**Mandatory Patterns**:
+
+1. **ORPC Contract-First (Core Concept 09 - NON-NEGOTIABLE)**:
+   - For API features: Specify contract-first development approach
+   - Mention type-safe contracts in `packages/api-contracts/`
+   - Include 3-step pattern in requirements: define → implement → generate
+   - Example requirement: "API endpoints use ORPC contracts for end-to-end type safety"
+
+2. **Service-Adapter Pattern (Core Concept 02)**:
+   - For backend features: Specify layered architecture
+   - Controllers → Services → Repositories → DatabaseService
+   - Example requirement: "Business logic isolated in service layer with repository data access"
+
+3. **Better Auth Integration (Core Concept 07)**:
+   - For auth features: Specify `AuthService.api` wrapper usage
+   - Centralized auth configuration
+   - Example requirement: "Authentication uses centralized AuthService wrapper"
+
+4. **Repository Ownership (Core Concept 03)**:
+   - For data features: Domain-specific repositories
+   - Each feature owns its data access layer
+   - Example requirement: "Feature-specific repository for domain data operations"
+
+5. **Documentation Maintenance (Core Concept 10)**:
+   - For all features: Include documentation requirements
+   - Parent README updates for structural changes
+   - Example requirement: "Documentation includes parent README updates and link validation"
+
+**Implementation in Spec**:
+- Add "Architecture Requirements" section mentioning applicable patterns
+- Include pattern compliance in success criteria
+- Reference core concepts in assumptions when relevant
+- Add architecture diagram if complex patterns involved
+
+**Validation**: Generated spec should pass `/speckit.validate-core-concepts` audit without CRITICAL violations.
+
+## General Guidelines## Quick Guidelines
 
 - Focus on **WHAT** users need and **WHY**.
 - Avoid HOW to implement (no tech stack, APIs, code structure).

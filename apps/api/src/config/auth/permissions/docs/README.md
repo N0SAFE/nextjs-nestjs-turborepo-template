@@ -2,21 +2,109 @@
 
 This implementation provides a comprehensive role and permission-based access control system for the NestJS API using the Better Auth admin plugin.
 
+## Documentation Index
+
+- **[📚 Getting Started](./GETTING-STARTED.md)** - Quick start guide, folder structure, and core concepts
+- **[🏗️ Builder Examples](./BUILDER-EXAMPLES.md)** - Comprehensive examples using PermissionBuilder pattern
+- **[📦 Collection API](./COLLECTION-API-EXAMPLES.md)** - Batch operations on multiple resources with type safety
+- **[🔒 Type Safety Guide](../system/TYPE_SAFETY.md)** - Complete type safety documentation (action constraints + return types)
+- **[🔧 Refactoring Report](./REFACTORING-REPORT.md)** - Historical refactoring documentation
+
+**Quick Links:**
+- New to the system? Start with [Getting Started](./GETTING-STARTED.md)
+- Building custom permissions? See [Builder Examples](./BUILDER-EXAMPLES.md)
+- Working with collections? Check [Collection API](./COLLECTION-API-EXAMPLES.md)
+- Understanding types? Read [Type Safety Guide](../system/TYPE_SAFETY.md)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Available Roles](#available-roles)
+- [Available Permissions](#available-permissions)
+- [Decorators Reference](#decorators-reference)
+- [Role Assignment](#role-assignment)
+- [Permission Checking](#permission-checking)
+- [Error Responses](#error-responses)
+- [Testing](#testing)
+- [Migration Guide](#migration-guide)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Advanced Usage](#advanced-usage)
+
 ## Overview
 
 The system consists of:
 
-1. **Permission Configuration** (`config/auth/permissions.ts`) - Defines roles, permissions, and access control rules
+1. **Permission Configuration** (`config/auth/permissions/`) - Modular permission system with builder pattern
+   - **System Exports** (`system/index.ts`) - Core classes and types
+   - **Builder** (`system/builder/builder.ts`) - Type-safe permission builder
+   - **Base Config** (`system/builder/shared/base-config.ts`) - Base configuration class
+   - **Statements** (`system/builder/statements/`) - Statement configuration classes
+   - **Statement Collection** (`system/builder/statements/statement-config-collection.ts`) - Batch operations on resources
+   - **Roles** (`system/builder/roles/`) - Role configuration classes
+   - **Role Collection** (`system/builder/roles/role-config-collection.ts`) - Batch operations on roles
+   - **Common Permissions** (`common.ts`) - Pre-defined permission patterns
+   - **Utils** (`utils.ts`) - Helper utilities
 2. **Role Guard** (`core/modules/auth/guards/role.guard.ts`) - NestJS guard for enforcing access control
 3. **Permission Decorators** (`core/modules/auth/decorators/decorators.ts`) - Type-safe decorators for route protection
 4. **Auth Configuration** (`config/auth/auth.ts`) - Better Auth setup with admin plugin
 
+### Importing System Components
+
+All system classes and types are exported from a single entry point:
+
+```typescript
+// Import everything from the system
+import {
+  // Builders
+  PermissionBuilder,
+  RoleBuilder,
+  
+  // Configuration classes
+  BaseConfig,
+  StatementConfig,
+  StatementsConfig,
+  StatementConfigCollection,
+  RoleConfig,
+  RolesConfig,
+  
+  // Types
+  Permission,
+  Resource,
+  ResourceActions,
+  ActionsForResource,
+  RoleName,
+  AuthenticatedUserType,
+  // ... all other types
+} from '@/config/auth/permissions/system';
+
+// Or import from main entry point
+import {
+  // System exports
+  PermissionBuilder,
+  StatementConfigCollection,
+  
+  // Common permissions
+  commonPermissions,
+  
+  // Built config
+  statement,
+  ac,
+  roles
+} from '@/config/auth/permissions';
+```
+
 ## Features
 
-### ✅ **Type-Safe Permissions**
-- Full TypeScript support with IntelliSense
-- Compile-time validation of permission structures
-- Auto-completion for roles and resource actions
+### ✅ **Advanced Type Safety**
+- **Full TypeScript support** with IntelliSense
+- **Compile-time validation** of permission structures and action parameters
+- **Auto-completion** for roles and resource actions
+- **Action parameter constraints** - Invalid actions caught at compile time
+- **Precise return types** - TypeScript knows exactly what's in filtered results
+- **Zero runtime overhead** - All type checking happens at compile time
 
 ### ✅ **Flexible Role System**
 - Hierarchical roles: `superAdmin` > `admin` > `manager` > `editor` > `viewer` > `user`
@@ -467,6 +555,54 @@ console.log(JSON.stringify(commonPermissions, null, 2));
 ```
 
 ## Advanced Usage
+
+### Type-Safe Action Constraints
+
+The collection API now enforces type-safe action parameters. Invalid actions are caught at compile time:
+
+```typescript
+import { statementsConfig } from '@/config/auth/permissions';
+
+// ✅ Valid - 'read' exists in the statements
+const readOnly = statementsConfig.getAll().pick(['read'] as const);
+
+// ❌ Type Error - 'invalid-action' doesn't exist in any statement
+const invalid = statementsConfig.getAll().pick(['invalid-action'] as const);
+// TypeScript error: Type '"invalid-action"' is not assignable to type AllActions<TStatement>
+
+// ✅ Valid - multiple existing actions
+const multi = statementsConfig.getAll().withAnyAction(['read', 'create'] as const);
+
+// ❌ Type Error - mixing valid and invalid actions
+const mixed = statementsConfig.getAll().withAnyAction(['read', 'fake-action'] as const);
+// TypeScript error: 'fake-action' is not a valid action
+```
+
+**Key Benefits:**
+- **Compile-time safety**: Typos and invalid actions caught during development
+- **IntelliSense support**: IDE auto-completes only valid actions
+- **Refactoring confidence**: Removing an action causes type errors where used
+- **Zero runtime cost**: All validation happens at compile time
+
+### Precise Return Types
+
+Collection methods return precisely typed results:
+
+```typescript
+// TypeScript knows exactly what's in the result
+const result = statementsConfig.getAll().readOnly();
+// result type: { user: ['read'], project: ['read'], ... }
+// Only resources with 'read' action are included
+
+// You can safely access known resources
+result.user // ✅ OK - user has 'read' action
+result.user[0] // Type: 'read'
+
+// Resources without the action are excluded from the type
+// result.session // Would be type error if session doesn't have 'read'
+```
+
+For detailed type system documentation, see [TYPE_SAFETY.md](../system/TYPE_SAFETY.md).
 
 ### Custom Permission Validation
 

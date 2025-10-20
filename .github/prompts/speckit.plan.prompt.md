@@ -16,6 +16,53 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 2. **Load context**: Read FEATURE_SPEC and `.specify/memory/constitution.md`. Load IMPL_PLAN template (already copied).
 
+## Core Concepts Compliance
+
+**CRITICAL**: All planning decisions MUST comply with core concepts.
+
+**Mandatory Planning Patterns**:
+
+1. **ORPC Contract-First (Core Concept 09 - NON-NEGOTIABLE)**:
+   - **In data-model.md**: Define entity schemas that map to ORPC contracts
+   - **In contracts/**: Create ORPC contract definitions first
+   - **In plan.md**: Document 3-step implementation flow:
+     1. Define contracts in `packages/api-contracts/`
+     2. Implement with `@Implement(contract)` decorators
+     3. Generate client: `bun run web -- generate`
+   - **File structure**: Contracts before controllers in dependency order
+
+2. **Service-Adapter Pattern (Core Concept 02)**:
+   - **In plan.md**: Document architecture layers:
+     - Controllers: Handle HTTP/validation
+     - Services: Business logic
+     - Repositories: Data access
+     - Adapters: Entity ↔ Contract transformation
+   - **In data-model.md**: Separate entities (database) from contracts (API)
+   - **File structure**: Plan creation order: Entities → Repositories → Services → Adapters → Controllers
+
+3. **Better Auth Integration (Core Concept 07)**:
+   - **In plan.md**: Document `AuthService.api` wrapper usage
+   - **In contracts/**: Auth endpoints use centralized service
+   - **Configuration**: Auth setup in `apps/api/src/auth.ts`
+   - **No direct betterAuth.* calls** in application code
+
+4. **Repository Ownership (Core Concept 03)**:
+   - **In plan.md**: Each feature has domain-specific repositories
+   - **File structure**: Repositories scoped to feature domain
+   - **No generic shared repositories** across features
+   - Example: `UserRepository`, `CapsuleRepository` (not `GenericRepository`)
+
+5. **Documentation Maintenance (Core Concept 10)**:
+   - **In quickstart.md**: Include setup, usage, and integration steps
+   - **In plan.md**: Document parent README update requirements
+   - **Architecture docs**: Update when adding new patterns
+   - **Link validation**: Check integrity when structure changes
+
+**Validation Checkpoints**:
+- Constitution Check section MUST validate pattern compliance
+- Flag any violations with justification or correction plan
+- Run `/speckit.validate-core-concepts` after planning for comprehensive audit
+
 3. **Execute plan workflow**: Follow the structure in IMPL_PLAN template to:
    - Fill Technical Context (mark unknowns as "NEEDS CLARIFICATION")
    - Fill Constitution Check section from constitution

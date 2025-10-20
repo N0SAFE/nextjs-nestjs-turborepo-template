@@ -36,6 +36,69 @@ Follow this execution flow:
    - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
    - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
 
+3a. **Core Concepts Compliance Section** (MANDATORY):
+   - **MUST include** a dedicated section documenting how constitution aligns with `.docs/core-concepts/`
+   - This section should appear near the end of the constitution, before or after Governance
+   - Title the section: `## Core Concepts Compliance` or `## Alignment with Core Concepts`
+   
+   **Required Content**:
+   - List all 11 core concepts with their enforcement status in this project:
+     1. 00-EFFICIENT-EXECUTION-PROTOCOL (AI workflow)
+     2. 01-DOCUMENTATION-FIRST-WORKFLOW (AI workflow)
+     3. 02-SERVICE-ADAPTER-PATTERN (Architecture - CRITICAL)
+     4. 03-REPOSITORY-OWNERSHIP-RULE (Architecture - CRITICAL)
+     5. 04-CORE-VS-FEATURE-ARCHITECTURE (Organization)
+     6. 05-TYPE-MANIPULATION-PATTERN (AI workflow)
+     7. 06-README-FIRST-DOCUMENTATION-DISCOVERY (AI workflow)
+     8. 07-BETTER-AUTH-INTEGRATION (Architecture - CRITICAL)
+     9. 08-FILE-MANAGEMENT-POLICY (Policy - CRITICAL)
+     10. 09-ORPC-IMPLEMENTATION-PATTERN (Architecture - CRITICAL)
+     11. 10-DOCUMENTATION-MAINTENANCE-PROTOCOL (Policy)
+   
+   - For each concept, document:
+     * **Status**: Mandatory/Recommended/Not Applicable
+     * **Enforcement**: How this constitution enforces it (reference specific sections)
+     * **Validation**: How compliance is verified (reference tools/prompts)
+   
+   - Add a compliance statement:
+     ```markdown
+     **Compliance Requirement**: All feature specifications, plans, and implementations 
+     MUST comply with applicable core concepts. Use `/speckit.validate-core-concepts` 
+     to audit compliance before implementation.
+     ```
+   
+   - If constitution principles conflict with or extend core concepts, explicitly document:
+     * Which core concept is affected
+     * Nature of the conflict/extension
+     * Justification for the deviation
+     * Resolution approach
+   
+   **Example Structure**:
+   ```markdown
+   ## Core Concepts Compliance
+   
+   This constitution integrates and enforces architectural patterns defined in `.docs/core-concepts/`.
+   
+   ### Mandatory Core Concepts
+   
+   **09-ORPC-IMPLEMENTATION-PATTERN** (CRITICAL):
+   - Status: Mandatory for all API development
+   - Enforcement: Principle 4 requires contract-first API design
+   - Validation: Task generation enforces 3-step pattern
+   
+   **02-SERVICE-ADAPTER-PATTERN** (CRITICAL):
+   - Status: Mandatory for all backend features
+   - Enforcement: Principle 2 defines layered architecture
+   - Validation: Code review checklist includes layer separation
+   
+   [... continue for all applicable concepts ...]
+   
+   ### Compliance Validation
+   
+   Use `/speckit.validate-core-concepts` to audit specifications before implementation.
+   All CRITICAL violations block implementation until resolved.
+   ```
+
 4. Consistency propagation checklist (convert prior checklist into active validations):
    - Read `.specify/templates/plan-template.md` and ensure any "Constitution Check" or rules align with updated principles.
    - Read `.specify/templates/spec-template.md` for scope/requirements alignment—update if constitution adds/removes mandatory sections or constraints.

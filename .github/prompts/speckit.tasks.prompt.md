@@ -51,9 +51,90 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Suggested MVP scope (typically just User Story 1)
    - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
 
+6. **Post-Generation Validation** (MANDATORY):
+   After generating tasks.md, you MUST run the task management verification script:
+   
+   ```bash
+   .specify/scripts/bash/manage-tasks.sh verify FEATURE_DIR/tasks.md
+   ```
+   
+   **If verification fails**:
+   - Review the error messages (include line numbers and specific issues)
+   - Fix ALL format violations immediately using the script's guidance
+   - Re-run verification until all checks pass
+   - Common issues to fix:
+     * Missing checkboxes (`- [ ]` or `- [x]`)
+     * Incorrect task ID format (must be T### with 3+ digits)
+     * Improper label spacing ([P], [US#] require space after bracket)
+     * Missing file paths in descriptions
+   
+   **Optional automated checks** (use as needed during task maintenance):
+   
+   ```bash
+   # Check for duplicates, gaps, orphaned tasks
+   .specify/scripts/bash/manage-tasks.sh check FEATURE_DIR/tasks.md
+   
+   # Auto-fix sequential numbering (with backup)
+   .specify/scripts/bash/manage-tasks.sh reorganize --auto FEATURE_DIR/tasks.md
+   
+   # Update task completion status
+   .specify/scripts/bash/manage-tasks.sh update --complete --task T001,T002 FEATURE_DIR/tasks.md
+   ```
+   
+   **When to use these commands**:
+   - `verify`: ALWAYS after initial generation, before reporting to user
+   - `check`: When reviewing existing tasks.md, or after manual edits
+   - `reorganize --auto`: When task IDs have gaps/duplicates (creates timestamped backup)
+   - `update --complete/--incomplete`: When marking tasks as done during implementation
+   
+   **Script features**:
+   - JSON output available with `--json` flag for CI/CD integration
+   - Automatic backups before modifications (timestamped)
+   - Line-by-line error reporting with specific issues
+   - Validates against constitution standards (v1.3.0)
+   
+   Only proceed to step 5 reporting after verification passes successfully.
+
 Context for task generation: $ARGUMENTS
 
 The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
+
+## Core Concepts Compliance
+
+**CRITICAL**: All generated tasks MUST comply with project core concepts from `.docs/core-concepts/`.
+
+**Mandatory Patterns**:
+
+1. **ORPC Contract-First** (Core Concept 09 - NON-NEGOTIABLE):
+   - Every API endpoint MUST be split into 3 sequential tasks:
+     - Task A: Define contract in `packages/api-contracts/[feature].contract.ts`
+     - Task B: Implement controller using `@Implement(contract.method)`
+     - Task C: Generate ORPC client with `bun run web -- generate`
+   - NO direct endpoint implementation without contract definition
+   - Ensures end-to-end type safety from backend to auto-generated React Query hooks
+
+2. **Service-Adapter Pattern** (Core Concept 02):
+   - Controllers call Services (business logic)
+   - Services call Repositories (data access via DatabaseService)
+   - Adapters transform entities to contracts
+   - Controllers NEVER access DatabaseService directly
+   - Task descriptions must explicitly note this pattern
+
+3. **Better Auth Integration** (Core Concept 07):
+   - All auth operations use `AuthService.api` wrapper
+   - NO direct `betterAuth.*` calls in controllers
+   - Reference `apps/api/src/core/modules/auth/services/auth.service.ts`
+
+4. **Repository Ownership** (Core Concept 03):
+   - Repositories owned by domain services
+   - NO generic shared repositories
+   - Each feature has its own repositories
+
+5. **Documentation Maintenance** (Core Concept 10):
+   - Documentation update tasks include parent README updates
+   - Link validation tasks when modifying docs structure
+
+**Validation**: After generating tasks.md, recommend running `/speckit.validate-core-concepts` to verify compliance before implementation.
 
 ## Task Generation Rules
 
