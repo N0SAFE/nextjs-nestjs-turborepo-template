@@ -15,7 +15,7 @@ export class HealthController {
   @Implement(healthContract.check)
   check() {
     return implement(healthContract.check).handler(async () => {
-      return await this.healthService.getHealth();
+      return this.healthService.getHealth();
     });
   }
 

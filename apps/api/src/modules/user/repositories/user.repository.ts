@@ -9,10 +9,18 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 import { randomUUID } from "crypto";
+import type { InferSelectModel } from "drizzle-orm";
 
 export type CreateUserInput = z.infer<typeof userCreateInput>;
 export type UpdateUserInput = z.infer<typeof userUpdateInput>;
 export type GetUsersInput = z.infer<typeof userListInput>;
+export type UserRow = InferSelectModel<typeof user>;
+
+/** User with serialized timestamps for API responses */
+export type UserResponse = Omit<UserRow, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
+};
 
 @Injectable()
 export class UserRepository {
@@ -21,35 +29,36 @@ export class UserRepository {
   /**
    * Transform user object for API response (serialize dates)
    */
-  private transformUser(user: any) {
+  private transformUser<T extends UserRow | null>(user: T): T extends null ? null : T & { createdAt: string; updatedAt: string } {
     if (!user) {
-      return null;
+      return null as T extends null ? null : T & { createdAt: string; updatedAt: string };
     }
-    return {
+    const transformed = {
       ...user,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
     };
+    return transformed as T extends null ? null : T & { createdAt: string; updatedAt: string };
   }
 
   /**
    * Transform multiple users for API response
    */
-  private transformUsers(users: any[]) {
+  private transformUsers(users: UserRow[]): (UserRow & { createdAt: string; updatedAt: string })[] {
     return users.map((user) => this.transformUser(user));
   }
 
   /**
    * Create a new user
    */
-  async create(input: CreateUserInput) {
+  async create(input: CreateUserInput): Promise<UserResponse> {
     const newUser = await this.databaseService.db
       .insert(user)
       .values({
         id: randomUUID(),
         name: input.name,
         email: input.email,
-        image: input.image || null,
+        image: input.image ?? null,
         emailVerified: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -62,7 +71,7 @@ export class UserRepository {
   /**
    * Find user by ID
    */
-  async findById(id: string) {
+  async findById(id: string): Promise<UserResponse | null> {
     const foundUser = await this.databaseService.db
       .select()
       .from(user)
@@ -75,7 +84,7 @@ export class UserRepository {
   /**
    * Find user by email
    */
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<UserResponse | null> {
     const foundUser = await this.databaseService.db
       .select()
       .from(user)
@@ -90,7 +99,7 @@ export class UserRepository {
    */
   async findMany(input: GetUsersInput) {
     // Build the where conditions
-    const conditions: SQL<unknown>[] = [];
+    const conditions: SQL[] = [];
 
     if (input.filter?.name) {
       conditions.push(like(user.name, `%${input.filter.name}%`));
@@ -194,12 +203,12 @@ export class UserRepository {
   /**
    * Update user by ID
    */
-  async update(id: string, input: UpdateUserInput) {
+  async update(id: string, input: Omit<UpdateUserInput, 'id'>): Promise<UserResponse | null> {
     const updatedUser = await this.databaseService.db
       .update(user)
       .set({
         ...input,
-        createdAt: new Date(input.createdAt || Date.now()),
+        createdAt: new Date(input.createdAt ?? Date.now()),
         updatedAt: new Date(),
       })
       .where(eq(user.id, id))

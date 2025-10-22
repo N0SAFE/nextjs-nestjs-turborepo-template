@@ -52,7 +52,7 @@ export type FromCamelToSnake<T extends string> = ToSnake<T>
 export type FromPascalToSnake<T extends string> = ToSnake<T>
 
 export type ObjectToSnake<T> = {
-    [K in keyof T as Lowercase<string & K>]: T[K] extends Record<string, any>
+    [K in keyof T as Lowercase<string & K>]: T[K] extends Record<string, unknown>
         ? ObjectToSnake<T[K]>
         : T[K]
 }
@@ -80,7 +80,7 @@ export type ToPascal<T extends string> = CamelToPascal<SnakeToPascal<T>>
 export type ObjectFromCamelToPascal<T> = {
     [K in keyof T as CamelToPascal<string & K>]: T[K] extends Record<
         string,
-        any
+        unknown
     >
         ? ObjectFromCamelToPascal<T[K]>
         : T[K]
@@ -88,13 +88,13 @@ export type ObjectFromCamelToPascal<T> = {
 export type ObjectFromSnakeToPascal<T> = {
     [K in keyof T as SnakeToPascal<string & K>]: T[K] extends Record<
         string,
-        any
+        unknown
     >
         ? ObjectFromSnakeToPascal<T[K]>
         : T[K]
 }
 export type ObjectToPascal<T> = {
-    [K in keyof T as ToPascal<string & K>]: T[K] extends Record<string, any>
+    [K in keyof T as ToPascal<string & K>]: T[K] extends Record<string, unknown>
         ? ObjectToPascal<T[K]>
         : T[K]
 }
@@ -121,20 +121,20 @@ export type PascalToCamel<S extends string> =
 export type ToCamel<S extends string> = PascalToCamel<SnakeToCamel<S>>
 
 export type ObjectFromSnakeToCamel<T> = {
-    [K in keyof T as SnakeToCamel<string & K>]: T[K] extends Record<string, any>
+    [K in keyof T as SnakeToCamel<string & K>]: T[K] extends Record<string, unknown>
         ? ObjectFromSnakeToCamel<T[K]>
         : T[K]
 }
 export type ObjectFromPascalToCamel<T> = {
     [K in keyof T as PascalToCamel<string & K>]: T[K] extends Record<
         string,
-        any
+        unknown
     >
         ? ObjectFromPascalToCamel<T[K]>
         : T[K]
 }
 export type ObjectToCamel<T> = {
-    [K in keyof T as ToCamel<string & K>]: T[K] extends Record<string, any>
+    [K in keyof T as ToCamel<string & K>]: T[K] extends Record<string, unknown>
         ? ObjectToCamel<T[K]>
         : T[K]
 }
@@ -149,14 +149,13 @@ export type KeysToCamel<T> = {
     [K in keyof T as ToCamel<string & K>]: T[K]
 }
 
-export type TupleIndices<A extends any[]> = A extends [any, ...infer T]
+export type TupleIndices<A extends unknown[]> = A extends [unknown, ...infer T]
     ? TupleIndices<T> | T['length']
     : never
 
 export type Prettify<T> = {
     [K in keyof T]: T[K]
-    // eslint-disable-next-line @typescript-eslint/ban-types
-} & {}
+}
 export type Promisable<T> = T | Promise<T>
 export type OmitNever<T extends object> = {
     [K in keyof T as T[K] extends never ? never : K]: T[K]
@@ -165,7 +164,9 @@ export type OmitNever<T extends object> = {
 export const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
 // credits goes to https://stackoverflow.com/a/50375286
+
 export type UnionToIntersection<U> = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     U extends any ? (k: U) => void : never
 ) extends (k: infer I) => void
     ? I
@@ -173,7 +174,7 @@ export type UnionToIntersection<U> = (
 
 // Converts union to overloaded function
 export type UnionToOvlds<U> = UnionToIntersection<
-    U extends any ? (f: U) => void : never
+    U extends unknown ? (f: U) => void : never
 >
 
 export type PopUnion<U> =
@@ -187,12 +188,13 @@ export type UnionToArray<T, A extends unknown[] = []> =
         ? UnionToArray<Exclude<T, PopUnion<T>>, [PopUnion<T>, ...A]>
         : [T, ...A]
 
-export type IntersectArray<A extends unknown[]> = A extends [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type IntersectArray<A extends any[]> = A extends [
     infer F,
     ...infer R,
 ]
     ? F & IntersectArray<R>
-    : {}
+    : object
 
 export type ArrayContains<
     T extends unknown[],

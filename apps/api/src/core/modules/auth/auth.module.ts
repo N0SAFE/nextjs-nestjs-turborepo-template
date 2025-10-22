@@ -35,11 +35,11 @@ import type { Auth } from "@/core/modules/auth/types/auth";
 /**
  * Configuration options for the AuthModule
  */
-type AuthModuleOptions = {
+interface AuthModuleOptions {
   disableExceptionFilter?: boolean;
   disableTrustedOriginsCors?: boolean;
   disableBodyParser?: boolean;
-};
+}
 
 /**
  * Factory for creating Auth instance and module options asynchronously
@@ -197,7 +197,7 @@ export class AuthModule implements NestModule, OnModuleInit {
 
   private setupHooks(
     providerMethod: (...args: unknown[]) => unknown,
-    providerClass: { new (...args: unknown[]): unknown }
+    providerClass: new (...args: unknown[]) => unknown
   ) {
     if (
       !("hooks" in this.auth.options) ||
@@ -295,7 +295,7 @@ export class AuthModule implements NestModule, OnModuleInit {
     return {
       global: true,
       module: AuthModule,
-      imports: options.imports || [],
+      imports: options.imports ?? [],
       providers: [...asyncProviders, AuthService, AuthGuard],
       controllers: [AuthController],
       exports: [

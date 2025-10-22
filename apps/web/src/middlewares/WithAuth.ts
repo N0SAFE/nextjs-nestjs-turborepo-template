@@ -6,14 +6,12 @@ import {
 } from 'next/server'
 import { ConfigFactory, Matcher, MiddlewareFactory } from './utils/types'
 import { nextjsRegexpPageOnly, nextNoApi } from './utils/static'
-import { $Infer } from '@/lib/auth'
 import { matcherHandler } from './utils/utils'
 import { validateEnvSafe } from '#/env'
 import { toAbsoluteUrl } from '@/lib/utils'
 import { Authsignin } from '@/routes/index'
 import { createDebug } from '@/lib/debug'
-import { getServerSession } from '@/lib/auth/actions'
-import { getCookieCache, getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from "better-auth/cookies";
 
 const debugAuth = createDebug('middleware/auth')
 const debugAuthError = createDebug('middleware/auth/error')

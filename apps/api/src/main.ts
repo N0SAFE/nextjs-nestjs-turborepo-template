@@ -17,7 +17,7 @@ async function bootstrap() {
   app.useGlobalFilters(new FlubErrorHandler());
   // Enable CORS for Next.js frontend
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3000",
+    origin: process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000",
     credentials: true,
   });
 
@@ -64,13 +64,13 @@ async function bootstrap() {
     })
   );
 
-  const port = process.env.API_PORT || 3005;
+  const port = process.env.API_PORT ?? 3005;
   await app.listen(port);
-  console.log(`🚀 NestJS API with oRPC running on port ${port}`);
+  console.log(`🚀 NestJS API with oRPC running on port ${String(port)}`);
   console.log(
-    `📘 OpenAPI JSON available at http://localhost:${port}/openapi.json`
+    `📘 OpenAPI JSON available at http://localhost:${String(port)}/openapi.json`
   );
-  console.log(`📗 Scalar API Reference at http://localhost:${port}/reference`);
+  console.log(`📗 Scalar API Reference at http://localhost:${String(port)}/reference`);
 }
 
 bootstrap().catch((error) => {

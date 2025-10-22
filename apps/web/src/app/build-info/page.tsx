@@ -1,4 +1,6 @@
 // This function runs at build time and makes the page static
+import Link from 'next/link'
+
 export default function BuildInfoPage() {
     // This timestamp is captured at build time
     const buildTime = new Date().toISOString()
@@ -76,12 +78,12 @@ export default function BuildInfoPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                    <a
+                    <Link
                         href="/"
                         className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
                     >
                         ← Back to Home
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

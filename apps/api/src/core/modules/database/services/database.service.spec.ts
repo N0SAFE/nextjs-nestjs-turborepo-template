@@ -1,6 +1,6 @@
-import type { TestingModule } from '@nestjs/testing';
+import type { TestingModule, TestingModuleBuilder } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DatabaseService } from '../database.service';
 import { DATABASE_CONNECTION } from '../database-connection';
 
@@ -32,7 +32,7 @@ describe('DatabaseService', () => {
 
   it('should throw error if database connection is not initialized', async () => {
     const createServiceWithNullDb = () => {
-      const module: TestingModule = Test.createTestingModule({
+      const module: TestingModuleBuilder = Test.createTestingModule({
         providers: [
           DatabaseService,
           {
@@ -129,7 +129,7 @@ describe('DatabaseService', () => {
       const serviceWithNullDb = {
         _db: null,
         getConnectionInfo() {
-          const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/mydb';
+          const connectionString = process.env.DATABASE_URL ?? 'postgresql://postgres:password@localhost:5432/mydb';
           const sanitizedUrl = connectionString.replace(/:([^:]+)@/, ':***@');
           
           return {

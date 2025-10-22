@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 
 const ClientSideShowcase: React.FC = function ClientSideShowcase() {
     const [timeTaken, setTimeTaken] = React.useState<number | null>(null)
+    // eslint-disable-next-line react-hooks/purity, react-hooks/exhaustive-deps
     const startTime = React.useMemo(() => Date.now(), [])
 
     const { data: result, isFetched } = useQuery(

@@ -1,4 +1,4 @@
-import { describe, expect,, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type {
   FromCamelToSnake,
   FromPascalToSnake,
@@ -12,7 +12,7 @@ import type {
   ObjectFromPascalToCamel,
   UnionToArray,
   ArrayContains,
-  prettify,
+  Prettify,
   OmitNever,
   TupleIndices,
 } from './utils'
@@ -80,7 +80,7 @@ describe('String Case Transformation Types', () => {
 
   describe('Object Transformations', () => {
     it('should transform object keys from camelCase to snake_case', () => {
-      type Original = { userName: string; userAge: number }
+      interface Original { userName: string; userAge: number }
       type Transformed = ObjectFromCamelToSnake<Original>
       
       const transformed: Transformed = {
@@ -93,7 +93,7 @@ describe('String Case Transformation Types', () => {
     })
 
     it('should transform object keys from PascalCase to snake_case', () => {
-      type Original = { UserName: string; UserAge: number }
+      interface Original { UserName: string; UserAge: number }
       type Transformed = ObjectFromPascalToSnake<Original>
       
       const transformed: Transformed = {
@@ -106,7 +106,7 @@ describe('String Case Transformation Types', () => {
     })
 
     it('should handle nested objects', () => {
-      type Original = { 
+      interface Original { 
         userInfo: { 
           userName: string
           userAge: number 
@@ -170,10 +170,10 @@ describe('Utility Types', () => {
     })
   })
 
-  describe('prettify', () => {
+  describe('Prettify', () => {
     it('should make complex types more readable', () => {
       type Complex = { a: string } & { b: number }
-      type Pretty = prettify<Complex>
+      type Pretty = Prettify<Complex>
       
       const pretty: Pretty = { a: 'test', b: 42 }
       
@@ -184,7 +184,7 @@ describe('Utility Types', () => {
 
   describe('OmitNever', () => {
     it('should omit never properties from objects', () => {
-      type WithNever = { a: string; b: never; c: number }
+      interface WithNever { a: string; b: never; c: number }
       type WithoutNever = OmitNever<WithNever>
       
       const withoutNever: WithoutNever = { a: 'test', c: 42 }

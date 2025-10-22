@@ -38,7 +38,7 @@ export class PermissionChecker {
     return userRoles
       .split(",")
       .map((r) => r.trim())
-      .filter((r) => r in roles) as RoleName[];
+      .filter((r) => r in roles);
   }
 
   static getUserRoles(userRoleString: string): RoleName[] {
@@ -65,11 +65,11 @@ export class PermissionChecker {
   }
 
   static getAllResources(): Resource[] {
-    return Object.keys(statement) as Resource[];
+    return Object.keys(statement);
   }
 
   static getAllRoles(): RoleName[] {
-    return Object.keys(roles) as RoleName[];
+    return Object.keys(roles);
   }
 
   static hasHigherPrivilege(

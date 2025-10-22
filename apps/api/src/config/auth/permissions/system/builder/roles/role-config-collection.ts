@@ -466,7 +466,7 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
     return new RoleConfigCollection({
       ...this._roles,
       ...other.toObject()
-    } as TRoles & TOther);
+    });
   }
 
   /**

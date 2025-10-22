@@ -53,7 +53,7 @@ export class UserService {
   /**
    * Update user by ID
    */
-  async updateUser(id: string, input: UpdateUserInput) {
+  async updateUser(id: string, input: Omit<UpdateUserInput, 'id'>) {
     const existingUser = await this.userRepository.findById(id);
     if (!existingUser) {
       return null;

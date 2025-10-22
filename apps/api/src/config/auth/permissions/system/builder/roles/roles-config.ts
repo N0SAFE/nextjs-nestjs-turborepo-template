@@ -116,7 +116,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
     return new RolesConfig({
       ...this._roles,
       ...roles
-    } as TRoles & T);
+    });
   }
 
   /**
@@ -199,7 +199,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
     return new RolesConfig({
       ...this._roles,
       ...other.build()
-    } as TRoles & T);
+    });
   }
 
   /**
@@ -271,7 +271,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.every(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions && permissions.length === 1 && permissions[0] === 'read';
+        return permissions?.length === 1 && permissions[0] === 'read';
       });
     });
   }
@@ -285,7 +285,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.some(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions && permissions.some(p => ['create', 'update', 'delete'].includes(p as string));
+        return permissions?.some(p => ['create', 'update', 'delete'].includes(p));
       });
     });
   }

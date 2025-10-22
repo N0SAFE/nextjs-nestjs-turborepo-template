@@ -10,4 +10,5 @@ import { DatabaseModule } from '../../core/modules/database/database.module';
     providers: [UserService, UserRepository],
     exports: [UserService, UserRepository],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UserModule {}

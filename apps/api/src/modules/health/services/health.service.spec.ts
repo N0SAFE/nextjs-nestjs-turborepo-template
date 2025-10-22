@@ -48,7 +48,7 @@ describe('HealthService', () => {
 
   describe('getReadiness', () => {
     it('should return ready status when database is healthy', async () => {
-      const mockCheckHealth = mockRepository.checkDatabaseHealth as any;
+      const mockCheckHealth = mockRepository.checkDatabaseHealth;
       mockCheckHealth.mockResolvedValue({
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -66,7 +66,7 @@ describe('HealthService', () => {
     });
 
     it('should return not-ready status when database is unhealthy', async () => {
-      const mockCheckHealth = mockRepository.checkDatabaseHealth as any;
+      const mockCheckHealth = mockRepository.checkDatabaseHealth;
       mockCheckHealth.mockResolvedValue({
         status: 'error',
         timestamp: new Date().toISOString(),
@@ -107,9 +107,9 @@ describe('HealthService', () => {
       const mockMemory = { used: 1000, free: 2000, total: 3000 };
       const mockUptime = 123.45;
 
-      const mockCheckHealth = mockRepository.checkDatabaseHealth as any;
-      const mockGetMemory = mockRepository.getMemoryInfo as any;
-      const mockGetUptime = mockRepository.getUptime as any;
+      const mockCheckHealth = mockRepository.checkDatabaseHealth;
+      const mockGetMemory = mockRepository.getMemoryInfo;
+      const mockGetUptime = mockRepository.getUptime;
 
       mockCheckHealth.mockResolvedValue(mockDbHealth);
       mockGetMemory.mockReturnValue(mockMemory);
@@ -140,9 +140,9 @@ describe('HealthService', () => {
       const mockMemory = { used: 1000, free: 2000, total: 3000 };
       const mockUptime = 123.45;
 
-      const mockCheckHealth = mockRepository.checkDatabaseHealth as any;
-      const mockGetMemory = mockRepository.getMemoryInfo as any;
-      const mockGetUptime = mockRepository.getUptime as any;
+      const mockCheckHealth = mockRepository.checkDatabaseHealth;
+      const mockGetMemory = mockRepository.getMemoryInfo;
+      const mockGetUptime = mockRepository.getUptime;
 
       mockCheckHealth.mockResolvedValue(mockDbHealth);
       mockGetMemory.mockReturnValue(mockMemory);

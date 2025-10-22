@@ -9,8 +9,8 @@ describe('HealthController', () => {
 
   beforeEach(async () => {
     const mockHealthService = {
-      getHealth: vi.fn(),
-      getDetailedHealth: vi.fn(),
+      getHealth: vi.fn() as (this: unknown) => ReturnType<HealthService['getHealth']>,
+      getDetailedHealth: vi.fn() as (this: unknown) => ReturnType<HealthService['getDetailedHealth']>,
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -48,8 +48,8 @@ describe('HealthController', () => {
   describe('Service integration', () => {
     it('should have service injected properly', () => {
       expect(service).toBeDefined();
-      expect(service.getHealth).toBeDefined();
-      expect(service.getDetailedHealth).toBeDefined();
+      expect(service.getHealth.bind(service)).toBeDefined();
+      expect(service.getDetailedHealth.bind(service)).toBeDefined();
     });
 
     it('should be able to call getHealth service method directly', async () => {
@@ -58,11 +58,11 @@ describe('HealthController', () => {
         timestamp: new Date().toISOString(),
         service: 'nestjs-api'
       };
-      vi.mocked(service.getHealth).mockResolvedValue(mockHealth);
+      vi.mocked(service.getHealth.bind(service)).mockResolvedValue(mockHealth);
 
       const result = await service.getHealth();
       expect(result).toEqual(mockHealth);
-      expect(service.getHealth).toHaveBeenCalledOnce();
+      expect(service.getHealth.bind(service)).toHaveBeenCalledOnce();
     });
 
     it('should be able to call getDetailedHealth service method directly', async () => {
@@ -74,11 +74,11 @@ describe('HealthController', () => {
         memory: { used: 1000, free: 2000, total: 3000 },
         database: { status: 'ok' }
       };
-      vi.mocked(service.getDetailedHealth).mockResolvedValue(mockDetailedHealth);
+      vi.mocked(service.getDetailedHealth.bind(service)).mockResolvedValue(mockDetailedHealth);
 
       const result = await service.getDetailedHealth();
       expect(result).toEqual(mockDetailedHealth);
-      expect(service.getDetailedHealth).toHaveBeenCalledOnce();
+      expect(service.getDetailedHealth.bind(service)).toHaveBeenCalledOnce();
     });
   });
 });

@@ -4,6 +4,7 @@ import { orpc } from '@/lib/orpc'
 import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
 
 const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
+    // eslint-disable-next-line react-hooks/purity
     const startTime = Date.now()
 
     try {
@@ -18,6 +19,7 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
             },
         })
 
+        // eslint-disable-next-line react-hooks/purity
         const endTime = Date.now()
 
         return (
@@ -28,6 +30,7 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
         )
     } catch (error) {
         unstable_rethrow(error) // Ensure proper error handling in Next.js because orpc can throw redirect responses
+        // eslint-disable-next-line react-hooks/purity
         const endTime = Date.now()
 
         return (

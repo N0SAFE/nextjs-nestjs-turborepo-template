@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Auth } from "@/core/modules/auth/types/auth";
-import { APIError, type getSession } from "better-auth/api";
+import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import { AUTH_INSTANCE_KEY } from "../types/symbols";
 
@@ -10,9 +10,7 @@ import { AUTH_INSTANCE_KEY } from "../types/symbols";
  * Type representing a valid user session after authentication
  * Excludes null and undefined values from the session return type
  */
-export type UserSession = NonNullable<
-	Awaited<ReturnType<ReturnType<typeof getSession>>>
->;
+export type UserSession = Auth["$Infer"]['Session']
 
 /**
  * NestJS guard that handles authentication for protected routes

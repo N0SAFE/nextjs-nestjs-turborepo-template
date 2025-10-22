@@ -26,7 +26,7 @@ export class EnvService {
       }
       return value as Env[T];
     }
-    return this.configService.get(key as string) as Env[T];
+    return this.configService.get(key as string)!;
   }
 
   /**

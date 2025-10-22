@@ -114,7 +114,7 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     const result = {} as Record<string, readonly string[]>;
 
     for (const [key, config] of Object.entries(this._statements)) {
-      const filteredActions = config.filter((action) => actions.includes(action as string));
+      const filteredActions = config.filter((action) => actions.includes(action));
       if (filteredActions.length > 0) {
         result[key] = filteredActions as readonly string[];
       }
@@ -135,7 +135,7 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     const result = {} as Record<string, readonly string[]>;
 
     for (const [key, config] of Object.entries(this._statements)) {
-      const remainingActions = config.filter((action) => !actions.includes(action as string));
+      const remainingActions = config.filter((action) => !actions.includes(action));
       if (remainingActions.length > 0) {
         result[key] = remainingActions as readonly string[];
       }
@@ -354,7 +354,7 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     return new StatementConfigCollection({
       ...this._statements,
       ...other,
-    } as TStatement & T);
+    });
   }
 
   /**

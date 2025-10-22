@@ -8,7 +8,7 @@
     "scripts": {
         " ": " ",
         "prettify": "bun x --bun prettier ./**/*.{ts,tsx,js,jsx,css} --write --no-error-on-unmatched-pattern",
-        "lint": "eslint \"**/*.ts*\"",
+        "lint": "eslint",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
@@ -18,8 +18,7 @@
         "react": "catalog:react"
     },
     "devDependencies": {
-        "@eslint/eslintrc": "catalog:linting",
-        "@eslint/js": "catalog:linting",
+        "eslint": "catalog:linting",
         "@repo/eslint-config": "*",
         "@repo/prettier-config": "*",
         "@repo/tailwind-config": "*",

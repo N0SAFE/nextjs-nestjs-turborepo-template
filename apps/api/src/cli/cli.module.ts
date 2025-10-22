@@ -25,4 +25,5 @@ import { EnvService } from '@/config/env/env.service';
     ResetCommand,
   ],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CLIModule {}

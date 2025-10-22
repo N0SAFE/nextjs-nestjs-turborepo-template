@@ -27,4 +27,5 @@ import { EnvModule } from "../../../config/env/env.module";
     ],
     exports: [DatabaseService, DATABASE_CONNECTION]
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class DatabaseModule {}

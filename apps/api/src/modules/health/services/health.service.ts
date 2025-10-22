@@ -8,7 +8,7 @@ export class HealthService {
   /**
    * Basic health check
    */
-  async getHealth() {
+  getHealth() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -35,7 +35,7 @@ export class HealthService {
   /**
    * Liveness check
    */
-  async getLiveness() {
+  getLiveness() {
     return {
       status: 'alive',
       timestamp: new Date().toISOString(),

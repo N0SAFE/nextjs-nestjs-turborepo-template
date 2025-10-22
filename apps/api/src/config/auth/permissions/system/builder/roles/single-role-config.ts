@@ -173,7 +173,7 @@ export class RoleConfig<TRole = any> {
    */
   writeOnly(): Record<string, readonly string[]> {
     return this.filter((_, actions) =>
-      actions.some(a => ['create', 'update', 'delete'].includes(a as string))
+      actions.some(a => ['create', 'update', 'delete'].includes(a))
     );
   }
 

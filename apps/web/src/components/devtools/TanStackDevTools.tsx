@@ -996,6 +996,7 @@ const ApiUrlPluginComponent = () => {
 
     React.useEffect(() => {
         if (apiUrl) checkHealth()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiUrl])
 
     return (

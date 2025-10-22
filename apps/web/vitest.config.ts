@@ -1,12 +1,10 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
 import * as path from 'path'
 import { createNextJSConfig } from '@repo/vitest-config/nextjs'
 
 export default defineConfig(
     createNextJSConfig({
-        plugins: [react()],
         test: {
             name: 'web',
             environment: 'jsdom',

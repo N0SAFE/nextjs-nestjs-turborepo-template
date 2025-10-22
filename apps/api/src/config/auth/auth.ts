@@ -30,13 +30,13 @@ export const betterAuthFactory = (...args: unknown[]) => {
         }),
         useAdmin(),
         masterTokenPlugin({
-          devAuthKey: devAuthKey || "",
+          devAuthKey: devAuthKey ?? "",
           enabled: envService.get("NODE_ENV") === "development" && !!devAuthKey,
         }),
         // Dev-only loginAs plugin to support 'Login as' from DevTools
         loginAsPlugin({
           enabled: envService.get("NODE_ENV") === "development" && !!devAuthKey,
-          devAuthKey: devAuthKey || "",
+          devAuthKey: devAuthKey ?? "",
         }),
         openAPI()
       ],

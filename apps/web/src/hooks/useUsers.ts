@@ -518,6 +518,7 @@ export function useUsersInfinite(options?: {
         },
         filter: options?.filter,
       }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       getNextPageParam: (lastPage: any, _: any, lastPageParam: number) => {
         // Determine if there are more pages
         if (!lastPage.meta?.pagination?.hasMore) {
@@ -525,6 +526,7 @@ export function useUsersInfinite(options?: {
         }
         return lastPageParam + 1
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       getPreviousPageParam: (_: any, __: any, firstPageParam: number) => {
         // Allow going back if not on first page
         if (firstPageParam === 1) {

@@ -54,6 +54,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
 
     useEffect(() => {
         void refetch()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [enabled])
 
     return (

@@ -10,4 +10,5 @@ import { DatabaseModule } from '../../core/modules/database/database.module';
   providers: [HealthService, HealthRepository],
   exports: [HealthService, HealthRepository],
 })
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HealthModule {}
