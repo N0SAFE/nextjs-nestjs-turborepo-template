@@ -183,6 +183,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@orpc/contract": "catalog:orpc",
+        "@repo/types": "*",
         "zod": "catalog:utils",
       },
       "devDependencies": {
@@ -196,6 +197,7 @@
       "devDependencies": {
         "@repo/vitest-config": "*",
         "@types/node": "catalog:build",
+        "commander": "catalog:utils",
         "vitest": "catalog:testing",
       },
     },
@@ -317,8 +319,10 @@
         "@repo/prettier-config": "*",
         "@repo/tsconfig": "*",
         "@repo/vitest-config": "*",
+        "drizzle-orm": "catalog:database",
         "typescript": "catalog:build",
         "vitest": "catalog:testing",
+        "zod": "catalog:utils",
       },
     },
     "packages/ui": {
@@ -3779,6 +3783,8 @@
     "@repo/mcp-repo-manager/zod": ["zod@3.23.8", "", {}, "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="],
 
     "@repo/types/concurrently": ["concurrently@8.2.2", "", { "dependencies": { "chalk": "^4.1.2", "date-fns": "^2.30.0", "lodash": "^4.17.21", "rxjs": "^7.8.1", "shell-quote": "^1.8.1", "spawn-command": "0.0.2", "supports-color": "^8.1.1", "tree-kill": "^1.2.2", "yargs": "^17.7.2" }, "bin": { "conc": "dist/bin/concurrently.js", "concurrently": "dist/bin/concurrently.js" } }, "sha512-1dP4gpXFhei8IOtlXRE/T/4H88ElHgTiUzh71YUmtjTEHMSRS2Z/fgOxHSxxusGHogsRfxNq1vyAwxSC+EVyDg=="],
+
+    "@repo/types/drizzle-orm": ["drizzle-orm@0.39.3", "", { "peerDependencies": { "@aws-sdk/client-rds-data": ">=3", "@cloudflare/workers-types": ">=4", "@electric-sql/pglite": ">=0.2.0", "@libsql/client": ">=0.10.0", "@libsql/client-wasm": ">=0.10.0", "@neondatabase/serverless": ">=0.10.0", "@op-engineering/op-sqlite": ">=2", "@opentelemetry/api": "^1.4.1", "@planetscale/database": ">=1", "@prisma/client": "*", "@tidbcloud/serverless": "*", "@types/better-sqlite3": "*", "@types/pg": "*", "@types/sql.js": "*", "@vercel/postgres": ">=0.8.0", "@xata.io/client": "*", "better-sqlite3": ">=7", "bun-types": "*", "expo-sqlite": ">=14.0.0", "knex": "*", "kysely": "*", "mysql2": ">=2", "pg": ">=8", "postgres": ">=3", "sql.js": ">=1", "sqlite3": ">=5" }, "optionalPeers": ["@aws-sdk/client-rds-data", "@cloudflare/workers-types", "@electric-sql/pglite", "@libsql/client", "@libsql/client-wasm", "@neondatabase/serverless", "@op-engineering/op-sqlite", "@opentelemetry/api", "@planetscale/database", "@prisma/client", "@tidbcloud/serverless", "@types/better-sqlite3", "@types/pg", "@types/sql.js", "@vercel/postgres", "@xata.io/client", "better-sqlite3", "bun-types", "expo-sqlite", "knex", "kysely", "mysql2", "pg", "postgres", "sql.js", "sqlite3"] }, "sha512-EZ8ZpYvDIvKU9C56JYLOmUskazhad+uXZCTCRN4OnRMsL+xAJ05dv1eCpAG5xzhsm1hqiuC5kAZUCS924u2DTw=="],
 
     "@repo/ui/concurrently": ["concurrently@8.2.2", "", { "dependencies": { "chalk": "^4.1.2", "date-fns": "^2.30.0", "lodash": "^4.17.21", "rxjs": "^7.8.1", "shell-quote": "^1.8.1", "spawn-command": "0.0.2", "supports-color": "^8.1.1", "tree-kill": "^1.2.2", "yargs": "^17.7.2" }, "bin": { "conc": "dist/bin/concurrently.js", "concurrently": "dist/bin/concurrently.js" } }, "sha512-1dP4gpXFhei8IOtlXRE/T/4H88ElHgTiUzh71YUmtjTEHMSRS2Z/fgOxHSxxusGHogsRfxNq1vyAwxSC+EVyDg=="],
 

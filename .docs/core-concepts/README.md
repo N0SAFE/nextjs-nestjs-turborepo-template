@@ -108,6 +108,7 @@ How would you like to proceed?
 | [05-TYPE-MANIPULATION-PATTERN.md](./05-TYPE-MANIPULATION-PATTERN.md) | Type Manipulation | 🟡 IMPORTANT | Prefer inference over manual definitions |
 | [07-BETTER-AUTH-INTEGRATION.md](./07-BETTER-AUTH-INTEGRATION.md) | Better Auth | 🔴 CRITICAL | Use AuthService.api for all auth operations |
 | [09-ORPC-IMPLEMENTATION-PATTERN.md](./09-ORPC-IMPLEMENTATION-PATTERN.md) | ORPC API Pattern | 🔴 CRITICAL | Type-safe API contracts with end-to-end safety |
+| [11-ORPC-CLIENT-HOOKS-PATTERN.md](./11-ORPC-CLIENT-HOOKS-PATTERN.md) | ORPC Client Hooks | 🔴 CRITICAL | Consume ORPC in components via dedicated hooks layer |
 
 ## How to Use This System
 

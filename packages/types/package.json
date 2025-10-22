@@ -26,7 +26,9 @@
         "@repo/tsconfig": "*",
         "@repo/vitest-config": "*",
         "typescript": "catalog:build",
-        "vitest": "catalog:testing"
+        "vitest": "catalog:testing",
+        "zod": "catalog:utils",
+        "drizzle-orm": "catalog:database"
     },
     "keywords": [],
     "author": "",

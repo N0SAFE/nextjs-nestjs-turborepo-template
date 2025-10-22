@@ -12,6 +12,7 @@
   "keywords": [],
   "author": "",
   "devDependencies": {
+    "commander": "catalog:utils",
     "@repo/vitest-config": "*",
     "vitest": "catalog:testing",
     "@types/node": "catalog:build"

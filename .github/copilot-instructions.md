@@ -68,8 +68,9 @@ Prefer Docker-first via these root scripts; local app-level scripts exist for ho
 **Shared type-safe contracts between frontend/backend:**
 - Contracts: `packages/api-contracts/index.ts`
 - API implementation: `apps/api/src/` using ORPC decorators
-- Client usage: Generated hooks via `@orpc/tanstack-query`
+- Client usage: Custom React Query hooks wrapping ORPC (see ORPC Client Hooks Pattern)
 - Changes require rebuilding web app: `bun run web -- generate`
+- **Important**: Always create custom hooks instead of using ORPC directly in components
 
 ### 4. Shared Package System
 **Internal packages use workspace references:**
@@ -163,6 +164,7 @@ For detailed information on specific topics, reference these documentation files
 ### 🛠️ **Development Workflows**
 - **Daily Development**: [`.docs/guides/DEVELOPMENT-WORKFLOW.md`](../.docs/guides/DEVELOPMENT-WORKFLOW.md) - Day-to-day development tasks and best practices
 - **API Contracts**: [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md) - ORPC type-safe API development and usage patterns
+- **API Client Hooks**: [`.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`](../.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md) - Creating hooks for ORPC consumption in components
 - **Declarative Routing**: [`apps/web/src/routes/README.md`](../apps/web/src/routes/README.md) - Type-safe routing system usage and examples
 
 ### 🐳 **Docker & Deployment**
@@ -185,6 +187,7 @@ For detailed information on specific topics, reference these documentation files
 |------|-------------------|-------------|
 | Setting up development environment | `.docs/guides/GETTING-STARTED.md` | Quick Start |
 | Creating API endpoints | `.docs/features/ORPC-TYPE-CONTRACTS.md` | API Implementation |
+| Creating client hooks for ORPC | `.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md` | Hook Organization |
 | Adding new pages | `apps/web/src/routes/README.md` | Using the routes |
 | Database operations | `.docs/guides/DEVELOPMENT-WORKFLOW.md` | Working with Database |
 | Docker issues | `.docs/guides/DOCKER-BUILD-STRATEGIES.md` | Troubleshooting |

@@ -3,7 +3,7 @@ import { defaultStatements } from "better-auth/plugins/admin/access";
 
 export const permissionConfig = PermissionBuilder.withDefaults(defaultStatements)
     .resource("system")
-    .actions(["maintenance", "backup", "restore", "monitor"] as const)
+    /**/ .actions(["maintenance", "backup", "restore", "monitor"] as const)
     .resources({
         project: ["create", "read", "update", "delete", "share"] as const,
         organization: ["create", "read", "update", "delete", "manage-members"] as const,
@@ -11,7 +11,7 @@ export const permissionConfig = PermissionBuilder.withDefaults(defaultStatements
         analytics: ["read", "export"] as const,
     })
     .role("superAdmin")
-    .allPermissions()
+    /**/ .allPermissions()
     .roles((ac) => {
         return {
             admin: ac.newRole({
