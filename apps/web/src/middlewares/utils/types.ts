@@ -1,7 +1,7 @@
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 // middleware/types.ts
 
-import { NextMiddleware } from 'next/server'
+import { NextProxy } from 'next/server'
 
 type AddParameters<
     TFunction extends (...args: any) => any,
@@ -11,7 +11,7 @@ type AddParameters<
 ) => ReturnType<TFunction>
 
 export type CustomNextMiddleware = AddParameters<
-    NextMiddleware,
+    NextProxy,
     [meta?: { key: number | string; ctx: any }]
 >
 export type MiddlewareFactory = (

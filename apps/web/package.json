@@ -36,7 +36,7 @@
         "@better-fetch/fetch": "catalog:auth",
         "@million/lint": "^1.0.14",
         "@n0safe/envcli": "^1.0.2",
-        "@next/bundle-analyzer": "catalog:next",
+        "@next/bundle-analyzer": "16.0.0",
         "@orpc/client": "catalog:orpc",
         "@orpc/contract": "catalog:orpc",
         "@orpc/openapi-client": "catalog:orpc",
@@ -55,18 +55,18 @@
         "declarative-routing": "^0.1.20",
         "lodash.snakecase": "catalog:utils",
         "lucide-react": "catalog:ui",
-        "next": "catalog:next",
+        "next": "16.0.0",
         "next-sitemap": "catalog:next",
         "nextjs-toploader": "catalog:next",
         "query-string": "catalog:utils",
-        "react": "catalog:react",
-        "react-dom": "catalog:react",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
         "react-use": "^17.6.0",
         "sonner": "catalog:ui",
         "tw-animate-css": "catalog:ui",
         "zod": "catalog:utils"
-    },
-    "devDependencies": {
+      },
+      "devDependencies": {
         "@asteasolutions/zod-to-openapi": "^8.0.0",
         "@eslint/eslintrc": "^3",
         "@repo/eslint-config": "*",
@@ -78,10 +78,10 @@
         "@types/lodash.snakecase": "catalog:utils",
         "@types/node": "catalog:build",
         "@types/nprogress": "^0.2.3",
-        "@types/react": "catalog:react",
-        "@types/react-dom": "catalog:react",
+        "@types/react": "19.2.2",
+        "@types/react-dom": "19.2.2",
         "eslint": "catalog:linting",
-        "eslint-config-next": "catalog:next",
+        "eslint-config-next": "16.0.0",
         "prettier-plugin-tailwindcss": "catalog:linting",
         "tailwind-merge": "catalog:styling",
         "rimraf": "catalog:build",
@@ -101,8 +101,8 @@
         "@types/mdx": "^2.0.13"
     },
     "optionalDependencies": {},
-    "overrides": {},
-    "pnpm": {
-        "patchedDependencies": {}
+    "overrides": {
+        "@types/react": "19.2.2",
+        "@types/react-dom": "19.2.2"
     }
 }

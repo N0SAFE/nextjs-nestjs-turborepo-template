@@ -1,6 +1,6 @@
 import {
     NextFetchEvent,
-    NextMiddleware,
+    NextProxy,
     NextRequest,
     NextResponse,
 } from 'next/server'
@@ -23,7 +23,7 @@ const env = validateEnvSafe(process.env).data
 const showcaseRegexpAndChildren = /^\/showcase(\/.*)?$/
 const dashboardRegexpAndChildren = /^\/dashboard(\/.*)?$/
 
-const withAuth: MiddlewareFactory = (next: NextMiddleware) => {
+const withAuth: MiddlewareFactory = (next: NextProxy) => {
     if (!env) {
         debugAuthError('Environment variables are not valid')
         throw new Error('env is not valid')

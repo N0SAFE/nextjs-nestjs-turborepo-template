@@ -2,7 +2,7 @@
 # Production Dockerfile for Web App - BUILD-TIME COMPILATION
 # This version builds the Next.js app during Docker build phase
 # Recommended for: Render, Vercel, and platforms that scan for open ports during build
-FROM oven/bun:1.2.21-alpine AS base
+FROM oven/bun:1.3.0-alpine AS base
 
 ENV NODE_ENV=production
 
@@ -43,13 +43,19 @@ RUN --mount=type=cache,target=/root/.cache/turbo \
 # Install dependencies for building
 FROM base AS installer
 RUN apk update
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    musl-dev
 WORKDIR /app
 
 # First install the dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
 RUN rm -f bun.lock # this is a workaround because when using the --frozen-lockfile i have a probleme with the way the turbo prune work with bun and it corrupt my bun.lock
-RUN bun install
+RUN bun install --frozen-lockfile
 
 # Build the project
 COPY --from=builder /app/out/full/ .

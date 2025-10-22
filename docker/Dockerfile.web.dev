@@ -1,17 +1,32 @@
 # syntax=docker/dockerfile:1.7
-# Simple development Dockerfile for Next.js Web App
-# Focused on simplicity and avoiding permission issues
+# Development Dockerfile for Next.js Web App
+# Multi-stage build with separate installer and runner stages
 
-FROM oven/bun:1.2.21-alpine
+# ===================================
+# Stage 1: Base - Common dependencies
+# ===================================
+FROM oven/bun:1.3.0-alpine AS base
 
-# Install system dependencies
-RUN apk add --no-cache libc6-compat curl bash supervisor
+# Install system dependencies including build tools for native modules
+RUN apk add --no-cache \
+    libc6-compat \
+    curl \
+    bash \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    musl-dev
 
 # Install Turbo globally
 RUN bun install -g turbo@^2
 
-# Set working directory
 WORKDIR /app
+
+# ===================================
+# Stage 2: Installer - Install dependencies
+# ===================================
+FROM base AS installer
 
 # Copy workspace configuration files for dependency installation
 COPY package.json bun.lock* ./
@@ -20,7 +35,21 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/ ./packages/
 
 # Install dependencies (this layer will be cached)
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install
+RUN bun install
+
+# ===================================
+# Stage 3: Runner - Development runtime
+# ===================================
+FROM base AS runner
+
+# Install supervisor for process management
+RUN apk add --no-cache supervisor
+
+WORKDIR /app
+
+# Copy installed dependencies from installer stage
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/packages ./packages
 
 # Copy supervisord configuration to a location outside the mount
 COPY apps/web/supervisord.dev.conf /etc/supervisord.conf

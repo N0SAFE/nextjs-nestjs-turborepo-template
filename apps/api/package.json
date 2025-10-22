@@ -45,6 +45,7 @@
     "better-auth": "catalog:auth",
     "drizzle-kit": "catalog:database",
     "drizzle-orm": "catalog:database",
+    "express": "^5.1.0",
     "express-list-routes": "^1.3.1",
     "nanoid": "catalog:database",
     "nest-commander": "^3.19.1",

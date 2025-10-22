@@ -1,4 +1,4 @@
-import { NextMiddleware, NextResponse } from 'next/server'
+import { NextProxy, NextResponse } from 'next/server'
 import { Matcher, MiddlewareFactory } from './utils/types'
 import { envIsValid, validateEnvSafe } from '#/env'
 import { nextjsRegexpPageOnly, nextNoApi, noPublic } from './utils/static'
@@ -12,7 +12,7 @@ const debugEnvError = createDebug('middleware/env/error')
 
 const errorPageRenderingPath = '/middleware/error/env'
 
-const withEnv: MiddlewareFactory = (next: NextMiddleware) => {
+const withEnv: MiddlewareFactory = (next: NextProxy) => {
     return async (request, _next) => {
         const isValid = envIsValid(process.env)
         debugEnv('Environment validation check', { 

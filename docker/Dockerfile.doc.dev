@@ -2,6 +2,37 @@
 # Simple development Dockerfile for Docs App
 # Focused on simplicity and avoiding permission issues
 
+FROM oven/bun:1.2.21-alpine AS pruner
+
+# Install system dependencies
+RUN apk add --no-cache libc6-compat curl bash
+
+# Install Turbo globally
+RUN bun install -g turbo@^2
+
+# Set working directory
+WORKDIR /app
+
+# Copy entire workspace for turbo prune
+COPY . .
+
+# Prune the workspace to only include doc and its dependencies
+RUN bun x turbo prune doc --docker
+
+# Stage 2: Install dependencies
+FROM oven/bun:1.2.21-alpine AS installer
+
+# Set working directory
+WORKDIR /app
+
+# Copy pruned lock file and package.json files from pruner stage
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/bun.lock* ./bun.lock
+
+# Install dependencies from pruned workspace
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install --ignore-scripts
+
+# Stage 3: Runtime
 FROM oven/bun:1.2.21-alpine
 
 # Install system dependencies
@@ -13,16 +44,10 @@ RUN bun install -g turbo@^2
 # Set working directory
 WORKDIR /app
 
-# Copy workspace configuration files for dependency installation
-COPY package.json bun.lock* ./
-COPY turbo.json ./
-COPY apps/doc/package.json ./apps/doc/
-COPY packages/ ./packages/
-
-# Install dependencies (this layer will be cached)
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --ignore-scripts
-
-# Set development environment
+# Copy installed node_modules from installer stage
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/apps ./apps
+COPY --from=installer /app/packages ./packages
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
