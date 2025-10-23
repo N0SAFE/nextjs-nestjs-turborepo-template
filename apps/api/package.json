@@ -38,6 +38,7 @@
     "@orpc/openapi": "catalog:orpc",
     "@orpc/server": "catalog:orpc",
     "@orpc/shared": "catalog:orpc",
+    "@orpc/zod": "catalog:orpc",
     "@repo/api-contracts": "*",
     "@scalar/nestjs-api-reference": "catalog:api:nest",
     "@vitest/coverage-istanbul": "catalog:testing",

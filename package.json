@@ -55,7 +55,7 @@
                 "react-use": "^17.6.0"
             },
             "react-compiler": {
-                "babel-plugin-react-compiler": "^19.1.0-rc.2"
+                "babel-plugin-react-compiler": "^1.0.0"
             },
             "tanstack": {
                 "@tanstack/react-devtools": "^0.6.9",
@@ -140,7 +140,8 @@
                 "@orpc/nest": "^1.7.8",
                 "@orpc/openapi": "^1.7.8",
                 "@orpc/server": "^1.7.8",
-                "@orpc/shared": "^1.7.8"
+                "@orpc/shared": "^1.7.8",
+                "@orpc/zod": "^1.7.8"
             },
             "api:nest": {
                 "@nestjs/cli": "^10.0.0",
@@ -169,7 +170,8 @@
             },
             "web": {
                 "@million/lint": "^1.0.14",
-                "@types/nprogress": "^0.2.3"
+                "@types/nprogress": "^0.2.3",
+                "nprogress": "^0.2.0"
             },
             "doc": {
                 "fumadocs-ui": "^15.6.3",
@@ -219,7 +221,6 @@
         "docker:build": "docker compose -f ./docker-compose.prod.yml build",
         "docker:build:web": "docker build -f docker/Dockerfile.web.prod . -t nextjs-directus-web:latest",
         "docker:build:api": "docker build -f docker/Dockerfile.api.prod . -t directus-api:latest",
-
         "docker:cleanup:cache": "docker builder prune -f",
         "docker:cleanup:all": "docker system prune -a -f",
         "docker:size": "docker system df",
@@ -274,7 +275,6 @@
         "bun": ">=1.2.14"
     },
     "packageManager": "bun@1.2.14",
-    "dependencies": {},
     "peerDependencies": {
         "typescript": "^5"
     }

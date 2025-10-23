@@ -49,6 +49,7 @@ WORKDIR /app
 
 # Copy installed dependencies from installer stage
 COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/apps ./apps
 COPY --from=installer /app/packages ./packages
 
 # Copy supervisord configuration to a location outside the mount
