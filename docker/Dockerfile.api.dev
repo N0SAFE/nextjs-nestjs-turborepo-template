@@ -28,15 +28,21 @@ COPY tsconfig.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/ ./packages/
 
+# Clean up any existing node_modules to avoid conflicts
+RUN find . -name "node_modules" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
 # Install dependencies (this layer will be cached)
 RUN bun install
+
+# Copy diagnostic script
+COPY scripts/diagnose-build.ts ./scripts/diagnose-build.ts
 
 # Copy supervisord config
 COPY apps/api/supervisord.dev.conf /etc/supervisord.conf
 
-# Copy entrypoint script
-COPY scripts/api-dev-entrypoint.sh /usr/local/bin/api-dev-entrypoint.sh
-RUN chmod +x /usr/local/bin/api-dev-entrypoint.sh
+# Copy entrypoint script (TypeScript version)
+COPY scripts/api-dev-entrypoint.ts /usr/local/bin/api-dev-entrypoint.ts
+RUN chmod +x /usr/local/bin/api-dev-entrypoint.ts
 
 # Set development environment
 ENV NODE_ENV=development
@@ -44,4 +50,4 @@ ENV LOG_LEVEL=debug
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["/usr/local/bin/api-dev-entrypoint.sh"]
+CMD ["bun", "--bun", "/usr/local/bin/api-dev-entrypoint.ts"]

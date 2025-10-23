@@ -22,7 +22,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "paths": {
-      "@repo/api-contracts/*": ["./*"]
+      "@/*": ["./*"]
     }
   },
   "include": ["**/*", "modules", "index.ts", "common"],
