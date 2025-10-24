@@ -43,9 +43,10 @@
     "@repo/tsconfig": "*",
     "@repo/vitest-config": "*",
     "@types/node": "catalog:build",
+    "esbuild": "^0.25.11",
     "glob": "^11.0.3",
     "rimraf": "catalog:build",
-    "typescript": "catalog:build",
+    "typescript": "^5.9.3",
     "vitest": "catalog:testing"
   }
 }

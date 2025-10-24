@@ -123,7 +123,7 @@ export const PackageBuildConfigSchema = z.object({
   builder: z.enum(['bun', 'esbuild', 'tsc', 'rollup', 'custom']).default('bun'),
   /** Builder-specific options */
   builderOptions: z.record(z.string(), z.any()).optional(),
-  /** Build entry points or commands */
+  /** Build entry points (for SDK-based builds) */
   entryPoints: z.array(z.string()).optional(),
   /** Output directory */
   outDir: z.string().default('dist'),

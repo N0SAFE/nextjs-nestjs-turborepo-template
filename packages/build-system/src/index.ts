@@ -12,6 +12,8 @@ export { BuildService } from './services/build.service';
 export { BuilderAdapter, BuilderAdapterRegistry } from './adapters/adapter.interface';
 export { AdapterRegistry } from './adapters/adapter.registry';
 export { BunAdapter } from './adapters/bun.adapter';
+export { EsbuildAdapter } from './adapters/esbuild.adapter';
+export { TscAdapter } from './adapters/tsc.adapter';
 
 // Export module
 export { BuildModule } from './build.module';

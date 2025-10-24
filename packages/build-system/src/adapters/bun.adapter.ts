@@ -1,5 +1,6 @@
 /**
  * Bun builder adapter implementation
+ * Uses Bun's native build API for better integration and error handling
  */
 
 import { Injectable } from '@nestjs/common';
@@ -38,48 +39,35 @@ export class BunAdapter implements BuilderAdapter {
     const logs: string[] = [];
 
     try {
-      // Run the build command
-      const buildCommand = config.builderOptions?.buildCommand || 'bun run build';
-      const commandString = String(buildCommand);
-      const [command, ...args] = commandString.split(' ');
+      // Check if Bun SDK build is configured
+      const entryPoints = config.entryPoints || config.builderOptions?.entryPoints;
+      const useSdk = entryPoints && Array.isArray(entryPoints) && entryPoints.length > 0;
 
-      logs.push(`[${this.name}] Running: ${commandString}`);
+      if (useSdk) {
+        // Use Bun SDK build API
+        logs.push(`[${this.name}] Using Bun.build() SDK with entry points: ${entryPoints.join(', ')}`);
+        
+        const result = await this.buildWithSdk(packagePath, config, logs);
+        const endTime = new Date();
+        const durationMs = endTime.getTime() - startTime.getTime();
 
-      const result = await execa(command, args, {
-        cwd: packagePath,
-        all: true,
-        reject: false,
-      });
+        // Discover artifacts
+        const artifacts = await this.discoverArtifacts(packagePath, config);
 
-      if (result.all) {
-        logs.push(result.all);
+        return {
+          status: result.success ? BuildStatus.SUCCESS : BuildStatus.FAILURE,
+          exitCode: result.success ? 0 : 1,
+          durationMs,
+          artifacts,
+          logs,
+          errors: result.errors || [],
+          startTime,
+          endTime,
+        };
+      } else {
+        // Fallback to CLI for packages using npm scripts
+        return await this.buildWithCli(packagePath, config, options, logs, startTime);
       }
-
-      const endTime = new Date();
-      const durationMs = endTime.getTime() - startTime.getTime();
-
-      // Discover artifacts
-      const artifacts = await this.discoverArtifacts(packagePath, config);
-
-      return {
-        status:
-          result.exitCode === 0 ? BuildStatus.SUCCESS : BuildStatus.FAILURE,
-        exitCode: result.exitCode,
-        durationMs,
-        artifacts,
-        logs,
-        errors:
-          result.exitCode !== 0
-            ? [
-                {
-                  message: result.stderr || 'Build failed',
-                  code: result.exitCode.toString(),
-                },
-              ]
-            : [],
-        startTime,
-        endTime,
-      };
     } catch (error) {
       const endTime = new Date();
       const durationMs = endTime.getTime() - startTime.getTime();
@@ -100,6 +88,119 @@ export class BunAdapter implements BuilderAdapter {
         endTime,
       };
     }
+  }
+
+  /**
+   * Build using Bun's native SDK (Bun.build() API)
+   */
+  private async buildWithSdk(
+    packagePath: string,
+    config: PackageBuildConfig,
+    logs: string[],
+  ): Promise<{ success: boolean; errors?: any[] }> {
+    const entryPoints = config.entryPoints || config.builderOptions?.entryPoints || [];
+    const outDir = path.join(packagePath, config.outDir);
+    
+    // Resolve entry points to absolute paths
+    const absoluteEntryPoints = entryPoints.map((ep: string) => 
+      path.isAbsolute(ep) ? ep : path.join(packagePath, ep)
+    );
+
+    try {
+      // Use dynamic import to access Bun's build API
+      // This works when running in Bun runtime
+      const buildOptions = {
+        entrypoints: absoluteEntryPoints,
+        outdir: outDir,
+        target: 'node',
+        format: 'esm' as const,
+        sourcemap: 'external' as const,
+        minify: config.builderOptions?.minify || false,
+        splitting: config.builderOptions?.splitting || false,
+        ...config.builderOptions,
+      };
+
+      logs.push(`[${this.name}] Build options: ${JSON.stringify(buildOptions, null, 2)}`);
+
+      // Execute Bun.build() using eval to avoid TypeScript issues
+      const buildResult = await (global as any).Bun?.build(buildOptions);
+
+      if (!buildResult) {
+        logs.push('[${this.name}] Bun.build() not available, falling back to CLI');
+        return { success: false, errors: [{ message: 'Bun.build() API not available' }] };
+      }
+
+      if (!buildResult.success) {
+        const errors = buildResult.logs?.map((log: any) => ({
+          message: log.message || String(log),
+          code: log.code,
+        })) || [];
+        logs.push(`[${this.name}] Build failed with ${errors.length} error(s)`);
+        return { success: false, errors };
+      }
+
+      logs.push(`[${this.name}] Build succeeded, generated ${buildResult.outputs?.length || 0} outputs`);
+      return { success: true };
+    } catch (error) {
+      logs.push(`[${this.name}] SDK build error: ${error.message}`);
+      return { 
+        success: false, 
+        errors: [{ message: error.message, stack: error.stack }] 
+      };
+    }
+  }
+
+  /**
+   * Build using CLI (fallback for packages with npm scripts)
+   */
+  private async buildWithCli(
+    packagePath: string,
+    config: PackageBuildConfig,
+    options: BuildOptions,
+    logs: string[],
+    startTime: Date,
+  ): Promise<BuildResult> {
+    const buildCommand = config.builderOptions?.buildCommand || 'bun run build';
+    const commandString = String(buildCommand);
+    const [command, ...args] = commandString.split(' ');
+
+    logs.push(`[${this.name}] Running CLI: ${commandString}`);
+
+    const result = await execa(command, args, {
+      cwd: packagePath,
+      all: true,
+      reject: false,
+    });
+
+    if (result.all) {
+      logs.push(result.all);
+    }
+
+    const endTime = new Date();
+    const durationMs = endTime.getTime() - startTime.getTime();
+
+    // Discover artifacts
+    const artifacts = await this.discoverArtifacts(packagePath, config);
+
+    return {
+      status:
+        result.exitCode === 0 ? BuildStatus.SUCCESS : BuildStatus.FAILURE,
+      exitCode: result.exitCode,
+      durationMs,
+      artifacts,
+      logs,
+      errors:
+        result.exitCode !== 0
+          ? [
+              {
+                message: result.stderr || 'Build failed',
+                code: result.exitCode.toString(),
+              },
+            ]
+          : [],
+      startTime,
+      endTime,
+    };
   }
 
   async discoverArtifacts(
