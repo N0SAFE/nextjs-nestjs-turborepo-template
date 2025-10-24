@@ -10,6 +10,7 @@ import {
   PackageBuildConfig,
   BuildOptions,
   BuildStatus,
+  BuildError,
 } from '../types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -41,7 +42,8 @@ export class EsbuildAdapter implements BuilderAdapter {
     try {
       const esbuild = await import('esbuild');
       
-      const entryPoints = config.entryPoints || config.builderOptions?.entryPoints || [];
+      const builderOpts = config.builderOptions as Record<string, unknown> | undefined;
+      const entryPoints = (config.entryPoints || (builderOpts?.entryPoints as string[] | undefined) || []) as string[];
       if (entryPoints.length === 0) {
         throw new Error('No entry points defined for esbuild');
       }
@@ -49,24 +51,24 @@ export class EsbuildAdapter implements BuilderAdapter {
       const outDir = path.join(packagePath, config.outDir);
       
       // Resolve entry points to absolute paths
-      const absoluteEntryPoints = entryPoints.map((ep: string) => 
+      const absoluteEntryPoints = entryPoints.map((ep) => 
         path.isAbsolute(ep) ? ep : path.join(packagePath, ep)
       );
 
       logs.push(`[${this.name}] Building with entry points: ${absoluteEntryPoints.join(', ')}`);
       logs.push(`[${this.name}] Output directory: ${outDir}`);
 
-      const buildOptions: any = {
+      const buildOptions = {
         entryPoints: absoluteEntryPoints,
-        bundle: config.builderOptions?.bundle ?? true,
+        bundle: (builderOpts?.bundle as boolean | undefined) ?? true,
         outdir: outDir,
-        platform: config.builderOptions?.platform || 'node',
-        format: config.builderOptions?.format || 'esm',
-        sourcemap: config.builderOptions?.sourcemap ?? true,
-        minify: config.builderOptions?.minify ?? false,
-        target: config.builderOptions?.target || 'node18',
-        logLevel: 'info',
-        ...config.builderOptions,
+        platform: (builderOpts?.platform as 'browser' | 'node' | 'neutral' | undefined) || 'node',
+        format: (builderOpts?.format as 'iife' | 'cjs' | 'esm' | undefined) || 'esm',
+        sourcemap: (builderOpts?.sourcemap as boolean | 'linked' | 'inline' | 'external' | 'both' | undefined) ?? true,
+        minify: (builderOpts?.minify as boolean | undefined) ?? false,
+        target: (builderOpts?.target as string | string[] | undefined) || 'node18',
+        logLevel: 'info' as const,
+        ...builderOpts,
       };
 
       logs.push(`[${this.name}] Build options: ${JSON.stringify(buildOptions, null, 2)}`);

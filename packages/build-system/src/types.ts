@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { BuilderOptionsSchema } from './builders/types';
 
 /**
  * Builder types supported by the build system
@@ -122,7 +123,7 @@ export const PackageBuildConfigSchema = z.object({
   /** Builder to use */
   builder: z.enum(['bun', 'esbuild', 'tsc', 'rollup', 'custom']).default('bun'),
   /** Builder-specific options */
-  builderOptions: z.record(z.string(), z.any()).optional(),
+  builderOptions: z.record(z.string(), z.unknown()).optional(),
   /** Build entry points (for SDK-based builds) */
   entryPoints: z.array(z.string()).optional(),
   /** Output directory */
@@ -151,7 +152,7 @@ export const PackageBuildConfigSchema = z.object({
   /** Clean commands */
   cleanCommand: z.string().optional(),
   /** Environment-specific overrides */
-  envOverrides: z.record(z.string(), z.any()).optional(),
+  envOverrides: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type PackageBuildConfig = z.infer<typeof PackageBuildConfigSchema>;

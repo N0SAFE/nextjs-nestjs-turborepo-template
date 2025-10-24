@@ -10,6 +10,7 @@ import {
   PackageBuildConfig,
   BuildOptions,
   BuildStatus,
+  BuildError,
 } from '../types';
 import { execa } from 'execa';
 import * as fs from 'fs/promises';
@@ -40,7 +41,8 @@ export class BunAdapter implements BuilderAdapter {
 
     try {
       // Check if Bun SDK build is configured
-      const entryPoints = config.entryPoints || config.builderOptions?.entryPoints;
+      const builderOpts = config.builderOptions as Record<string, unknown> | undefined;
+      const entryPoints = config.entryPoints || (builderOpts?.entryPoints as string[] | undefined);
       const useSdk = entryPoints && Array.isArray(entryPoints) && entryPoints.length > 0;
 
       if (useSdk) {
@@ -97,12 +99,13 @@ export class BunAdapter implements BuilderAdapter {
     packagePath: string,
     config: PackageBuildConfig,
     logs: string[],
-  ): Promise<{ success: boolean; errors?: any[] }> {
-    const entryPoints = config.entryPoints || config.builderOptions?.entryPoints || [];
+  ): Promise<{ success: boolean; errors?: BuildError[] }> {
+    const builderOpts = config.builderOptions as Record<string, unknown> | undefined;
+    const entryPoints = (config.entryPoints || (builderOpts?.entryPoints as string[] | undefined) || []) as string[];
     const outDir = path.join(packagePath, config.outDir);
     
     // Resolve entry points to absolute paths
-    const absoluteEntryPoints = entryPoints.map((ep: string) => 
+    const absoluteEntryPoints = entryPoints.map((ep) => 
       path.isAbsolute(ep) ? ep : path.join(packagePath, ep)
     );
 
@@ -122,16 +125,24 @@ export class BunAdapter implements BuilderAdapter {
 
       logs.push(`[${this.name}] Build options: ${JSON.stringify(buildOptions, null, 2)}`);
 
-      // Execute Bun.build() using eval to avoid TypeScript issues
-      const buildResult = await (global as any).Bun?.build(buildOptions);
-
-      if (!buildResult) {
-        logs.push('[${this.name}] Bun.build() not available, falling back to CLI');
+      // Execute Bun.build() using global Bun object
+      interface BunBuildResult {
+        success: boolean;
+        outputs?: unknown[];
+        logs?: Array<{ message?: string; code?: string }>;
+      }
+      
+      const globalBun = (global as { Bun?: { build: (opts: unknown) => Promise<BunBuildResult> } }).Bun;
+      
+      if (!globalBun?.build) {
+        logs.push(`[${this.name}] Bun.build() not available, falling back to CLI`);
         return { success: false, errors: [{ message: 'Bun.build() API not available' }] };
       }
 
+      const buildResult = await globalBun.build(buildOptions);
+
       if (!buildResult.success) {
-        const errors = buildResult.logs?.map((log: any) => ({
+        const errors: BuildError[] = buildResult.logs?.map((log) => ({
           message: log.message || String(log),
           code: log.code,
         })) || [];

@@ -58,8 +58,9 @@ export class PackageLock {
             console.warn(`Failed to release lock for ${packageName}:`, error);
           }
         };
-      } catch (error: any) {
-        if (error.code === 'EEXIST') {
+      } catch (error) {
+        const err = error as { code?: string };
+        if (err.code === 'EEXIST') {
           // Lock exists, check if stale
           const isStale = await this.isLockStale(lockPath);
           if (isStale) {

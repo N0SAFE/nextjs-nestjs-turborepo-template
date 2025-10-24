@@ -4,6 +4,10 @@
 
 // Export types
 export * from './types';
+export * from './builders/types';
+
+// Export config helpers
+export * from './builders/config-helpers';
 
 // Export services
 export { BuildService } from './services/build.service';

@@ -10,6 +10,7 @@ import {
   PackageBuildConfig,
   BuildOptions,
   BuildStatus,
+  BuildError,
 } from '../types';
 import { execa } from 'execa';
 import * as fs from 'fs/promises';
@@ -105,14 +106,14 @@ export class TscAdapter implements BuilderAdapter {
         .getPreEmitDiagnostics(program)
         .concat(emitResult.diagnostics);
 
-      const errors = allDiagnostics
+      const errors: BuildError[] = allDiagnostics
         .filter((d) => d.category === ts.DiagnosticCategory.Error)
         .map((diagnostic) => {
           const message = typeof diagnostic.messageText === 'string'
             ? diagnostic.messageText
             : diagnostic.messageText.messageText;
 
-          const error: any = { message };
+          const error: BuildError = { message };
 
           if (diagnostic.file && diagnostic.start) {
             const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(
