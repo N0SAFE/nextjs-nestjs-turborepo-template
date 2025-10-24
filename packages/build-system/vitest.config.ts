@@ -10,6 +10,8 @@ export default defineConfig({
         singleFork: true,
       },
     },
+    testTimeout: 60000, // 60 seconds for e2e tests
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

@@ -111,13 +111,13 @@ describe('Config Helpers', () => {
         name: '@repo/test',
         builderOptions: {
           input: 'src/index.ts',
-          format: 'esm',
+          format: 'es',
         },
       });
 
       expect(config.builderOptions).toEqual({
         input: 'src/index.ts',
-        format: 'esm',
+        format: 'es',
       });
     });
   });

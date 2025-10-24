@@ -26,11 +26,15 @@ import {
  * ```
  */
 export function createBunBuildConfig(
-  config: Omit<PackageBuildConfig, 'builder'> & {
+  config: Partial<Omit<PackageBuildConfig, 'builder'>> & {
+    name: string;
     builderOptions?: BunBuildOptions;
   },
 ): PackageBuildConfig {
   return {
+    outDir: 'dist',
+    artifactGlobs: ['dist/**/*'],
+    incremental: true,
     ...config,
     builder: 'bun',
     builderOptions: config.builderOptions as Record<string, unknown>,
@@ -53,11 +57,15 @@ export function createBunBuildConfig(
  * ```
  */
 export function createEsbuildBuildConfig(
-  config: Omit<PackageBuildConfig, 'builder'> & {
+  config: Partial<Omit<PackageBuildConfig, 'builder'>> & {
+    name: string;
     builderOptions?: EsbuildBuildOptions;
   },
 ): PackageBuildConfig {
   return {
+    outDir: 'dist',
+    artifactGlobs: ['dist/**/*'],
+    incremental: true,
     ...config,
     builder: 'esbuild',
     builderOptions: config.builderOptions as Record<string, unknown>,
@@ -78,11 +86,15 @@ export function createEsbuildBuildConfig(
  * ```
  */
 export function createTscBuildConfig(
-  config: Omit<PackageBuildConfig, 'builder'> & {
+  config: Partial<Omit<PackageBuildConfig, 'builder'>> & {
+    name: string;
     builderOptions?: TscBuildOptions;
   },
 ): PackageBuildConfig {
   return {
+    outDir: 'dist',
+    artifactGlobs: ['dist/**/*'],
+    incremental: true,
     ...config,
     builder: 'tsc',
     builderOptions: config.builderOptions as Record<string, unknown>,
@@ -103,11 +115,15 @@ export function createTscBuildConfig(
  * ```
  */
 export function createRollupBuildConfig(
-  config: Omit<PackageBuildConfig, 'builder'> & {
+  config: Partial<Omit<PackageBuildConfig, 'builder'>> & {
+    name: string;
     builderOptions?: RollupBuildOptions;
   },
 ): PackageBuildConfig {
   return {
+    outDir: 'dist',
+    artifactGlobs: ['dist/**/*'],
+    incremental: true,
     ...config,
     builder: 'rollup',
     builderOptions: config.builderOptions as Record<string, unknown>,
