@@ -1,5 +1,4 @@
 {
-  "extends": "@repo/tsconfig/nest.json",
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
