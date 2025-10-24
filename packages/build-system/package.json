@@ -19,11 +19,11 @@
   },
   "scripts": {
     "build": "nest build",
-    "build:inner": "bun x tsc -p tsconfig.build.json && bun src/cli.ts build . --clean",
+    "build:inner": "bun x tsc -p tsconfig.build.json && bun src/cli.ts build packages/build-system --clean",
     "clean": "rimraf dist",
     "prettify": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev": "nest start --watch",
-    "dev:inner": "bun x tsc -p tsconfig.build.json && node dist/cli.js build . --watch",
+    "dev:inner": "bun x tsc -p tsconfig.build.json && node dist/cli.js build packages/build-system --watch",
     "lint": "echo 'No linting configured'",
     "test": "vitest run",
     "test:watch": "vitest watch",
