@@ -170,6 +170,11 @@ describe('End-to-End Build Tests', () => {
         clean: true,
       });
 
+      if (result.status !== BuildStatus.SUCCESS) {
+        console.log('Rollup build failed:', result.errors);
+        console.log('Rollup logs:', result.logs);
+      }
+
       expect(result.status).toBe(BuildStatus.SUCCESS);
       expect(result.exitCode).toBe(0);
       expect(result.artifacts.length).toBeGreaterThan(0);
@@ -262,37 +267,47 @@ describe('End-to-End Build Tests', () => {
       // Try to build a non-existent package
       const packagePath = path.join(FIXTURES_DIR, 'non-existent');
       
-      await expect(
-        buildService.buildPackage(packagePath, {
-          package: packagePath,
-        })
-      ).rejects.toThrow();
+      const result = await buildService.buildPackage(packagePath, {
+        package: packagePath,
+      });
+      
+      expect(result.status).toBe(BuildStatus.FAILURE);
+      expect(result.exitCode).toBe(1);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 
   describe('Clean Build', () => {
     it('should remove existing dist before building', async () => {
-      const packagePath = path.join(FIXTURES_DIR, 'bun-single-entry');
+      const packagePath = path.join(FIXTURES_DIR, 'esbuild-single-entry');
       const distPath = path.join(packagePath, 'dist');
 
-      // First build
-      await buildService.buildPackage(packagePath, {
+      // First build to ensure dist exists
+      const firstBuild = await buildService.buildPackage(packagePath, {
         package: packagePath,
         clean: false,
       });
+      
+      expect(firstBuild.status).toBe(BuildStatus.SUCCESS);
 
       // Create a marker file
       await fs.mkdir(distPath, { recursive: true });
       await fs.writeFile(path.join(distPath, 'marker.txt'), 'old build');
 
+      // Verify marker exists
+      let files = await fs.readdir(distPath);
+      expect(files).toContain('marker.txt');
+
       // Build with clean flag
-      await buildService.buildPackage(packagePath, {
+      const secondBuild = await buildService.buildPackage(packagePath, {
         package: packagePath,
         clean: true,
       });
+      
+      expect(secondBuild.status).toBe(BuildStatus.SUCCESS);
 
       // Marker file should be gone
-      const files = await fs.readdir(distPath);
+      files = await fs.readdir(distPath);
       expect(files).not.toContain('marker.txt');
     });
   });

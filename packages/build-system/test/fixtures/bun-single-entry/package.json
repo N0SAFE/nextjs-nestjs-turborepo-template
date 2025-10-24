@@ -1,5 +1,8 @@
 {
   "name": "test-bun-single",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "bun build src/index.ts --outdir=dist --target=node --format=esm --sourcemap=external"
+  }
 }

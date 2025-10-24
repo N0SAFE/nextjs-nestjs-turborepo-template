@@ -42,6 +42,7 @@
     "@nestjs/testing": "catalog:api:nest",
     "@repo/tsconfig": "*",
     "@repo/vitest-config": "*",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "catalog:build",
     "esbuild": "^0.25.11",
     "glob": "^11.0.3",

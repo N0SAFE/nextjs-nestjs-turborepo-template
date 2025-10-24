@@ -1,5 +1,8 @@
 {
   "name": "test-bun-multi",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "bun build src/index.ts src/utils.ts --outdir=dist --target=node --format=esm --splitting"
+  }
 }

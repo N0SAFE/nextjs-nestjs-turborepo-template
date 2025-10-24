@@ -40,16 +40,24 @@ export class BunAdapter implements BuilderAdapter {
     const logs: string[] = [];
 
     try {
-      // Check if Bun SDK build is configured
+      // Check if Bun SDK build is configured and available
       const builderOpts = config.builderOptions as Record<string, unknown> | undefined;
       const entryPoints = config.entryPoints || (builderOpts?.entryPoints as string[] | undefined);
-      const useSdk = entryPoints && Array.isArray(entryPoints) && entryPoints.length > 0;
+      const hasBunRuntime = (global as { Bun?: unknown }).Bun !== undefined;
+      const useSdk = entryPoints && Array.isArray(entryPoints) && entryPoints.length > 0 && hasBunRuntime;
 
       if (useSdk) {
         // Use Bun SDK build API
         logs.push(`[${this.name}] Using Bun.build() SDK with entry points: ${entryPoints.join(', ')}`);
         
         const result = await this.buildWithSdk(packagePath, config, logs);
+        
+        // If SDK build failed because API not available, fall back to CLI
+        if (!result.success && result.errors?.some(e => e.message.includes('not available'))) {
+          logs.push(`[${this.name}] SDK build not available, falling back to CLI`);
+          return await this.buildWithCli(packagePath, config, options, logs, startTime);
+        }
+        
         const endTime = new Date();
         const durationMs = endTime.getTime() - startTime.getTime();
 
@@ -67,7 +75,10 @@ export class BunAdapter implements BuilderAdapter {
           endTime,
         };
       } else {
-        // Fallback to CLI for packages using npm scripts
+        // Fallback to CLI for packages using npm scripts or when Bun runtime not available
+        if (!hasBunRuntime && entryPoints) {
+          logs.push(`[${this.name}] Bun runtime not detected, using CLI build`);
+        }
         return await this.buildWithCli(packagePath, config, options, logs, startTime);
       }
     } catch (error) {

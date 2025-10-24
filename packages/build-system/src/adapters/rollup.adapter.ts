@@ -41,12 +41,26 @@ export class RollupAdapter implements BuilderAdapter {
 
     try {
       const rollup = await import('rollup');
+      const { default: rollupPluginTypescript } = await import('@rollup/plugin-typescript');
       
       const builderOpts = config.builderOptions as Record<string, unknown> | undefined;
-      const input = builderOpts?.input as string | string[] | Record<string, string> | undefined;
+      let input = builderOpts?.input as string | string[] | Record<string, string> | undefined;
       
       if (!input) {
         throw new Error('No input defined for rollup. Please specify input in builderOptions.');
+      }
+
+      // Make input paths absolute
+      if (typeof input === 'string') {
+        input = path.isAbsolute(input) ? input : path.join(packagePath, input);
+      } else if (Array.isArray(input)) {
+        input = input.map(i => path.isAbsolute(i) ? i : path.join(packagePath, i));
+      } else if (typeof input === 'object') {
+        const absoluteInput: Record<string, string> = {};
+        for (const [key, value] of Object.entries(input)) {
+          absoluteInput[key] = path.isAbsolute(value) ? value : path.join(packagePath, value);
+        }
+        input = absoluteInput;
       }
 
       const outDir = path.join(packagePath, builderOpts?.dir as string || config.outDir);
@@ -55,10 +69,21 @@ export class RollupAdapter implements BuilderAdapter {
       logs.push(`[${this.name}] Output directory: ${outDir}`);
 
       // Prepare rollup input options
+      const userPlugins = (builderOpts?.plugins as Plugin[] | undefined) || [];
+      const plugins: Plugin[] = [
+        rollupPluginTypescript({ 
+          tsconfig: path.join(packagePath, 'tsconfig.json'),
+          compilerOptions: {
+            declaration: false, // We don't need .d.ts for bundle builds
+          },
+        }),
+        ...userPlugins,
+      ];
+
       const inputOptions: InputOptions = {
         input,
         external: (builderOpts?.external as string[] | ((id: string) => boolean) | undefined) || [],
-        plugins: (builderOpts?.plugins as Plugin[] | undefined) || [],
+        plugins,
       };
 
       // Prepare rollup output options
