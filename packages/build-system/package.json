@@ -1,0 +1,51 @@
+{
+  "name": "@repo/build-system",
+  "version": "0.0.1",
+  "description": "Monorepo build orchestration package for standardized builds across workspace packages",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "build-system": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "nest build",
+    "clean": "rimraf dist",
+    "prettify": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "dev": "nest start --watch",
+    "lint": "echo 'No linting configured'",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@nestjs/common": "catalog:api:nest",
+    "@nestjs/core": "catalog:api:nest",
+    "commander": "catalog:utils",
+    "execa": "^9.6.0",
+    "nest-commander": "catalog:api:nest",
+    "reflect-metadata": "catalog:api:nest",
+    "rxjs": "catalog:api:nest",
+    "zod": "catalog:utils"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "catalog:api:nest",
+    "@nestjs/schematics": "catalog:api:nest",
+    "@nestjs/testing": "catalog:api:nest",
+    "@repo/tsconfig": "*",
+    "@repo/vitest-config": "*",
+    "@types/node": "catalog:build",
+    "glob": "^11.0.3",
+    "rimraf": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:testing"
+  }
+}
