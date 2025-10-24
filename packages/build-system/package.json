@@ -1,6 +1,7 @@
 {
   "name": "@repo/build-system",
   "version": "0.0.1",
+  "type": "module",
   "description": "Monorepo build orchestration package for standardized builds across workspace packages",
   "author": "",
   "private": true,
@@ -17,10 +18,12 @@
     }
   },
   "scripts": {
-    "build": "nest build",
+    "build": "bun --bun build.ts",
+    "build:nest": "nest build",
     "clean": "rimraf dist",
     "prettify": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "dev": "nest start --watch",
+    "dev": "bun --bun build.ts && node dist/cli.js build . --watch",
+    "dev:nest": "nest start --watch",
     "lint": "echo 'No linting configured'",
     "test": "vitest run",
     "test:watch": "vitest watch",
