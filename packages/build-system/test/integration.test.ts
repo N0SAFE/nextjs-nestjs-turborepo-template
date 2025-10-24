@@ -2,30 +2,29 @@
  * Basic integration tests for the build system
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { NestFactory } from '@nestjs/core';
-import { BuildModule } from '../src/build.module';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { BuildService } from '../src/services/build.service';
 import { AdapterRegistry } from '../src/adapters/adapter.registry';
-import { INestApplicationContext } from '@nestjs/common';
+import { PackageLock } from '../src/lock/package-lock';
+import { BunAdapter } from '../src/adapters/bun.adapter';
+import { EsbuildAdapter } from '../src/adapters/esbuild.adapter';
+import { TscAdapter } from '../src/adapters/tsc.adapter';
+import { RollupAdapter } from '../src/adapters/rollup.adapter';
 
 describe('Build System Integration', () => {
   let buildService: BuildService;
   let adapterRegistry: AdapterRegistry;
-  let app: INestApplicationContext;
+  let packageLock: PackageLock;
 
-  beforeAll(async () => {
-    app = await NestFactory.createApplicationContext(BuildModule, {
-      logger: false,
-    });
-    buildService = app.get(BuildService);
-    adapterRegistry = app.get(AdapterRegistry);
-  });
-
-  afterAll(async () => {
-    if (app) {
-      await app.close();
-    }
+  beforeEach(() => {
+    // Create services manually without NestJS
+    adapterRegistry = new AdapterRegistry();
+    adapterRegistry.register(new BunAdapter());
+    adapterRegistry.register(new EsbuildAdapter());
+    adapterRegistry.register(new TscAdapter());
+    adapterRegistry.register(new RollupAdapter());
+    packageLock = new PackageLock();
+    buildService = new BuildService(adapterRegistry, packageLock);
   });
 
   describe('Adapter Registry', () => {

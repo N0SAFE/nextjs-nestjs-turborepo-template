@@ -3,32 +3,34 @@
  * Tests actual builds with all adapters and various configurations
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { NestFactory } from '@nestjs/core';
-import { BuildModule } from '../src/build.module';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { BuildService } from '../src/services/build.service';
 import { BuildStatus } from '../src/types';
-import { INestApplicationContext } from '@nestjs/common';
+import { AdapterRegistry } from '../src/adapters/adapter.registry';
+import { PackageLock } from '../src/lock/package-lock';
+import { BunAdapter } from '../src/adapters/bun.adapter';
+import { EsbuildAdapter } from '../src/adapters/esbuild.adapter';
+import { TscAdapter } from '../src/adapters/tsc.adapter';
+import { RollupAdapter } from '../src/adapters/rollup.adapter';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
 const FIXTURES_DIR = path.join(__dirname, 'fixtures');
 
 describe('End-to-End Build Tests', () => {
-  let app: INestApplicationContext;
   let buildService: BuildService;
+  let adapterRegistry: AdapterRegistry;
+  let packageLock: PackageLock;
 
-  beforeAll(async () => {
-    app = await NestFactory.createApplicationContext(BuildModule, {
-      logger: false,
-    });
-    buildService = app.get(BuildService);
-  });
-
-  afterAll(async () => {
-    if (app) {
-      await app.close();
-    }
+  beforeEach(() => {
+    // Create services manually without NestJS
+    adapterRegistry = new AdapterRegistry();
+    adapterRegistry.register(new BunAdapter());
+    adapterRegistry.register(new EsbuildAdapter());
+    adapterRegistry.register(new TscAdapter());
+    adapterRegistry.register(new RollupAdapter());
+    packageLock = new PackageLock();
+    buildService = new BuildService(adapterRegistry, packageLock);
   });
 
   beforeEach(async () => {
@@ -61,6 +63,10 @@ describe('End-to-End Build Tests', () => {
         package: packagePath,
         clean: true,
       });
+
+      if (result.status !== BuildStatus.SUCCESS) {
+        console.log('Build failed:', result.errors);
+      }
 
       expect(result.status).toBe(BuildStatus.SUCCESS);
       expect(result.exitCode).toBe(0);
