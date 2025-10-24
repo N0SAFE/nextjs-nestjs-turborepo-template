@@ -1,0 +1,13 @@
+{
+	"servers": {
+		"nextjs-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"next-devtools-mcp@latest"
+			]
+		}
+	},
+	"inputs": []
+}
