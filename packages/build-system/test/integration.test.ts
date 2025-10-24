@@ -2,16 +2,17 @@
  * Basic integration tests for the build system
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { NestFactory } from '@nestjs/core';
 import { BuildModule } from '../src/build.module';
 import { BuildService } from '../src/services/build.service';
 import { AdapterRegistry } from '../src/adapters/adapter.registry';
+import { INestApplicationContext } from '@nestjs/common';
 
 describe('Build System Integration', () => {
   let buildService: BuildService;
   let adapterRegistry: AdapterRegistry;
-  let app: any;
+  let app: INestApplicationContext;
 
   beforeAll(async () => {
     app = await NestFactory.createApplicationContext(BuildModule, {
@@ -19,6 +20,12 @@ describe('Build System Integration', () => {
     });
     buildService = app.get(BuildService);
     adapterRegistry = app.get(AdapterRegistry);
+  });
+
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('Adapter Registry', () => {

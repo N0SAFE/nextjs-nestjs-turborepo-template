@@ -18,6 +18,7 @@ export { AdapterRegistry } from './adapters/adapter.registry';
 export { BunAdapter } from './adapters/bun.adapter';
 export { EsbuildAdapter } from './adapters/esbuild.adapter';
 export { TscAdapter } from './adapters/tsc.adapter';
+export { RollupAdapter } from './adapters/rollup.adapter';
 
 // Export module
 export { BuildModule } from './build.module';

@@ -231,6 +231,7 @@
         "esbuild": "^0.25.11",
         "glob": "^11.0.3",
         "rimraf": "catalog:build",
+        "rollup": "^4.52.5",
         "typescript": "^5.9.3",
         "vitest": "catalog:testing",
       },
