@@ -29,6 +29,7 @@
   "dependencies": {
     "@nestjs/common": "catalog:api:nest",
     "@nestjs/core": "catalog:api:nest",
+    "chokidar": "^4.0.3",
     "commander": "catalog:utils",
     "execa": "^9.6.0",
     "nest-commander": "catalog:api:nest",
