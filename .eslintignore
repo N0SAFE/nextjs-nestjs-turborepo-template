@@ -1,0 +1,15 @@
+.eslintcache
+node_modules/
+dist/
+build/
+out/
+.next/
+coverage/
+.turbo/
+*.min.js
+*.log
+.env*
+.DS_Store
+.vscode/
+.idea/
+/*.tgz

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+out/
+.next/
+coverage/
+.turbo/
+*.log
+.env*
+.DS_Store
+.vscode/
+.idea/
+test/
+tests/
+specs/
+.github/
+.git/
