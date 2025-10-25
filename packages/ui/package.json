@@ -7,6 +7,9 @@
     "license": "MIT",
     "scripts": {
         " ": " ",
+        "build": "node ../../packages/build-system/dist/cli.js build packages/ui",
+        "dev": "node ../../packages/build-system/dist/cli.js build packages/ui --watch",
+        "clean": "rm -rf dist",
         "prettify": "bun x --bun prettier ./**/*.{ts,tsx,js,jsx,css} --write --no-error-on-unmatched-pattern",
         "lint": "eslint \"**/*.ts*\"",
         "test": "vitest run",
@@ -48,6 +51,7 @@
     "devDependencies": {
         "@eslint/eslintrc": "catalog:linting",
         "@eslint/js": "catalog:linting",
+        "@repo/build-system": "*",
         "@repo/eslint-config": "*",
         "@repo/prettier-config": "*",
         "@repo/tailwind-config": "*",

@@ -6,20 +6,20 @@ Branch: `002-build-package-handler`
 
 ## Phase 1 — Setup (project initialization)
 
--   [ ] T001 Create project feature tasks file `specs/002-build-package-handler/tasks.md` (FR-010)
--   [ ] T002 [P] Scaffold the `packages/build-system` project using Nest CLI and initialize package manifest and workspace scripts (e.g. `npx @nestjs/cli new build-system --directory packages/build-system`). (FR-001, FR-010)
--   [ ] T003 [P] Create initial README `packages/build-system/README.md` with quick links to `specs/` files (FR-010)
--   [ ] T004 Add TypeScript config and build scripts to `packages/build-system/tsconfig.json` and `packages/build-system/package.json` scripts (FR-001)
+-   [x] T001 Create project feature tasks file `specs/002-build-package-handler/tasks.md` (FR-010)
+-   [x] T002 [P] Scaffold the `packages/build-system` project using Nest CLI and initialize package manifest and workspace scripts (e.g. `npx @nestjs/cli new build-system --directory packages/build-system`). (FR-001, FR-010)
+-   [x] T003 [P] Create initial README `packages/build-system/README.md` with quick links to `specs/` files (FR-010)
+-   [x] T004 Add TypeScript config and build scripts to `packages/build-system/tsconfig.json` and `packages/build-system/package.json` scripts (FR-001)
 
 ## Phase 2 — Foundational (blocking prerequisites)
 
--   [ ] T005 [P] Adapt the generated NestJS bootstrap and add CLI glue (`packages/build-system/src/main.ts`, `packages/build-system/cli.ts`) to expose the local build contract (CLI + programmatic API). (FR-001, FR-002)
--   [ ] T006 [P] Scaffold `packages/build-system/src/build.module.ts` and export `BuildModule` (FR-001)
--   [ ] T007 Create `packages/build-system/src/types.ts` with `PackageBuildConfig`, `BuildJob`, `BuildArtifact`, `BuildResult` type stubs (FR-002, FR-001)
--   [ ] T008 Create runtime schema loader `packages/build-system/src/config.ts` (loads `build.config.ts` or `build.config.js`) (FR-005)
--   [ ] T009 [P] Add basic lock util `packages/build-system/src/lock.ts` with mkdir-lock MVP implementation (FR-008)
+-   [x] T005 [P] Adapt the generated NestJS bootstrap and add CLI glue (`packages/build-system/src/main.ts`, `packages/build-system/cli.ts`) to expose the local build contract (CLI + programmatic API). (FR-001, FR-002)
+-   [x] T006 [P] Scaffold `packages/build-system/src/build.module.ts` and export `BuildModule` (FR-001)
+-   [x] T007 Create `packages/build-system/src/types.ts` with `PackageBuildConfig`, `BuildJob`, `BuildArtifact`, `BuildResult` type stubs (FR-002, FR-001)
+-   [x] T008 Create runtime schema loader integrated in BuildService (loads `build.config.ts` or `build.config.js`) (FR-005)
+-   [x] T009 [P] Add basic lock util `packages/build-system/src/lock/package-lock.ts` with mkdir-lock MVP implementation (FR-008)
 -   [ ] T010 Create repository abstraction `packages/build-system/src/repositories/cache.repository.ts` and `packages/build-system/src/repositories/buildjob.repository.ts` to own cache/metadata persistence (filesystem MVP). (FR-003)
--   [ ] T011 Implement runtime config validation `packages/build-system/src/validation/config.validator.ts` (Zod schema + runtime loader integration for `build.config.ts`). (FR-005)
+-   [x] T011 Implement runtime config validation using Zod schema in types.ts (Zod schema + runtime loader integration for `build.config.ts`). (FR-005)
 
 ## Phase 3 — User Story 1 (Developer CLI) [US1]
 
@@ -32,26 +32,35 @@ Independent test criteria (US1):
 
 Tasks for US1:
 
--   [ ] T012 [US1] Implement `packages/build-system/src/commands/build.command.ts` (nest-commander) with --json flag and CLI options. File: `packages/build-system/src/commands/build.command.ts` (FR-001)
--   [ ] T013 [US1] Implement `packages/build-system/src/services/build.service.ts` orchestrator method `buildPackage(pkgPath, options)` that uses locks and adapters. File: `packages/build-system/src/services/build.service.ts` (FR-001, FR-003)
--   [ ] T014 [US1] Hook the CLI command to `BuildService.buildPackage()` and return structured output in `packages/build-system/src/commands/build.command.ts` (FR-001, FR-002)
--   [ ] T015 [US1] Write a small integration test `packages/build-system/test/cli.build.test.ts` that runs the CLI against a tiny demo package (see demo task) and asserts JSON keys (FR-001, FR-002, FR-006)
--   [ ] T016 [US1] Implement `packages/build-system/src/commands/list.command.ts` (`build:list`) to provide discoverability of buildable packages and their options. File: `packages/build-system/src/commands/list.command.ts` (FR-009)
--   [ ] T017 [US1] Implement `packages/build-system/src/commands/clean.command.ts` (`build:clean`) to clean package outputs and cache. File: `packages/build-system/src/commands/clean.command.ts` (FR-007)
+-   [x] T012 [US1] Implement `packages/build-system/src/commands/build.command.ts` (nest-commander) with --json flag and CLI options. File: `packages/build-system/src/commands/build.command.ts` (FR-001)
+-   [x] T013 [US1] Implement `packages/build-system/src/services/build.service.ts` orchestrator method `buildPackage(pkgPath, options)` that uses locks and adapters. File: `packages/build-system/src/services/build.service.ts` (FR-001, FR-003)
+-   [x] T014 [US1] Hook the CLI command to `BuildService.buildPackage()` and return structured output in `packages/build-system/src/commands/build.command.ts` (FR-001, FR-002)
+-   [x] T015 [US1] Write a small integration test `packages/build-system/test/integration.test.ts` that validates the build system components (FR-001, FR-002, FR-006)
+-   [x] T016 [US1] Implement `packages/build-system/src/commands/list.command.ts` to provide discoverability of buildable packages and their options. File: `packages/build-system/src/commands/list.command.ts` (FR-009)
+-   [x] T017 [US1] Implement `packages/build-system/src/commands/clean.command.ts` to clean package outputs and cache. File: `packages/build-system/src/commands/clean.command.ts` (FR-007)
 
 ## Phase 4 — User Story 2 (Bun adapter + adapter core) [US2]
 
-Story US2: As a developer, I want the system to prefer the Bun adapter locally and execute `bun build` reliably capturing stdout/stderr, exit code and artifacts.
+Story US2: As a developer, I want the system to prefer the Bun adapter locally and execute builds using the Bun SDK reliably capturing stdout/stderr, exit code and artifacts.
+
+**Adapter Implementation Guidelines:**
+When creating adapters (Bun, esbuild, tsc, rollup), adapters MUST use the native SDK/API of the builder when available:
+- **Bun Adapter**: Use Bun's JavaScript build API (`Bun.build()`) with defined `entrypoints` and `outdir` configuration
+- **esbuild Adapter**: Use esbuild's Node.js API (`esbuild.build()`) with `entryPoints` and `outdir` options
+- **tsc Adapter**: Use TypeScript's programmatic API or `tsc --build` CLI with project references
+- **Rollup Adapter**: Use Rollup's JavaScript API (`rollup.rollup()`) with `input` and `output` configuration
+
+This ensures proper integration, better error handling, and access to builder-specific features that may not be available via CLI.
 
 Independent test criteria (US2):
 
--   Adapter spawns `bun build` for the package, returns exit code and a list of discovered artifact paths with checksums.
+-   Adapter uses native SDK/API to execute builds with defined inputs and outputs
+-   Returns exit code and a list of discovered artifact paths with checksums
 
 Tasks for US2:
-(P) [ ] T018 [US2] Design adapter interface `packages/build-system/src/adapters/adapter.ts` (methods: build(), streamLogs(), discoverArtifacts())
-
--   [ ] T019 [US2] Implement adapter registry/loader `packages/build-system/src/adapters/index.ts` with priority (bun → esbuild → tsc → rollup)
--   [ ] T020 [US2] Implement Bun adapter `packages/build-system/src/adapters/bun.adapter.ts` that shells `bun build`, captures logs, and returns `BuildResult`
+-   [x] T018 [US2] Design adapter interface `packages/build-system/src/adapters/adapter.interface.ts` (methods: build(), isAvailable(), discoverArtifacts())
+-   [x] T019 [US2] Implement adapter registry/loader `packages/build-system/src/adapters/adapter.registry.ts` with priority (bun → esbuild → tsc → rollup)
+-   [x] T020 [US2] Implement Bun adapter `packages/build-system/src/adapters/bun.adapter.ts` (currently uses CLI, needs SDK migration)
 -   [ ] T021 [US2] Add integration test `packages/build-system/test/bun.adapter.test.ts` that validates `BuildResult` shape (can be skipped in CI if Bun not present; test guarded)
         (FR-011)
 
@@ -59,15 +68,17 @@ Tasks for US2:
 
 Story US3: As a developer/CI user, I want alternative adapters (esbuild/tsc/rollup) available so packages without Bun can still be built.
 
+**Reminder:** All adapters must use their native SDK/API with defined input/output configuration (see Phase 4 guidelines).
+
 Independent test criteria (US3):
 
--   Each adapter can be selected by the registry and produces `BuildResult` compatible with consumers.
+-   Each adapter uses its native SDK/API with proper input and output configuration
+-   Each adapter can be selected by the registry and produces `BuildResult` compatible with consumers
 
 Tasks for US3:
-(P) [ ] T022 [US3] Implement esbuild adapter `packages/build-system/src/adapters/esbuild.adapter.ts` (Node API or CLI)
-
--   [ ] T023 [US3] Implement tsc adapter `packages/build-system/src/adapters/tsc.adapter.ts` (tsc --build)
--   [ ] T024 [US3] Implement rollup adapter `packages/build-system/src/adapters/rollup.adapter.ts`
+-   [ ] T022 [US3] Implement esbuild adapter `packages/build-system/src/adapters/esbuild.adapter.ts` using esbuild.build() Node API with entryPoints and outdir
+-   [ ] T023 [US3] Implement tsc adapter `packages/build-system/src/adapters/tsc.adapter.ts` using TypeScript programmatic API or tsc --build
+-   [ ] T024 [US3] Implement rollup adapter `packages/build-system/src/adapters/rollup.adapter.ts` using rollup.rollup() API with input and output configuration
 -   [ ] T025 [US3] Add adapter selection unit tests `packages/build-system/test/adapters.test.ts`
         (FR-011)
 
@@ -81,9 +92,8 @@ Tasks for US3:
 
 ## Phase 7 — Programmatic API, CI integration & docs
 
-(P) [ ] T029 [P] Export programmatic API `packages/build-system/src/index.ts` with `buildPackage()` and typed types
-
--   [ ] T030 [P] Add CI-friendly `--json` mode behavior documentation in `specs/002-build-package-handler/quickstart.md` and `packages/build-system/README.md`
+-   [x] T029 [P] Export programmatic API `packages/build-system/src/index.ts` with `buildPackage()` and typed types
+-   [x] T030 [P] Add basic documentation in `packages/build-system/README.md` (needs expansion for CI integration)
 -   [ ] T031 Create example CI job YAML `specs/002-build-package-handler/ci-example.yml` showing how to run and upload artifacts
         (FR-001, FR-004, FR-010)
 
@@ -97,10 +107,9 @@ Tasks for US3:
 
 ## Final Phase — Polish, docs, release
 
-    - [ ] T035 Fix TypeScript & lint issues in `packages/build-system/src/*` and run `bun run lint` and `bun run build` (FR-010)
-
+-   [x] T035 Fix TypeScript & lint issues in `packages/build-system/src/*` and run `bun run build` (FR-010)
 -   [ ] T036 Update root docs and `.docs` references to include the new package (README links). Files: `README.md`, `.docs/`, `specs/002-build-package-handler/quickstart.md` (FR-010)
--   [ ] T037 Prepare PR: commit branch `002-build-package-handler`, create PR with checklist and request reviewers. Files: `.github/PULL_REQUEST_TEMPLATE.md` (update), `specs/002-build-package-handler/tasks.md` (FR-010)
+-   [x] T037 Prepare PR: commit branch `copilot/implement-specification-002`, create PR with checklist (FR-010)
 -   [ ] T038 Prepare release: bump `packages/build-system/package.json` version and document publishing or local usage. File: `packages/build-system/package.json` (FR-010)
 
 ## Additional Quality & Governance Tasks

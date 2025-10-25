@@ -12,6 +12,8 @@
     "./*": "./*.ts"
   },
   "scripts": {
+    "build": "node ../../packages/build-system/dist/cli.js build packages/api-contracts",
+    "dev": "node ../../packages/build-system/dist/cli.js build packages/api-contracts --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "@repo/build-system": "*",
     "@repo/tsconfig": "*",
     "typescript": "catalog:build"
   }
