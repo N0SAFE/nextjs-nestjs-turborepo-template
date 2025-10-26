@@ -5,7 +5,7 @@
 # ===================================
 # Stage 1: Base - Common dependencies
 # ===================================
-FROM oven/bun:1.3.0-alpine AS base
+FROM oven/bun:1.3.1-alpine AS base
 
 # Install system dependencies including build tools for native modules
 RUN apk add --no-cache \
