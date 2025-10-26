@@ -13,17 +13,17 @@
         "react": "catalog:react",
         "react-dom": "catalog:react",
         "babel-plugin-react-compiler": "catalog:react-compiler",
-        "fumadocs-ui": "^15.6.3",
-        "fumadocs-core": "^15.6.3"
+        "fumadocs-ui": "catalog:doc",
+        "fumadocs-core": "catalog:doc"
     },
     "devDependencies": {
         "@repo/tsconfig": "*",
         "@tailwindcss/postcss": "catalog:styling",
-        "@types/mdx": "^2.0.13",
+        "@types/mdx": "catalog:doc",
         "@types/node": "catalog:build",
         "@types/react": "catalog:react",
         "@types/react-dom": "catalog:react",
-        "fumadocs-mdx": "^11.7.4",
+        "fumadocs-mdx": "catalog:doc",
         "tailwindcss": "catalog:styling",
         "typescript": "catalog:build"
     }

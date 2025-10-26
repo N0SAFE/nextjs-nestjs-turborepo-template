@@ -56,7 +56,6 @@ logs
 *.log
 
 # Cache directories
-.turbo
 .cache
 .parcel-cache
 

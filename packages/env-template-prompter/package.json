@@ -25,7 +25,6 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    " ": " ",
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
@@ -41,9 +40,22 @@
   "dependencies": {
     "commander": "catalog:utils",
     "dotenv": "catalog:dev",
+    "dotenv-cli": "catalog:dev",
     "dotenv-expand": "catalog:dev",
     "picocolors": "catalog:utils",
-    "prompts": "catalog:utils"
+    "prompts": "catalog:utils",
+    "wait-on": "catalog:dev",
+    "wait-port": "catalog:dev"
+  },
+  "peerDependencies": {
+    "commander": "catalog:utils",
+    "dotenv": "catalog:dev",
+    "dotenv-cli": "catalog:dev",
+    "dotenv-expand": "catalog:dev",
+    "picocolors": "catalog:utils",
+    "prompts": "catalog:utils",
+    "wait-on": "catalog:dev",
+    "wait-port": "catalog:dev"
   },
   "devDependencies": {
     "@repo/tsconfig": "workspace:*",

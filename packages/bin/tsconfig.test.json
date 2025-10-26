@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/tsconfig/config/test.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@": ["./src"]
+    }
+  },
+  "include": ["__tests__/**/*"]
+}

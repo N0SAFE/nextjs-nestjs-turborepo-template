@@ -67,4 +67,4 @@ WORKDIR /app/apps/doc
 
 # Build at runtime then start
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "bun run build && bun x next start -H 0.0.0.0 -p 3020"]
+CMD ["turbo", "run", "doc#build", "&&", "turbo", "run", "doc#start"]

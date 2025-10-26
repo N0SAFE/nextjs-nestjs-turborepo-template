@@ -1,11 +1,11 @@
-import { NextFetchEvent, NextMiddleware, NextRequest } from 'next/server'
+import { NextFetchEvent, NextProxy, NextRequest } from 'next/server'
 import { Matcher, MiddlewareFactory } from './utils/types'
 import { nextjsRegexpPageOnly } from './utils/static'
 import { createDebug } from '@/lib/debug'
 
 const debugHeaders = createDebug('middleware/headers')
 
-export const withHeaders: MiddlewareFactory = (next: NextMiddleware) => {
+export const withHeaders: MiddlewareFactory = (next: NextProxy) => {
     return async (request: NextRequest, _next: NextFetchEvent) => {
         debugHeaders('Processing request headers', {
             path: request.nextUrl.pathname,

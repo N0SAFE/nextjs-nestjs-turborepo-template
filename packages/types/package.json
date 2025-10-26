@@ -12,7 +12,6 @@
         }
     },
     "scripts": {
-        " ": " ",
         "lint": "eslint \"**/*.ts*\"",
         "test": "vitest run",
         "test:watch": "vitest",
@@ -35,6 +34,10 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "concurrently": "^8.2.2",
+        "rimraf": "catalog:build"
+    },
+    "peerDependencies": {
         "concurrently": "^8.2.2",
         "rimraf": "catalog:build"
     }

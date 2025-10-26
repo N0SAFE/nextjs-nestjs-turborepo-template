@@ -25,10 +25,6 @@
     "noEmit": false,
     "paths": {
       "@/*": ["./src/*"],
-      "@repo/database": ["../../packages/database/src"],
-      "@repo/database/*": ["../../packages/database/src/*"],
-      "@repo/api-contracts": ["../../packages/api-contracts"],
-      "@repo/api-contracts/*": ["../../packages/api-contracts/*"]
     }
   }
 }

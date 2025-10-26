@@ -1,17 +1,32 @@
 # syntax=docker/dockerfile:1.7
-# Simple development Dockerfile for Next.js Web App
-# Focused on simplicity and avoiding permission issues
+# Development Dockerfile for Next.js Web App
+# Multi-stage build with separate installer and runner stages
 
-FROM oven/bun:1.2.21-alpine
+# ===================================
+# Stage 1: Base - Common dependencies
+# ===================================
+FROM oven/bun:1.3.0-alpine AS base
 
-# Install system dependencies
-RUN apk add --no-cache libc6-compat curl bash supervisor
+# Install system dependencies including build tools for native modules
+RUN apk add --no-cache \
+    libc6-compat \
+    curl \
+    bash \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    musl-dev
 
 # Install Turbo globally
 RUN bun install -g turbo@^2
 
-# Set working directory
 WORKDIR /app
+
+# ===================================
+# Stage 2: Installer - Install dependencies
+# ===================================
+FROM base AS installer
 
 # Copy workspace configuration files for dependency installation
 COPY package.json bun.lock* ./
@@ -20,10 +35,27 @@ COPY apps/web/package.json ./apps/web/
 COPY packages/ ./packages/
 
 # Install dependencies (this layer will be cached)
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install
+RUN bun install
 
-# Copy supervisord configuration to a location outside the mount
-COPY apps/web/supervisord.dev.conf /etc/supervisord.conf
+# ===================================
+# Stage 3: Runner - Development runtime
+# ===================================
+FROM base AS runner
+
+WORKDIR /app
+
+# Copy installed dependencies from installer stage
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/apps ./apps
+COPY --from=installer /app/packages ./packages
+
+# Copy entrypoint script from app directory
+COPY apps/web/scripts/entrypoint.ts ./apps/web/scripts/entrypoint.ts
+COPY **/.turbo/ **/.turbo/
+COPY .turbo/ ./.turbo
+
+# Add permission for turbo to write to the cache directory
+RUN find . -type d -name "node_modules" -prune -o -type d -name ".turbo" -exec chmod -R a+w {} \;
 
 # Set development environment
 ENV NODE_ENV=development
@@ -31,4 +63,4 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["turbo", "run", "build", "--filter=web...", "&&", "turbo", "run", "web#dev"]

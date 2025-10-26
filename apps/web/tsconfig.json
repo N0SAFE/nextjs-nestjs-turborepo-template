@@ -1,5 +1,5 @@
 {
-    "extends": "@repo/tsconfig/nextjs.json",
+    "extends": "@repo/tsconfig/config/nextjs.json",
     "compilerOptions": {
         "useDefineForClassFields": true,
         "baseUrl": ".",

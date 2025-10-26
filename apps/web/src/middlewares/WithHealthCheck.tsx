@@ -1,6 +1,6 @@
 import {
     NextFetchEvent,
-    NextMiddleware,
+    NextProxy,
     NextRequest,
     NextResponse,
 } from 'next/server'
@@ -18,7 +18,7 @@ const debugHealthCheckError = createDebug('middleware/healthcheck/error')
 const NODE_ENV = validateEnvPath(process.env.NODE_ENV, 'NODE_ENV')
 const errorPageRenderingPath = '/middleware/error/healthCheck'
 
-const withHealthCheck: MiddlewareFactory = (next: NextMiddleware) => {
+const withHealthCheck: MiddlewareFactory = (next: NextProxy) => {
     return async (request: NextRequest, _next: NextFetchEvent) => {
         debugHealthCheck('Health check middleware initiated', {
             path: request.nextUrl.pathname,

@@ -2,10 +2,10 @@
 # Simple development Dockerfile for NestJS API
 # Focused on simplicity and avoiding permission issues
 
-FROM oven/bun:1.2.21-alpine
+FROM oven/bun:1.3.0-alpine
 
 # Install system dependencies
-RUN apk add --no-cache curl wget bash git python3 make g++ supervisor
+RUN apk add --no-cache curl wget bash git python3 make g++
 
 # Copy Node.js 22 installation from the Node.js image (binaries + libraries)
 COPY --from=node:22-alpine /usr/local /usr/local
@@ -15,8 +15,8 @@ RUN ln -sf /usr/local/bin/node /usr/bin/node && \
     ln -sf /usr/local/bin/npm /usr/bin/npm && \
     ln -sf /usr/local/bin/npx /usr/bin/npx
 
-# Install NestJS CLI globally
-RUN bun install -g @nestjs/cli
+# Install Turbo and NestJS CLI globally
+RUN bun install -g turbo@^2 @nestjs/cli
 
 # Set working directory
 WORKDIR /app
@@ -28,15 +28,22 @@ COPY tsconfig.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/ ./packages/
 
+# Clean up any existing node_modules to avoid conflicts
+RUN find . -name "node_modules" -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
 # Install dependencies (this layer will be cached)
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install
+RUN bun install
 
-# Copy supervisord config
-COPY apps/api/supervisord.dev.conf /etc/supervisord.conf
+# Copy diagnostic script
+COPY scripts/diagnose-build.ts ./scripts/diagnose-build.ts
 
-# Copy entrypoint script
-COPY scripts/api-dev-entrypoint.sh /usr/local/bin/api-dev-entrypoint.sh
-RUN chmod +x /usr/local/bin/api-dev-entrypoint.sh
+# Copy entrypoint script from app directory (must match the actual filename)
+COPY apps/api/scripts/entrypoint.dev.ts ./apps/api/scripts/entrypoint.dev.ts
+COPY **/.turbo/ **/.turbo/
+COPY .turbo/ ./.turbo
+
+# Add permission for turbo to write to the cache directory
+RUN find . -type d -name "node_modules" -prune -o -type d -name ".turbo" -exec chmod -R a+w {} \;
 
 # Set development environment
 ENV NODE_ENV=development
@@ -44,4 +51,5 @@ ENV LOG_LEVEL=debug
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["/usr/local/bin/api-dev-entrypoint.sh"]
+# Note: Only run dev on api itself, not its dependencies (they may not have dev scripts)
+CMD ["bun", "x", "turbo", "run", "build", "--filter=api...", "&&", "bun", "x", "turbo", "run", "api#dev"]

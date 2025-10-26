@@ -1,4 +1,4 @@
-import { NextFetchEvent, NextMiddleware, NextRequest, NextResponse } from 'next/server'
+import { NextFetchEvent, NextProxy, NextRequest, NextResponse } from 'next/server'
 import { Matcher, MiddlewareFactory } from './utils/types'
 import { nextNoApi, nextjsRegexpPageOnly } from './utils/static'
 import { matcherHandler } from './utils/utils'
@@ -6,7 +6,7 @@ import { createDebug } from '@/lib/debug'
 
 const debugRedirect = createDebug('middleware/redirect')
 
-const withRedirect: MiddlewareFactory = (next: NextMiddleware) => {
+const withRedirect: MiddlewareFactory = (next: NextProxy) => {
     return async (request: NextRequest, _next: NextFetchEvent) => {
         debugRedirect('Processing redirect rules', {
             path: request.nextUrl.pathname,

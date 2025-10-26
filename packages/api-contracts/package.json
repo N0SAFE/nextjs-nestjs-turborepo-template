@@ -4,14 +4,30 @@
   "private": true,
   "main": "./index.ts",
   "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    },
+    "./*": "./*.ts"
+  },
   "scripts": {
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build": "bun scripts/build.ts",
+    "dev": "bun run build -- --watch"
   },
   "dependencies": {
     "@orpc/contract": "catalog:orpc",
+    "@orpc/shared": "catalog:orpc",
+    "zod": "catalog:utils"
+  },
+  "peerDependencies": {
+    "@orpc/contract": "catalog:orpc",
+    "@orpc/shared": "catalog:orpc",
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "chokidar": "catalog:build",
     "@repo/tsconfig": "*",
     "typescript": "catalog:build"
   }
