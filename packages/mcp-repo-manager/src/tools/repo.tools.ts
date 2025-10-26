@@ -426,7 +426,7 @@ export class RepoTools {
     };
     await fs.writeFile(path.join(targetDir, 'package.json'), JSON.stringify(pkg, null, 2), 'utf-8');
     const tsconfig = {
-      extends: '@repo/tsconfig/base.json',
+      extends: '@repo/tsconfig/config/base.json',
       compilerOptions: {
         target: 'ES2022',
         module: 'ES2022',

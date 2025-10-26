@@ -2,20 +2,39 @@
   "name": "@repo/eslint-config",
   "version": "0.0.0",
   "private": true,
-  "main": "index.js",
+  "main": "dist/cjs/index.js",
+  "type": "module",
   "files": [
-    "library.js",
-    "next.js",
-    "nestjs.js",
-    "react-internal.js"
+    "dist"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./library": {
+      "import": "./dist/esm/library.js",
+      "require": "./dist/cjs/library.js"
+    },
+    "./next": {
+      "import": "./dist/esm/next.js",
+      "require": "./dist/cjs/next.js"
+    },
+    "./nestjs": {
+      "import": "./dist/esm/nestjs.js",
+      "require": "./dist/cjs/nestjs.js"
+    },
+    "./react-internal": {
+      "import": "./dist/esm/react-internal.js",
+      "require": "./dist/cjs/react-internal.js"
+    }
+  },
   "scripts": {
-    " ": " ",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "build": "bun scripts/build.ts",
+    "clean": "rimraf dist"
   },
   "devDependencies": {
+    "chokidar": "catalog:build",
     "@eslint/compat": "^1.0.3",
     "@eslint/js": "^9.4.0",
     "@repo/vitest-config": "*",
@@ -23,6 +42,7 @@
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "@vercel/style-guide": "^5.2.0",
+    "babel-plugin-macros": "^3.1.0",
     "eslint": "catalog:linting",
     "eslint-config-nestjs": "^0.8.0",
     "eslint-config-next": "^14.2.3",

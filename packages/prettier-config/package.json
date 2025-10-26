@@ -1,15 +1,28 @@
 {
   "name": "@repo/prettier-config",
   "version": "1.0.0",
+  "main": "dist/cjs/base.cjs",
+  "type": "module",
   "exports": {
-    "./base": "./prettierrc.base.js",
-    "./tailwind": "./prettierrc.tailwind.js"
+    ".": {
+      "import": "./dist/esm/base.mjs",
+      "require": "./dist/cjs/base.cjs"
+    },
+    "./base": {
+      "import": "./dist/esm/base.mjs",
+      "require": "./dist/cjs/base.cjs"
+    },
+    "./tailwind": {
+      "import": "./dist/esm/tailwind.mjs",
+      "require": "./dist/cjs/tailwind.cjs"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    " ": " ",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "build": "bun scripts/build.ts",
+    "clean": "rimraf dist"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,12 @@
+{
+  "extends": "@repo/tsconfig/config/test.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@": ["./src"],
+      "#": ["./"]
+    },
+    "jsx": "react-jsx"
+  },
+  "include": ["__tests__/**/*"]
+}

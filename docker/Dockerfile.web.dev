@@ -42,9 +42,6 @@ RUN bun install
 # ===================================
 FROM base AS runner
 
-# Install supervisor for process management
-RUN apk add --no-cache supervisor
-
 WORKDIR /app
 
 # Copy installed dependencies from installer stage
@@ -52,8 +49,13 @@ COPY --from=installer /app/node_modules ./node_modules
 COPY --from=installer /app/apps ./apps
 COPY --from=installer /app/packages ./packages
 
-# Copy supervisord configuration to a location outside the mount
-COPY apps/web/supervisord.dev.conf /etc/supervisord.conf
+# Copy entrypoint script from app directory
+COPY apps/web/scripts/entrypoint.ts ./apps/web/scripts/entrypoint.ts
+COPY **/.turbo/ **/.turbo/
+COPY .turbo/ ./.turbo
+
+# Add permission for turbo to write to the cache directory
+RUN find . -type d -name "node_modules" -prune -o -type d -name ".turbo" -exec chmod -R a+w {} \;
 
 # Set development environment
 ENV NODE_ENV=development
@@ -61,4 +63,4 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["turbo", "run", "build", "--filter=web...", "&&", "turbo", "run", "web#dev"]

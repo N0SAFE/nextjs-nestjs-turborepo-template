@@ -6,7 +6,9 @@
     ],
     "license": "MIT",
     "scripts": {
-        " ": " ",
+        "build": "bun scripts/build.ts",
+        "clean": "rimraf dist",
+        "dev": "bun run build -- --watch",
         "prettify": "bun x --bun prettier ./**/*.{ts,tsx,js,jsx,css} --write --no-error-on-unmatched-pattern",
         "lint": "eslint \"**/*.ts*\"",
         "test": "vitest run",
@@ -46,6 +48,7 @@
         "zod": "catalog:utils"
     },
     "devDependencies": {
+        "chokidar": "catalog:build",
         "@eslint/eslintrc": "catalog:linting",
         "@eslint/js": "catalog:linting",
         "@repo/eslint-config": "*",
@@ -99,6 +102,7 @@
         "lucide-react": "catalog:ui",
         "next-themes": "catalog:next",
         "react-hook-form": "catalog:react",
+        "react-use": "^17.6.0",
         "rimraf": "catalog:build",
         "sonner": "catalog:ui",
         "tailwind-merge": "catalog:styling",

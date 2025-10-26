@@ -51,9 +51,16 @@ COPY --from=installer /app/packages ./packages
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
+COPY **/.turbo/ **/.turbo/
+COPY .turbo/ ./.turbo
+
+# Add permission for turbo to write to the cache directory
+RUN find . -type d -name "node_modules" -prune -o -type d -name ".turbo" -exec chmod -R a+w {} \;
+
 # Set working directory to the doc app
-WORKDIR /app/apps/doc
+WORKDIR /app
+
 
 # The actual source code will be mounted via docker-compose volumes
 # This avoids all permission issues with bind mounts
-CMD ["bun", "x", "next", "dev", "-H", "0.0.0.0", "-p", "3020"]
+CMD ["turbo", "run", "build", "--filter=doc...", "&&", "turbo", "run", "doc#dev"]

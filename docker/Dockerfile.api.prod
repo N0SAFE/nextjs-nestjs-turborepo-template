@@ -33,7 +33,7 @@ RUN bun install
 
 # Build the project
 COPY --from=builder /app/out/full/ .
-RUN bun turbo run build
+RUN bun turbo run build --filter=api...
 
 # Production runner
 FROM base AS runner
@@ -57,7 +57,7 @@ RUN mkdir -p /app/uploads /app/extracted /app/static-files && \
 USER nestjs
 
 # Change to API directory
-WORKDIR /app/apps/api
+WORKDIR /app
 
 # Expose port
 EXPOSE 3001
@@ -66,5 +66,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Start the application with migrations
-CMD ["sh", "-c", "bun run db:migrate && bun --bun dist/src/main"]
+# Start the application
+CMD ["bun", "run", "api#start"]

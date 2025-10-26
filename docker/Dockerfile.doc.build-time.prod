@@ -45,8 +45,8 @@ RUN sed -i '/const config: NextConfig = {/a\  typescript: { ignoreBuildErrors: t
 FROM installer AS doc-builder
 # Copy the complete application with generated files
 COPY --from=installer /app ./
-WORKDIR /app/apps/doc
-RUN bun run build
+WORKDIR /app
+RUN bun turbo run build --filter=doc...
 
 # Production runner
 FROM base AS runner
@@ -74,8 +74,8 @@ EXPOSE 3020
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3020 || exit 1
 
-WORKDIR /app/apps/doc
+WORKDIR /app
 
 # Start already built app
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["bun", "x", "next", "start", "-H", "0.0.0.0", "-p", "3020"]
+CMD ["turbo", "run", "doc#start"]

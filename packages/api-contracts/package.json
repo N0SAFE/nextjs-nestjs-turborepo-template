@@ -12,7 +12,9 @@
     "./*": "./*.ts"
   },
   "scripts": {
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build": "bun scripts/build.ts",
+    "dev": "bun run build -- --watch"
   },
   "dependencies": {
     "@orpc/contract": "catalog:orpc",
@@ -25,6 +27,7 @@
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "chokidar": "catalog:build",
     "@repo/tsconfig": "*",
     "typescript": "catalog:build"
   }

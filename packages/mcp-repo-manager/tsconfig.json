@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@repo/tsconfig/base.json",
+  "extends": "@repo/tsconfig/config/base.json",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

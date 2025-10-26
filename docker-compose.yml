@@ -136,6 +136,8 @@ services:
             # Persistent build caches (named volumes) to speed up installs/builds
             - bun_cache_dev:/root/.bun/install/cache
             - turbo_cache_dev:/root/.cache/turbo
+            # Bind host .turbo for shared turbo cache
+            - ./.turbo:/app/.turbo
         depends_on:
             api-dev:
                 condition: service_healthy

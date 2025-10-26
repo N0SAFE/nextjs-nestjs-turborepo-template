@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Test Configuration",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "types": ["vitest/globals"]
+  },
+  "include": ["**/__tests__/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

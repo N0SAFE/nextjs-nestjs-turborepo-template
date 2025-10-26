@@ -4,10 +4,11 @@
   "description": "NestJS API with tRPC, Drizzle ORM, and Better Auth",
   "main": "dist/main.js",
   "scripts": {
-    "build": "bun --bun nest build",
+    "build": "bun --bun scripts/build.ts",
     "compile": "bun run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "dev": "bun run start:dev",
+    "dev": "bun --bun scripts/entrypoint.dev.ts",
+    "prod": "bun --bun scripts/entrypoint.prod.ts",
     "start": "bun --bun nest start --preserveWatchOutput",
     "start:dev": "bun --bun src/main",
     "start:debug": "bun --bun nest start --debug --watch --preserveWatchOutput",

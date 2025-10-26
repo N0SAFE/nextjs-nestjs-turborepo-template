@@ -6,12 +6,11 @@
     },
     "globalDependencies": ["**/.env.*local", "**/.env", ".env.local"],
     "globalPassThroughEnv": [".env.local", "TURBO_TOKEN", "TURBO_TEAM"],
-    "globalEnv": ["API_URL", "API_PING_PATH", "API_ADMIN_TOKEN", "TEMP_APP_NEXTAUTH_URL", "NEXT_AUTH", "TURBO_TOKEN", "TURBO_TEAM"],
+    "globalEnv": ["API_URL", "API_PING_PATH", "API_ADMIN_TOKEN", "TEMP_APP_NEXTAUTH_URL", "NEXT_AUTH", "TURBO_TOKEN", "TURBO_TEAM", "DATABASE_URL", "AUTH_SECRET", "JWT_SECRET"],
     "tasks": {
         "dev": {
             "cache": false,
-            "persistent": true,
-            "dependsOn": ["^dev"]
+            "persistent": true
         },
         "build": {
             "dependsOn": ["^build"],
@@ -56,23 +55,24 @@
         "test:watch": {
             "cache": false,
             "persistent": true,
-            "dependsOn": ["^build"]
+            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"]
         },
         "test:ui": {
             "cache": false,
             "persistent": true,
-            "dependsOn": ["^build"]
+            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"]
         },
         "test:coverage": {
-            "dependsOn": ["^build"],
+            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"],
             "outputs": ["coverage/**"],
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "lint": {
+            "dependsOn": ["@repo/eslint-config#build"],
             "inputs": ["src/**", "*.config.*", "package.json"]
         },
         "prettify": {
-            "dependsOn": ["^lint"]
+            "dependsOn": ["^lint", "@repo/prettier-config#build"]
         },
         "clean": {
             "cache": false

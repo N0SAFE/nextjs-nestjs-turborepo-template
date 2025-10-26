@@ -59,7 +59,8 @@ RUN bun install --frozen-lockfile
 
 # Build the project
 COPY --from=builder /app/out/full/ .
-RUN bun turbo run generate
+RUN bun turbo run generate --filter=web...
+RUN bun turbo run build --filter=web...
 
 # Production runner
 FROM base AS runner
@@ -99,7 +100,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider ${NEXT_PUBLIC_APP_URL} || exit 1
 
 # Start the already built application
-WORKDIR /app/apps/web
+WORKDIR /app
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "bun run build:docker && bun run start:production"]
+CMD ["turbo", "run", "web#build", "&&", "turbo", "run", "web#start"]

@@ -14,7 +14,8 @@
                 "typescript": "^5.8.3",
                 "rimraf": "^6.0.1",
                 "@types/node": "^20",
-                "vite": "^7.0.5"
+                "vite": "^7.0.5",
+                "chokidar": "^4.0.3"
             },
             "dev": {
                 "dotenv": "^16.4.5",
@@ -209,7 +210,7 @@
         "coverage:report": "mkdir -p coverage && nyc report --temp-dir coverage --report-dir coverage/report --reporter=html --reporter=text --reporter=lcov && echo \"\\n📊 Merged coverage report generated at: coverage/report/index.html\"",
         "lint": "turbo lint",
         "format": "turbo prettify",
-        "clean": "turbo clean",
+        "clean": "turbo clean && rimraf --glob 'packages/*/dist' 'apps/*/.next' '.turbo'",
         "init": "bun --bun scripts/init.ts",
         "diagnose": "bun --bun scripts/diagnose-build.ts",
         "add:upstream": "bun --bun scripts/add-upstream.ts",
