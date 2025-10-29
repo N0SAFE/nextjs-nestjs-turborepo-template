@@ -12,9 +12,16 @@ const isLintContext =
   process.env.npm_lifecycle_script?.includes("lint") ||
   process.argv.some((arg) => arg.includes("next-lint")) ||
   commandLine.endsWith("lint");
+  
+  const isCompileContext = 
+  process.env.COMPILE_MODE === "true" ||
+  process.argv.includes("--experimental-build-mode=compile") ||
+  process.argv.includes("--build-mode=compile") ||
+  process.env.npm_lifecycle_event === "compile" ||
+  process.env.npm_lifecycle_script?.includes("compile");
 
 if (!process.env.API_URL) {
-  if (isLintContext) {
+  if (isLintContext || isCompileContext) {
     // Provide a default URL for linting context to avoid breaking the lint process
     process.env.API_URL = "http://localhost:3001";
     console.warn(

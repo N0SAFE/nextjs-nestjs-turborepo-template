@@ -89,7 +89,7 @@ const LoginPage: React.FC = () => {
             setError(errorMessage)
             setIsLoading(false)
         } else {
-            redirect(searchParams.callbackUrl ?? '/')
+            void redirect(searchParams.callbackUrl ?? '/')
         }
     }
 
@@ -110,7 +110,7 @@ const LoginPage: React.FC = () => {
                 const errorMessage = res.error.message ?? 'Passkey authentication failed'
                 setError(errorMessage)
             } else {
-                redirect(searchParams.callbackUrl ?? '/')
+                void redirect(searchParams.callbackUrl ?? '/')
             }
         } catch (error) {
             console.error('Passkey sign-in error:', error)

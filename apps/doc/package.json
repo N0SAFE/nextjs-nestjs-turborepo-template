@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "dev": "next dev -p 3020",
     "start": "next start -p 3020",
     "postinstall": "fumadocs-mdx",

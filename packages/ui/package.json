@@ -15,11 +15,12 @@
             "require": "./dist/*.js",
             "import": "./dist/*.mjs"
         },
-        "./styles/globals.css": "./styles/globals.css"
+        "./styles/globals.css": "./src/styles/globals.css"
     },
     "license": "MIT",
     "scripts": {
         "build": "bun scripts/build.ts",
+        "compile": "bun x cross-env COMPILE_MODE=true bun run build",
         "clean": "rimraf dist",
         "dev": "bun run build -- --watch",
         "prettify": "bun x --bun prettier ./**/*.{ts,tsx,js,jsx,css} --write --no-error-on-unmatched-pattern",

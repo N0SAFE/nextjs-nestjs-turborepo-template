@@ -1,0 +1,3 @@
+{
+  "{apps,packages}/**/*.{ts,tsx,js,jsx,json,md,mdx}": "bun x turbo run compile lint test --affected --"
+}

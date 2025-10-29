@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "bun --bun scripts/build.ts",
-    "compile": "bun run build",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev": "bun --bun scripts/entrypoint.dev.ts",
     "prod": "bun --bun scripts/entrypoint.prod.ts",

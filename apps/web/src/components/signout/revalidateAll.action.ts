@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
-export function revalidateAllAction() {
+export async function revalidateAllAction() {
     revalidatePath('/')
+    await Promise.resolve()
 }

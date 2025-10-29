@@ -197,6 +197,7 @@
         "dev:web:run": "envcli docker exec -it ${COMPOSE_PROJECT_NAME:-nextjs-directus}-web-dev /bin/sh",
         "dev:local": "turbo dev",
         "build": "turbo build",
+        "compile": "turbo compile",
         "start": "docker compose -f ./docker-compose.prod.yml down && docker compose -f ./docker-compose.prod.yml up --build",
         "start:local": "turbo start",
         "test": "turbo test",
@@ -261,16 +262,17 @@
         "@n0safe/envcli": "^1.0.2",
         "@n0safe/rununtil": "^1.0.5",
         "@n0safe/trycli": "^1.0.4",
+        "@repo/vitest-config": "*",
         "@types/bun": "latest",
         "concurrently": "catalog:dev",
+        "dotenv-cli": "catalog:dev",
+        "lint-staged": "^16.2.6",
         "nyc": "^17.1.0",
         "prompts": "catalog:utils",
         "rimraf": "catalog:build",
         "turbo": "2.5.9-canary.10",
         "vite": "catalog:build",
-        "vitest": "^4.0.4",
-        "dotenv-cli": "catalog:dev",
-        "@repo/vitest-config": "*"
+        "vitest": "^4.0.4"
     },
     "engines": {
         "bun": ">=1.3.1"

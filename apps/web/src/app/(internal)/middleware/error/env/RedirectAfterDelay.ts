@@ -12,7 +12,7 @@ export default function RedirectAfterDelay({
 }) {
     useEffect(() => {
         const timeout = setTimeout(() => {
-            redirect(to)
+            void redirect(to)
         }, delay)
         return () => { clearTimeout(timeout); }
     }, [delay, to])

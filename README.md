@@ -27,13 +27,19 @@ A modern, full-stack monorepo template featuring Next.js frontend, NestJS API, S
    cd nextjs-nestjs-turborepo-template
    ```
 
-2. **Initialize the Project**
+2. **Configure Git Hooks (Required for lint-staged)**
+   ```bash
+   git config --local core.hooksPath .husky
+   ```
+   This configures Git to use the Husky hooks in the repository. You only need to run this once after cloning.
+
+3. **Initialize the Project**
    ```bash
    bun run init 
    ```
    This will guide you through an interactive setup to configure your environment
 
-3. **Set Upstream Remote for Updates**
+4. **Set Upstream Remote for Updates**
    To keep your project up to date with the original template, add an `upstream` remote:
    ```bash
    git remote add upstream https://github.com/N0SAFE/nextjs-nestjs-turborepo-template.git
@@ -54,7 +60,7 @@ A modern, full-stack monorepo template featuring Next.js frontend, NestJS API, S
    ```
    See [Project Isolation Guide](./docs/PROJECT-ISOLATION.md) for details.
 
-4. **Start Development Servers**
+5. **Start Development Servers**
    ```bash
    bun --bun dev
    ```

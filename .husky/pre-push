@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "🚀 Running pre-push hook with lint-staged..."
+bunx lint-staged

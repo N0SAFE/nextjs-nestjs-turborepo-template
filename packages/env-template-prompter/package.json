@@ -26,6 +26,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",

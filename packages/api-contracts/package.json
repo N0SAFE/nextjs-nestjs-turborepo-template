@@ -14,6 +14,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "bun scripts/build.ts",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "dev": "bun run build -- --watch"
   },
   "dependencies": {

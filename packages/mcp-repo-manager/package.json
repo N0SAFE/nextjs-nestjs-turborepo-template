@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "bun --bun nest build",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "dev": "bun run start:dev:inspector",
     "start": "bun --bun nest start --preserveWatchOutput",
     "start:dev": "bun --bun nest start --watch --preserveWatchOutput",

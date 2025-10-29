@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "build": "bun scripts/build.ts",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "clean": "rimraf dist"
   },
   "keywords": [],

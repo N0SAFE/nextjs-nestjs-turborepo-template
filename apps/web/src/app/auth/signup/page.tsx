@@ -68,7 +68,7 @@ const SignupPage: React.FC = () => {
         } else {
             setSuccess('Account created successfully! Redirecting...')
             setTimeout(() => {
-                redirect(searchParams.callbackUrl ?? '/')
+                void redirect(searchParams.callbackUrl ?? '/')
             }, 1500)
         }
     }
