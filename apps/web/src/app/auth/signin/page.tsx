@@ -238,7 +238,7 @@ const LoginPage: React.FC = () => {
                                                     variant="outline"
                                                     className="h-12 w-full text-base"
                                                     disabled={isPasskeyLoading}
-                                                    onClick={handlePasskeySignIn}
+                                                    onClick={() => void handlePasskeySignIn()}
                                                 >
                                                     {isPasskeyLoading && <Spinner />}
                                                     {!isPasskeyLoading && <Fingerprint className="mr-2 h-4 w-4" />}

@@ -153,7 +153,7 @@ export function createORPCClientWithCookies() {
                             )
                         )
 
-                        await clientRedirect(loginUrl)
+                        void clientRedirect(loginUrl)
                     } else {
                         const headerList = await (
                             await import('next/headers')

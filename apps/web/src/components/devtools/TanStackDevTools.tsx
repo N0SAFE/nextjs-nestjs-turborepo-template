@@ -933,7 +933,7 @@ const DrizzleStudioPluginComponent = () => {
                             <DropdownMenuItem onClick={openStudio}>
                                 Open in new tab
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={copyUrl}>
+                            <DropdownMenuItem onClick={() => void copyUrl()}>
                                 Copy URL
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -1039,7 +1039,7 @@ const ApiUrlPluginComponent = () => {
                             <DropdownMenuItem onClick={openApiUrl}>
                                 Open API Root
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={copyApiUrl}>
+                            <DropdownMenuItem onClick={() => void copyApiUrl()}>
                                 Copy API URL
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -1049,7 +1049,7 @@ const ApiUrlPluginComponent = () => {
                             >
                                 Reload Reference
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={checkHealth}>
+                            <DropdownMenuItem onClick={() => void checkHealth()}>
                                 {checking ? 'Checking...' : 'Check Health'}
                             </DropdownMenuItem>
                         </DropdownMenuContent>

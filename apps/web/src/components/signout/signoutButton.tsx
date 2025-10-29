@@ -10,7 +10,7 @@ const SignOutButton = () => {
         <form
             action={async () => {
                 await signOut({})
-                await revalidateAllAction()
+                revalidateAllAction()
             }}
         >
             <Button

@@ -13,6 +13,7 @@ export function usePush<
     Params extends z.ZodType,
     Search extends z.ZodType = typeof emptySchema,
 >(builder: RouteBuilder<Params, Search>) {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const { push } = useRouter()
     return (
         p: z.input<Params>,

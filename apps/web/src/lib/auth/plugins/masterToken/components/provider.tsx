@@ -32,8 +32,8 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
         }
 
         const onCustom = (e: Event) => {
-            const cev = e as CustomEvent
-            if (typeof cev.detail?.value !== 'undefined') {
+            const cev = e as CustomEvent<{value?: string}>
+            if (typeof cev.detail.value !== 'undefined') {
                 MasterTokenManager.change(Boolean(cev.detail.value))
             }
         }
@@ -60,7 +60,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
 
     return (
         <MasterTokenContext.Provider
-            value={{ enabled, setEnabled: MasterTokenManager.change }}
+            value={{ enabled, setEnabled: MasterTokenManager.change.bind(MasterTokenManager) }}
         >
             {children}
         </MasterTokenContext.Provider>

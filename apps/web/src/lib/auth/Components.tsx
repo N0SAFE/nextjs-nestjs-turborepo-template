@@ -39,9 +39,10 @@ export function LoginLink(
     const callbackUrl = toAbsoluteUrl(`/${pathname}?${searchParams.toString()}`)
 
     // Cast the entire Link component to work around type generation issues
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     const LinkComponent = Authsignin.Link as any
 
+     
     return (
         <LinkComponent {...props} search={{ callbackUrl }} />
     )
@@ -50,9 +51,13 @@ export function LoginLink(
 export function LogoutButton(props: React.ComponentProps<typeof Button>) {
     return (
         <Button
-            onClick={async (e) => {
-                await signOut()
-                props.onClick?.(e)
+            onClick={(e) => {
+                void new Promise((resolve) => {
+                    void signOut().then(() => {
+                        props.onClick?.(e)
+                        resolve()
+                    })
+                })
             }}
             {...props}
         />

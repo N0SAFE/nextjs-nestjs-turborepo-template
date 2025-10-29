@@ -6,12 +6,12 @@
     ],
     "exports": {
         ".": {
-            "types": "./src/index.ts",
+            "types": ["./src/index.ts", "./src/index.tsx"],
             "import": "./dist/index.js",
             "require": "./dist/index.mjs"
         },
         "./*": {
-            "types": "./src/*.ts",
+            "types": ["./src/*.ts", "./src/*.tsx"],
             "require": "./dist/*.js",
             "import": "./dist/*.mjs"
         },

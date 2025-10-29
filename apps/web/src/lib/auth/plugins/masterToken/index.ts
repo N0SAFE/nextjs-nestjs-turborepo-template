@@ -75,13 +75,23 @@ export const masterTokenClient = (): ReturnType<() => BetterAuthClientPlugin> =>
                             const mergedHeaders = Object.assign(
                                 {
                                     Authorization: `Bearer ${key}`,
-                                    ...(ctx?.headers || {}),
+                                    ...Array.isArray(ctx?.headers) ? ctx.headers.reduce((acc, [key, data]) => {
+                                    return {
+                                        ...acc,
+                                        [key]: data
+                                    }
+                                }, {}) : ctx?.headers ?? {},
                                 },
                                 ctx?.headers || {}
                             )
                             return {
                                 ...(ctx || {}),
-                                headers: new Headers({ ...mergedHeaders }),
+                                headers: new Headers({ ...Array.isArray(mergedHeaders) ? mergedHeaders.reduce((acc, [key, data]) => {
+                                    return {
+                                        ...acc,
+                                        [key]: data
+                                    }
+                                }, {}) : mergedHeaders ?? {}, }),
                             }
                         } catch (e) {
                             // defensive fallback
