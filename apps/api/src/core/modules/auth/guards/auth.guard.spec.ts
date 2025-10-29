@@ -79,24 +79,24 @@ describe('AuthGuard', () => {
     };
 
     beforeEach(() => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector)).mockReturnValue(false);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue(false);
     });
 
     it('should return true for public routes', async () => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector)).mockReturnValue(true);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue(true);
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
 
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      expect(reflector.getAllAndOverride.bind(reflector)).toHaveBeenCalledWith('PUBLIC', [
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('PUBLIC', [
         mockContext.getHandler(),
         mockContext.getClass(),
       ]);
     });
 
     it('should return true for optional auth routes with no session', async () => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector))
+      vi.mocked(reflector.getAllAndOverride)
         .mockReturnValueOnce(false) // PUBLIC
         .mockReturnValueOnce(true); // OPTIONAL
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
@@ -104,7 +104,7 @@ describe('AuthGuard', () => {
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      expect(reflector.getAllAndOverride.bind(reflector)).toHaveBeenCalledWith('OPTIONAL', [
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('OPTIONAL', [
         mockContext.getHandler(),
         mockContext.getClass(),
       ]);
@@ -124,12 +124,12 @@ describe('AuthGuard', () => {
     });
 
     it('should throw APIError for unauthenticated requests on protected routes', async () => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector)).mockReturnValue(false);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue(false);
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
 
       await expect(guard.canActivate(mockContext)).rejects.toThrow(APIError);
       expect(mockRequest.session).toBeNull();
-      expect(mockRequest.user).toBeNull();
+      expect(mockRequest.user).toBeUndefined();
     });
 
     it('should set user to null when session exists but no user', async () => {
@@ -146,7 +146,7 @@ describe('AuthGuard', () => {
 
       expect(result).toBe(true);
       expect(mockRequest.session).toBe(sessionWithoutUser);
-      expect(mockRequest.user).toBeNull();
+      expect(mockRequest.user).toBeUndefined();
     });
 
     it('should handle auth session check errors', async () => {
@@ -156,26 +156,26 @@ describe('AuthGuard', () => {
     });
 
     it('should check both handler and class metadata for PUBLIC', async () => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector)).mockReturnValue(true);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue(true);
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
 
       await guard.canActivate(mockContext);
 
-      expect(reflector.getAllAndOverride.bind(reflector)).toHaveBeenCalledWith('PUBLIC', [
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('PUBLIC', [
         mockContext.getHandler(),
         mockContext.getClass(),
       ]);
     });
 
     it('should check both handler and class metadata for OPTIONAL', async () => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector))
+      vi.mocked(reflector.getAllAndOverride)
         .mockReturnValueOnce(false) // PUBLIC
         .mockReturnValueOnce(true); // OPTIONAL
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
 
       await guard.canActivate(mockContext);
 
-      expect(reflector.getAllAndOverride.bind(reflector)).toHaveBeenNthCalledWith(2, 'OPTIONAL', [
+      expect(reflector.getAllAndOverride).toHaveBeenNthCalledWith(2, 'OPTIONAL', [
         mockContext.getHandler(),
         mockContext.getClass(),
       ]);

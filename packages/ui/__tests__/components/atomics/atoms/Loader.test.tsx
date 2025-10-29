@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import Loader from '@repo/ui/components/atomics/atoms/Loader'
+import Loader from '../../../../src/components/atomics/atoms/Loader'
 
 describe('Loader Component', () => {
   it('should render with default props', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn } from '@repo/ui/lib/utils'
+import { cn } from '../../src/lib/utils'
 
 describe('cn utility function', () => {
     it('should merge class names correctly', () => {

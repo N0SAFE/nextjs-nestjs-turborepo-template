@@ -1,10 +1,10 @@
 import { ReactElement } from 'react'
 
-export type Icon = {
+export interface Icon {
     className: string
 }
 
-export const Spinner = (): ReactElement<any> => {
+export const Spinner = (): ReactElement => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -23,7 +23,7 @@ export const Spinner = (): ReactElement<any> => {
     )
 }
 
-export const AlertCircle = (props: Icon): ReactElement<any> => {
+export const AlertCircle = (props: Icon): ReactElement => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"

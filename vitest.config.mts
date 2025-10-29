@@ -1,13 +1,12 @@
 import { defineConfig } from "vitest/config";
-
-const { createBaseConfig } = require('@repo/vitest-config/base')
+import { createBaseConfig } from '@repo/vitest-config/base'
 
 export default defineConfig(
     createBaseConfig({
         test: {
             projects: [
-                "apps/*/vitest.config.ts",
-                "packages/*/vitest.config.ts",
+                "apps/*/vitest.config.mts",
+                "packages/*/vitest.config.mts",
             ],
             coverage: {
                 provider: 'v8',

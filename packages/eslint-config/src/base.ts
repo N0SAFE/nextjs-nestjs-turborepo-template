@@ -50,6 +50,7 @@ export const testConfig = defineConfig([
             "@typescript-eslint/no-unsafe-argument": "off",
             "@typescript-eslint/no-unsafe-return": "off",
             "no-unused-vars": "off",
+            "@typescript-eslint/unbound-method": "off",
         },
     },
 ]);

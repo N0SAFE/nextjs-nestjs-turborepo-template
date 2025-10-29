@@ -1,5 +1,3 @@
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
 import eslintNestJs from "@darraghor/eslint-plugin-nestjs-typed";
 import { defineConfig } from "eslint/config";
 import { Linter } from "eslint"
@@ -23,6 +21,7 @@ const sharedRules: Partial<Linter.RulesRecord> = {
             ],
             "@darraghor/nestjs-typed/param-decorator-name-matches-route-param": "off",
             "@darraghor/nestjs-typed/controllers-should-supply-api-tags": "off",
+            "@darraghor/nestjs-typed/injectable-should-be-provided": "off",
         }
 
 const base = defineConfig([

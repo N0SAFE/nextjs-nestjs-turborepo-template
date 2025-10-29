@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import ImageOrPlaceholder from '@repo/ui/components/atomics/atoms/ImageOrPlaceholder'
+import ImageOrPlaceholder from '../../../../src/components/atomics/atoms/ImageOrPlaceholder'
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({

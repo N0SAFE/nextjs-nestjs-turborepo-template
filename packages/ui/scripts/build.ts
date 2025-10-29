@@ -41,7 +41,7 @@ function isTestFile(filePath: string): boolean {
 
 // Get all TypeScript/TSX files from components, hooks, and lib directories
 async function getFiles(): Promise<string[]> {
-    const glob = new Glob("**/*.{ts,tsx}");
+    const glob = new Glob("src/**/*.{ts,tsx}");
     const files: string[] = [];
 
     // Scan components, hooks, and lib directories

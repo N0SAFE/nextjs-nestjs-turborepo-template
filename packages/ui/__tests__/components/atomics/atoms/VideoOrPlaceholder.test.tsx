@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render } from '@testing-library/react'
-import VideoOrPlaceholder from '@repo/ui/components/atomics/atoms/VideoOrPlaceholder'
+import VideoOrPlaceholder from '../../../../src/components/atomics/atoms/VideoOrPlaceholder'
 
 // Mock asset imports
 vi.mock('../../../assets/video/placeholder.mp4', () => ({

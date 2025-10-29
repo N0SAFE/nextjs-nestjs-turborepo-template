@@ -10,14 +10,15 @@ const ImageOrPlaceholder: React.FC<
 > = ({ src, alt, render, ...props }) => {
     if (src) {
         return typeof render === 'function' ? (
-            render({ src, alt: alt || 'image', ...props })
+            render({ src, alt: alt ?? 'image', ...props })
         ) : (
-            <Image src={src} alt={alt || 'image'} {...props} />
+            <Image src={src} alt={alt ?? 'image'} {...props} />
         )
     }
     return (
         <img
-            src={require('../../../assets/images/placeholder.svg')}
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            src={require('../../../assets/images/placeholder.svg') as string}
             alt={'Placeholder Image'}
             {...props}
         />

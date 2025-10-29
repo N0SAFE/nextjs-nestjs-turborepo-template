@@ -26,7 +26,7 @@ vi.mock('next/dynamic', () => ({
 }))
 
 // Import after mocking
-import ThemeProvider from '@repo/ui/components/theme-provider'
+import ThemeProvider from '../../src/components/theme-provider'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 
 describe('ThemeProvider Component', () => {

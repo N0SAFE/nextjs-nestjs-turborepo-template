@@ -26,7 +26,7 @@ async function bootstrap() {
 
   // Serve OpenAPI JSON generated from the oRPC app contract
   const http = app.getHttpAdapter().getInstance() as Express
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+   
   http.get("/openapi.json", async (_req, res) => {
     try {
       const mergeResult = merge([

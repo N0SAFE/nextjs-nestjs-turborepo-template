@@ -1,6 +1,4 @@
-import eslint from "@eslint/js";
 import { defineConfig } from "eslint/config";
-import tseslint from "typescript-eslint";
 import coreConfig from "./base";
 
 const tsconfigRootDir = process.cwd();

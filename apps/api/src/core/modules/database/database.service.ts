@@ -8,10 +8,13 @@ export type Database = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class DatabaseService {
-  constructor(@Inject(DATABASE_CONNECTION) private readonly _db: Database) {
-    if (!this._db) {
+  private readonly _db: Database
+  
+  constructor(@Inject(DATABASE_CONNECTION) _db?: Database) {
+    if (!_db) {
       throw new Error('Database connection is not initialized');
     }
+    this._db = _db;
   }
   
   /**

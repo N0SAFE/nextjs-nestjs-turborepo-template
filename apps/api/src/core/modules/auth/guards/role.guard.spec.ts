@@ -100,8 +100,8 @@ describe('RoleGuard', () => {
     };
 
     beforeEach(() => {
-      vi.mocked(reflector.getAllAndOverride.bind(reflector)).mockReturnValue(undefined);
-      vi.mocked(PermissionChecker.validatePermission.bind(PermissionChecker)).mockReturnValue(true);
+      vi.mocked(reflector.getAllAndOverride).mockReturnValue(undefined);
+      vi.mocked(PermissionChecker.validatePermission).mockReturnValue(true);
     });
 
     it('should be defined', () => {
@@ -114,7 +114,7 @@ describe('RoleGuard', () => {
       const result = await guard.canActivate(mockContext);
 
       expect(result).toBe(true);
-      expect(reflector.getAllAndOverride.bind(reflector)).toHaveBeenCalledWith('REQUIRED_ROLES', [
+      expect(reflector.getAllAndOverride).toHaveBeenCalledWith('REQUIRED_ROLES', [
         mockContext.getHandler(),
         mockContext.getClass(),
       ]);
@@ -126,27 +126,27 @@ describe('RoleGuard', () => {
       });
 
       it('should allow access if user has required role', async () => {
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(['admin', 'manager']) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(undefined); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker)).mockReturnValue(true);
+        vi.mocked(PermissionChecker.hasRole).mockReturnValue(true);
 
         const result = await guard.canActivate(mockContext);
 
         expect(result).toBe(true);
-        expect(PermissionChecker.hasRole.bind(PermissionChecker)).toHaveBeenCalledWith('admin', 'admin');
+        expect(PermissionChecker.hasRole).toHaveBeenCalledWith('admin', 'admin');
       });
 
       it('should deny access if user lacks required role', async () => {
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(['manager', 'editor']) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined)
           .mockReturnValueOnce(undefined);
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker)).mockReturnValue(false);
-        vi.mocked(PermissionChecker.getUserRoles.bind(PermissionChecker)).mockReturnValue(['admin']);
+        vi.mocked(PermissionChecker.hasRole).mockReturnValue(false);
+        vi.mocked(PermissionChecker.getUserRoles).mockReturnValue(['admin']);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -160,33 +160,33 @@ describe('RoleGuard', () => {
       });
 
       it('should allow access if user has all required roles', async () => {
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(['admin', 'manager']) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(undefined); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker))
+        vi.mocked(PermissionChecker.hasRole)
           .mockReturnValueOnce(true) // has admin
           .mockReturnValueOnce(true); // has manager
 
         const result = await guard.canActivate(mockContext);
 
         expect(result).toBe(true);
-        expect(PermissionChecker.hasRole.bind(PermissionChecker)).toHaveBeenCalledWith('admin', 'admin');
-        expect(PermissionChecker.hasRole.bind(PermissionChecker)).toHaveBeenCalledWith('admin', 'manager');
+        expect(PermissionChecker.hasRole).toHaveBeenCalledWith('admin', 'admin');
+        expect(PermissionChecker.hasRole).toHaveBeenCalledWith('admin', 'manager');
       });
 
       it('should deny access if user lacks one of the required all roles', async () => {
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(['admin', 'superuser']) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(undefined); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker))
+        vi.mocked(PermissionChecker.hasRole)
           .mockReturnValueOnce(true) // has admin
           .mockReturnValueOnce(false); // lacks superuser
 
-        vi.mocked(PermissionChecker.getUserRoles.bind(PermissionChecker)).mockReturnValue(['admin']);
+        vi.mocked(PermissionChecker.getUserRoles).mockReturnValue(['admin']);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -211,17 +211,17 @@ describe('RoleGuard', () => {
           user: ['list'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(mockAuth.api.userHasPermission.bind(mockAuth.api)).mockResolvedValue(true);
+        vi.mocked(mockAuth.api.userHasPermission).mockResolvedValue({ success: true });
 
         const result = await guard.canActivate(mockContext);
 
         expect(result).toBe(true);
-        expect(mockAuth.api.userHasPermission.bind(mockAuth.api)).toHaveBeenCalledWith({
+        expect(mockAuth.api.userHasPermission).toHaveBeenCalledWith({
           body: {
             userId: 'user-1',
             permissions: requiredPermissions,
@@ -235,12 +235,12 @@ describe('RoleGuard', () => {
           system: ['backup'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(mockAuth.api.userHasPermission.bind(mockAuth.api)).mockResolvedValue(false);
+        vi.mocked(mockAuth.api.userHasPermission).mockResolvedValue(false);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -258,12 +258,12 @@ describe('RoleGuard', () => {
           invalidResource: ['invalidAction'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(invalidPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.validatePermission.bind(PermissionChecker)).mockReturnValue(false);
+        vi.mocked(PermissionChecker.validatePermission).mockReturnValue(false);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -281,7 +281,7 @@ describe('RoleGuard', () => {
           project: ['create'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
@@ -291,7 +291,7 @@ describe('RoleGuard', () => {
           message: 'User does not have required permissions',
         });
 
-        vi.mocked(mockAuth.api.userHasPermission.bind(mockAuth.api)).mockRejectedValue(apiError);
+        vi.mocked(mockAuth.api.userHasPermission).mockRejectedValue(apiError);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(apiError);
       });
@@ -301,12 +301,12 @@ describe('RoleGuard', () => {
           project: ['create'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(undefined) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(mockAuth.api.userHasPermission.bind(mockAuth.api)).mockRejectedValue(new Error('Database error'));
+        vi.mocked(mockAuth.api.userHasPermission).mockRejectedValue(new Error('Database error'));
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -330,13 +330,13 @@ describe('RoleGuard', () => {
           project: ['create'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(['manager']) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker)).mockReturnValue(false);
-        vi.mocked(PermissionChecker.getUserRoles.bind(PermissionChecker)).mockReturnValue(['admin']);
+        vi.mocked(PermissionChecker.hasRole).mockReturnValue(false);
+        vi.mocked(PermissionChecker.getUserRoles).mockReturnValue(['admin']);
 
         await expect(guard.canActivate(mockContext)).rejects.toThrow(
           expect.objectContaining({
@@ -349,7 +349,7 @@ describe('RoleGuard', () => {
         );
 
         // Permission check should not be called since role check failed
-        expect(mockAuth.api.userHasPermission.bind(mockAuth.api)).not.toHaveBeenCalled();
+        expect(mockAuth.api.userHasPermission).not.toHaveBeenCalled();
       });
 
       it('should check both roles and permissions when both pass', async () => {
@@ -357,19 +357,19 @@ describe('RoleGuard', () => {
           project: ['create'],
         };
 
-        vi.mocked(reflector.getAllAndOverride.bind(reflector))
+        vi.mocked(reflector.getAllAndOverride)
           .mockReturnValueOnce(['admin']) // REQUIRED_ROLES
           .mockReturnValueOnce(undefined) // REQUIRED_ALL_ROLES
           .mockReturnValueOnce(requiredPermissions); // REQUIRED_PERMISSIONS
 
-        vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker)).mockReturnValue(true);
-        vi.mocked(mockAuth.api.userHasPermission.bind(mockAuth.api)).mockResolvedValue(true);
+        vi.mocked(PermissionChecker.hasRole).mockReturnValue(true);
+        vi.mocked(mockAuth.api.userHasPermission).mockResolvedValue({ success: true });
 
         const result = await guard.canActivate(mockContext);
 
         expect(result).toBe(true);
-        expect(PermissionChecker.hasRole.bind(PermissionChecker)).toHaveBeenCalledWith('admin', 'admin');
-        expect(mockAuth.api.userHasPermission.bind(mockAuth.api)).toHaveBeenCalledWith({
+        expect(PermissionChecker.hasRole).toHaveBeenCalledWith('admin', 'admin');
+        expect(mockAuth.api.userHasPermission).toHaveBeenCalledWith({
           body: {
             userId: 'user-1',
             permissions: requiredPermissions,
@@ -385,21 +385,21 @@ describe('RoleGuard', () => {
     });
 
     it('should check role using PermissionChecker.hasRole', () => {
-      vi.mocked(PermissionChecker.hasRole.bind(PermissionChecker)).mockReturnValue(true);
+      vi.mocked(PermissionChecker.hasRole).mockReturnValue(true);
 
       const result = RoleGuard.hasRole('admin,manager', 'admin');
 
       expect(result).toBe(true);
-      expect(PermissionChecker.hasRole.bind(PermissionChecker)).toHaveBeenCalledWith('admin,manager', 'admin');
+      expect(PermissionChecker.hasRole).toHaveBeenCalledWith('admin,manager', 'admin');
     });
 
     it('should get user roles using PermissionChecker.getUserRoles', () => {
-      vi.mocked(PermissionChecker.getUserRoles.bind(PermissionChecker)).mockReturnValue(['admin', 'manager']);
+      vi.mocked(PermissionChecker.getUserRoles).mockReturnValue(['admin', 'manager']);
 
       const result = RoleGuard.getUserRoles('admin,manager');
 
       expect(result).toEqual(['admin', 'manager']);
-      expect(PermissionChecker.getUserRoles.bind(PermissionChecker)).toHaveBeenCalledWith('admin,manager');
+      expect(PermissionChecker.getUserRoles).toHaveBeenCalledWith('admin,manager');
     });
   });
 });

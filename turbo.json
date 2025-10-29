@@ -64,7 +64,7 @@
             "cache": false
         },
         "test": {
-            "dependsOn": ["^build"],
+            "dependsOn": ["@repo/vitest-config#build"],
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "test:watch": {

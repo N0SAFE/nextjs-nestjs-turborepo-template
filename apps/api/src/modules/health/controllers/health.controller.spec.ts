@@ -52,8 +52,8 @@ describe("HealthController", () => {
     describe("Service integration", () => {
         it("should have service injected properly", () => {
             expect(service).toBeDefined();
-            expect(service.getHealth.bind(service)).toBeDefined();
-            expect(service.getDetailedHealth.bind(service)).toBeDefined();
+            expect(service.getHealth).toBeDefined();
+            expect(service.getDetailedHealth).toBeDefined();
         });
 
         it("should be able to call getHealth service method directly", () => {
@@ -62,11 +62,11 @@ describe("HealthController", () => {
                 timestamp: new Date().toISOString(),
                 service: "nestjs-api",
             };
-            vi.mocked(service.getHealth.bind(service)).mockResolvedValue(mockHealth);
+            vi.mocked(service.getHealth).mockReturnValue(mockHealth);
 
             const result = service.getHealth();
             expect(result).toEqual(mockHealth);
-            expect(service.getHealth.bind(service)).toHaveBeenCalledOnce();
+            expect(service.getHealth).toHaveBeenCalledOnce();
         });
 
         it("should be able to call getDetailedHealth service method directly", async () => {
@@ -78,11 +78,11 @@ describe("HealthController", () => {
                 memory: { used: 1000, free: 2000, total: 3000 },
                 database: { status: "ok" },
             };
-            vi.mocked(service.getDetailedHealth.bind(service)).mockResolvedValue(mockDetailedHealth);
+            vi.mocked(service.getDetailedHealth).mockResolvedValue(mockDetailedHealth);
 
             const result = await service.getDetailedHealth();
             expect(result).toEqual(mockDetailedHealth);
-            expect(service.getDetailedHealth.bind(service)).toHaveBeenCalledOnce();
+            expect(service.getDetailedHealth).toHaveBeenCalledOnce();
         });
     });
 });

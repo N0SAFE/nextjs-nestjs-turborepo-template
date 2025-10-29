@@ -23,7 +23,7 @@
     "@repo/eslint-config": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
-    "@types/node": "^24.9.1",
+    "@types/node": "^24.9.2",
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
     "eslint": "catalog:linting",

@@ -95,13 +95,13 @@ describe('UserController', () => {
   describe('Service integration', () => {
     it('should have service injected properly', () => {
       expect(service).toBeDefined();
-      expect(service.getUsers.bind(service)).toBeDefined();
-      expect(service.findUserById.bind(service)).toBeDefined();
-      expect(service.createUser.bind(service)).toBeDefined();
-      expect(service.updateUser.bind(service)).toBeDefined();
-      expect(service.deleteUser.bind(service)).toBeDefined();
-      expect(service.checkUserExistsByEmail.bind(service)).toBeDefined();
-      expect(service.getUserCount.bind(service)).toBeDefined();
+      expect(service.getUsers).toBeDefined();
+      expect(service.findUserById).toBeDefined();
+      expect(service.createUser).toBeDefined();
+      expect(service.updateUser).toBeDefined();
+      expect(service.deleteUser).toBeDefined();
+      expect(service.checkUserExistsByEmail).toBeDefined();
+      expect(service.getUserCount).toBeDefined();
     });
 
     it('should be able to call service methods directly', async () => {
@@ -109,11 +109,11 @@ describe('UserController', () => {
         users: [mockUser],
         meta: { pagination: { total: 1, limit: 10, offset: 0, hasMore: false } },
       };
-      vi.mocked(service.getUsers.bind(service)).mockResolvedValue(mockResponse);
+      vi.mocked(service.getUsers).mockResolvedValue(mockResponse);
 
       const result = await service.getUsers({ pagination: { limit: 10, offset: 0 } });
       expect(result).toEqual(mockResponse);
-      expect(service.getUsers.bind(service)).toHaveBeenCalledWith({ pagination: { limit: 10, offset: 0 } });
+      expect(service.getUsers).toHaveBeenCalledWith({ pagination: { limit: 10, offset: 0 } });
     });
   });
 });

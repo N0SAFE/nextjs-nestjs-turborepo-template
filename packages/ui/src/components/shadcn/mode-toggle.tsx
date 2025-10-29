@@ -3,13 +3,13 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import { Button } from '@repo/ui/components/shadcn/button'
+import { Button } from '@/components/shadcn/button'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from '@repo/ui/components/shadcn/dropdown-menu'
+} from '@/components/shadcn/dropdown-menu'
 
 export default function ModeToggle() {
     const { setTheme } = useTheme()
@@ -24,13 +24,13 @@ export default function ModeToggle() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
-                <DropdownMenuItem onClick={() => setTheme('light')}>
+                <DropdownMenuItem onClick={() => { setTheme('light'); }}>
                     Light
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                <DropdownMenuItem onClick={() => { setTheme('dark'); }}>
                     Dark
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('system')}>
+                <DropdownMenuItem onClick={() => { setTheme('system'); }}>
                     System
                 </DropdownMenuItem>
             </DropdownMenuContent>

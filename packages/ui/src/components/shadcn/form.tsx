@@ -13,14 +13,14 @@ import {
 } from 'react-hook-form'
 
 import { cn } from '@repo/ui/lib/utils'
-import { Label } from '@repo/ui/components/shadcn/label'
+import { Label } from '@/components/shadcn/label'
 
 const Form = FormProvider
 
-type FormFieldContextValue<
+interface FormFieldContextValue<
     TFieldValues extends FieldValues = FieldValues,
     TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-> = {
+> {
     name: TName
 }
 
@@ -48,6 +48,7 @@ const useFormField = () => {
 
     const fieldState = getFieldState(fieldContext.name, formState)
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!fieldContext) {
         throw new Error('useFormField should be used within <FormField>')
     }
@@ -64,7 +65,7 @@ const useFormField = () => {
     }
 }
 
-type FormItemContextValue = {
+interface FormItemContextValue {
     id: string
 }
 
@@ -87,7 +88,7 @@ const FormItem = React.forwardRef<
 FormItem.displayName = 'FormItem'
 
 const FormLabel = React.forwardRef<
-    React.ElementRef<typeof LabelPrimitive.Root>,
+    React.ComponentRef<typeof LabelPrimitive.Root>,
     React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
     const { error, formItemId } = useFormField()
@@ -104,7 +105,7 @@ const FormLabel = React.forwardRef<
 FormLabel.displayName = 'FormLabel'
 
 const FormControl = React.forwardRef<
-    React.ElementRef<typeof Slot>,
+    React.ComponentRef<typeof Slot>,
     React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
     const { error, formItemId, formDescriptionId, formMessageId } =
@@ -116,7 +117,7 @@ const FormControl = React.forwardRef<
             id={formItemId}
             aria-describedby={
                 !error
-                    ? `${formDescriptionId}`
+                    ? formDescriptionId
                     : `${formDescriptionId} ${formMessageId}`
             }
             aria-invalid={!!error}
@@ -148,7 +149,7 @@ const FormMessage = React.forwardRef<
     React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
     const { error, formMessageId } = useFormField()
-    const body = error ? String(error?.message) : children
+    const body = error ? String(error.message) : children
 
     if (!body) {
         return null

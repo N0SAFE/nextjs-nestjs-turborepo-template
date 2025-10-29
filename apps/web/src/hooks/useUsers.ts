@@ -36,12 +36,12 @@ export function useUsers(options?: {
 }) {
   const params = {
     pagination: {
-      page: options?.pagination?.page || 1,
-      pageSize: options?.pagination?.pageSize || 20,
+      page: options?.pagination?.page ?? 1,
+      pageSize: options?.pagination?.pageSize ?? 20,
     },
     sort: {
-      field: (options?.sort?.field || 'name') as keyof User,
-      direction: options?.sort?.direction || 'asc' as const,
+      field: (options?.sort?.field ?? 'name') as keyof User,
+      direction: options?.sort?.direction ?? 'asc' as const,
     },
     filter: options?.filter,
   }
@@ -179,7 +179,7 @@ export function useUserSearch(searchQuery?: string, options?: {
       email: searchQuery,
     } : undefined,
     pagination: {
-      pageSize: options?.limit || 10,
+      pageSize: options?.limit ?? 10,
     },
     enabled: (options?.enabled ?? true) && !!searchQuery,
   })
@@ -233,7 +233,7 @@ export function useUserActions() {
 
 // Hook for user profile management
 export function useUserProfile(userId?: string) {
-  const user = useUser(userId || '', { enabled: !!userId })
+  const user = useUser(userId ?? '', { enabled: !!userId })
   const updateUser = useUpdateUser()
   
   return {
@@ -259,7 +259,7 @@ export function useUserAdministration(options?: {
   refetchInterval?: number
 }) {
   const users = useUsers({
-    pagination: { pageSize: options?.pageSize || 25 }
+    pagination: { pageSize: options?.pageSize ?? 25 }
   })
   
   const userCount = useUserCount()
@@ -267,8 +267,8 @@ export function useUserAdministration(options?: {
 
   return {
     // Data
-    users: users.data?.users || [],
-    totalUsers: userCount.data?.count || 0,
+    users: users.data?.users ?? [],
+    totalUsers: userCount.data?.count ?? 0,
     meta: users.data?.meta,
     
     // Loading states
@@ -276,7 +276,7 @@ export function useUserAdministration(options?: {
     isRefreshing: users.isFetching,
     
     // Error states
-    error: users.error || userCount.error,
+    error: users.error ?? userCount.error,
     hasError: users.isError || userCount.isError,
     
     // Actions (excluding isLoading to avoid conflict)
@@ -302,10 +302,10 @@ export function useUserAdministration(options?: {
     
     // Pagination helpers
     pagination: {
-      currentPage: Math.floor((users.data?.meta?.pagination?.offset || 0) / (users.data?.meta?.pagination?.limit || 10)) + 1,
-      totalPages: Math.ceil((users.data?.meta?.pagination?.total || 0) / (users.data?.meta?.pagination?.limit || 10)),
-      hasNextPage: users.data?.meta?.pagination?.hasMore || false,
-      hasPrevPage: (users.data?.meta?.pagination?.offset || 0) > 0,
+      currentPage: Math.floor((users.data?.meta?.pagination?.offset ?? 0) / (users.data?.meta?.pagination?.limit ?? 10)) + 1,
+      totalPages: Math.ceil((users.data?.meta?.pagination?.total ?? 0) / (users.data?.meta?.pagination?.limit ?? 10)),
+      hasNextPage: users.data?.meta?.pagination?.hasMore ?? false,
+      hasPrevPage: (users.data?.meta?.pagination?.offset ?? 0) > 0,
     }
   }
 }
@@ -324,7 +324,7 @@ export function useUserSelector(options?: {
     if (options?.excludeUserIds?.includes(user.id)) return false
     // Add role filtering if needed when roles are added to user schema
     return true
-  }) || []
+  }) ?? []
   
   const selectedUsers = availableUsers.filter(user => 
     selectedUserIds.includes(user.id)
@@ -407,12 +407,12 @@ export async function getUsers(params: {
 } = {}) {
   return orpc.user.list.call({
     pagination: {
-      limit: params.pagination?.page || 1,
-      offset: params.pagination?.pageSize || 20,
+      limit: params.pagination?.page ?? 1,
+      offset: params.pagination?.pageSize ?? 20,
     },
     sort: {
-      field: params.sort?.field || 'name',
-      direction: params.sort?.direction || 'asc',
+      field: params.sort?.field ?? 'name',
+      direction: params.sort?.direction ?? 'asc',
     },
     filter: params.filter,
   })
@@ -450,12 +450,12 @@ export function prefetchUsers(
     orpc.user.list.queryOptions({
       input: {
         pagination: {
-          page: params?.pagination?.page || 1,
-          pageSize: params?.pagination?.pageSize || 20,
+          page: params?.pagination?.page ?? 1,
+          pageSize: params?.pagination?.pageSize ?? 20,
         },
         sort: {
-          field: (params?.sort?.field || 'name') as keyof User,
-          direction: params?.sort?.direction || 'asc' as const,
+          field: (params?.sort?.field ?? 'name') as keyof User,
+          direction: params?.sort?.direction ?? 'asc' as const,
         },
       },
       staleTime: 1000 * 60,
@@ -509,12 +509,12 @@ export function useUsersInfinite(options?: {
     orpc.user.list.infiniteOptions({
       input: (context: { pageParam?: number }) => ({
         pagination: {
-          page: context?.pageParam || 1,
-          pageSize: options?.pageSize || 20,
+          page: context?.pageParam ?? 1,
+          pageSize: options?.pageSize ?? 20,
         },
         sort: {
-          field: (options?.sort?.field || 'name') as keyof User,
-          direction: options?.sort?.direction || 'asc' as const,
+          field: (options?.sort?.field ?? 'name') as keyof User,
+          direction: options?.sort?.direction ?? 'asc' as const,
         },
         filter: options?.filter,
       }),
@@ -550,7 +550,7 @@ export function useUserSearchInfinite(searchQuery?: string, options?: {
       name: searchQuery,
       email: searchQuery,
     } : undefined,
-    pageSize: options?.pageSize || 20,
+    pageSize: options?.pageSize ?? 20,
   })
 }
 

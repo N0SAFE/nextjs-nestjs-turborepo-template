@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Card } from '@repo/ui/components/atomics/molecules/Card'
+import { Card } from '../../../../src/components/atomics/molecules/Card'
 
 describe('Card Component', () => {
   const defaultProps = {
