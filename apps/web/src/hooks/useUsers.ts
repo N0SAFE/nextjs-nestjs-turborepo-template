@@ -40,8 +40,8 @@ export function useUsers(options?: {
       pageSize: options?.pagination?.pageSize ?? 20,
     },
     sort: {
-      field: (options?.sort?.field ?? 'name') as keyof User,
-      direction: options?.sort?.direction ?? 'asc' as const,
+      field: options?.sort?.field ?? 'name',
+      direction: options?.sort?.direction ?? 'asc',
     },
     filter: options?.filter,
   }
@@ -73,7 +73,7 @@ export function useCreateUser() {
   return useMutation(orpc.user.create.mutationOptions({
     onSuccess: (newUser) => {
       // Invalidate user list to refresh data with proper input structure
-      queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
             pagination: { limit: 10, offset: 0 },
@@ -82,7 +82,7 @@ export function useCreateUser() {
         })
       })
       // Invalidate user count
-      queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
       toast.success(`User "${newUser.name}" created successfully`)
     },
     onError: (error: Error) => {
@@ -98,7 +98,7 @@ export function useUpdateUser() {
   return useMutation(orpc.user.update.mutationOptions({
     onSuccess: (updatedUser, variables) => {
       // Invalidate user list to refresh data with proper input structure
-      queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
             pagination: { limit: 10, offset: 0 },
@@ -107,7 +107,7 @@ export function useUpdateUser() {
         })
       })
       // Invalidate the specific user query
-      queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({ 
         queryKey: orpc.user.findById.queryKey({ input: { id: variables.id } }) 
       })
       toast.success(`User "${updatedUser.name}" updated successfully`)
@@ -125,7 +125,7 @@ export function useDeleteUser() {
   return useMutation(orpc.user.delete.mutationOptions({
     onSuccess: (_, variables) => {
       // Invalidate user list to refresh data with proper input structure
-      queryClient.invalidateQueries({ 
+      void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
             pagination: { limit: 10, offset: 0 },
@@ -134,7 +134,7 @@ export function useDeleteUser() {
         })
       })
       // Invalidate user count
-      queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
       // Remove the specific user from cache
       queryClient.removeQueries({ 
         queryKey: orpc.user.findById.queryKey({ input: { id: variables.id } }) 
@@ -296,16 +296,16 @@ export function useUserAdministration(options?: {
     
     // Refresh functions
     refresh: () => {
-      users.refetch()
-      userCount.refetch()
+      void users.refetch()
+      void userCount.refetch()
     },
     
     // Pagination helpers
     pagination: {
-      currentPage: Math.floor((users.data?.meta?.pagination?.offset ?? 0) / (users.data?.meta?.pagination?.limit ?? 10)) + 1,
-      totalPages: Math.ceil((users.data?.meta?.pagination?.total ?? 0) / (users.data?.meta?.pagination?.limit ?? 10)),
-      hasNextPage: users.data?.meta?.pagination?.hasMore ?? false,
-      hasPrevPage: (users.data?.meta?.pagination?.offset ?? 0) > 0,
+      currentPage: Math.floor((users.data?.meta.pagination.offset ?? 0) / (users.data?.meta.pagination.limit ?? 10)) + 1,
+      totalPages: Math.ceil((users.data?.meta.pagination.total ?? 0) / (users.data?.meta.pagination.limit ?? 10)),
+      hasNextPage: users.data?.meta.pagination.hasMore ?? false,
+      hasPrevPage: (users.data?.meta.pagination.offset ?? 0) > 0,
     }
   }
 }
@@ -320,7 +320,7 @@ export function useUserSelector(options?: {
   const users = useUsers()
   
   // Filter users based on options
-  const availableUsers = users.data?.users?.filter(user => {
+  const availableUsers = users.data?.users.filter(user => {
     if (options?.excludeUserIds?.includes(user.id)) return false
     // Add role filtering if needed when roles are added to user schema
     return true
@@ -342,7 +342,7 @@ export function useUserSelector(options?: {
     }
   }
   
-  const clearSelection = () => setSelectedUserIds([])
+  const clearSelection = () => { setSelectedUserIds([]); }
   
   const selectAll = () => {
     if (options?.multiple) {
@@ -411,7 +411,7 @@ export async function getUsers(params: {
       offset: params.pagination?.pageSize ?? 20,
     },
     sort: {
-      field: params.sort?.field ?? 'name',
+      field: (params.sort?.field ?? 'name') as keyof User,
       direction: params.sort?.direction ?? 'asc',
     },
     filter: params.filter,
@@ -454,7 +454,7 @@ export function prefetchUsers(
           pageSize: params?.pagination?.pageSize ?? 20,
         },
         sort: {
-          field: (params?.sort?.field ?? 'name') as keyof User,
+          field: (params?.sort?.field ?? 'name'),
           direction: params?.sort?.direction ?? 'asc' as const,
         },
       },
@@ -509,11 +509,11 @@ export function useUsersInfinite(options?: {
     orpc.user.list.infiniteOptions({
       input: (context: { pageParam?: number }) => ({
         pagination: {
-          page: context?.pageParam ?? 1,
+          page: context.pageParam ?? 1,
           pageSize: options?.pageSize ?? 20,
         },
         sort: {
-          field: (options?.sort?.field ?? 'name') as keyof User,
+          field: (options?.sort?.field ?? 'name'),
           direction: options?.sort?.direction ?? 'asc' as const,
         },
         filter: options?.filter,
@@ -562,14 +562,14 @@ export function useUserSearchInfinite(searchQuery?: string, options?: {
  * Invalidate all user-related queries
  */
 export function invalidateAllUserQueries(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ queryKey: ['user'] })
+  void queryClient.invalidateQueries({ queryKey: ['user'] })
 }
 
 /**
  * Invalidate user list cache
  */
 export function invalidateUserListCache(queryClient: QueryClient) {
-  queryClient.invalidateQueries({ 
+  void queryClient.invalidateQueries({ 
     queryKey: orpc.user.list.queryKey({ 
       input: {
         pagination: { limit: 10, offset: 0 },
@@ -583,7 +583,7 @@ export function invalidateUserListCache(queryClient: QueryClient) {
  * Invalidate specific user cache
  */
 export function invalidateUserCache(queryClient: QueryClient, userId: string) {
-  queryClient.invalidateQueries({ 
+  void queryClient.invalidateQueries({ 
     queryKey: orpc.user.findById.queryKey({ input: { id: userId } }) 
   })
 }

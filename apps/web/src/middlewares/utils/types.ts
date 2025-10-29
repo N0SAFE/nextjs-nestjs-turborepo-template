@@ -24,7 +24,7 @@ export type Middleware<Context = unknown> =
           matcher?: Matcher<Context>
           config?: ConfigFactory
       }
-export type MatcherCondition<Context = unknown> = {
+export interface MatcherCondition<Context = unknown> {
     and?: MatcherTypeArray<Context>
     or?: MatcherTypeArray<Context>
     not?: MatcherTypeArray<Context> | MatcherType<Context>
@@ -54,7 +54,7 @@ export type Matcher<Context = unknown> =
     | boolean
     | ConfiguredMatcher<Context>
 
-export type ConfigFactory = {
+export interface ConfigFactory {
     name: string
     matcher?: true
 }

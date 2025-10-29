@@ -83,7 +83,7 @@ export function createORPCClientWithCookies() {
                             parseCookie(
                                 Array.isArray(headers.cookie)
                                     ? headers.cookie.join('; ')
-                                    : headers.cookie || ''
+                                    : headers.cookie ?? ''
                             ).get('master-token-enabled')
                         ) {
                             const devAuthKey =
@@ -110,8 +110,8 @@ export function createORPCClientWithCookies() {
                 ...init,
                 cache: options.context.cache,
                 next: options.context.next
-                    ? options.context.next
-                    : {
+                    ??
+                     {
                           revalidate: 60, // Revalidation toutes les 60 secondes
                       },
             })
@@ -119,7 +119,7 @@ export function createORPCClientWithCookies() {
         interceptors: [
             onError(async (error, options) => {
                 if (
-                    (error as Error)?.name === 'AbortError' ||
+                    (error as Error | undefined)?.name === 'AbortError' ||
                     (error &&
                         typeof error === 'object' &&
                         'code' in error &&
@@ -158,7 +158,7 @@ export function createORPCClientWithCookies() {
                         const headerList = await (
                             await import('next/headers')
                         ).headers()
-                        const currentPath = headerList.get('x-pathname') || '/'
+                        const currentPath = headerList.get('x-pathname') ?? '/'
 
                         const loginUrl = toAbsoluteUrl(
                             Authsignin(

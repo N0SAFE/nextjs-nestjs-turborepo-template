@@ -1,13 +1,13 @@
 // Better Auth types - this file defines the Better Auth session structure
 import { Session, User } from '../lib/auth/auth-client'
 
-export type AuthRefresh = {
+export interface AuthRefresh {
     access_token?: string | null
     expires?: number | null
     refresh_token?: string | null
 }
 
-export type UserSession = {
+export interface UserSession {
     id: string
     first_name: string
     last_name: string
@@ -17,7 +17,7 @@ export type UserSession = {
     refresh_token?: string
 }
 
-export type UserParams = {
+export interface UserParams {
     id?: string
     name?: string
     first_name?: string
@@ -25,7 +25,7 @@ export type UserParams = {
     email?: string
 }
 
-export type UserAuthenticated = {
+export interface UserAuthenticated {
     id?: string
     name?: string
     email?: string

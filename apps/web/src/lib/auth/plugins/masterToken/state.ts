@@ -18,7 +18,7 @@ export function setMasterTokenEnabled(enabled: boolean): void {
     const expirationDate = new Date()
     expirationDate.setDate(expirationDate.getDate() + 1)
 
-    document.cookie = `${MASTER_TOKEN_COOKIE_NAME}=${enabled}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`
+    document.cookie = `${MASTER_TOKEN_COOKIE_NAME}=${String(enabled)}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`
 
     try {
         localStorage.setItem(
@@ -77,10 +77,10 @@ export class MasterTokenManager {
         } catch {
             // ignore
         }
-        MasterTokenManager.state = Boolean(value)
+        MasterTokenManager.state = value
         for (const fn of Array.from(MasterTokenManager.subscribers)) {
             try {
-                fn(Boolean(value))
+                fn(value)
             } catch {
                 // ignore
             }

@@ -6,10 +6,10 @@ describe('WithEnv Middleware', () => {
     const mockEnvIsValid = vi.fn()
     const mockValidateEnvSafe = vi.fn()
     const mockMatcherHandler = vi.fn()
-    const mockToAbsoluteUrl = vi.fn((path) => `http://localhost:3003${path}`)
+    const mockToAbsoluteUrl = vi.fn((path: string) => `http://localhost:3003${String(path)}`)
     const mockCreateDebug = vi.fn(() => vi.fn())
     
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks()
         // @ts-expect-error set NODE_ENV for tests
         process.env.NODE_ENV = 'development'

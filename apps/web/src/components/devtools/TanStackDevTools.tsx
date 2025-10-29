@@ -86,13 +86,13 @@ const RoutesPluginComponent = () => {
                                 const obj = awaited as Record<string, unknown>
                                 // Common shapes: { path }, { url }, { href }, { to }, or a function getPath()
                                 if ('path' in obj && typeof obj.path === 'string') {
-                                    path = obj.path as string
+                                    path = obj.path
                                 } else if ('url' in obj && typeof obj.url === 'string') {
-                                    path = obj.url as string
+                                    path = obj.url
                                 } else if ('href' in obj && typeof obj.href === 'string') {
-                                    path = obj.href as string
+                                    path = obj.href
                                 } else if ('to' in obj && typeof obj.to === 'string') {
-                                    path = obj.to as string
+                                    path = obj.to
                                 } else if ('getPath' in obj && typeof obj.getPath === 'function') {
                                     try {
                                         const getPath = obj.getPath as () => string | Promise<string>
@@ -226,7 +226,9 @@ const RoutesPluginComponent = () => {
             </div>
 
             <button
-                onClick={fetchRoutesData}
+                onClick={() => {
+                    void fetchRoutesData()
+                }}
                 className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
                 disabled={loading}
             >
@@ -279,7 +281,7 @@ const BundlesPluginComponent = () => {
     }
 
     React.useEffect(() => {
-        fetchBundleInfo()
+        void fetchBundleInfo()
     }, [])
 
     return (
@@ -333,7 +335,9 @@ const BundlesPluginComponent = () => {
             </div>
 
             <button
-                onClick={fetchBundleInfo}
+                onClick={() => {
+                    void fetchBundleInfo()
+                }}
                 className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
                 disabled={loading}
             >
@@ -441,7 +445,9 @@ const CLIPluginComponent = () => {
             </div>
 
             <button
-                onClick={fetchEnvInfo}
+                onClick={() => {
+                    void fetchEnvInfo()
+                }}
                 className="rounded bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
                 disabled={loading}
             >
@@ -510,7 +516,7 @@ const ConfiguredAuth = () => {
             },
             context: {
                 headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY}`,
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ''}`,
                 },
                 noRedirectOnUnauthorized: true,
             },
@@ -528,7 +534,7 @@ const ConfiguredAuth = () => {
         try {
             // Mock auth configuration
             const mockAuthConfig = {
-                databaseUrl: process.env.DATABASE_URL || 'Not configured',
+                databaseUrl: process.env.DATABASE_URL ?? 'Not configured',
                 baseUrl:
                     typeof window !== 'undefined'
                         ? window.location.origin
@@ -641,7 +647,7 @@ const ConfiguredAuth = () => {
                             <Switch
                                 checked={devAuthEnabled}
                                 onCheckedChange={(val: boolean) =>
-                                    setEnabled(Boolean(val))
+                                    { setEnabled(Boolean(val)); }
                                 }
                                 aria-label="Enable Dev Auth"
                             />
@@ -657,7 +663,9 @@ const ConfiguredAuth = () => {
                     <h4 className="text-lg font-semibold">Login As</h4>
                     <div className="flex items-center space-x-2">
                         <button
-                            onClick={() => refetchUsers()}
+                            onClick={() => {
+                                void refetchUsers()
+                            }}
                             className="rounded bg-gray-500 px-3 py-1 text-xs text-white hover:bg-gray-600"
                             disabled={usersLoading}
                         >
@@ -677,14 +685,14 @@ const ConfiguredAuth = () => {
                                     if (debouncedSetUserSearch.current)
                                         clearTimeout(debouncedSetUserSearch.current)
                                     debouncedSetUserSearch.current = setTimeout(
-                                        () => setUserSearch(v),
+                                        () => { setUserSearch(v); },
                                         300
                                     )
                                 }}
-                                    users={usersData?.users || []}
+                                    users={usersData?.users ?? []}
                                     loading={usersLoading}
                                     selectedUserId={session?.user?.id}
-                                    selectedUserName={session?.user?.name || session?.user?.email}
+                                    selectedUserName={session?.user?.name ?? session?.user?.email}
                                     onSelect={async (userId: string) => {
                                 try {
                                     if (authClient?.loginAs) {
@@ -692,7 +700,7 @@ const ConfiguredAuth = () => {
                                             { userId },
                                             {
                                                 headers: {
-                                                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY}`,
+                                                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ''}`,
                                                 },
                                             }
                                         )
@@ -701,7 +709,7 @@ const ConfiguredAuth = () => {
                                     }
 
                                     const apiBase =
-                                        process.env.NEXT_PUBLIC_API_URL || ''
+                                        process.env.NEXT_PUBLIC_API_URL ?? ''
                                     const url =
                                         (apiBase.replace(/\/$/, '') || '') +
                                         '/api/auth/dev/login-as'
@@ -710,7 +718,7 @@ const ConfiguredAuth = () => {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
-                                            Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY}`,
+                                            Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ''}`,
                                         },
                                         body: JSON.stringify({ userId }),
                                     })
@@ -729,7 +737,7 @@ const ConfiguredAuth = () => {
 
                                     const data = await resp.json()
                                     alert(
-                                        `Logged as ${data.user?.id} - session: ${data.session?.id}`
+                                        `Logged as ${String(data.user?.id)} - session: ${String(data.session?.id)}`
                                     )
                                 } catch (err) {
                                     console.error('Login as error', err)
@@ -741,7 +749,9 @@ const ConfiguredAuth = () => {
             </div>
 
             <button
-                onClick={fetchAuthConfig}
+                onClick={() => {
+                    void fetchAuthConfig()
+                }}
                 className="rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
                 disabled={loading}
             >
@@ -766,7 +776,7 @@ function UserSelector({
     onSelect,
     onSearchChange,
 }: {
-    users: Array<{ id: string; name?: string; email: string }>
+    users: { id: string; name?: string; email: string }[]
     loading: boolean
     selectedUserId?: string | null
     selectedUserName?: string | null
@@ -783,7 +793,7 @@ function UserSelector({
 
     const frameworks = users.map((u) => ({
         value: u.id,
-        label: u.name || u.email,
+        label: u.name ?? u.email,
     }))
 
     // Ensure the selected user is always present in the list, even if the
@@ -791,7 +801,7 @@ function UserSelector({
     if (selectedUserId) {
         const exists = frameworks.find((f) => f.value === selectedUserId)
         if (!exists) {
-            frameworks.unshift({ value: selectedUserId, label: selectedUserName || selectedUserId })
+            frameworks.unshift({ value: selectedUserId, label: selectedUserName ?? selectedUserId })
         }
     }
 
@@ -923,7 +933,7 @@ const DrizzleStudioPluginComponent = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() =>
-                                    reloadIframe('drizzle-studio-iframe')
+                                    { reloadIframe('drizzle-studio-iframe'); }
                                 }
                             >
                                 Reload
@@ -953,7 +963,7 @@ const DrizzleStudioPlugin: TanStackDevtoolsReactPlugin = {
 
 // API URL Reference Plugin Component
 const ApiUrlPluginComponent = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || ''
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? ''
     const referenceUrl = apiUrl ? `${apiUrl.replace(/\/$/, '')}/reference` : ''
     const [status, setStatus] = useState<string>('unknown')
     const [checking, setChecking] = useState(false)
@@ -982,7 +992,7 @@ const ApiUrlPluginComponent = () => {
         try {
             const resp = await fetch(apiUrl + '/health', { method: 'GET' })
             setStatus(
-                resp.ok ? `OK (${resp.status})` : `Error (${resp.status})`
+                resp.ok ? `OK (${String(resp.status)})` : `Error (${String(resp.status)})`
             )
         } catch (err) {
             console.error('Health check error:', err)
@@ -993,7 +1003,7 @@ const ApiUrlPluginComponent = () => {
     }, [apiUrl])
 
     React.useEffect(() => {
-        if (apiUrl) checkHealth()
+        if (apiUrl) void checkHealth()
     }, [apiUrl, checkHealth])
 
     return (
@@ -1028,7 +1038,7 @@ const ApiUrlPluginComponent = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={() =>
-                                    reloadIframe('api-reference-iframe')
+                                    { reloadIframe('api-reference-iframe'); }
                                 }
                             >
                                 Reload Reference
@@ -1112,7 +1122,7 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
 
     const handleProvider = (
         children: React.ReactNode,
-        index: number = 0
+        index = 0
     ): React.ReactNode => {
         const Provider = providers[index]
         if (!Provider) return children

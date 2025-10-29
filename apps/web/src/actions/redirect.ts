@@ -2,6 +2,6 @@
 
 import { redirect as r } from 'next/navigation'
 
-export default async function redirect(to: string) {
+export default function redirect(to: string) {
     return r(to)
 }

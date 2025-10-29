@@ -21,8 +21,10 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
         const onStorage = (e: StorageEvent) => {
             if (e.key === 'master-token-changed' && e.newValue) {
                 try {
-                    const parsed = JSON.parse(e.newValue)
-                    MasterTokenManager.change(Boolean(parsed?.value))
+                    const parsed = JSON.parse(e.newValue) as {
+                        value: boolean
+                    }
+                    MasterTokenManager.change(parsed.value)
                 } catch {
                     // ignore
                 }
@@ -31,7 +33,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
 
         const onCustom = (e: Event) => {
             const cev = e as CustomEvent
-            if (cev?.detail && typeof cev.detail.value !== 'undefined') {
+            if (typeof cev.detail?.value !== 'undefined') {
                 MasterTokenManager.change(Boolean(cev.detail.value))
             }
         }
@@ -39,7 +41,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
         window.addEventListener('storage', onStorage)
         window.addEventListener('master-token-changed', onCustom as EventListener)
         const unsub = MasterTokenManager.onStateChange((v) => {
-            setEnabledState(Boolean(v))
+            setEnabledState(v)
             if (!v) {
                 toast('Master token mode disabled')
             }
@@ -53,7 +55,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
     }, [])
 
     useEffect(() => {
-        void refetch()
+        refetch()
     }, [enabled, refetch])
 
     return (

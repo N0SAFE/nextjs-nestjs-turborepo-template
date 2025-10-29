@@ -73,7 +73,7 @@ export function transformUseReturn<
         ctx: FunctionContext<TParams, TPageParam, TQueryKey>
     ) => TQueryFnData | Promise<TQueryFnData>,
     transformFunc: (data: TQueryFnData) => TNewQueryFnData,
-    addToQueryKey: boolean = true
+    addToQueryKey = true
 ) {
     return toFunc(function ({
         queryKey: _queryKey,
@@ -85,7 +85,7 @@ export function transformUseReturn<
                       ...ctx,
                       queryKey: [
                           ..._queryKey,
-                          atob?.('transformUseReturn') ||
+                          atob('transformUseReturn') ||
                               'transformUseReturn' /** create a unique hash for this specific function */,
                       ],
                   }
@@ -99,9 +99,9 @@ export function transformUseReturn<
             >
         )
         if (data instanceof Promise) {
-            return data.then(transformFunc) as Promise<TNewQueryFnData>
+            return data.then(transformFunc)
         } else {
-            return transformFunc(data) as TNewQueryFnData
+            return transformFunc(data)
         }
     })
 }
@@ -127,7 +127,7 @@ export function addUseQueryKey<
         ...ctx
     }: FunctionContext<TParams, TPageParam, TQueryKey>) {
         return func({
-            queryKey: [...(_queryKey ?? []), ...queryKey],
+            queryKey: [..._queryKey, ...queryKey],
             ...ctx,
         } as unknown as FunctionContext<TParams, TPageParam, TQueryKey>)
     })
@@ -193,7 +193,7 @@ export function toAdvancedUseQuery<
                 queryFn: (ctx) =>
                     func({
                         ...ctx,
-                        params: options.params || [],
+                        params: options.params ?? [],
                     } as FunctionContext<TParams, TPageParam, TQueryKey>),
                 queryKey: [
                     ...(options.queryKey ?? []),
@@ -331,7 +331,7 @@ export function toUseQuery<
         TQueryKey,
         TParams,
         TPageParam
-    >(({ params }) => func(...(params as TParams))) // add a function withDefault to add default params to this function (toUseQuery().withDefault({queryKey: ['example']})({params: [1]})
+    >(({ params }) => func(...(params))) // add a function withDefault to add default params to this function (toUseQuery().withDefault({queryKey: ['example']})({params: [1]})
 }
 
 export function toAdvancedUseSuspenseQuery<
@@ -394,7 +394,7 @@ export function toAdvancedUseSuspenseQuery<
                 queryFn: (ctx) =>
                     func({
                         ...ctx,
-                        params: options.params || [],
+                        params: options.params ?? [],
                     } as FunctionContext<TParams, TPageParam, TQueryKey>),
                 queryKey: [
                     ...(options.queryKey ?? []),
@@ -538,7 +538,7 @@ export function toUseSuspenseQuery<
         TQueryKey,
         TParams,
         TPageParam
-    >(({ params }) => func(...(params as TParams))) // add a function withDefault to add default params to this function (toUseQuery().withDefault({queryKey: ['example']})({params: [1]})
+    >(({ params }) => func(...(params))) // add a function withDefault to add default params to this function (toUseQuery().withDefault({queryKey: ['example']})({params: [1]})
 }
 
 export function toUseMutation<
@@ -644,7 +644,7 @@ export function toAdvancedUseInfiniteQuery<
             queryFn: (ctx) =>
                 func({
                     ...ctx,
-                    params: options.params || [],
+                    params: options.params ?? [],
                 } as FunctionContext<TParams, TPageParam, TQueryKey>),
             queryKey: [...(options.queryKey ?? []), ...(options.params ?? [])],
         }) as Options extends DefinedInitialDataInfiniteOptions<

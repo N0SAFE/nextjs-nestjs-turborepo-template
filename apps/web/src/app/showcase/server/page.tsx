@@ -11,7 +11,7 @@ import { Appshowcase, AppshowcaseClient } from '@/routes'
 import { ArrowLeft, Server, Zap, Shield, Globe } from 'lucide-react'
 import ServerSideShowcase from './ServerSide'
 
-const ShowcaseServerPage: React.FC = async function ShowcaseServerPage() {
+const ShowcaseServerPage: React.FC = function ShowcaseServerPage() {
     return (
         <div className="container mx-auto space-y-8 px-4 py-8">
             {/* Back Navigation */}

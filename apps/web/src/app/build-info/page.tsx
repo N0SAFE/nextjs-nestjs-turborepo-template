@@ -3,7 +3,7 @@
 import Link from 'next/link'
 
 // This function runs at build time and makes the page static
-export default async function BuildInfoPage() {
+export default function BuildInfoPage() {
     "use cache"
     
     // This timestamp is captured at build time

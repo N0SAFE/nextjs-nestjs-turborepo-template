@@ -21,7 +21,7 @@ import {
 import ServerSideShowcase from './server/ServerSide'
 import ClientSideShowcase from './client/ClientSide'
 
-const ShowcasePage: React.FC = async function ShowcasePage() {
+const ShowcasePage: React.FC = function ShowcasePage() {
     return (
         <div className="container mx-auto space-y-8 px-4 py-8">
             {/* Back Navigation */}

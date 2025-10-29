@@ -8,6 +8,6 @@ import React from "react";
 export const DynamicTanstackDevTools = process.env.NODE_ENV === 'development' && process.env.PHASE !== PHASE_PRODUCTION_BUILD ? dynamic(
     () => import('./TanStackDevTools').then((mod) => mod.TanStackDevTools),
     { ssr: false }
-) as React.ComponentType<TanStackDevToolsProps> : dynamic(
+) : dynamic(
     () => Promise.resolve(() => null)
 )

@@ -13,18 +13,19 @@ export function stackMiddlewares(
     index = 0
 ): CustomNextMiddleware {
     const current = functions[index]
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (current) {
         const next = stackMiddlewares(functions, config, index + 1)
         if (typeof current === 'function') {
             return async (req, _next) => {
                 try {
-                    debugMiddleware(`Executing function middleware at index ${index}`, {
+                    debugMiddleware(`Executing function middleware at index ${String(index)}`, {
                         path: req.nextUrl.pathname,
                         index
                     })
                     return await current(next)(req, _next)
                 } catch (error) {
-                    debugMiddlewareError(`Function middleware at index ${index} failed:`, {
+                    debugMiddlewareError(`Function middleware at index ${String(index)} failed:`, {
                         error: error instanceof Error ? error.message : error,
                         stack: error instanceof Error ? error.stack : undefined,
                         path: req.nextUrl.pathname,
@@ -36,7 +37,7 @@ export function stackMiddlewares(
         }
         const { default: middleware, matcher, config: middlewareConfig } = current
         return async (req, _next) => {
-            const middlewareName = middlewareConfig?.name || 'Unknown middleware'
+            const middlewareName = middlewareConfig?.name ?? 'Unknown middleware'
             try {
                 debugMiddleware(`Executing middleware: ${middlewareName}`, {
                     path: req.nextUrl.pathname,
@@ -65,6 +66,7 @@ export function stackMiddlewares(
                         })
                         return await middleware(next)(req, _next, {
                             key: matched.data,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                             ctx: ctx[matched.data],
                         })
                     }
@@ -96,7 +98,7 @@ export function stackMiddlewares(
                 })
                 return await next(req, _next)
             } catch (error) {
-                debugMiddlewareError(`${middlewareName} at index ${index} failed:`, {
+                debugMiddlewareError(`${middlewareName} at index ${String(index)} failed:`, {
                     error: error instanceof Error ? error.message : error,
                     stack: error instanceof Error ? error.stack : 'No stack trace available',
                     path: req.nextUrl.pathname,

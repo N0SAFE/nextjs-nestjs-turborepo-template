@@ -9,7 +9,7 @@ export async function getServerSession(h: ReadonlyHeaders) {
   const session = await authClient.getSession({
     fetchOptions: {
       headers: {
-        cookie: h.get('cookie') || '',
+        cookie: h.get('cookie') ?? '',
       },
     },
   })

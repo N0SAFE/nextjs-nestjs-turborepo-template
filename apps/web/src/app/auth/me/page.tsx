@@ -45,12 +45,8 @@ import {
 } from 'lucide-react'
 import { authClient, useSession } from '@/lib/auth'
 import { Spinner } from '@repo/ui/components/atomics/atoms/Icon'
-
-type PasskeyData = Awaited<ReturnType<typeof authClient.passkey.listUserPasskeys>>['data']
-type Passkey = NonNullable<PasskeyData>[number]
-
-type SessionData = Awaited<ReturnType<typeof authClient.listSessions>>['data']
-type SessionItem = NonNullable<SessionData>[number]
+import { Passkey } from 'better-auth/plugins/passkey'
+import { Session } from 'better-auth'
 
 const ProfilePage: React.FC = () => {
     const { data: session } = useSession()
@@ -67,10 +63,10 @@ const ProfilePage: React.FC = () => {
     const [passkeySupported, setPasskeySupported] = React.useState(false)
     
     // Session state  
-    const [sessions, setSessions] = React.useState<SessionItem[]>([])
+    const [sessions, setSessions] = React.useState<Session[]>([])
     const [sessionLoading, setSessionLoading] = React.useState(true)
     const [isSessionDeleteModalOpen, setIsSessionDeleteModalOpen] = React.useState(false)
-    const [selectedSession, setSelectedSession] = React.useState<SessionItem | null>(null)
+    const [selectedSession, setSelectedSession] = React.useState<Session | null>(null)
     const [showSessionTokens, setShowSessionTokens] = React.useState<Record<string, boolean>>({})
     
     // Global state
@@ -95,9 +91,9 @@ const ProfilePage: React.FC = () => {
             setError('')
             const result = await authClient.passkey.listUserPasskeys()
             if (result.error) {
-                setError(result.error.message || 'Failed to load passkeys')
+                setError(result.error.message ?? 'Failed to load passkeys')
             } else {
-                setPasskeys((result.data || []) as Passkey[])
+                setPasskeys((result.data ?? []))
             }
         } catch (err) {
             console.error('Error loading passkeys:', err)
@@ -118,9 +114,9 @@ const ProfilePage: React.FC = () => {
             setError('')
             const result = await authClient.listSessions()
             if (result.error) {
-                setError(result.error.message || 'Failed to load sessions')
+                setError(result.error.message ?? 'Failed to load sessions')
             } else {
-                setSessions((result.data || []) as SessionItem[])
+                setSessions((result.data ?? []) as SessionItem[])
             }
         } catch (err) {
             console.error('Error loading sessions:', err)
@@ -131,8 +127,8 @@ const ProfilePage: React.FC = () => {
     }, [session?.user])
 
     React.useEffect(() => {
-        loadPasskeys()
-        loadSessions()
+        void loadPasskeys()
+        void loadSessions()
     }, [loadPasskeys, loadSessions])
 
     const handleAddPasskey = async () => {
@@ -150,7 +146,7 @@ const ProfilePage: React.FC = () => {
             })
             
             if (result?.error) {
-                setError(result.error.message || 'Failed to add passkey')
+                setError(result.error.message ?? 'Failed to add passkey')
             } else {
                 setSuccess('Passkey added successfully!')
                 setNewPasskeyName('')
@@ -177,7 +173,7 @@ const ProfilePage: React.FC = () => {
             })
             
             if (result.error) {
-                setError(result.error.message || 'Failed to delete passkey')
+                setError(result.error.message ?? 'Failed to delete passkey')
             } else {
                 setSuccess('Passkey deleted successfully!')
                 await loadPasskeys()
@@ -205,7 +201,7 @@ const ProfilePage: React.FC = () => {
             })
             
             if (result.error) {
-                setError(result.error.message || 'Failed to update passkey')
+                setError(result.error.message ?? 'Failed to update passkey')
             } else {
                 setSuccess('Passkey updated successfully!')
                 await loadPasskeys()
@@ -233,7 +229,7 @@ const ProfilePage: React.FC = () => {
             })
             
             if (result.error) {
-                setError(result.error.message || 'Failed to revoke session')
+                setError(result.error.message ?? 'Failed to revoke session')
             } else {
                 setSuccess('Session revoked successfully!')
                 await loadSessions()
@@ -254,7 +250,7 @@ const ProfilePage: React.FC = () => {
             const result = await authClient.revokeOtherSessions()
             
             if (result.error) {
-                setError(result.error.message || 'Failed to revoke other sessions')
+                setError(result.error.message ?? 'Failed to revoke other sessions')
             } else {
                 setSuccess('All other sessions revoked successfully!')
                 await loadSessions()
@@ -325,10 +321,10 @@ const ProfilePage: React.FC = () => {
         return 'Unknown Browser'
     }
 
-    const getLocationInfo = (ipAddress?: string) => {
+    const getSessionLocation = (ipAddress: string) => {
         // In a real app, you might want to do IP geolocation
         // For now, just show the IP or a placeholder
-        return ipAddress || 'Unknown Location'
+        return ipAddress ?? 'Unknown Location'
     }
 
     const isCurrentSession = (sessionToken: string) => {
@@ -344,7 +340,7 @@ const ProfilePage: React.FC = () => {
 
     const openPasskeyEditModal = (passkey: Passkey) => {
         setSelectedPasskey(passkey)
-        setEditPasskeyName(passkey.name || '')
+        setEditPasskeyName(passkey.name ?? '')
         setIsPasskeyEditModalOpen(true)
     }
 
@@ -353,7 +349,7 @@ const ProfilePage: React.FC = () => {
         setIsPasskeyDeleteModalOpen(true)
     }
 
-    const openSessionDeleteModal = (session: SessionItem) => {
+    const openSessionDeleteModal = (session: Session) => {
         setSelectedSession(session)
         setIsSessionDeleteModalOpen(true)
     }
@@ -515,7 +511,7 @@ const ProfilePage: React.FC = () => {
                                                                         <Key className="h-3 w-3" />
                                                                         <span>Token:</span>
                                                                         <button
-                                                                            onClick={() => toggleSessionToken(sessionItem.id)}
+                                                                            onClick={() => { toggleSessionToken(sessionItem.id); }}
                                                                             className="flex items-center gap-1 text-xs hover:text-foreground"
                                                                         >
                                                                             {showSessionTokens[sessionItem.id] ? (
@@ -542,7 +538,7 @@ const ProfilePage: React.FC = () => {
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
-                                                                onClick={() => openSessionDeleteModal(sessionItem)}
+                                                                onClick={() => { openSessionDeleteModal(sessionItem); }}
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -615,7 +611,7 @@ const ProfilePage: React.FC = () => {
                                                     id="passkey-name"
                                                     placeholder={`${getDeviceTypeName()} - ${new Date().toLocaleDateString()}`}
                                                     value={newPasskeyName}
-                                                    onChange={(e) => setNewPasskeyName(e.target.value)}
+                                                    onChange={(e) => { setNewPasskeyName(e.target.value); }}
                                                     className="mt-1"
                                                 />
                                             </div>
@@ -677,7 +673,7 @@ const ProfilePage: React.FC = () => {
                                                             {getDeviceIcon(passkey.deviceType)}
                                                             <div>
                                                                 <h4 className="font-medium">
-                                                                    {passkey.name || 'Unnamed Passkey'}
+                                                                    {passkey.name ?? 'Unnamed Passkey'}
                                                                 </h4>
                                                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                                     <Clock className="h-3 w-3" />
@@ -698,14 +694,14 @@ const ProfilePage: React.FC = () => {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => openPasskeyEditModal(passkey)}
+                                                            onClick={() => { openPasskeyEditModal(passkey); }}
                                                         >
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="destructive"
                                                             size="sm"
-                                                            onClick={() => openPasskeyDeleteModal(passkey)}
+                                                            onClick={() => { openPasskeyDeleteModal(passkey); }}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -750,7 +746,7 @@ const ProfilePage: React.FC = () => {
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsSessionDeleteModalOpen(false)}
+                            onClick={() => { setIsSessionDeleteModalOpen(false); }}
                         >
                             Cancel
                         </Button>
@@ -779,7 +775,7 @@ const ProfilePage: React.FC = () => {
                             <Input
                                 id="edit-passkey-name"
                                 value={editPasskeyName}
-                                onChange={(e) => setEditPasskeyName(e.target.value)}
+                                onChange={(e) => { setEditPasskeyName(e.target.value); }}
                                 placeholder="Enter a name for this passkey"
                             />
                         </div>
@@ -787,7 +783,7 @@ const ProfilePage: React.FC = () => {
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsPasskeyEditModalOpen(false)}
+                            onClick={() => { setIsPasskeyEditModalOpen(false); }}
                         >
                             Cancel
                         </Button>
@@ -815,7 +811,7 @@ const ProfilePage: React.FC = () => {
                             {selectedPasskey && getDeviceIcon(selectedPasskey.deviceType)}
                             <div>
                                 <p className="font-medium">
-                                    {selectedPasskey?.name || 'Unnamed Passkey'}
+                                    {selectedPasskey?.name ?? 'Unnamed Passkey'}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                     {selectedPasskey && formatDate(selectedPasskey.createdAt)}
@@ -826,7 +822,7 @@ const ProfilePage: React.FC = () => {
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsPasskeyDeleteModalOpen(false)}
+                            onClick={() => { setIsPasskeyDeleteModalOpen(false); }}
                         >
                             Cancel
                         </Button>

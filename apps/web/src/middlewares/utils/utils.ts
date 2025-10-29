@@ -114,7 +114,7 @@ export function matcherHandler<
             const data = callback()
             if (options?.multiple) {
                 status.data = [
-                    ...((status.data || []) as ReturnType<Callback>[]),
+                    ...((status.data ?? []) as ReturnType<Callback>[]),
                     data,
                 ]
             } else {

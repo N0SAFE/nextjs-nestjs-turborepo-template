@@ -32,7 +32,7 @@ describe('TanStack Query utilities', () => {
     })
 
     describe('toUseQuery', () => {
-        it('should create a query hook from a function', async () => {
+        it('should create a query hook from a function', () => {
             const mockFetch = vi.fn().mockResolvedValue({ id: 1, name: 'John' })
             const useUser = toUseQuery((id: number) => mockFetch(id))
 
@@ -44,7 +44,7 @@ describe('TanStack Query utilities', () => {
             expect(mockFetch).toHaveBeenCalledWith(1)
         })
 
-        it('should handle query parameters correctly', async () => {
+        it('should handle query parameters correctly', () => {
             const mockFetch = vi
                 .fn()
                 .mockResolvedValue([{ id: 1, comment: 'test' }])
@@ -61,7 +61,7 @@ describe('TanStack Query utilities', () => {
             expect(mockFetch).toHaveBeenCalledWith(1, 2)
         })
 
-        it('should support query options', async () => {
+        it('should support query options', () => {
             const mockFetch = vi.fn().mockResolvedValue({ id: 1, name: 'John' })
             const useUser = toUseQuery((id: number) => mockFetch(id))
 
@@ -81,7 +81,7 @@ describe('TanStack Query utilities', () => {
     })
 
     describe('toUseMutation', () => {
-        it('should create a mutation hook from a function', async () => {
+        it('should create a mutation hook from a function', () => {
             const mockCreate = vi
                 .fn()
                 .mockResolvedValue({ id: 1, name: 'John' })
@@ -131,7 +131,7 @@ describe('TanStack Query utilities', () => {
     })
 
     describe('transformations', () => {
-        it('should support parameter transformation', async () => {
+        it('should support parameter transformation', () => {
             const mockFetch = vi
                 .fn()
                 .mockResolvedValue({ id: 1, comment: 'test' })
@@ -154,7 +154,7 @@ describe('TanStack Query utilities', () => {
             expect(mockFetch).toHaveBeenCalledWith(1, 123)
         })
 
-        it('should support return transformation', async () => {
+        it('should support return transformation', () => {
             const mockFetch = vi
                 .fn()
                 .mockResolvedValue({ firstName: 'John', lastName: 'Doe' })
@@ -162,7 +162,7 @@ describe('TanStack Query utilities', () => {
 
             const useUserFullName = useUser.transformReturn((user) => ({
                 ...user,
-                fullName: `${user.firstName} ${user.lastName}`,
+                fullName: `${String(user.firstName)} ${String(user.lastName)}`,
             }))
 
             const { result } = renderHook(
@@ -174,7 +174,7 @@ describe('TanStack Query utilities', () => {
             expect(mockFetch).toHaveBeenCalledWith(1)
         })
 
-        it('should support adding query keys', async () => {
+        it('should support adding query keys', () => {
             const mockFetch = vi.fn().mockResolvedValue({ id: 1, name: 'John' })
             const useUser = toUseQuery((id: number) => mockFetch(id))
 

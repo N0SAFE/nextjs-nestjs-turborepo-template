@@ -69,7 +69,7 @@ const LoginPage: React.FC = () => {
             }
         }
 
-        checkPasskeySupport()
+        void checkPasskeySupport()
     }, [])
 
     const onSubmit = async (
@@ -84,7 +84,7 @@ const LoginPage: React.FC = () => {
         if (res?.error) {
             console.log(res)
             // Handle both string and object error types
-            const errorMessage = res.error.message || 'Authentication failed'
+            const errorMessage = res.error.message ?? 'Authentication failed'
             setError(errorMessage)
             setIsLoading(false)
         } else {
@@ -106,7 +106,7 @@ const LoginPage: React.FC = () => {
             })
             
             if (res?.error) {
-                const errorMessage = res.error.message || 'Passkey authentication failed'
+                const errorMessage = res.error.message ?? 'Passkey authentication failed'
                 setError(errorMessage)
             } else {
                 redirect(searchParams.callbackUrl ?? '/')
@@ -142,7 +142,9 @@ const LoginPage: React.FC = () => {
                     <CardContent>
                         <Form {...form}>
                             <form
-                                onSubmit={form.handleSubmit(onSubmit)}
+                                onSubmit={(e) => {
+                                    void form.handleSubmit(onSubmit)(e)
+                                }}
                                 className="space-y-6"
                             >
                                 <div className="space-y-4">

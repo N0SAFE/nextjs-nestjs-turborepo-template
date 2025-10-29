@@ -2,7 +2,7 @@ import { authClient } from '../..'
 import type { MasterTokenManager as _MasterTokenManager } from './state'
 
 // The runtime plugin exposes these actions on the auth client.
-export type MasterTokenActions = {
+export interface MasterTokenActions {
   masterTokenSignOut: typeof authClient.signOut
   getMasterTokenEnabled: typeof import('./state').getMasterTokenEnabled
   setMasterTokenEnabled: typeof import('./state').setMasterTokenEnabled

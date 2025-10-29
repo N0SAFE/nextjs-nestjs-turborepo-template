@@ -134,7 +134,7 @@ const withHealthCheck: MiddlewareFactory = (next: NextProxy) => {
 
         if (request.nextUrl.pathname === errorPageRenderingPath) {
             const redirectUrl =
-                request.nextUrl.searchParams.get('from') ||
+                request.nextUrl.searchParams.get('from') ??
                 request.nextUrl.origin + '/'
             debugHealthCheck(
                 'Redirecting from health check error page to origin',

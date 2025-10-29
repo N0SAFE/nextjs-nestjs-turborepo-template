@@ -39,7 +39,7 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
 
         // Get session using Better Auth directly
         let sessionCookie: string | null = null
-        let sessionError: Error | unknown = null
+        let sessionError: unknown = null
         const startTime = Date.now()
 
         try {
@@ -58,7 +58,7 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
             debugAuthError('Error getting session from Better Auth:', {
                 error: error instanceof Error ? error.message : error,
                 stack: error instanceof Error ? error.stack : undefined,
-                duration: `${duration}ms`,
+                duration: `${String(duration)}ms`,
                 errorType: error instanceof Error ? error.constructor.name : typeof error,
             })
         }
@@ -71,7 +71,7 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
             sessionCookie
         })
 
-        debugAuth(`Session result - isAuth: ${isAuth}, hasError: ${!!sessionError}`, {
+        debugAuth(`Session result - isAuth: ${String(isAuth)}, hasError: ${String(!!sessionError)}`, {
             path: request.nextUrl.pathname,
             isAuth,
             hasError: !!sessionError

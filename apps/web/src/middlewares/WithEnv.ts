@@ -25,7 +25,7 @@ const withEnv: MiddlewareFactory = (next: NextProxy) => {
                 errorPageRenderingPath,
                 () => {
                     if (isValid) {
-                        const redirectUrl = request.nextUrl.searchParams.get('from') ||
+                        const redirectUrl = request.nextUrl.searchParams.get('from') ??
                             request.nextUrl.origin + '/'
                         debugEnv('Redirecting from error page to valid URL', {
                             from: errorPageRenderingPath,
@@ -42,7 +42,7 @@ const withEnv: MiddlewareFactory = (next: NextProxy) => {
                         debugEnv('Environment valid, proceeding to next middleware')
                         return next(request, _next)
                     }
-                    if (process.env?.NODE_ENV === 'development') {
+                    if (process.env.NODE_ENV === 'development') {
                         const errorUrl = toAbsoluteUrl(
                             Middlewareerrorenv({}, {
                                 from: request.url

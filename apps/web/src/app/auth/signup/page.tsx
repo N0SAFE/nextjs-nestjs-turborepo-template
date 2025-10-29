@@ -61,7 +61,7 @@ const SignupPage: React.FC = () => {
         
         if (res?.error) {
             // Handle both string and object error types
-            const errorMessage = res.error.message || 'Registration failed'
+            const errorMessage = res.error.message ?? 'Registration failed'
             setError(errorMessage)
             setIsLoading(false)
         } else {
@@ -95,7 +95,9 @@ const SignupPage: React.FC = () => {
                     <CardContent>
                         <Form {...form}>
                             <form
-                                onSubmit={form.handleSubmit(onSubmit)}
+                                onSubmit={(e) => {
+                                    void form.handleSubmit(onSubmit)(e)
+                                }}
                                 className="space-y-6"
                             >
                                 <div className="space-y-4">

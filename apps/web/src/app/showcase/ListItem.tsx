@@ -5,7 +5,7 @@ import React from 'react'
 import z from 'zod/v4'
 
 
-type ListItemShowcaseProps = {
+interface ListItemShowcaseProps {
     users?: z.infer<typeof userSchema>[]
 }
 

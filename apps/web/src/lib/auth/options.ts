@@ -1,4 +1,4 @@
-import { ClientOptions } from 'better-auth'
+import { BetterAuthClientOptions } from 'better-auth'
 import masterTokenClient from './plugins/masterToken'
 import { loginAsClientPlugin } from './plugins/loginAs'
 import { passkeyClient } from 'better-auth/client/plugins'
@@ -13,4 +13,4 @@ export const options = {
     basePath: '/api/auth',
     baseURL: appUrl,
     plugins: [passkeyClient(), masterTokenClient(), loginAsClientPlugin()],
-} satisfies ClientOptions
+} satisfies BetterAuthClientOptions

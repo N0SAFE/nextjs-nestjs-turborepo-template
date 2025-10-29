@@ -10,8 +10,8 @@ import { emptySchema, RouteBuilder } from './makeRoute'
 type PushOptions = Parameters<ReturnType<typeof useRouter>['push']>[1]
 
 export function usePush<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema = typeof emptySchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType = typeof emptySchema,
 >(builder: RouteBuilder<Params, Search>) {
     const { push } = useRouter()
     return (
@@ -24,8 +24,8 @@ export function usePush<
 }
 
 export function useParams<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema = typeof emptySchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType = typeof emptySchema,
 >(builder: RouteBuilder<Params, Search>): z.output<Params> {
     const res = builder.paramsSchema.safeParse(useNextParams())
     if (!res.success) {
@@ -37,10 +37,10 @@ export function useParams<
 }
 
 export function useSearchParams<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema = typeof emptySchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType = typeof emptySchema,
 >(builder: RouteBuilder<Params, Search>): z.output<Search> {
-    const res = builder.searchSchema!.safeParse(
+    const res = builder.searchSchema.safeParse(
         convertURLSearchParamsToObject(useNextSearchParams())
     )
     if (!res.success) {

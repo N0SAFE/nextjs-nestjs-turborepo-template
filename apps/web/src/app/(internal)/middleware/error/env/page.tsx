@@ -21,7 +21,7 @@ function renderInvalidType(issue: $ZodIssueInvalidType) {
             <div className="flex justify-between gap-2">
                 <div className="text-sm text-gray-500">Expected Type: </div>
                 <div className="text-sm text-red-500">
-                    {issue.expected.toString()}
+                    {issue.expected}
                 </div>
             </div>{' '}
         </div>
@@ -53,7 +53,7 @@ export default async function EnvPage(props: {
                 </Card>
                 <RedirectAfterDelay
                     delay={3000}
-                    to={searchParams.redirect || '/'}
+                    to={searchParams.redirect ?? '/'}
                 />
             </div>
         )

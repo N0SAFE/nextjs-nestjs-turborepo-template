@@ -10,5 +10,5 @@ export const handleError = (error: string, cause: unknown) => {
 }
 
 export function toAbsoluteUrl(path: string) {
-    return `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '')}${path}`
+    return `${(process.env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '')}${path}`
 }

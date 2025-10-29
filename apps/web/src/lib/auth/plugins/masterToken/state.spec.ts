@@ -41,7 +41,7 @@ describe('master token state utilities', () => {
 
         const stored = localStorage.getItem('master-token')
         expect(stored).toBeTruthy()
-        const parsed = JSON.parse(stored as string)
+        const parsed = JSON.parse(stored!)
         expect(parsed.value).toBe(true)
     })
 
@@ -56,7 +56,7 @@ describe('master token state utilities', () => {
         clearMasterToken()
 
         expect(getMasterTokenEnabled()).toBe(false)
-        const stored = JSON.parse(localStorage.getItem('master-token') || '{}')
+        const stored = JSON.parse(localStorage.getItem('master-token') ?? '{}')
         expect(stored.value).toBe(false)
 
         // event dispatched

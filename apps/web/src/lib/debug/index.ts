@@ -22,7 +22,7 @@ interface DebugConfig {
  */
 function expandBracePattern(pattern: string): string[] {
     // Check if pattern contains braces
-    const braceMatch = pattern.match(/^(.+?)\{([^}]+)\}(.*)$/)
+    const braceMatch = /^(.+?)\{([^}]+)\}(.*)$/.exec(pattern)
     if (!braceMatch) {
         return [pattern] // No braces, return as-is
     }
@@ -115,7 +115,7 @@ export function debug(scopes: string | string[], ...args: unknown[]): void {
  * @returns A debug function that will always use the provided scopes
  */
 export function createDebug(scopes: string | string[]) {
-    return (...args: unknown[]) => debug(scopes, ...args)
+    return (...args: unknown[]) => { debug(scopes, ...args); }
 }
 
 /**

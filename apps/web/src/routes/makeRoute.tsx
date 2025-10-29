@@ -14,27 +14,27 @@ export { emptySchema }
 
 type LinkProps = Parameters<typeof Link>[0]
 
-export type RouteInfo<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-> = {
+export interface RouteInfo<
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+> {
     name: string
     params: Params
     search: Search
     description?: string
 }
 
-export type GetInfo<Result extends z.ZodSchema> = {
+export interface GetInfo<Result extends z.ZodType> {
     result: Result
 }
 
-export type PostInfo<Body extends z.ZodSchema, Result extends z.ZodSchema> = {
+export interface PostInfo<Body extends z.ZodType, Result extends z.ZodType> {
     body: Body
     result: Result
     description?: string
 }
 
-export type PutInfo<Body extends z.ZodSchema, Result extends z.ZodSchema> = {
+export interface PutInfo<Body extends z.ZodType, Result extends z.ZodType> {
     body: Body
     result: Result
     description?: string
@@ -42,10 +42,10 @@ export type PutInfo<Body extends z.ZodSchema, Result extends z.ZodSchema> = {
 
 type FetchOptions = Parameters<typeof fetch>[1]
 
-type CoreRouteElements<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema = typeof emptySchema,
-> = {
+interface CoreRouteElements<
+    Params extends z.ZodType,
+    Search extends z.ZodType = typeof emptySchema,
+> {
     params: z.output<Params>
     paramsSchema: Params
     search: z.output<Search>
@@ -53,10 +53,10 @@ type CoreRouteElements<
 }
 
 type PutRouteBuilder<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Body extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Body extends z.ZodType,
+    Result extends z.ZodType,
 > = CoreRouteElements<Params, Search> & {
     (
         body: z.input<Body>,
@@ -72,10 +72,10 @@ type PutRouteBuilder<
 }
 
 type PostRouteBuilder<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Body extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Body extends z.ZodType,
+    Result extends z.ZodType,
 > = CoreRouteElements<Params, Search> & {
     (
         body: z.input<Body>,
@@ -91,9 +91,9 @@ type PostRouteBuilder<
 }
 
 type GetRouteBuilder<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Result extends z.ZodType,
 > = CoreRouteElements<Params, Search> & {
     (
         p?: z.input<Params>,
@@ -105,16 +105,14 @@ type GetRouteBuilder<
     resultSchema: Result
 }
 
-type DeleteRouteBuilder<Params extends z.ZodSchema> = CoreRouteElements<
+type DeleteRouteBuilder<Params extends z.ZodType> = CoreRouteElements<
     Params,
-    z.ZodSchema
-> & {
-    (p?: z.input<Params>, options?: FetchOptions): Promise<void>
-}
+    z.ZodType
+> & ((p?: z.input<Params>, options?: FetchOptions) => Promise<void>)
 
 export type RouteBuilder<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
 > = CoreRouteElements<Params, Search> & {
     (p?: z.input<Params>, search?: z.input<Search>): string
 
@@ -147,7 +145,11 @@ function createPathBuilder<T extends Record<string, string | string[]>>(
 
     let catchAllSegment: ((params: T) => string) | null = null
     if (pathArr.at(-1)?.startsWith('[[...')) {
-        const catchKey = pathArr.pop()!.replace('[[...', '').replace(']]', '')
+        const pop = pathArr.pop()
+        if (!pop) {
+            throw new Error('Unexpected empty path segment')
+        }
+        const catchKey = pop.replace('[[...', '').replace(']]', '')
         catchAllSegment = (params: T) => {
             const catchAll = params[catchKey] as unknown as string[]
             return catchAll ? `/${catchAll.join('/')}` : ''
@@ -156,8 +158,8 @@ function createPathBuilder<T extends Record<string, string | string[]>>(
 
     const elems: ((params: T) => string)[] = []
     for (const elem of pathArr) {
-        const catchAll = elem.match(/\[\.\.\.(.*)\]/)
-        const param = elem.match(/\[(.*)\]/)
+        const catchAll = /\[\.\.\.(.*)\]/.exec(elem)
+        const param = /\[(.*)\]/.exec(elem)
         if (catchAll?.[1]) {
             const key = catchAll[1]
             elems.push((params: T) =>
@@ -184,13 +186,13 @@ function createPathBuilder<T extends Record<string, string | string[]>>(
 }
 
 function createRouteBuilder<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
 >(route: string, info: RouteInfo<Params, Search>) {
     const fn = createPathBuilder<Record<string, any>>(route)
 
     return (params?: z.input<Params>, search?: z.input<Search>) => {
-        let checkedParams: any = params || {}
+        let checkedParams: any = params ?? {}
         if (info.params) {
             const safeParams = info.params.safeParse(checkedParams)
             if (!safeParams?.success) {
@@ -202,11 +204,11 @@ function createRouteBuilder<
             }
         }
         const safeSearch = info.search
-            ? info.search?.safeParse(search || {})
+            ? info.search?.safeParse(search ?? {})
             : null
         if (info.search && !safeSearch?.success) {
             throw new Error(
-                `Invalid search params for route ${info.name}: ${safeSearch?.error.message}`
+                `Invalid search params for route ${info.name}: ${String(safeSearch?.error.message)}`
             )
         }
 
@@ -217,10 +219,10 @@ function createRouteBuilder<
 }
 
 export function makePostRoute<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Body extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Body extends z.ZodType,
+    Result extends z.ZodType,
 >(
     route: string,
     info: RouteInfo<Params, Search>,
@@ -246,7 +248,7 @@ export function makePostRoute<
             method: 'POST',
             body: JSON.stringify(safeBody.data),
             headers: {
-                ...(options?.headers || {}),
+                ...(options?.headers ?? {}),
                 'Content-Type': 'application/json',
             },
         })
@@ -282,10 +284,10 @@ export function makePostRoute<
 }
 
 export function makePutRoute<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Body extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Body extends z.ZodType,
+    Result extends z.ZodType,
 >(
     route: string,
     info: RouteInfo<Params, Search>,
@@ -311,7 +313,7 @@ export function makePutRoute<
             method: 'PUT',
             body: JSON.stringify(safeBody.data),
             headers: {
-                ...(options?.headers || {}),
+                ...(options?.headers ?? {}),
                 'Content-Type': 'application/json',
             },
         })
@@ -347,9 +349,9 @@ export function makePutRoute<
 }
 
 export function makeGetRoute<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
-    Result extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    Result extends z.ZodType,
 >(
     route: string,
     info: RouteInfo<Params, Search>,
@@ -393,8 +395,8 @@ export function makeGetRoute<
 }
 
 export function makeDeleteRoute<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType,
 >(route: string, info: RouteInfo<Params, Search>): DeleteRouteBuilder<Params> {
     const urlBuilder = createRouteBuilder(route, info)
 
@@ -420,8 +422,8 @@ export function makeDeleteRoute<
 }
 
 export function makeRoute<
-    Params extends z.ZodSchema,
-    Search extends z.ZodSchema = typeof emptySchema,
+    Params extends z.ZodType,
+    Search extends z.ZodType = typeof emptySchema,
 >(
     route: string,
     info: RouteInfo<Params, Search>

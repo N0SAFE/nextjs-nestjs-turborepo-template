@@ -52,7 +52,7 @@ const ClientSideShowcase: React.FC = function ClientSideShowcase() {
                     <Loader2 className="animate-spin" />{' '}
                 </div>
             )}
-            <ListItemShowcase users={result?.users || []} />
+            <ListItemShowcase users={result?.users ?? []} />
         </Suspense>
     )
 }

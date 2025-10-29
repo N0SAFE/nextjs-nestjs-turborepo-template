@@ -2,9 +2,9 @@
 import { z } from 'zod'
 import { ZodType } from 'zod/v4'
 
-type ParsedData<T> = { error?: string; data?: T }
+interface ParsedData<T> { error?: string; data?: T }
 
-export function safeParseSearchParams<T extends z.ZodTypeAny>(
+export function safeParseSearchParams<T extends z.ZodType>(
     schema: T,
     searchParams: URLSearchParams
 ): any {
@@ -120,7 +120,7 @@ function getAllParamsAsArrays(
 
 function convertToRequiredType(
     values: string[],
-    schema: z.ZodTypeAny
+    schema: z.ZodType
 ): ParsedData<unknown> {
     const usedSchema = getInnerType(schema)
     if (values.length > 1 && !(usedSchema instanceof z.ZodArray)) {
@@ -142,7 +142,7 @@ function parseValues(schema: ZodType, values: string[]): ParsedData<unknown> {
         case z.ZodString:
             return { data: values[0] }
         case z.ZodArray: {
-            const elementSchema = schema._def.type
+            const elementSchema = schema.def.type
             switch (elementSchema.constructor) {
                 case z.ZodNumber:
                     return parseArray(values, parseNumber)
@@ -167,7 +167,7 @@ function getInnerType(schema: any) {
     switch (schema.constructor) {
         case z.ZodOptional:
         case z.ZodDefault:
-            return (schema as any)._def.innerType
+            return (schema).def.innerType
         default:
             return schema
     }
