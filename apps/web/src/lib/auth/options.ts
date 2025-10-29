@@ -5,7 +5,7 @@ import { passkeyClient } from 'better-auth/client/plugins'
 import { validateEnvPath } from '#/env'
 
 const appUrl = validateEnvPath(
-    process.env.NEXT_PUBLIC_APP_URL!,
+    process.env.NEXT_PUBLIC_APP_URL ?? '',
     'NEXT_PUBLIC_APP_URL'
 )
 

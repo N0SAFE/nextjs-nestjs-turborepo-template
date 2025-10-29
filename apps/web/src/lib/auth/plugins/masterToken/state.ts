@@ -60,18 +60,16 @@ export function getMasterTokenKey(): string | null {
 
 export type MasterTokenSubscriber = (value: boolean) => void
 
-export class MasterTokenManager {
-    static state: boolean =
-        typeof window === 'undefined' ? false : getMasterTokenEnabled()
-
-    static subscribers = new Set<MasterTokenSubscriber>()
-
-    static onStateChange(fn: MasterTokenSubscriber) {
+export const MasterTokenManager = {
+    state: typeof window === 'undefined' ? false : getMasterTokenEnabled(),
+    subscribers: new Set<MasterTokenSubscriber>(),
+    
+    onStateChange(fn: MasterTokenSubscriber) {
         MasterTokenManager.subscribers.add(fn)
         return () => MasterTokenManager.subscribers.delete(fn)
-    }
+    },
 
-    static change(value: boolean) {
+    change(value: boolean) {
         try {
             setMasterTokenEnabled(value)
         } catch {

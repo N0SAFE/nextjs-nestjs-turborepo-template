@@ -41,35 +41,37 @@ function isTestFile(filePath: string): boolean {
 
 // Get all TypeScript/TSX files from components, hooks, and lib directories
 async function getFiles(): Promise<string[]> {
-    const glob = new Glob("src/**/*.{ts,tsx}");
+    const glob = new Glob("**/*.{ts,tsx}");
     const files: string[] = [];
 
     // Scan components, hooks, and lib directories
-    for await (const file of glob.scan({ cwd: path.join(packageRoot, "components") })) {
-        const fullPath = path.join("components", file);
+    for await (const file of glob.scan({ cwd: path.join(srcDir, "components") })) {
+        const fullPath = path.join("src/components", file);
         if (!isTestFile(fullPath)) {
             files.push(fullPath);
         }
     }
 
-    for await (const file of glob.scan({ cwd: path.join(packageRoot, "hooks") })) {
-        const fullPath = path.join("hooks", file);
+    for await (const file of glob.scan({ cwd: path.join(srcDir, "hooks") })) {
+        const fullPath = path.join("src", file);
         if (!isTestFile(fullPath)) {
             files.push(fullPath);
         }
     }
 
-    for await (const file of glob.scan({ cwd: path.join(packageRoot, "lib") })) {
-        const fullPath = path.join("lib", file);
+    for await (const file of glob.scan({ cwd: path.join(srcDir, "lib") })) {
+        const fullPath = path.join("src/lib", file);
         if (!isTestFile(fullPath)) {
             files.push(fullPath);
         }
     }
 
     // Add index.ts if it exists and is not a test file
-    if (existsSync(path.join(packageRoot, "index.ts")) && !isTestFile("index.ts")) {
+    if (existsSync(path.join(srcDir, "index.ts")) && !isTestFile("index.ts")) {
         files.push("index.ts");
     }
+    
+    console.log(files)
 
     return files;
 }

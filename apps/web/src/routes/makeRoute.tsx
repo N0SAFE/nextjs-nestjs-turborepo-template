@@ -193,7 +193,7 @@ function createRouteBuilder<
     const fn = createPathBuilder<Record<string, any>>(route)
 
     return (params?: z.input<Params>, search?: z.input<Search>) => {
-        let checkedParams: any = params ?? {}
+        let checkedParams: Partial<z.core.output<Params>> = params ?? {}
         if (info.params) {
             const safeParams = info.params.safeParse(checkedParams)
             if (!safeParams?.success) {
@@ -213,7 +213,7 @@ function createRouteBuilder<
             )
         }
 
-        const baseUrl = fn(checkedParams)
+        const baseUrl = fn(checkedParams as Record<string, any>)
         const searchString = search && queryString.stringify(search)
         return [baseUrl, searchString ? `?${searchString}` : ''].join('')
     }
@@ -249,7 +249,12 @@ export function makePostRoute<
             method: 'POST',
             body: JSON.stringify(safeBody.data),
             headers: {
-                ...(options?.headers ?? {}),
+                ...Array.isArray(options?.headers) ? options.headers.reduce((acc, [key, data]) => {
+                    return {
+                        ...acc,
+                        [key]: data
+                    }
+                }, {}) : options?.headers ?? {},
                 'Content-Type': 'application/json',
             },
         })
@@ -314,7 +319,12 @@ export function makePutRoute<
             method: 'PUT',
             body: JSON.stringify(safeBody.data),
             headers: {
-                ...(options?.headers ?? {}),
+                ...Array.isArray(options?.headers) ? options.headers.reduce((acc, [key, data]) => {
+                    return {
+                        ...acc,
+                        [key]: data
+                    }
+                }, {}) : options?.headers ?? {},
                 'Content-Type': 'application/json',
             },
         })
@@ -470,11 +480,12 @@ export function makeRoute<
         z.input<Params> & {
             search?: z.input<Search>
         } & { children?: React.ReactNode }) {
-        const parsedParams = info.params.parse(props)
+        const parsedParams = info.params.parse(props) as z.core.input<Params>
         const params = parsedParams as Record<string, any>
         const extraProps = { ...props }
         for (const key of Object.keys(params)) {
-            delete (extraProps as any)[key]
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete extraProps[key as keyof typeof props]
         }
         return (
             <Link

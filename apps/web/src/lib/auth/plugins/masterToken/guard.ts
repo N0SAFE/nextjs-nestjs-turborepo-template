@@ -16,7 +16,7 @@ export interface MasterTokenActions {
  * plugin actions when they are present on the object.
  */
 export function hasMasterTokenPlugin(
-  client: typeof authClient | unknown
+  client: typeof authClient
 ): client is typeof authClient & MasterTokenActions {
   const candidate = client as Record<string, unknown>
   // check for a small set of keys that the plugin adds

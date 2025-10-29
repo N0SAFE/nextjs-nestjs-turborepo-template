@@ -13,7 +13,7 @@ import { redirect, RedirectType } from 'next/navigation'
 import { serverAuthClient } from '../auth/server'
 
 const APP_URL = validateEnvPath(
-    process.env.NEXT_PUBLIC_APP_URL!,
+    process.env.NEXT_PUBLIC_APP_URL ?? '',
     'NEXT_PUBLIC_APP_URL'
 )
 
@@ -103,7 +103,7 @@ export function createORPCClientWithCookies() {
         ],
         url:
             typeof window === 'undefined'
-                ? validateEnvPath(process.env.API_URL!, 'API_URL')
+                ? validateEnvPath(process.env.API_URL ?? '', 'API_URL')
                 : `${APP_URL}/api/nest`,
         fetch(request, init, options) {
             return fetch(request, {

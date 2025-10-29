@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { z } from 'zod'
-import { ZodType } from 'zod/v4'
+import { safeParse } from 'zod/v4'
 
 interface ParsedData<T> { error?: string; data?: T }
 
@@ -18,9 +18,9 @@ function processSchema(
     paramsArray: Record<string, string[]>
 ): Record<string, unknown> {
     if (schema instanceof z.ZodOptional) {
-        schema = (schema as any)._def.innerType
+        schema = schema.def.innerType
     }
-    switch (schema.constructor) {
+    switch ((schema as object).constructor) {
         case z.ZodObject: {
             const { shape } = schema as z.ZodObject<z.ZodRawShape>
             return parseShape(shape, paramsArray)
@@ -33,7 +33,7 @@ function processSchema(
                         ...z.ZodObject<z.ZodRawShape>[],
                     ]
                 >
-            )._def
+            ).def
             for (const option of options) {
                 const { shape } = option
                 const requireds = getRequireds(shape)
@@ -75,7 +75,7 @@ function parseShape(
 
     for (const key in shape) {
         if (Object.hasOwn(shape, key)) {
-            const fieldSchema: any = shape[key]
+            const fieldSchema = shape[key]
             if (paramsArray[key]) {
                 const fieldData = convertToRequiredType(
                     paramsArray[key],
@@ -88,7 +88,7 @@ function parseShape(
                     }
                     continue
                 }
-                const result = fieldSchema.safeParse(fieldData.data!)
+                const result = safeParse(fieldSchema, fieldData.data)
                 if (result.success) {
                     parsed[key] = result.data
                 }
@@ -121,7 +121,7 @@ function getAllParamsAsArrays(
 
 function convertToRequiredType(
     values: string[],
-    schema: z.ZodType
+    schema: z.core.$ZodType
 ): ParsedData<unknown> {
     const usedSchema = getInnerType(schema)
     if (values.length > 1 && !(usedSchema instanceof z.ZodArray)) {
@@ -134,7 +134,7 @@ function convertToRequiredType(
     return value
 }
 
-function parseValues(schema: ZodType, values: string[]): ParsedData<unknown> {
+function parseValues(schema: z.core.$ZodType, values: string[]): ParsedData<unknown> {
     switch (schema.constructor) {
         case z.ZodNumber:
             return parseNumber(values[0])
@@ -143,7 +143,7 @@ function parseValues(schema: ZodType, values: string[]): ParsedData<unknown> {
         case z.ZodString:
             return { data: values[0] }
         case z.ZodArray: {
-            const elementSchema = schema.def.type
+            const elementSchema = schema._zod.def.type
             switch (elementSchema.constructor) {
                 case z.ZodNumber:
                     return parseArray(values, parseNumber)
@@ -164,11 +164,11 @@ function parseValues(schema: ZodType, values: string[]): ParsedData<unknown> {
     }
 }
 
-function getInnerType(schema: any) {
+function getInnerType(schema: z.core.$ZodType) {
     switch (schema.constructor) {
         case z.ZodOptional:
         case z.ZodDefault:
-            return (schema).def.innerType
+            return (schema._zod.def as unknown as {innerType: z.core.$ZodType}).innerType
         default:
             return schema
     }
@@ -199,5 +199,5 @@ function parseArray<T>(
     if (error) {
         return { error }
     }
-    return { data: numbers.map((n) => n.data!) }
+    return { data: numbers.filter((n): n is Omit<ParsedData<T>, "data"> & {data: T} => Boolean(n.data)).map((n) => n.data) }
 }

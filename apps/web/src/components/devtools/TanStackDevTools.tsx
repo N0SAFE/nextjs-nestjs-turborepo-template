@@ -65,7 +65,7 @@ const RoutesPluginComponent = () => {
         try {
             const routesModule = await import('@/routes')
 
-            const entries = Object.entries(routesModule) as [string, unknown][]
+            const entries = Object.entries(routesModule) as [string, () => object | string | Promise<object | string> ][]
 
             const list = await Promise.all(
                 entries.map(async ([name, fnOrValue]) => {
@@ -103,9 +103,9 @@ const RoutesPluginComponent = () => {
                                         console.error('getPath error:', er)
                                     }
                                 } else {
-                                    const str = String(awaited)
+                                    const obj = awaited
                                     // avoid default [object Object] if possible
-                                    path = str && str !== '[object Object]' ? str : name
+                                    path = obj && String(obj as unknown) !== '[object Object]' ? String(obj as unknown) : name
                                 }
                             } else {
                                 path = name
@@ -129,9 +129,9 @@ const RoutesPluginComponent = () => {
                     const type: 'API' | 'Page' | 'Unknown' =
                         name.toLowerCase().startsWith('getapi') ||
                         name.toLowerCase().startsWith('api') ||
-                        String(path).startsWith('/api')
+                        path.startsWith('/api')
                             ? 'API'
-                            : String(path).startsWith('/')
+                            : path.startsWith('/')
                             ? 'Page'
                             : 'Unknown'
 
@@ -202,7 +202,7 @@ const RoutesPluginComponent = () => {
                 <div className="max-h-96 overflow-y-auto">
                     {loading ? (
                         <div>Loading routes...</div>
-                    ) : routesList && routesList.length ? (
+                    ) : routesList.length ? (
                         <div className="space-y-2">
                             {routesList.map((route, index) => (
                                 <div
@@ -260,7 +260,7 @@ const BundlesPluginComponent = () => {
     })
     const [loading, setLoading] = useState(false)
 
-    const fetchBundleInfo = async () => {
+    const fetchBundleInfo = () => {
         setLoading(true)
         try {
             // Mock data for now - will be replaced with actual API calls
@@ -282,7 +282,7 @@ const BundlesPluginComponent = () => {
     }
 
     React.useEffect(() => {
-        void fetchBundleInfo()
+        fetchBundleInfo()
     }, [])
 
     return (
@@ -337,7 +337,7 @@ const BundlesPluginComponent = () => {
 
             <button
                 onClick={() => {
-                    void fetchBundleInfo()
+                    fetchBundleInfo()
                 }}
                 className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
                 disabled={loading}
@@ -371,7 +371,7 @@ const CLIPluginComponent = () => {
     })
     const [loading, setLoading] = useState(false)
 
-    const fetchEnvInfo = async () => {
+    const fetchEnvInfo = () => {
         setLoading(true)
         try {
             // Get actual browser environment info
@@ -447,7 +447,7 @@ const CLIPluginComponent = () => {
 
             <button
                 onClick={() => {
-                    void fetchEnvInfo()
+                    fetchEnvInfo()
                 }}
                 className="rounded bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
                 disabled={loading}
@@ -530,7 +530,7 @@ const ConfiguredAuth = () => {
         refetch: refetchUsers,
     } = usersQuery
 
-    const fetchAuthConfig = async () => {
+    const fetchAuthConfig = () => {
         setLoading(true)
         try {
             // Mock auth configuration
@@ -648,7 +648,7 @@ const ConfiguredAuth = () => {
                             <Switch
                                 checked={devAuthEnabled}
                                 onCheckedChange={(val: boolean) =>
-                                    { setEnabled(Boolean(val)); }
+                                    { setEnabled(val); }
                                 }
                                 aria-label="Enable Dev Auth"
                             />
@@ -705,7 +705,7 @@ const ConfiguredAuth = () => {
                                                 },
                                             }
                                         )
-                                        await refetch()
+                                        refetch()
                                         return
                                     }
 
@@ -736,7 +736,10 @@ const ConfiguredAuth = () => {
                                         return
                                     }
 
-                                    const data = await resp.json()
+                                    const data = await resp.json() as {
+                                        user?: { id: string; email: string }
+                                        session?: { id: string }
+                                    }
                                     alert(
                                         `Logged as ${String(data.user?.id)} - session: ${String(data.session?.id)}`
                                     )
@@ -751,7 +754,7 @@ const ConfiguredAuth = () => {
 
             <button
                 onClick={() => {
-                    void fetchAuthConfig()
+                    fetchAuthConfig()
                 }}
                 className="rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
                 disabled={loading}
@@ -899,6 +902,7 @@ const DrizzleStudioPluginComponent = () => {
 
     const reloadIframe = (iframeId: string) => {
         const el = document.getElementById(iframeId) as HTMLIFrameElement | null
+        // eslint-disable-next-line no-self-assign
         if (el) el.src = el.src
     }
 
@@ -984,6 +988,7 @@ const ApiUrlPluginComponent = () => {
 
     const reloadIframe = (iframeId: string) => {
         const el = document.getElementById(iframeId) as HTMLIFrameElement | null
+        // eslint-disable-next-line no-self-assign
         if (el) el.src = el.src
     }
 

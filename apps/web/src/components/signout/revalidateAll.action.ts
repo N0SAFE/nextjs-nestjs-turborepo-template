@@ -2,6 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 
-export async function revalidateAllAction() {
+export function revalidateAllAction() {
     revalidatePath('/')
 }

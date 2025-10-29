@@ -81,7 +81,7 @@ describe('TanStack Query utilities', () => {
     })
 
     describe('toUseMutation', () => {
-        it('should create a mutation hook from a function', () => {
+        it('should create a mutation hook from a function', async () => {
             const mockCreate = vi
                 .fn()
                 .mockResolvedValue({ id: 1, name: 'John' })
