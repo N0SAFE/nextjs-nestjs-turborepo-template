@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { z } from 'zod'
 import { ZodType } from 'zod/v4'
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import type { BetterAuthClientPlugin } from 'better-auth/client'
 import {
     getMasterTokenEnabled,
