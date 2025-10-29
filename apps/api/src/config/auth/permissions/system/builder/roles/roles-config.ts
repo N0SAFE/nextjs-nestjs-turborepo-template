@@ -7,10 +7,6 @@ import { RoleConfigCollection } from './role-config-collection';
  * Provides methods to manipulate and query the entire role collection
  */
 export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<TRoles> {
-  constructor(roles: TRoles) {
-    super(roles);
-  }
-
   /**
    * Get a specific role as a RoleConfig instance
    * This enables chained operations on individual roles
@@ -86,7 +82,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
    * Get all roles as RoleConfig instances
    */
   values(): RoleConfig<TRoles[keyof TRoles]>[] {
-    return Object.values(this._roles).map(role => new RoleConfig(role));
+    return Object.values<TRoles[keyof TRoles]>(this._roles).map(role => new RoleConfig(role));
   }
 
   /**
@@ -102,7 +98,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
   /**
    * Add a new role
    */
-  add<K extends string>(key: K, role: any): RolesConfig<TRoles & Record<K, any>> {
+  add<K extends string>(key: K, role: unknown): RolesConfig<TRoles & Record<K, any>> {
     return new RolesConfig({
       ...this._roles,
       [key]: role
@@ -116,7 +112,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
     return new RolesConfig({
       ...this._roles,
       ...roles
-    } as TRoles & T);
+    });
   }
 
   /**
@@ -142,6 +138,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
   omit<K extends keyof TRoles>(...keys: K[]): RolesConfig<Omit<TRoles, K>> {
     const filtered = { ...this._roles };
     for (const key of keys) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete filtered[key];
     }
     return new RolesConfig(filtered as Omit<TRoles, K>);
@@ -199,7 +196,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
     return new RolesConfig({
       ...this._roles,
       ...other.build()
-    } as TRoles & T);
+    });
   }
 
   /**
@@ -271,7 +268,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.every(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions && permissions.length === 1 && permissions[0] === 'read';
+        return permissions?.length === 1 && permissions[0] === 'read';
       });
     });
   }
@@ -285,7 +282,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.some(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions && permissions.some(p => ['create', 'update', 'delete'].includes(p as string));
+        return permissions?.some(p => ['create', 'update', 'delete'].includes(p));
       });
     });
   }
@@ -301,7 +298,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
    * Verify roles structure
    */
   verify(): boolean {
-    if (typeof this._roles !== 'object' || this._roles === null) {
+    if (typeof this._roles !== 'object') {
       return false;
     }
     

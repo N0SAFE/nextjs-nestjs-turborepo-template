@@ -5,14 +5,7 @@ import {
     ThemeProviderProps,
 } from 'next-themes'
 
-import dynamic from 'next/dynamic'
-
-const NextThemesProvider =
-    process.env.NODE_ENV === 'production'
-        ? StaticNextThemesProvider
-        : dynamic(() => import('next-themes').then((e) => e.ThemeProvider), {
-              ssr: false,
-          })
+const NextThemesProvider = StaticNextThemesProvider
 
 export default function ThemeProvider({
     children,

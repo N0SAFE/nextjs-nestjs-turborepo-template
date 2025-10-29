@@ -28,24 +28,24 @@ export class SeedCommand extends CommandRunner {
 
     try {
       // Dynamically get roles from permissions
-      const roleNames = Object.keys(roles) as (keyof typeof roles)[];
+      const roleNames = Object.keys(roles);
       const usersPerRole = 2;
-      const seededData = { users: [] as Array<{ role: string; id: string; email: string; password: string }>, apiKeys: [] as Array<{ role: string; userId: string; key: string; abilities: string[] }> };
+      const seededData = { users: [] as { role: string; id: string; email: string; password: string }[], apiKeys: [] as { role: string; userId: string; key: string; abilities: string[] }[] };
 
       for (const roleKey of roleNames) {
-        const role = roleKey as string; // Type assertion
+        const role = roleKey; // Type assertion
         for (let i = 1; i <= usersPerRole; i++) {
-          const email = `${role}${i}@test.com`;
+          const email = `${role}${String(i)}@test.com`;
           const password = 'password123';
           const userResult = await this.auth.api.createUser({
             body: {
-              name: `${role.charAt(0).toUpperCase() + role.slice(1)} User ${i}`,
+              name: `${role.charAt(0).toUpperCase() + role.slice(1)} User ${String(i)}`,
               email,
               password,
               data: { 
                 role, 
                 emailVerified: true, 
-                image: `https://avatars.githubusercontent.com/u/${i}?v=4`
+                image: `https://avatars.githubusercontent.com/u/${String(i)}?v=4`
               },
             },
           });
@@ -54,19 +54,19 @@ export class SeedCommand extends CommandRunner {
           // Generate API key data (no DB insert; log for dev use)
           const apiKeyData = {
             userId: user.id,
-            name: `${role}-key-${i}`,
+            name: `${role}-key-${String(i)}`,
             key: nanoid(32),
             expiresAt: null,
             abilities: role === 'superAdmin' || role === 'admin' ? ['*'] : role === 'manager' || role === 'editor' ? ['read', 'write'] : ['read'],
           };
 
           // Note: api_keys table not present; skipping insert. Use logged keys for auth.
-          console.warn(`API key generated for ${role} user ${i} (no DB table; use logged key): ${apiKeyData.key}`);
+          console.warn(`API key generated for ${role} user ${String(i)} (no DB table; use logged key): ${apiKeyData.key}`);
 
           seededData.users.push({ role, id: user.id, email, password });
           seededData.apiKeys.push({ role, userId: user.id, key: apiKeyData.key, abilities: apiKeyData.abilities });
 
-          console.log(`Created ${role} user ${i}: ${email} (ID: ${user.id})`);
+          console.log(`Created ${role} user ${String(i)}: ${email} (ID: ${user.id})`);
         }
       }
 

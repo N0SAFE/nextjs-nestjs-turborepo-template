@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import VideoOrPlaceholder from '@repo/ui/components/atomics/atoms/VideoOrPlaceholder'
 
 // Mock asset imports

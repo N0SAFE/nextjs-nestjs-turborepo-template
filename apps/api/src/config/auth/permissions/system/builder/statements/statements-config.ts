@@ -7,10 +7,6 @@ import { StatementConfigCollection } from './statement-config-collection';
  * Provides utility methods to manipulate and query the entire statement structure
  */
 export class StatementsConfig<TStatement extends Record<string, readonly string[]>> extends BaseConfig<TStatement> {
-  constructor(statements: TStatement) {
-    super(statements);
-  }
-
   /**
    * Get a single statement config for a specific resource
    * Returns a StatementConfig instance with utility methods
@@ -63,7 +59,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
     return new StatementsConfig({
       ...this._value,
       ...resources,
-    } as TStatement & TResources);
+    });
   }
 
   /**
@@ -94,7 +90,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
    */
   hasAction(resource: string, action: string): boolean {
     const actions = this._value[resource];
-    return actions ? actions.includes(action as never) : false;
+    return actions.includes(action);
   }
 
   /**
@@ -105,6 +101,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
   ): StatementsConfig<Omit<TStatement, K>> {
     const newStatement = { ...this._value };
     for (const resource of resources) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete newStatement[resource];
     }
     return new StatementsConfig(newStatement as Omit<TStatement, K>);
@@ -116,13 +113,13 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
   pick<K extends keyof TStatement>(
     ...resources: K[]
   ): StatementsConfig<Pick<TStatement, K>> {
-    const result: any = {};
+    const result: Partial<Pick<TStatement, K>> = {};
     for (const resource of resources) {
       if (resource in this._value) {
         result[resource] = this._value[resource];
       }
     }
-    return new StatementsConfig(result);
+    return new StatementsConfig(result as Pick<TStatement, K>);
   }
 
   /**
@@ -136,8 +133,8 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
   ): Record<string, readonly string[]> {
     const result: Record<string, readonly string[]> = {};
     for (const [resource, actions] of Object.entries(this._value)) {
-      if (predicate(resource, actions as any)) {
-        result[resource] = actions as readonly string[];
+      if (predicate(resource, actions as TStatement[keyof TStatement])) {
+        result[resource] = actions;
       }
     }
     return result;
@@ -153,7 +150,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
     ) => U
   ): U[] {
     return Object.entries(this._value).map(([resource, actions]) =>
-      mapper(resource, actions as any)
+      mapper(resource, actions as TStatement[keyof TStatement])
     );
   }
 
@@ -166,7 +163,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
     return new StatementsConfig({
       ...this._value,
       ...other._value,
-    } as TStatement & T);
+    });
   }
 
   /**
@@ -189,24 +186,23 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
     resource: K,
     ...actions: TActions
   ): StatementsConfig<TStatement & Record<K, readonly [...TStatement[K], ...TActions]>> {
-    const existing = this._value[resource] || ([] as const);
+    const existing = this._value[resource];
     return new StatementsConfig({
       ...this._value,
-      [resource]: [...existing, ...actions] as any,
-    } as any);
+      [resource]: [...existing, ...actions] as const,
+    });
   }
 
   /**
    * Remove actions from an existing resource
    */
-  removeActions<K extends keyof TStatement>(
-    resource: K,
+  removeActions(
+    resource: keyof TStatement,
     ...actions: readonly string[]
   ): StatementsConfig<TStatement> {
     const existing = this._value[resource];
-    if (!existing) return this;
     
-    const filtered = existing.filter(a => !actions.includes(a as string));
+    const filtered = existing.filter(a => !actions.includes(a));
     return new StatementsConfig({
       ...this._value,
       [resource]: filtered,
@@ -224,14 +220,14 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
    * Get all action arrays (values)
    */
   values(): (readonly string[])[] {
-    return Object.values(this._value) as (readonly string[])[];
+    return Object.values(this._value);
   }
 
   /**
    * Get entries as [resource, actions] pairs
    */
   entries(): [keyof TStatement, TStatement[keyof TStatement]][] {
-    return Object.entries(this._value) as any;
+    return Object.entries(this._value) as [keyof TStatement, TStatement[keyof TStatement]][];
   }
 
   /**
@@ -256,7 +252,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
     
     for (const [resource, actions] of Object.entries(this._value)) {
       if (typeof resource !== 'string') {
-        errors.push(`Invalid resource name: ${resource}`);
+        errors.push(`Invalid resource name: ${String(resource)}`);
       }
       if (!Array.isArray(actions)) {
         errors.push(`Actions for ${resource} must be an array`);
@@ -266,7 +262,7 @@ export class StatementsConfig<TStatement extends Record<string, readonly string[
       }
       for (const action of actions) {
         if (typeof action !== 'string') {
-          errors.push(`Invalid action type for ${resource}: ${action}`);
+          errors.push(`Invalid action type for ${resource}: ${String(action)}`);
         }
       }
     }

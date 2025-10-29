@@ -54,7 +54,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
 
     useEffect(() => {
         void refetch()
-    }, [enabled])
+    }, [enabled, refetch])
 
     return (
         <MasterTokenContext.Provider

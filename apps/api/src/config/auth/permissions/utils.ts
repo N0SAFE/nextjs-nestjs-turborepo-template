@@ -13,7 +13,7 @@ export class PermissionChecker {
         return false;
       }
 
-      const validActions = statement[resource];
+      const validActions = statement[resource as keyof typeof statement];
       for (const action of actions as string[]) {
         if (!validActions.includes(action as never)) {
           return false;
@@ -38,7 +38,7 @@ export class PermissionChecker {
     return userRoles
       .split(",")
       .map((r) => r.trim())
-      .filter((r) => r in roles) as RoleName[];
+      .filter((r) => r in roles);
   }
 
   static getUserRoles(userRoleString: string): RoleName[] {
@@ -46,30 +46,30 @@ export class PermissionChecker {
   }
 
   static isValidRoleName(role: string): role is RoleName {
-    return Object.prototype.hasOwnProperty.call(roles, role);
+    return Object.prototype.hasOwnProperty.call<boolean>(roles, role);
   }
 
   static isValidResource(resource: string): resource is Resource {
-    return Object.prototype.hasOwnProperty.call(statement, resource);
+    return Object.prototype.hasOwnProperty.call<boolean>(statement, resource);
   }
 
-  static isValidActionForResource(resource: string, action: string): boolean {
+  static isValidActionForResource(resource: keyof typeof statement, action: string): boolean {
     if (!this.isValidResource(resource)) return false;
     const resourceActions = statement[resource];
     return resourceActions.includes(action as never);
   }
 
-  static getActionsForResource(resource: string): readonly string[] {
+  static getActionsForResource(resource: keyof typeof statement): readonly string[] {
     if (!this.isValidResource(resource)) return [];
     return statement[resource];
   }
 
   static getAllResources(): Resource[] {
-    return Object.keys(statement) as Resource[];
+    return Object.keys(statement);
   }
 
   static getAllRoles(): RoleName[] {
-    return Object.keys(roles) as RoleName[];
+    return Object.keys(roles);
   }
 
   static hasHigherPrivilege(
@@ -83,11 +83,11 @@ export class PermissionChecker {
     return 0;
   }
 
-  async userHasRole(_userId: string, _role: string): Promise<boolean> {
+  userHasRole(_userId: string, _role: string): Promise<boolean> {
     throw new Error("Implement userHasRole based on your auth system");
   }
 
-  async userHasPermissions(
+  userHasPermissions(
     _userId: string,
     _permissions: Record<string, string[]>
   ): Promise<boolean> {

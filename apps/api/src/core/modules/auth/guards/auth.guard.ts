@@ -2,17 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Auth } from "@/core/modules/auth/types/auth";
-import { APIError, type getSession } from "better-auth/api";
+import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import { AUTH_INSTANCE_KEY } from "../types/symbols";
-
-/**
- * Type representing a valid user session after authentication
- * Excludes null and undefined values from the session return type
- */
-export type UserSession = NonNullable<
-	Awaited<ReturnType<ReturnType<typeof getSession>>>
->;
+import type { IncomingHttpHeaders } from "http";
 
 /**
  * NestJS guard that handles authentication for protected routes
@@ -34,13 +27,13 @@ export class AuthGuard implements CanActivate {
 	 * @returns True if the request is authorized to proceed, throws an error otherwise
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const request = context.switchToHttp().getRequest();
+		const request = context.switchToHttp().getRequest<Request & { session: {session: Auth['$Infer']['Session']['session'] , user?: Auth['$Infer']['Session']['user']} | null; user?: Auth['$Infer']['Session']['user'] }>();
 		const session = await this.auth.api.getSession({
-			headers: fromNodeHeaders(request.headers),
+			headers: fromNodeHeaders(request.headers as unknown as IncomingHttpHeaders),
 		});
 
 		request.session = session;
-		request.user = session?.user ?? null; // useful for observability tools like Sentry
+		request.user = session?.user; // useful for observability tools like Sentry
 
 		const isPublic = this.reflector.getAllAndOverride<boolean>("PUBLIC", [
 			context.getHandler(),

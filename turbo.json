@@ -6,7 +6,22 @@
     },
     "globalDependencies": ["**/.env.*local", "**/.env", ".env.local"],
     "globalPassThroughEnv": [".env.local", "TURBO_TOKEN", "TURBO_TEAM"],
-    "globalEnv": ["API_URL", "API_PING_PATH", "API_ADMIN_TOKEN", "TEMP_APP_NEXTAUTH_URL", "NEXT_AUTH", "TURBO_TOKEN", "TURBO_TEAM", "DATABASE_URL", "AUTH_SECRET", "JWT_SECRET"],
+    "globalEnv": [
+        "API_URL",
+        "API_PING_PATH",
+        "API_ADMIN_TOKEN",
+        "TEMP_APP_NEXTAUTH_URL",
+        "NEXT_AUTH",
+        "TURBO_TOKEN",
+        "TURBO_TEAM",
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "JWT_SECRET",
+        "NODE_ENV",
+        "PHASE",
+        "NEXT_PUBLIC_WEB_URL",
+        "API_PORT"
+    ],
     "tasks": {
         "dev": {
             "cache": false,

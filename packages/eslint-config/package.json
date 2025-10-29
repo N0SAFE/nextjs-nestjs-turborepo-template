@@ -1,59 +1,67 @@
 {
-  "name": "@repo/eslint-config",
-  "version": "0.0.0",
-  "private": true,
-  "main": "dist/cjs/index.js",
-  "type": "module",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+    "name": "@repo/eslint-config",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "files": [
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "import": "./src/index.ts"
+        },
+        "./library": {
+            "types": "./src/library.ts",
+            "import": "./src/library.ts"
+        },
+        "./nextjs": {
+            "types": "./src/nextjs.ts",
+            "import": "./src/nextjs.ts"
+        },
+        "./nestjs": {
+            "types": "./src/nestjs.ts",
+            "import": "./src/nestjs.ts"
+        },
+        "./react": {
+            "types": "./src/react.ts",
+            "import": "./src/react.ts"
+        },
+        "./test": {
+            "types": "./src/test.ts",
+            "import": "./src/test.ts"
+        },
+        "./mdx": {
+            "types": "./src/mdx.ts",
+            "import": "./src/mdx.ts"
+        }
     },
-    "./library": {
-      "import": "./dist/esm/library.js",
-      "require": "./dist/cjs/library.js"
-    },
-    "./next": {
-      "import": "./dist/esm/next.js",
-      "require": "./dist/cjs/next.js"
-    },
-    "./nestjs": {
-      "import": "./dist/esm/nestjs.js",
-      "require": "./dist/cjs/nestjs.js"
-    },
-    "./react-internal": {
-      "import": "./dist/esm/react-internal.js",
-      "require": "./dist/cjs/react-internal.js"
+    "devDependencies": {
+        "@darraghor/eslint-plugin-nestjs-typed": "^6.9.3",
+        "@eslint/compat": "^1.0.3",
+        "@eslint/js": "^9.4.0",
+        "@repo/vitest-config": "*",
+        "@tanstack/eslint-plugin-query": "catalog:tanstack",
+        "@typescript-eslint/eslint-plugin": "^8.15.0",
+        "@typescript-eslint/parser": "^8.15.0",
+        "@vercel/style-guide": "^5.2.0",
+        "babel-plugin-macros": "^3.1.0",
+        "chokidar": "catalog:build",
+        "eslint": "^9.38.0",
+        "eslint-config-nestjs": "^0.8.0",
+        "eslint-config-next": "catalog:next",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-config-turbo": "^2.0.0",
+        "eslint-plugin-mdx": "^3.6.2",
+        "eslint-plugin-next": "^0.0.0",
+        "eslint-plugin-only-warn": "^1.1.0",
+        "eslint-plugin-react": "^7.34.2",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-refresh": "^0.4.7",
+        "globals": "^16.4.0",
+        "tailwindcss": "^4.1.16",
+        "typescript": "catalog:build",
+        "typescript-eslint": "^8.15.0",
+        "vitest": "catalog:testing"
     }
-  },
-  "scripts": {
-    "build": "bun scripts/build.ts",
-    "clean": "rimraf dist"
-  },
-  "devDependencies": {
-    "chokidar": "catalog:build",
-    "@eslint/compat": "^1.0.3",
-    "@eslint/js": "^9.4.0",
-    "@repo/vitest-config": "*",
-    "@tanstack/eslint-plugin-query": "catalog:tanstack",
-    "@typescript-eslint/eslint-plugin": "^8.15.0",
-    "@typescript-eslint/parser": "^8.15.0",
-    "@vercel/style-guide": "^5.2.0",
-    "babel-plugin-macros": "^3.1.0",
-    "eslint": "catalog:linting",
-    "eslint-config-nestjs": "^0.8.0",
-    "eslint-config-next": "^14.2.3",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-config-turbo": "^2.0.0",
-    "eslint-plugin-next": "^0.0.0",
-    "eslint-plugin-only-warn": "^1.1.0",
-    "eslint-plugin-react": "^7.34.2",
-    "eslint-plugin-react-refresh": "^0.4.7",
-    "typescript": "catalog:build",
-    "typescript-eslint": "^8.15.0",
-    "vitest": "catalog:testing"
-  }
 }

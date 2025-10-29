@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ExecutionContext } from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { 
   Public, 
   Optional, 
@@ -168,7 +168,7 @@ describe('Auth Decorators', () => {
       }
 
       expect(TestController).toBeDefined();
-      expect(TestController.prototype.testMethod).toBeDefined();
+      expect(TestController.prototype.testMethod.bind(TestController.prototype)).toBeDefined();
     });
 
     it('should apply multiple decorators', () => {
@@ -182,8 +182,8 @@ describe('Auth Decorators', () => {
       }
 
       expect(TestHookProvider).toBeDefined();
-      expect(TestHookProvider.prototype.beforeTest).toBeDefined();
-      expect(TestHookProvider.prototype.afterTest).toBeDefined();
+      expect(TestHookProvider.prototype.beforeTest.bind(TestHookProvider.prototype)).toBeDefined();
+      expect(TestHookProvider.prototype.afterTest.bind(TestHookProvider.prototype)).toBeDefined();
     });
   });
 
@@ -207,7 +207,7 @@ describe('Auth Decorators', () => {
         testMethod() {}
       }
 
-      expect(TestController.prototype.testMethod).toBeDefined();
+      expect(TestController.prototype.testMethod.bind(TestController.prototype)).toBeDefined();
     });
   });
 
@@ -215,7 +215,6 @@ describe('Auth Decorators', () => {
   describe('Permission Decorators', () => {
     describe('RequireRole', () => {
       it('should create role requirement decorator', () => {
-        // @ts-expect-error - Testing with mocked types
         const decorator = RequireRole('admin', 'manager');
         
         expect(decorator).toBeDefined();
@@ -224,28 +223,25 @@ describe('Auth Decorators', () => {
 
       it('should apply to methods', () => {
         class TestController {
-          // @ts-expect-error - Testing with mocked types
           @RequireRole('admin')
           adminOnlyMethod() {}
         }
 
-        expect(TestController.prototype.adminOnlyMethod).toBeDefined();
+        expect(TestController.prototype.adminOnlyMethod.bind(TestController.prototype)).toBeDefined();
       });
 
       it('should handle multiple roles', () => {
         class TestController {
-          // @ts-expect-error - Testing with mocked types
           @RequireRole('admin', 'manager', 'editor')
           multiRoleMethod() {}
         }
 
-        expect(TestController.prototype.multiRoleMethod).toBeDefined();
+        expect(TestController.prototype.multiRoleMethod.bind(TestController.prototype)).toBeDefined();
       });
     });
 
     describe('RequireAllRoles', () => {
       it('should create all-roles requirement decorator', () => {
-        // @ts-expect-error - Testing with mocked types
         const decorator = RequireAllRoles('admin', 'superAdmin');
         
         expect(decorator).toBeDefined();
@@ -254,12 +250,11 @@ describe('Auth Decorators', () => {
 
       it('should apply to methods', () => {
         class TestController {
-          // @ts-expect-error - Testing with mocked types
           @RequireAllRoles('admin', 'superAdmin')
           restrictedMethod() {}
         }
 
-        expect(TestController.prototype.restrictedMethod).toBeDefined();
+        expect(TestController.prototype.restrictedMethod.bind(TestController.prototype)).toBeDefined();
       });
     });
 
@@ -277,18 +272,16 @@ describe('Auth Decorators', () => {
 
       it('should apply to methods', () => {
         class TestController {
-          // @ts-expect-error - Testing with mocked types
           @RequirePermissions({ project: ['create'] })
           createProject() {}
         }
 
-        expect(TestController.prototype.createProject).toBeDefined();
+        expect(TestController.prototype.createProject.bind(TestController.prototype)).toBeDefined();
       });
 
       it('should handle complex permission structures', () => {
         class TestController {
           @RequirePermissions({
-            // @ts-expect-error - Testing with mocked types
             project: ['create', 'update', 'delete'],
             organization: ['manage-members'],
             billing: ['read', 'update']
@@ -296,7 +289,7 @@ describe('Auth Decorators', () => {
           complexPermissionMethod() {}
         }
 
-        expect(TestController.prototype.complexPermissionMethod).toBeDefined();
+        expect(TestController.prototype.complexPermissionMethod.bind(TestController.prototype)).toBeDefined();
       });
     });
 
@@ -314,13 +307,12 @@ describe('Auth Decorators', () => {
           manageUsers() {}
         }
 
-        expect(TestController.prototype.manageUsers).toBeDefined();
+        expect(TestController.prototype.manageUsers.bind(TestController.prototype)).toBeDefined();
       });
     });
 
     describe('RequireRoleAndPermissions', () => {
       it('should create combined role and permission decorator', () => {
-        // @ts-expect-error - Testing with mocked types
         const decorator = RequireRoleAndPermissions('manager', {
           project: ['delete']
         });
@@ -331,17 +323,15 @@ describe('Auth Decorators', () => {
 
       it('should apply to methods', () => {
         class TestController {
-          // @ts-expect-error - Testing with mocked types
           @RequireRoleAndPermissions('admin', { system: ['backup'] })
           systemBackup() {}
         }
 
-        expect(TestController.prototype.systemBackup).toBeDefined();
+        expect(TestController.prototype.systemBackup.bind(TestController.prototype)).toBeDefined();
       });
 
       it('should throw error when applied to invalid target', () => {
         expect(() => {
-          // @ts-expect-error - Testing with mocked types
           const decorator = RequireRoleAndPermissions('admin', { project: ['create'] });
           // Simulate applying to invalid target (propertyKey undefined)
           decorator({}, undefined as any, {} as PropertyDescriptor);
@@ -431,7 +421,7 @@ describe('Auth Decorators', () => {
           
           const result = {
             ...session.user,
-            role: user?.role || null,
+            role: user?.role ?? null,
             roles,
           };
 
@@ -484,7 +474,7 @@ describe('Auth Decorators', () => {
           
           const result = {
             ...session.user,
-            role: user?.role || null,
+            role: user?.role ?? null,
             roles,
           };
 
@@ -503,15 +493,13 @@ describe('Auth Decorators', () => {
   describe('Decorator Combination', () => {
     it('should allow combining multiple decorators', () => {
       class TestController {
-        // @ts-expect-error - Testing with mocked types
         @RequireRole('admin')
-        // @ts-expect-error - Testing with mocked types
         @RequirePermissions({ project: ['create'] })
         @Public()
         complexMethod() {}
       }
 
-      expect(TestController.prototype.complexMethod).toBeDefined();
+      expect(TestController.prototype.complexMethod.bind(TestController.prototype)).toBeDefined();
     });
 
     it('should work with parameter decorators', () => {
@@ -524,7 +512,7 @@ describe('Auth Decorators', () => {
         }
       }
 
-      expect(TestController.prototype.testMethod).toBeDefined();
+      expect(TestController.prototype.testMethod.bind(TestController.prototype)).toBeDefined();
     });
   });
 });

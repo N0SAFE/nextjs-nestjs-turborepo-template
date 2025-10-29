@@ -103,7 +103,7 @@ describe('HealthRepository', () => {
       const result = repository.getUptime();
 
       expect(result).toBe(mockUptime);
-      expect(process.uptime).toHaveBeenCalledOnce();
+      expect(process.uptime.bind(process)).toHaveBeenCalledOnce();
     });
   });
 });

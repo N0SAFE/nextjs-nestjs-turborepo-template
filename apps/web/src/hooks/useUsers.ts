@@ -518,14 +518,14 @@ export function useUsersInfinite(options?: {
         },
         filter: options?.filter,
       }),
-      getNextPageParam: (lastPage: any, _: any, lastPageParam: number) => {
+      getNextPageParam: (lastPage: Record<string, unknown> | undefined, _: unknown, lastPageParam: number) => {
         // Determine if there are more pages
-        if (!lastPage.meta?.pagination?.hasMore) {
+        if (!(lastPage && typeof lastPage === 'object' && 'meta' in lastPage && typeof lastPage.meta === 'object' && lastPage.meta && 'pagination' in lastPage.meta && typeof lastPage.meta.pagination === 'object' && lastPage.meta.pagination && 'hasMore' in lastPage.meta.pagination && lastPage.meta.pagination.hasMore)) {
           return undefined
         }
         return lastPageParam + 1
       },
-      getPreviousPageParam: (_: any, __: any, firstPageParam: number) => {
+      getPreviousPageParam: (_: unknown, __: unknown, firstPageParam: number) => {
         // Allow going back if not on first page
         if (firstPageParam === 1) {
           return undefined

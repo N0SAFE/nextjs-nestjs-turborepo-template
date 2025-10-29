@@ -209,13 +209,13 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
   withResource<TResource extends AllRoleResources<TRoles>>(
     resource: TResource
   ): WithResource<TRoles, TResource> {
-    const result: any = {};
+    const result: Partial<WithResource<TRoles, TResource>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       if (resource in rolePerms) {
         result[roleName] = rolePerms;
       }
     }
-    return result;
+    return result as unknown as WithResource<TRoles, TResource>;
   }
 
   /**
@@ -228,7 +228,7 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
   withAction<TAction extends AllRoleActions<TRoles>>(
     action: TAction
   ): WithAction<TRoles, TAction> {
-    const result: any = {};
+    const result: Partial<WithAction<TRoles, TAction>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       const hasAction = Object.values(rolePerms).some((actions: any) =>
         Array.isArray(actions) && actions.includes(action)
@@ -237,7 +237,7 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
         result[roleName] = rolePerms;
       }
     }
-    return result;
+    return result as unknown as WithAction<TRoles, TAction>;
   }
 
   /**
@@ -254,14 +254,14 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
     resource: TResource,
     action: TAction
   ): WithActionOnResource<TRoles, TResource, TAction> {
-    const result: any = {};
+    const result: Partial<WithActionOnResource<TRoles, TResource, TAction>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
-      const resourceActions = (rolePerms as any)[resource];
+      const resourceActions = rolePerms[resource];
       if (Array.isArray(resourceActions) && resourceActions.includes(action)) {
         result[roleName] = rolePerms;
       }
     }
-    return result;
+    return result as unknown as WithActionOnResource<TRoles, TResource, TAction>;
   }
 
   /**
@@ -278,9 +278,9 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
     resource: TResource,
     actions: TActions
   ): WithAllActionsOnResource<TRoles, TResource, TActions> {
-    const result: any = {};
+    const result: Partial<WithAllActionsOnResource<TRoles, TResource, TActions>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
-      const resourceActions = (rolePerms as any)[resource];
+      const resourceActions = rolePerms[resource];
       if (Array.isArray(resourceActions)) {
         const hasAllActions = actions.every(action => resourceActions.includes(action));
         if (hasAllActions) {
@@ -288,7 +288,7 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
         }
       }
     }
-    return result;
+    return result as unknown as WithAllActionsOnResource<TRoles, TResource, TActions>;
   }
 
   /**
@@ -305,9 +305,9 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
     resource: TResource,
     actions: TActions
   ): WithAnyActionOnResource<TRoles, TResource, TActions> {
-    const result: any = {};
+    const result: Partial<WithAnyActionOnResource<TRoles, TResource, TActions>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
-      const resourceActions = (rolePerms as any)[resource];
+      const resourceActions = rolePerms[resource];
       if (Array.isArray(resourceActions)) {
         const hasAnyAction = actions.some(action => resourceActions.includes(action));
         if (hasAnyAction) {
@@ -315,7 +315,7 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
         }
       }
     }
-    return result;
+    return result as unknown as WithAnyActionOnResource<TRoles, TResource, TActions>;
   }
 
   /**
@@ -328,16 +328,16 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
   withoutAction<TAction extends AllRoleActions<TRoles>>(
     action: TAction
   ): WithoutAction<TRoles, TAction> {
-    const result: any = {};
+    const result: Partial<WithoutAction<TRoles, TAction>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
-      const hasAction = Object.values(rolePerms).some((actions: any) =>
+      const hasAction = Object.values(rolePerms).some((actions) =>
         Array.isArray(actions) && actions.includes(action)
       );
       if (!hasAction) {
         result[roleName] = rolePerms;
       }
     }
-    return result;
+    return result as unknown as WithoutAction<TRoles, TAction>;
   }
 
   /**
@@ -350,13 +350,13 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
   withoutResource<TResource extends AllRoleResources<TRoles>>(
     resource: TResource
   ): WithoutResource<TRoles, TResource> {
-    const result: any = {};
+    const result: Partial<WithoutResource<TRoles, TResource>> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       if (!(resource in rolePerms)) {
         result[roleName] = rolePerms;
       }
     }
-    return result;
+    return result as unknown as WithoutResource<TRoles, TResource>;
   }
 
   /**
@@ -367,13 +367,13 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
    * collection.readOnly()
    */
   readOnly(): Partial<TRoles> {
-    const result: any = {};
+    const result: Partial<TRoles> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
-      const isReadOnly = Object.values(rolePerms).every((actions: any) =>
+      const isReadOnly = Object.values(rolePerms).every((actions) =>
         Array.isArray(actions) && actions.length === 1 && actions[0] === 'read'
       );
       if (isReadOnly) {
-        result[roleName] = rolePerms;
+        (result as Record<string, typeof rolePerms>)[roleName] = rolePerms;
       }
     }
     return result;
@@ -387,14 +387,14 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
    * collection.writeOnly()
    */
   writeOnly(): Partial<TRoles> {
-    const result: any = {};
+    const result: Partial<TRoles> = {};
     const writeActions = ['create', 'update', 'delete'];
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       const hasWrite = Object.values(rolePerms).some((actions: any) =>
         Array.isArray(actions) && actions.some(a => writeActions.includes(a as string))
       );
       if (hasWrite) {
-        result[roleName] = rolePerms;
+        (result as Record<string, typeof rolePerms>)[roleName] = rolePerms;
       }
     }
     return result;
@@ -432,10 +432,10 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
    * Filter roles by custom predicate
    */
   filter(predicate: (roleName: keyof TRoles, rolePerms: TRoles[keyof TRoles]) => boolean): Partial<TRoles> {
-    const result: any = {};
+    const result: Partial<TRoles> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       if (predicate(roleName as keyof TRoles, rolePerms as TRoles[keyof TRoles])) {
-        result[roleName] = rolePerms;
+        (result as Record<string, typeof rolePerms>)[roleName] = rolePerms;
       }
     }
     return result;
@@ -466,17 +466,17 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
     return new RoleConfigCollection({
       ...this._roles,
       ...other.toObject()
-    } as TRoles & TOther);
+    });
   }
 
   /**
    * Remove roles with empty permissions
    */
   compact(): Partial<TRoles> {
-    const result: any = {};
+    const result: Partial<TRoles> = {};
     for (const [roleName, rolePerms] of Object.entries(this._roles)) {
       if (Object.keys(rolePerms).length > 0) {
-        result[roleName] = rolePerms;
+        (result as Record<string, typeof rolePerms>)[roleName] = rolePerms;
       }
     }
     return result;

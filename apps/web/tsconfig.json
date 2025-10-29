@@ -11,14 +11,13 @@
         ],
         "paths": {
             "@/*": ["./src/*"],
-            "#/*": ["./*"],
-            "@repo/nextjs-devtool": ["../../packages/nextjs-devtool/src"],
-            "@repo/*": ["../../packages/*"],
-            "@api/*": ["../api/src/*"]
+            "#/*": ["./*"]
         },
         "target": "ES2017"
     },
     "include": [
+        "tailwind.config.ts",
+        "eslint.config.ts",
         "next-env.d.ts",
         "**/*.ts",
         "**/*.tsx",

@@ -107,9 +107,9 @@ async function main(): Promise<void> {
 
     console.log('\n✅ Build completed successfully!')
   } catch (error) {
-    console.error('\n❌ Build failed:', error instanceof Error ? error.message : error)
+    console.error('\n❌ Build failed:', error)
     process.exit(1)
   }
 }
 
-main()
+await main()

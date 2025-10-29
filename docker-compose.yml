@@ -170,41 +170,42 @@ services:
         networks:
             - app_network_dev
 
-    # # Fumadocs docs app for development with HMR
-    # doc-dev:
-    #     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev
-    #     build:
-    #         context: .
-    #         dockerfile: ./docker/Dockerfile.doc.dev
-    #         tags:
-    #           - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:latest"
-    #           - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:${DOC_VERSION:-dev}"
-    #     user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
-    #     restart: unless-stopped
-    #     mem_limit: 2g
-    #     memswap_limit: 2g
-    #     ports:
-    #         - "${NEXT_PUBLIC_DOC_PORT:-3020}:3020"
-    #     volumes:
-    #         # Mount source code for hot reloading
-    #         - .:/app
-    #         # Anonymous volumes for dependencies only (not .next)
-    #         - /app/node_modules
-    #         - /app/apps/doc/node_modules
-    #         # No .next volume - let Next.js create it on the fly
-    #         # Persistent caches
-    #         - bun_cache_dev:/root/.bun/install/cache
-    #         - turbo_cache_dev:/root/.cache/turbo
-    #     depends_on:
-    #         api-dev:
-    #             condition: service_healthy
-    #     environment:
-    #         - NODE_ENV=development
-    #         # Enable hot reloading
-    #         - WATCHPACK_POLLING=true
-    #         - CHOKIDAR_USEPOLLING=true
-    #     networks:
-    #         - app_network_dev
+    # Fumadocs docs app for development with HMR
+    doc-dev:
+        container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile.doc.dev
+            tags:
+              - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:latest"
+              - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:${DOC_VERSION:-dev}"
+        user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
+        restart: unless-stopped
+        mem_limit: 2g
+        memswap_limit: 2g
+        ports:
+            - "${NEXT_PUBLIC_DOC_PORT:-3020}:3020"
+        volumes:
+            # Mount source code for hot reloading
+            - .:/app
+            # Anonymous volumes for dependencies only (not .next)
+            - /app/node_modules
+            - /app/apps/doc/node_modules
+            # No .next volume - let Next.js create it on the fly
+            # Persistent caches
+            - bun_cache_dev:/root/.bun/install/cache
+            - turbo_cache_dev:/root/.cache/turbo
+        depends_on:
+            api-dev:
+                condition: service_healthy
+        environment:
+            - NODE_ENV=development
+            # Enable hot reloading
+            - WATCHPACK_POLLING=true
+            - CHOKIDAR_USEPOLLING=true
+            - NEXT_WEBPACK_USEPOLLING=1
+        networks:
+            - app_network_dev
 
 networks:
     app_network_dev:

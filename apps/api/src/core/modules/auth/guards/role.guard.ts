@@ -9,7 +9,6 @@ import {
   type RoleName,
   PermissionChecker,
 } from "@/config/auth/permissions";
-import type { UserSession } from "./auth.guard";
 
 /**
  * NestJS guard that handles role and permission-based access control
@@ -49,33 +48,33 @@ export class RoleGuard implements CanActivate {
    * @returns True if the request is authorized to proceed, throws an error otherwise
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request & { session: {session: Auth['$Infer']['Session']['session'], user?: Auth['$Infer']['Session']['user']}; user?: Auth['$Infer']['Session']['user'] }>();
     
     // Get session from request (may or may not be set by AuthGuard)
-    const session = request.session as UserSession | null;
+    const session = request.session;
 
     // Check for required roles (user needs ANY of these roles)
-    const requiredRoles = this.reflector.getAllAndOverride<RoleName[]>("REQUIRED_ROLES", [
+    const requiredRoles = this.reflector.getAllAndOverride<RoleName[] | null>("REQUIRED_ROLES", [
       context.getHandler(),
       context.getClass(),
     ]);
 
     // Check for required all roles (user needs ALL of these roles)
-    const requiredAllRoles = this.reflector.getAllAndOverride<RoleName[]>("REQUIRED_ALL_ROLES", [
+    const requiredAllRoles = this.reflector.getAllAndOverride<RoleName[] | null>("REQUIRED_ALL_ROLES", [
       context.getHandler(),
       context.getClass(),
     ]);
 
     // Check for required permissions
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission>("REQUIRED_PERMISSIONS", [
+    const requiredPermissions = this.reflector.getAllAndOverride<Permission | null>("REQUIRED_PERMISSIONS", [
       context.getHandler(),
       context.getClass(),
     ]);
 
     // If no role or permission requirements are defined via reflector, allow access
     // This means the guard only enforces restrictions when explicitly configured
-    const hasAnyReflectorRequirements = (requiredRoles && requiredRoles.length > 0) || 
-                                       (requiredAllRoles && requiredAllRoles.length > 0) || 
+    const hasAnyReflectorRequirements = (requiredRoles && requiredRoles.length > 0) ?? 
+                                       (requiredAllRoles && requiredAllRoles.length > 0) ?? 
                                        requiredPermissions;
 
     if (!hasAnyReflectorRequirements) {
@@ -83,7 +82,7 @@ export class RoleGuard implements CanActivate {
     }
 
     // If we have reflector requirements but no authenticated user, deny access
-    if (!session?.user) {
+    if (!session.user) {
       throw new APIError(401, {
         code: "UNAUTHORIZED",
         message: "Authentication required for this resource",
@@ -94,7 +93,14 @@ export class RoleGuard implements CanActivate {
 
     // Better Auth stores the role in the user object, but it might be optional
     // We need to access it correctly based on the Better Auth admin plugin schema
-    const userRole = (user as any).role;
+    const userRole = user.role;
+    
+    if (!userRole) {
+      throw new APIError(500, {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "User role information is missing",
+      });
+    }
 
     // Only require a role if there are role-based requirements
     if ((requiredRoles || requiredAllRoles) && !userRole) {
@@ -150,7 +156,7 @@ export class RoleGuard implements CanActivate {
           },
         });
 
-        if (!hasPermission) {
+        if (!hasPermission.success) {
           throw new APIError(403, {
             code: "FORBIDDEN",
             message: `Access denied. Missing required permissions: ${JSON.stringify(requiredPermissions)}`,

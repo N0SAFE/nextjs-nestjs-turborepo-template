@@ -1,6 +1,7 @@
 {
     "extends": "@repo/tsconfig/config/nextjs.json",
     "compilerOptions": {
+        "outDir": "dist",
         "baseUrl": ".",
         "plugins": [
             {

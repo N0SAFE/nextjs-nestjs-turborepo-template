@@ -4,7 +4,10 @@ import { orpc } from '@/lib/orpc'
 import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
 
 const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
-    const startTime = Date.now()
+    // Performance monitoring - captured at server render time
+    // eslint-disable-next-line react-hooks/purity -- Server component, timing capture is acceptable
+    const timingStartMs = performance.now()
+    let timeTakenMs: number
 
     try {
         const result = await orpc.user.list.call({
@@ -18,21 +21,23 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
             },
         })
 
-        const endTime = Date.now()
+        // eslint-disable-next-line react-hooks/purity -- Server component, timing capture is acceptable
+        timeTakenMs = performance.now() - timingStartMs
 
         return (
             <>
-                <div>Time taken: {endTime - startTime}ms</div>
+                <div>Time taken: {timeTakenMs}ms</div>
                 <ListItemShowcase users={result.users} />
             </>
         )
     } catch (error) {
         unstable_rethrow(error) // Ensure proper error handling in Next.js because orpc can throw redirect responses
-        const endTime = Date.now()
+        // eslint-disable-next-line react-hooks/purity -- Server component, timing capture is acceptable
+        timeTakenMs = performance.now() - timingStartMs
 
         return (
             <>
-                <div>Time taken: {endTime - startTime}ms</div>
+                <div>Time taken: {timeTakenMs}ms</div>
                 <div className="text-red-500">
                     Error loading users:{' '}
                     {error instanceof Error ? error.message : 'Unknown error'}

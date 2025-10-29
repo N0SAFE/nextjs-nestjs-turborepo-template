@@ -43,7 +43,7 @@ export class DatabaseService {
     hasConnection: boolean;
     databaseUrl: string; 
   } {
-    const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/mydb';
+    const connectionString = process.env.DATABASE_URL ?? 'postgresql://postgres:password@localhost:5432/mydb';
     // Remove password from the URL for logging
     const sanitizedUrl = connectionString.replace(/:([^:]+)@/, ':***@');
     

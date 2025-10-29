@@ -12,7 +12,7 @@ vi.mock('next-themes', () => ({
 
 // Mock next/dynamic
 vi.mock('next/dynamic', () => ({
-    default: vi.fn((importFn, options) => {
+    default: vi.fn(() => {
         // Return a component that uses the mocked ThemeProvider
         return vi.fn(({ children, ...props }) => (
             <div

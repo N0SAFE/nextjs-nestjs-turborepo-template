@@ -55,25 +55,13 @@ async function runBuild(files?: string[]) {
   // Shared build configuration
   const sharedConfig: Partial<BuildConfig> = {
     entrypoints: files.map((file) => path.join(srcDir, file)),
-    minify: true,
-    splitting: true,
+    minify: false,
+    splitting: false,
     target: 'bun',
     external: [
       // Common dependencies that should not be bundled
       'eslint',
-      '@typescript-eslint/eslint-plugin',
-      '@typescript-eslint/parser',
-      'eslint-config-nestjs',
-      '@vercel/style-guide',
-      '@next/eslint-plugin-next',
-      'eslint-plugin-react',
       'eslint-plugin-react-hooks',
-      'eslint-plugin-jsx-a11y',
-      'prettier',
-      'prettier-plugin-tailwindcss',
-      'vitest',
-      '@vitejs/plugin-react',
-      'jsdom',
     ],
   };
 

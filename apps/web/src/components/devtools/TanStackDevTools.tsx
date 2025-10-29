@@ -841,16 +841,14 @@ function UserSelector({
                                     <CommandItem
                                         key={framework.value}
                                         value={framework.value}
-                                        onSelect={(currentValue) => {
-                                            const selected =
-                                                currentValue as string
+                                        onSelect={(currentValue: string) => {
                                             setValue(
-                                                selected === value
+                                                currentValue === value
                                                     ? ''
-                                                    : selected
+                                                    : currentValue
                                             )
                                             setOpen(false)
-                                            void onSelect(selected)
+                                            void onSelect(currentValue)
                                         }}
                                     >
                                         <CheckIcon
@@ -978,7 +976,7 @@ const ApiUrlPluginComponent = () => {
         if (el) el.src = el.src
     }
 
-    const checkHealth = async () => {
+    const checkHealth = React.useCallback(async () => {
         if (!apiUrl) return
         setChecking(true)
         try {
@@ -992,11 +990,11 @@ const ApiUrlPluginComponent = () => {
         } finally {
             setChecking(false)
         }
-    }
+    }, [apiUrl])
 
     React.useEffect(() => {
         if (apiUrl) checkHealth()
-    }, [apiUrl])
+    }, [apiUrl, checkHealth])
 
     return (
         <div className="flex h-full flex-col">

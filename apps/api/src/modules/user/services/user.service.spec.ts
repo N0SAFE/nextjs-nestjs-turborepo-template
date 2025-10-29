@@ -52,7 +52,7 @@ describe('UserService', () => {
 
   describe('createUser', () => {
     it('should create a new user when email does not exist', async () => {
-      const input = { name: 'John Doe', email: 'john@example.com' };
+      const input = { name: 'John Doe', email: 'john@example.com', image: "" };
       mockRepository.findByEmail.mockResolvedValue(null);
       mockRepository.create.mockResolvedValue(mockUser);
 
@@ -64,7 +64,7 @@ describe('UserService', () => {
     });
 
     it('should throw ConflictException when user with email already exists', async () => {
-      const input = { name: 'John Doe', email: 'john@example.com' };
+      const input = { name: 'John Doe', email: 'john@example.com', image: "" };
       mockRepository.findByEmail.mockResolvedValue(mockUser);
 
       await expect(service.createUser(input)).rejects.toThrow(ConflictException);

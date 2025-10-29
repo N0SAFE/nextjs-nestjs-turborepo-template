@@ -1,40 +1,48 @@
-import { resolve } from "node:path";
-import type { Linter } from "eslint";
+import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
+import coreConfig from "./base";
 
-const project = resolve(process.cwd(), "tsconfig.json");
+const tsconfigRootDir = process.cwd();
+const coreBase = coreConfig.configs.base;
+const coreTest = coreConfig.configs.test;
 
-const config: Linter.Config = {
-    plugins: ["@typescript-eslint", "only-warn"],
-    extends: ["eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended"],
-    parser: "@typescript-eslint/parser",
-    env: {
-        browser: true,
-        node: true
+const base = defineConfig([
+    coreBase,
+    {
+        rules: {
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": ["error"],
+            "typescript-eslint/no-namespace": "off",
+            "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+        },
     },
-    settings: {
-        "import/resolver": {
-            typescript: {
-                project
-            }
-        }
-    },
-    rules: {
-        "@next/next/no-html-link-for-pages": "off",
-        "no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars": ["error"],
-        "typescript-eslint/no-namespace": "off",
-    },
-    ignorePatterns: [
-        // Ignore dotfiles
-        ".*.js",
-        "node_modules/",
-        "dist/"
-    ],
-    overrides: [
-        {
-            files: ["*.js?(x)", "*.ts?(x)"]
-        }
-    ]
-} as any;
+]);
 
-export default config;
+const test = defineConfig([
+    coreTest,
+    {
+        rules: {
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": ["error"],
+            "typescript-eslint/no-namespace": "off",
+        },
+    },
+]);
+
+const all = defineConfig([
+    base,
+    test,
+]);
+
+export default {
+    meta: {
+        name: "@repo/eslint-config/library",
+        version: "0.0.0",
+    },
+    configs: {
+        base,
+        test,
+        all,
+    },
+} as const;

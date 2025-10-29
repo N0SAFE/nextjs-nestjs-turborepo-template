@@ -1,41 +1,48 @@
+# syntax=docker/dockerfile:1-labs
 # Production Dockerfile for NestJS API
 # Multi-stage build for optimized production image
 
-# syntax=docker/dockerfile:1.7
+# Stage 1: Base - Install global dependencies and set environment
 FROM oven/bun:1.2.21-alpine AS base
 ENV NODE_ENV=production
 
-# Install dependencies only when needed
-FROM base AS builder
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
-RUN apk update
+# Install system dependencies and Turbo
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Install Turbo globally
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 
-# Copy everything and prune for API app
+# Copy Node.js 22 from later stage if available, otherwise use system Node
+# Install Node.js for NestJS compatibility
+RUN apk add --no-cache nodejs
+WORKDIR /app
+
+# Stage 2: Pruner - Prune monorepo for API dependencies
+FROM base AS pruner
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune api --docker
 
-# Install dependencies for building
+# Stage 3: Installer - Install dependencies from pruned lockfile
 FROM base AS installer
-RUN apk update
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+RUN apk add --no-cache python3 make g++ gcc musl-dev
 
-# First install the dependencies (as they change less often)
-COPY --from=builder /app/out/json/ .
-RUN rm -f bun.lock # this is a workaround because when using the --frozen-lockfile i have a probleme with the way the turbo prune work with bun and it corrupt my bun.lock
-RUN bun install
+COPY --from=pruner /app/out/full/ .
+RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+  bun ci
 
-# Build the project
-COPY --from=builder /app/out/full/ .
-RUN bun turbo run build --filter=api...
+# Stage 4: Builder - Build the application
+FROM base AS builder
+RUN apk add --no-cache python3 make g++ gcc musl-dev
 
-# Production runner
+COPY --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./
+COPY --from=pruner /app/out/full/apps/ /app/apps/
+COPY --from=pruner /app/out/full/packages/ /app/packages/
+COPY --from=installer --parents /app/node_modules /app/**/node_modules /
+COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
+
+RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+  bun turbo run build --filter=api...
+
+# Stage 5: Production Runner - Run the built application
 FROM base AS runner
 WORKDIR /app
 
@@ -46,8 +53,8 @@ RUN apk add --no-cache curl wget bash python3 make g++
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy built application
-COPY --from=installer --chown=nestjs:nodejs /app ./
+# Copy built application from builder stage
+COPY --from=builder --chown=nestjs:nodejs /app ./
 
 # Ensure writable directories exist and are owned by the app user
 RUN mkdir -p /app/uploads /app/extracted /app/static-files && \
@@ -67,4 +74,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 # Start the application
-CMD ["bun", "run", "api#start"]
+CMD ["sh", "-c", "bun x turbo run api#start"]

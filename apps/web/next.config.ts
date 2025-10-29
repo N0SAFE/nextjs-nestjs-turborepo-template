@@ -33,12 +33,6 @@ const noCheck = process.env.CHECK_ON_BUILD !== "true";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    console.log(
-      "redirect external orpc request from",
-      "/api/nest/:path*",
-      "to",
-      `${apiUrl.href}`,
-    );
     return [
       {
         source: "/api/auth/:path*",
@@ -50,9 +44,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  eslint: {
-    ignoreDuringBuilds: noCheck,
-  },
   typescript: {
     ignoreBuildErrors: noCheck,
     // compilerOptions: {
@@ -61,7 +52,7 @@ const nextConfig: NextConfig = {
     // },
   },
   reactStrictMode: true,
-  transpilePackages: ["@repo/ui", "@repo/nextjs-devtool"],
+  transpilePackages: ["@repo/nextjs-devtool"],
   cacheComponents: true,
   reactCompiler: false, // disable because of https://github.com/vercel/next.js/issues/85234
   images: {
@@ -78,7 +69,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  swcMinify: true,
 
   webpack: (config, context) => {
     // Enable polling based on env variable being set

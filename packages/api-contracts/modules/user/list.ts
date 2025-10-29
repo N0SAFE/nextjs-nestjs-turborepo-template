@@ -23,7 +23,7 @@ export const userListInput = z.object({
   sort: z.object({
     field: z.enum(Object.keys(userSchema.shape) as [keyof typeof userSchema['shape'], ...TuplifyUnion<(keyof typeof userSchema['shape'])>]),
     direction: z.enum(['asc', 'desc']),
-  }),
+  }).optional(),
   filter: z.object({
     id: userSchema.shape.id,
     email: userSchema.shape.email,

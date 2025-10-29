@@ -114,7 +114,7 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     const result = {} as Record<string, readonly string[]>;
 
     for (const [key, config] of Object.entries(this._statements)) {
-      const filteredActions = config.filter((action) => actions.includes(action as string));
+      const filteredActions = config.filter((action) => actions.includes(action));
       if (filteredActions.length > 0) {
         result[key] = filteredActions as readonly string[];
       }
@@ -135,7 +135,7 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     const result = {} as Record<string, readonly string[]>;
 
     for (const [key, config] of Object.entries(this._statements)) {
-      const remainingActions = config.filter((action) => !actions.includes(action as string));
+      const remainingActions = config.filter((action) => !actions.includes(action));
       if (remainingActions.length > 0) {
         result[key] = remainingActions as readonly string[];
       }
@@ -149,15 +149,15 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    * Excludes resources that don't have "read" or have other actions
    */
   readOnly(): FilteredStatement<TStatement, readonly ['read']> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, readonly ['read']>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      if (resourceActions.includes('read' as any)) {
+      if (resourceActions.includes('read')) {
         result[resource] = ['read'] as const;
       }
     }
     
-    return result;
+    return result as unknown as FilteredStatement<TStatement, readonly ['read']>;
   }
 
   /**
@@ -165,17 +165,17 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    * Excludes resources that don't have any write actions
    */
   writeOnly(): FilteredStatement<TStatement, readonly ['create', 'update', 'delete']> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>> = {};
     const writeActions = ['create', 'update', 'delete'];
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      const filtered = resourceActions.filter(a => writeActions.includes(a as any));
+      const filtered = resourceActions.filter(a => writeActions.includes(a));
       if (filtered.length > 0) {
         result[resource] = filtered;
       }
     }
     
-    return result;
+    return result as unknown as FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>;
   }
 
   /**
@@ -183,17 +183,17 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    * Excludes resources that don't have any CRUD actions
    */
   crudOnly(): FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>> = {};
     const crudActions = ['create', 'read', 'update', 'delete'];
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      const filtered = resourceActions.filter(a => crudActions.includes(a as any));
+      const filtered = resourceActions.filter(a => crudActions.includes(a));
       if (filtered.length > 0) {
         result[resource] = filtered;
       }
     }
     
-    return result;
+    return result as unknown as FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>;
   }
 
   /**
@@ -203,15 +203,15 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   filter(
     predicate: (resource: string, actions: readonly string[]) => boolean
   ): Partial<TStatement> {
-    const result: any = {};
-    
+    const result: Partial<TStatement> = {};
+
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (predicate(resource, resourceActions)) {
-        result[resource] = resourceActions;
+        (result as Record<string, readonly string[]>)[resource] = resourceActions;
       }
     }
-    
-    return result;
+
+    return result as unknown as Partial<TStatement>;
   }
 
   /**
@@ -229,15 +229,15 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    * Get resources that have a specific action
    */
   withAction<TAction extends AllActions<TStatement>>(action: TAction): WithAction<TStatement, TAction> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, readonly [TAction]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      if (resourceActions.includes(action as any)) {
+      if (resourceActions.includes(action)) {
         result[resource] = resourceActions;
       }
     }
     
-    return result;
+    return result as unknown as WithAction<TStatement, TAction>;
   }
 
   /**
@@ -246,15 +246,15 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   withAllActions<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
   ): WithAllActions<TStatement, TActions> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, TActions>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      if (actions.every(a => resourceActions.includes(a as any))) {
+      if (actions.every(a => resourceActions.includes(a))) {
         result[resource] = resourceActions;
       }
     }
     
-    return result;
+    return result as unknown as WithAllActions<TStatement, TActions>;
   }
 
   /**
@@ -263,30 +263,30 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   withAnyAction<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
   ): WithAnyAction<TStatement, TActions> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, TActions>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      if (actions.some(a => resourceActions.includes(a as any))) {
+      if (actions.some(a => resourceActions.includes(a))) {
         result[resource] = resourceActions;
       }
     }
     
-    return result;
+    return result as unknown as WithAnyAction<TStatement, TActions>;
   }
 
   /**
    * Exclude resources that have a specific action
    */
   withoutAction<TAction extends AllActions<TStatement>>(action: TAction): WithoutAction<TStatement, TAction> {
-    const result: any = {};
+    const result: Partial<FilteredStatement<TStatement, readonly [TAction]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      if (!resourceActions.includes(action as any)) {
+      if (!resourceActions.includes(action)) {
         result[resource] = resourceActions;
       }
     }
     
-    return result;
+    return result as unknown as WithoutAction<TStatement, TAction>;
   }
 
   /**
@@ -333,12 +333,12 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   transform(
     transformer: (resource: string, actions: readonly string[]) => readonly string[]
   ): Partial<TStatement> {
-    const result: any = {};
+    const result: Partial<TStatement> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       const transformed = transformer(resource, resourceActions);
       if (transformed.length > 0) {
-        result[resource] = transformed;
+        (result as Record<string, readonly string[]>)[resource] = transformed;
       }
     }
     
@@ -354,18 +354,18 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
     return new StatementConfigCollection({
       ...this._statements,
       ...other,
-    } as TStatement & T);
+    });
   }
 
   /**
    * Return only resources with non-empty actions
    */
   compact(): Partial<TStatement> {
-    const result: any = {};
+    const result: Partial<TStatement> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (resourceActions.length > 0) {
-        result[resource] = resourceActions;
+        (result as Record<string, readonly string[]>)[resource] = resourceActions;
       }
     }
     

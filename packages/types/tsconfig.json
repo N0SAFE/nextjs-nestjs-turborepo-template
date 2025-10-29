@@ -13,7 +13,7 @@
     },
   },
   "include": [
-    "**/*",
+    "**/*.ts",
     "utils.ts"
   ],
   "exclude": [

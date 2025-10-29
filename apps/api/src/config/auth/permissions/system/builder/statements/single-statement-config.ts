@@ -23,37 +23,37 @@ export class StatementConfig<TActions extends readonly string[] = readonly strin
    * Pick specific actions from the statement
    * Returns the filtered actions array directly
    */
-  pick<T extends readonly (TActions[number])[]>(actions: T): readonly (TActions[number])[] {
-    return this._actions.filter(a => actions.includes(a as any)) as any;
+  pick(actions: readonly (TActions[number])[]): readonly (TActions[number])[] {
+    return this._actions.filter(a => actions.includes(a));
   }
 
   /**
    * Omit specific actions from the statement
    * Returns the filtered actions array directly
    */
-  omit<T extends readonly (TActions[number])[]>(actions: T): readonly (Exclude<TActions[number], T[number]>)[] {
-    return this._actions.filter(a => !actions.includes(a as any)) as any;
+  omit(actions: readonly (TActions[number])[]): readonly (Exclude<TActions[number], typeof actions[number]>)[] {
+    return this._actions.filter((a): a is Exclude<TActions[number], typeof actions[number]> => !actions.includes(a));
   }
 
   /**
    * Check if statement has a specific action
    */
   has(action: string): boolean {
-    return this._actions.includes(action as any);
+    return this._actions.includes(action);
   }
 
   /**
    * Check if statement has all specified actions
    */
   hasAll(actions: readonly string[]): boolean {
-    return actions.every(a => this._actions.includes(a as any));
+    return actions.every(a => this._actions.includes(a));
   }
 
   /**
    * Check if statement has any of the specified actions
    */
   hasAny(actions: readonly string[]): boolean {
-    return actions.some(a => this._actions.includes(a as any));
+    return actions.some(a => this._actions.includes(a));
   }
 
   /**
@@ -95,14 +95,14 @@ export class StatementConfig<TActions extends readonly string[] = readonly strin
    * Check if statement includes action
    */
   includes(action: string): boolean {
-    return this._actions.includes(action as any);
+    return this._actions.includes(action);
   }
 
   /**
    * Find index of action
    */
   indexOf(action: string): number {
-    return this._actions.indexOf(action as any);
+    return this._actions.indexOf(action);
   }
 
   /**
@@ -137,42 +137,42 @@ export class StatementConfig<TActions extends readonly string[] = readonly strin
    * Add actions (returns new instance)
    */
   add<T extends readonly string[]>(...actions: T): StatementConfig<readonly [...TActions, ...T]> {
-    return new StatementConfig([...this._actions, ...actions] as any);
+    return new StatementConfig([...this._actions, ...actions]);
   }
 
   /**
    * Concat with another statement config
    */
   concat<T extends readonly string[]>(other: StatementConfig<T>): StatementConfig<readonly [...TActions, ...T]> {
-    return new StatementConfig([...this._actions, ...other._actions] as any);
+    return new StatementConfig([...this._actions, ...other._actions]);
   }
 
   /**
    * Remove duplicates
    */
   unique(): StatementConfig<TActions> {
-    return new StatementConfig([...new Set(this._actions)] as any);
+    return new StatementConfig<TActions>([...new Set(this._actions)] as unknown as TActions);
   }
 
   /**
    * Slice actions
    */
   slice(start?: number, end?: number): StatementConfig<readonly (TActions[number])[]> {
-    return new StatementConfig(this._actions.slice(start, end) as any);
+    return new StatementConfig(this._actions.slice(start, end));
   }
 
   /**
    * Reverse actions order
    */
   reverse(): StatementConfig<readonly (TActions[number])[]> {
-    return new StatementConfig([...this._actions].reverse() as any);
+    return new StatementConfig([...this._actions].reverse());
   }
 
   /**
    * Sort actions
    */
   sort(compareFn?: (a: TActions[number], b: TActions[number]) => number): StatementConfig<readonly (TActions[number])[]> {
-    return new StatementConfig([...this._actions].sort(compareFn) as any);
+    return new StatementConfig([...this._actions].sort(compareFn));
   }
 
   /**

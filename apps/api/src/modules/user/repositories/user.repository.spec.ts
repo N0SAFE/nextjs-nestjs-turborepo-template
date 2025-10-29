@@ -82,7 +82,7 @@ describe('UserRepository', () => {
 
   describe('create', () => {
     it('should create a new user', async () => {
-      const input = { name: 'John Doe', email: 'john@example.com' };
+      const input = { name: 'John Doe', email: 'john@example.com', image: "" };
       const mockInsertBuilder = mockDb.insert();
       mockInsertBuilder.returning.mockResolvedValue([mockUser]);
 
@@ -192,7 +192,7 @@ describe('UserRepository', () => {
       const input = {
         pagination: { limit: 10, offset: 0 },
         filter: { name: 'John', email: 'john' },
-        sort: { field: 'name', direction: 'asc' },
+        sort: { field: 'name', direction: 'asc' } as const,
       };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
@@ -248,9 +248,10 @@ describe('UserRepository', () => {
     it('should throw error for unsupported sort field', async () => {
       const input = {
         pagination: { limit: 10, offset: 0 },
-        sort: { field: 'unsupported', direction: 'asc' },
+        sort: { field: 'unsupported', direction: 'asc' } as const,
       };
 
+      // @ts-expect-error this test a unsupported field
       await expect(repository.findMany(input)).rejects.toThrow(
         'Unsupported sort field: unsupported'
       );

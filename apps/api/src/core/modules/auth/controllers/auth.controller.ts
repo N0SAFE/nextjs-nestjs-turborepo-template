@@ -22,6 +22,7 @@ export class AuthController {
 	 * Catch-all route that proxies all requests to Better Auth
 	 * This replaces the problematic wildcard middleware approach
 	 */
+	// eslint-disable-next-line @darraghor/nestjs-typed/api-method-should-specify-api-response
 	@All('*')
 	async handleAuth(@Req() req: Request, @Res() res: Response): Promise<void> {
 		try {

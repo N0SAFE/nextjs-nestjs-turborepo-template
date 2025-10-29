@@ -7,9 +7,9 @@ export class EnvService {
   private readonly logger = new Logger(EnvService.name);
 
   constructor(
-    @Optional() private readonly configService: ConfigService
+    @Optional() private readonly configService?: ConfigService
   ) {
-    this.logger.log(`EnvService constructor called. ConfigService available: ${!!this.configService}`);
+    this.logger.log(`EnvService constructor called. ConfigService available: ${String(!!this.configService)}`);
     if (this.configService) {
       this.logger.log('ConfigService is properly injected');
     } else {
@@ -22,11 +22,15 @@ export class EnvService {
       // Fallback to process.env if ConfigService is not available
       const value = process.env[key as string];
       if (value === undefined) {
-        throw new Error(`Environment variable ${String(key)} is not set and ConfigService is not available.`);
+        throw new Error(`Environment variable ${key} is not set and ConfigService is not available.`);
       }
       return value as Env[T];
     }
-    return this.configService.get(key as string) as Env[T];
+    const ret = this.configService.get<Env[T]>(key);
+    if (!ret) {
+      throw new Error(`Config key: ${key} is not set`)
+    }
+    return ret
   }
 
   /**

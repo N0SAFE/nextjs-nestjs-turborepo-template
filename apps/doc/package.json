@@ -1,30 +1,35 @@
 {
-    "name": "doc",
-    "version": "0.1.0",
-    "private": true,
-    "scripts": {
-        "dev": "next dev --turbopack -p 3020",
-        "build": "next build",
-        "start": "next start -p 3020",
-        "postinstall": "fumadocs-mdx"
-    },
-    "dependencies": {
-        "next": "catalog:next",
-        "react": "catalog:react",
-        "react-dom": "catalog:react",
-        "babel-plugin-react-compiler": "catalog:react-compiler",
-        "fumadocs-ui": "catalog:doc",
-        "fumadocs-core": "catalog:doc"
-    },
-    "devDependencies": {
-        "@repo/tsconfig": "*",
-        "@tailwindcss/postcss": "catalog:styling",
-        "@types/mdx": "catalog:doc",
-        "@types/node": "catalog:build",
-        "@types/react": "catalog:react",
-        "@types/react-dom": "catalog:react",
-        "fumadocs-mdx": "catalog:doc",
-        "tailwindcss": "catalog:styling",
-        "typescript": "catalog:build"
-    }
+  "name": "doc",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3020",
+    "start": "next start -p 3020",
+    "postinstall": "fumadocs-mdx",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "fumadocs-core": "catalog:doc",
+    "fumadocs-mdx": "catalog:doc",
+    "fumadocs-ui": "catalog:doc",
+    "lucide-react": "catalog:ui",
+    "next": "catalog:next",
+    "react": "catalog:react",
+    "react-dom": "catalog:react"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "catalog:linting",
+    "@repo/eslint-config": "*",
+    "@tailwindcss/postcss": "catalog:styling",
+    "@types/mdx": "catalog:doc",
+    "@types/node": "^24.9.1",
+    "@types/react": "catalog:react",
+    "@types/react-dom": "catalog:react",
+    "eslint": "catalog:linting",
+    "eslint-config-next": "catalog:next",
+    "postcss": "catalog:styling",
+    "tailwindcss": "catalog:styling",
+    "typescript": "catalog:build"
+  }
 }

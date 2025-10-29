@@ -69,7 +69,7 @@ describe('ImageOrPlaceholder Component', () => {
   })
 
   it('should use custom render function when provided', () => {
-    const customRender = vi.fn(({ src, alt, ...props }) => (
+    const customRender = vi.fn(({ src, alt }) => (
       <div data-testid="custom-render">
         Custom: {src} - {alt}
       </div>

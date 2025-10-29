@@ -8,7 +8,8 @@ import { useQuery } from '@tanstack/react-query'
 
 const ClientSideShowcase: React.FC = function ClientSideShowcase() {
     const [timeTaken, setTimeTaken] = React.useState<number | null>(null)
-    const startTime = React.useMemo(() => Date.now(), [])
+    // eslint-disable-next-line react-hooks/purity -- Initial timing is acceptable in useRef
+    const startTime = React.useRef(Date.now()).current
 
     const { data: result, isFetched } = useQuery(
         orpc.user.list.queryOptions({

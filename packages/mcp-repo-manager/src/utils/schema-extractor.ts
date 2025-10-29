@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * Simple Zod schema to JSON schema converter (basic implementation; extend for complex types).
@@ -17,25 +17,35 @@ export function zodToJsonSchema(schema: z.ZodTypeAny): any {
       required: required.length > 0 ? required : undefined,
     };
   } else if (schema instanceof z.ZodString) {
-    return { type: 'string', ... (schema._def.checks?.reduce((acc, check) => {
-      if (check.kind === 'min') acc.minLength = check.value;
-      if (check.kind === 'max') acc.maxLength = check.value;
-      return acc;
-    }, {} as any) || {}) };
+    const stringConstraints: Record<string, number> = {};
+    if (schema._def.checks) {
+      for (const check of schema._def.checks) {
+        if ((check as any).kind === 'min') stringConstraints.minLength = (check as any).value;
+        if ((check as any).kind === 'max') stringConstraints.maxLength = (check as any).value;
+      }
+    }
+    return { type: 'string', ...stringConstraints };
   } else if (schema instanceof z.ZodNumber) {
-    return { type: 'number', ... (schema._def.checks?.reduce((acc, check) => {
-      if (check.kind === 'min') acc.minimum = check.value;
-      if (check.kind === 'max') acc.maximum = check.value;
-      return acc;
-    }, {} as any) || {}) };
+    const numberConstraints: Record<string, number> = {};
+    if (schema._def.checks) {
+      for (const check of schema._def.checks) {
+        if ((check as any).kind === 'min') numberConstraints.minimum = (check as any).value;
+        if ((check as any).kind === 'max') numberConstraints.maximum = (check as any).value;
+      }
+    }
+    return { type: 'number', ...numberConstraints };
   } else if (schema instanceof z.ZodBoolean) {
     return { type: 'boolean' };
   } else if (schema instanceof z.ZodArray) {
-    return { type: 'array', items: zodToJsonSchema(schema.element) };
+    const arraySchema = schema as z.ZodArray<z.ZodTypeAny>;
+    const itemSchema = (arraySchema._def as any).type || (arraySchema as any).element;
+    return { type: 'array', items: zodToJsonSchema(itemSchema) };
   } else if (schema instanceof z.ZodEnum) {
-    return { type: 'string', enum: schema._def.values };
+    const enumSchema = schema as unknown as { _def: { values: readonly unknown[] } };
+    return { type: 'string', enum: Array.from(enumSchema._def.values) };
   } else if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
-    return zodToJsonSchema(schema.unwrap());
+    const unwrappableSchema = schema as unknown as { unwrap(): z.ZodTypeAny };
+    return zodToJsonSchema(unwrappableSchema.unwrap());
   } // Add more Zod types as needed (union, literal, etc.)
   return { type: 'unknown' };
 }

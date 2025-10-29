@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { orpc } from '@/lib/orpc'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
     try {
         const webHealth = {

@@ -30,12 +30,12 @@ export class RoleConfig<TRole = any> {
    * Check if role has specific permission
    * (Implementation depends on role structure)
    */
-  has(resource: string, action?: string): boolean {
+  has(resource: keyof TRole, action?: string): boolean {
     if (typeof this._role !== 'object' || this._role === null) {
       return false;
     }
     
-    const roleObj = this._role as any;
+    const roleObj = this._role;
     if (!(resource in roleObj)) {
       return false;
     }
@@ -51,31 +51,31 @@ export class RoleConfig<TRole = any> {
   /**
    * Check if role has all specified permissions
    */
-  hasAll(permissions: Record<string, string[]>): boolean {
-    return Object.entries(permissions).every(([resource, actions]) =>
-      actions.every(action => this.has(resource, action))
+  hasAll(permissions: Record<keyof TRole, string[]>): boolean {
+    return Object.entries<string[]>(permissions).every(([resource, actions]) =>
+      actions.every(action => this.has(resource as keyof TRole, action))
     );
   }
 
   /**
    * Check if role has any of the specified permissions
    */
-  hasAny(permissions: Record<string, string[]>): boolean {
-    return Object.entries(permissions).some(([resource, actions]) =>
-      actions.some(action => this.has(resource, action))
+  hasAny(permissions: Record<keyof TRole, string[]>): boolean {
+    return Object.entries<string[]>(permissions).some(([resource, actions]) =>
+      actions.some(action => this.has(resource as keyof TRole, action))
     );
   }
 
   /**
    * Get permissions for a specific resource
    */
-  getPermissions(resource: string): readonly string[] | undefined {
+  getPermissions(resource: string): string[] | undefined {
     if (typeof this._role !== 'object' || this._role === null) {
       return undefined;
     }
     
-    const roleObj = this._role as any;
-    return roleObj[resource];
+    const roleObj = this._role;
+    return roleObj[resource] as string[];
   }
 
   /**
@@ -86,7 +86,7 @@ export class RoleConfig<TRole = any> {
       return [];
     }
     
-    return Object.keys(this._role as any);
+    return Object.keys(this._role);
   }
 
   /**
@@ -97,7 +97,7 @@ export class RoleConfig<TRole = any> {
       return true;
     }
     
-    return Object.keys(this._role as any).length === 0;
+    return Object.keys(this._role).length === 0;
   }
 
   /**
@@ -108,7 +108,7 @@ export class RoleConfig<TRole = any> {
       return 0;
     }
     
-    return Object.keys(this._role as any).length;
+    return Object.keys(this._role).length;
   }
 
   /**
@@ -134,7 +134,7 @@ export class RoleConfig<TRole = any> {
     }
     
     const result: Record<string, readonly string[]> = {};
-    const roleObj = this._role as any;
+    const roleObj = this._role;
     
     for (const [resource, actions] of Object.entries(roleObj)) {
       if (Array.isArray(actions) && predicate(resource, actions)) {
@@ -153,7 +153,7 @@ export class RoleConfig<TRole = any> {
       return [];
     }
     
-    const roleObj = this._role as any;
+    const roleObj = this._role;
     return Object.entries(roleObj)
       .filter(([, actions]) => Array.isArray(actions))
       .map(([resource, actions]) => mapper(resource, actions as readonly string[]));
@@ -173,21 +173,21 @@ export class RoleConfig<TRole = any> {
    */
   writeOnly(): Record<string, readonly string[]> {
     return this.filter((_, actions) =>
-      actions.some(a => ['create', 'update', 'delete'].includes(a as string))
+      actions.some(a => ['create', 'update', 'delete'].includes(a))
     );
   }
 
   /**
    * Check if role can perform action on resource
    */
-  can(resource: string, action: string): boolean {
+  can(resource: keyof TRole, action: string): boolean {
     return this.has(resource, action);
   }
 
   /**
    * Check if role cannot perform action on resource
    */
-  cannot(resource: string, action: string): boolean {
+  cannot(resource: keyof TRole, action: string): boolean {
     return !this.has(resource, action);
   }
 }
