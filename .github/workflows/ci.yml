@@ -159,7 +159,7 @@ jobs:
                       bun-deps-${{ runner.os }}-
 
             - name: 🔍 Run ESLint
-              run: bun run lint
+              run: bun x turbo run lint --affected --concurrency 4
 
     # Job 3: Build
     build:
@@ -240,7 +240,7 @@ jobs:
             - name: 🏗️ Build packages
               run: |
                   # Build shared packages first
-                  bun x turbo run compile
+                  bun x turbo run compile --affected --concurrency 4
 
     # Job 4: Test
     test:
@@ -319,7 +319,7 @@ jobs:
                       declarative-routes-${{ runner.os }}-
 
             - name: 🧪 Run tests for all packages
-              run: bun run test
+              run: bun 
 
     # Job 5: Deployment Ready Check
     deployment-ready:

@@ -1,20 +1,5 @@
 #!/bin/sh
 echo "🚀 Running pre-push hook with turbo..."
 
-# Read the remote and branch being pushed from stdin
-# Format: <local-ref> <local-sha> <remote-ref> <remote-sha>
-read local_ref local_sha remote_ref remote_sha
-
-# If the remote ref doesn't exist (new branch), compare with HEAD^
-if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
-    # New branch - get the range from the merge base
-    remote_sha=$(git merge-base origin/HEAD HEAD 2>/dev/null || echo "HEAD^")
-fi
-
-# Get the commit range being pushed
-commit_range="$remote_sha..$local_sha"
-
-echo "📤 Commits being pushed: $commit_range"
-
 # Run turbo with the specific commit range
-bun x turbo run compile lint test --filter="[$commit_range]"
+bun x turbo run compile lint test --affected
