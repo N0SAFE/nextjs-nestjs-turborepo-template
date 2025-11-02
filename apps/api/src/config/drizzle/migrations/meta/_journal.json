@@ -22,6 +22,13 @@
       "when": 1758318828427,
       "tag": "0002_whole_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1762085007680,
+      "tag": "0003_dusty_firestar",
+      "breakpoints": true
     }
   ]
 }

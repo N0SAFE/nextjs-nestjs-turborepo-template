@@ -7,6 +7,10 @@ import { AUTH_INSTANCE_KEY } from '@/core/modules/auth/types/symbols';
 import type { Auth } from '@/auth';
 import { nanoid } from 'nanoid';
 import { roles } from '@/config/auth/permissions'; // Correct relative path
+import { eq } from 'drizzle-orm';
+
+// Seed version identifier - increment this when you want to re-seed
+const SEED_VERSION = 'v1.0.0';
 
 @Injectable()
 @Command({
@@ -27,6 +31,20 @@ export class SeedCommand extends CommandRunner {
     console.log("🌱 Seeding database...");
 
     try {
+      // Check if this seed version has already been applied
+      const existingSeed = await this.db
+        .select()
+        .from(schema.seedVersion)
+        .where(eq(schema.seedVersion.version, SEED_VERSION))
+        .limit(1);
+
+      if (existingSeed.length > 0) {
+        console.log(`✅ Seed version ${SEED_VERSION} already applied at ${existingSeed[0].appliedAt.toISOString()}`);
+        console.log('   Skipping seeding. To re-seed, increment SEED_VERSION in seed.command.ts');
+        return;
+      }
+
+      console.log(`📦 Applying seed version ${SEED_VERSION}...`);
       // Dynamically get roles from permissions
       const roleNames = Object.keys(roles);
       const usersPerRole = 2;
@@ -73,7 +91,12 @@ export class SeedCommand extends CommandRunner {
       // Log for MCP access (in production, use secure storage)
       console.log('Seeded API Keys for MCP (store securely):', JSON.stringify(seededData.apiKeys, null, 2));
 
-      console.log("✅ Database seeded successfully with role-based users and API keys");
+      // Record that this seed version has been applied
+      await this.db.insert(schema.seedVersion).values({
+        version: SEED_VERSION,
+      });
+
+      console.log(`✅ Database seeded successfully with role-based users and API keys (version ${SEED_VERSION})`);
     } catch (error) {
       console.error("❌ Seeding failed:", error);
       throw error;
