@@ -76,4 +76,4 @@ RUN --mount=type=cache,target=/root/.bun \
     bun x turbo run build --filter=api... --filter=!api
 
 # Start the API dev server at container runtime only.
-CMD ["sh", "-c", "bun x turbo run api#dev"]
+CMD ["sh", "-c", "bun x dotenv -e .env -- bun x turbo run dev --filter=api..."]

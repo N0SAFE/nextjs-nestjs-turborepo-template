@@ -13,11 +13,14 @@ describe('UserController', () => {
     name: 'John Doe',
     email: 'john@example.com',
     image: null,
-    status: 'active',
     emailVerified: false,
-    createdAt: '2023-01-01T00:00:00.000Z',
-    updatedAt: '2023-01-01T00:00:00.000Z',
-  };
+    createdAt: new Date('2023-01-01T00:00:00.000Z') as Date & string,
+    updatedAt: new Date('2023-01-01T00:00:00.000Z') as Date & string,
+    role: 'user',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+  } satisfies Awaited<ReturnType<typeof service.getUsers>>['users'][number]
 
   beforeEach(async () => {
     const mockUserService = {
@@ -50,43 +53,43 @@ describe('UserController', () => {
 
   describe('ORPC implementation methods', () => {
     it('should have list method that returns implementation', () => {
-      const implementation = controller.list();
+      const implementation = controller.list() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have findById method that returns implementation', () => {
-      const implementation = controller.findById();
+      const implementation = controller.findById() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have create method that returns implementation', () => {
-      const implementation = controller.create();
+      const implementation = controller.create() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have update method that returns implementation', () => {
-      const implementation = controller.update();
+      const implementation = controller.update() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have delete method that returns implementation', () => {
-      const implementation = controller.delete();
+      const implementation = controller.delete() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have checkEmail method that returns implementation', () => {
-      const implementation = controller.checkEmail();
+      const implementation = controller.checkEmail() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });
 
     it('should have count method that returns implementation', () => {
-      const implementation = controller.count();
+      const implementation = controller.count() as any;
       expect(implementation).toBeDefined();
       expect(typeof implementation.handler).toBe('function');
     });

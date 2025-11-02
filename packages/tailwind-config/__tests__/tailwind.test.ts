@@ -5,14 +5,14 @@ import * as path from 'path'
 describe('Tailwind Config', () => {
   describe('Configuration Export', () => {
     it('should export a valid tailwind configuration', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       
       expect(config).toBeDefined()
       expect(config.default).toBeDefined()
     })
 
     it('should have content paths defined', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       expect(tailwindConfig).toHaveProperty('content')
@@ -21,7 +21,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should have theme configuration', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       expect(tailwindConfig).toHaveProperty('theme')
@@ -29,7 +29,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should have plugins array', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.plugins) {
@@ -40,7 +40,7 @@ describe('Tailwind Config', () => {
 
   describe('Content Patterns', () => {
     it('should include common file patterns', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       const contentPatterns = tailwindConfig.content
@@ -54,7 +54,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should use proper glob patterns', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       const contentPatterns = tailwindConfig.content
@@ -69,7 +69,7 @@ describe('Tailwind Config', () => {
 
   describe('Theme Configuration', () => {
     it('should extend default theme if configured', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.theme && tailwindConfig.theme.extend) {
@@ -78,7 +78,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should have valid color configuration if present', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.theme?.extend?.colors) {
@@ -93,7 +93,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should have valid spacing configuration if present', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.theme?.extend?.spacing) {
@@ -105,7 +105,7 @@ describe('Tailwind Config', () => {
 
   describe('Plugin Configuration', () => {
     it('should include animate plugin if present', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.plugins && tailwindConfig.plugins.length > 0) {
@@ -121,7 +121,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should have valid plugin structure', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       if (tailwindConfig.plugins) {
@@ -139,8 +139,8 @@ describe('Tailwind Config', () => {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
       
       expect(packageJson.name).toBe('@repo/tailwind-config')
-      expect(packageJson.main).toBe('index.ts')
-      expect(packageJson.types).toBe('index.ts')
+      expect(packageJson.main).toBe('index.mts')
+      expect(packageJson.types).toBe('index.mts')
     })
 
     it('should have tailwindcss as dependency', () => {
@@ -158,7 +158,7 @@ describe('Tailwind Config', () => {
 
   describe('Configuration Validation', () => {
     it('should be a valid Tailwind configuration object', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       // Basic validation for Tailwind config structure
@@ -170,7 +170,7 @@ describe('Tailwind Config', () => {
     })
 
     it('should not have conflicting configuration', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       const tailwindConfig = config.default
       
       // Should not have both purge and content (purge is deprecated)
@@ -183,12 +183,12 @@ describe('Tailwind Config', () => {
   describe('File Import', () => {
     it('should import without errors', async () => {
       expect(async () => {
-        await import('../index.ts')
+        await import('../index.mts')
       }).not.toThrow()
     })
 
     it('should export as default export', async () => {
-      const config = await import('../index.ts')
+      const config = await import('../index.mts')
       expect(config.default).toBeDefined()
     })
   })

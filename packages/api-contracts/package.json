@@ -15,7 +15,8 @@
     "clean": "rm -rf dist",
     "build": "bun scripts/build.ts",
     "compile": "bun x cross-env COMPILE_MODE=true bun run build",
-    "dev": "bun run build -- --watch"
+    "dev": "bun run build -- --watch",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@orpc/contract": "catalog:orpc",
@@ -28,6 +29,7 @@
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "@types/node": "catalog:build",
     "chokidar": "catalog:build",
     "@repo/tsconfig": "*",
     "typescript": "catalog:build"

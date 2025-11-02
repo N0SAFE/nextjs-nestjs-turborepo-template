@@ -25,6 +25,7 @@
         "dev": "bun run build -- --watch",
         "prettify": "bun x --bun prettier ./**/*.{ts,tsx,js,jsx,css} --write --no-error-on-unmatched-pattern",
         "lint": "eslint \"**/*.ts*\"",
+        "type-check": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",

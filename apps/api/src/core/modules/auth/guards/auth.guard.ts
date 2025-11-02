@@ -6,6 +6,7 @@ import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import { AUTH_INSTANCE_KEY } from "../types/symbols";
 import type { IncomingHttpHeaders } from "http";
+import { getRequestFromContext } from "../utils/context";
 
 /**
  * NestJS guard that handles authentication for protected routes
@@ -27,7 +28,7 @@ export class AuthGuard implements CanActivate {
 	 * @returns True if the request is authorized to proceed, throws an error otherwise
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const request = context.switchToHttp().getRequest<Request & { session: {session: Auth['$Infer']['Session']['session'] , user?: Auth['$Infer']['Session']['user']} | null; user?: Auth['$Infer']['Session']['user'] }>();
+		const request = getRequestFromContext(context);
 		const session = await this.auth.api.getSession({
 			headers: fromNodeHeaders(request.headers as unknown as IncomingHttpHeaders),
 		});

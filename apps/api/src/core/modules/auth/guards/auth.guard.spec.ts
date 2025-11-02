@@ -33,6 +33,7 @@ describe('AuthGuard', () => {
     };
 
     mockContext = {
+      getType: () => 'http',
       switchToHttp: () => ({
         getRequest: () => mockRequest,
       }),

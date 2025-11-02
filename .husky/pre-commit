@@ -1,3 +1,0 @@
-#!/bin/sh
-# Pre-commit hook intentionally empty
-# Linting and testing happens on pre-push instead

@@ -103,7 +103,7 @@ const LoginPage: React.FC = () => {
         
         try {
             const res = await authClient.signIn.passkey({
-                email: form.getValues('email') || undefined, // Use email if provided
+                autoFill: true,
             })
             
             if (res?.error) {

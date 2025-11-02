@@ -1,10 +1,10 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type ViteUserConfigExport } from 'vitest/config'
 
 /**
  * Base Vitest configuration for all packages
  */
-export const createBaseConfig = (overrides: any = {}) => {
+export const createBaseConfig = (overrides: ViteUserConfigExport = {}): ViteUserConfigExport => {
   return defineConfig({
     test: {
       globals: true,

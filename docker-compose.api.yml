@@ -2,7 +2,7 @@ services:
   # Database for development
   api-db-dev:
     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-db-dev
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -20,23 +20,6 @@ services:
     networks:
       - api_network_dev
 
-  # Redis cache for development
-  api-cache-dev:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-cache-dev
-    image: redis:8-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD-SHELL", "[ $$(redis-cli ping) = 'PONG' ]"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_interval: 5s
-      start_period: 30s
-    networks:
-      - api_network_dev
-
   # NestJS API for development
   api-dev:
     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-dev
@@ -46,11 +29,10 @@ services:
     depends_on:
       api-db-dev:
         condition: service_healthy
-      api-cache-dev:
-        condition: service_healthy
     restart: unless-stopped
     ports:
       - "${API_PORT:-3001}:${API_PORT:-3001}"
+      - "${DRIZZLE_STUDIO_PORT:-4983}:4983"
     volumes:
       # Mount source code for hot reloading
       - ./apps/api/src:/app/apps/api/src
@@ -72,6 +54,7 @@ services:
       CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # Development specific settings
       LOG_LEVEL: debug
+      DEV_AUTH_KEY: ${DEV_AUTH_KEY:-dev-auth-fallback-key}
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://127.0.0.1:${API_PORT:-3001}/health || exit 1
       start_period: 15s

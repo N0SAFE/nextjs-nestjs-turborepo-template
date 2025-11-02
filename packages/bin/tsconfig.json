@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig/config/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "composite": false,
+    "lib": ["ES2020"]
+  },
+  "include": ["script/**/*"],
+  "exclude": ["node_modules", "dist", "__tests__"]
+}

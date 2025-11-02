@@ -15,6 +15,11 @@ export { emptySchema }
 
 type LinkProps = Parameters<typeof Link>[0]
 
+// Helper type to check if params input is empty
+type ParamsInput<T extends z.ZodType> = z.input<T> extends Record<string, never>
+    ? Record<string, never>
+    : z.input<T>
+
 export interface RouteInfo<
     Params extends z.ZodType,
     Search extends z.ZodType,
@@ -43,7 +48,7 @@ export interface PutInfo<Body extends z.ZodType, Result extends z.ZodType> {
 
 type FetchOptions = Parameters<typeof fetch>[1]
 
-interface CoreRouteElements<
+export interface CoreRouteElements<
     Params extends z.ZodType,
     Search extends z.ZodType = typeof emptySchema,
 > {
@@ -127,15 +132,16 @@ export type RouteBuilder<
 
     Link: React.FC<
         Omit<LinkProps, 'href'> &
-            z.input<Params> & {
-                search?: z.input<Search>
-            } & { children?: React.ReactNode }
+            (ParamsInput<Params> extends Record<string, never>
+                ? { search?: z.input<Search>; children?: React.ReactNode }
+                : ParamsInput<Params> & { search?: z.input<Search>; children?: React.ReactNode })
     >
     ParamsLink: React.FC<
         Omit<LinkProps, 'href'> & {
             params?: z.input<Params>
             search?: z.input<Search>
-        } & { children?: React.ReactNode }
+            children?: React.ReactNode
+        }
     >
 }
 
@@ -477,9 +483,9 @@ export function makeRoute<
         children,
         ...props
     }: Omit<LinkProps, 'href'> &
-        z.input<Params> & {
-            search?: z.input<Search>
-        } & { children?: React.ReactNode }) {
+        (ParamsInput<Params> extends Record<string, never>
+            ? { search?: z.input<Search>; children?: React.ReactNode }
+            : ParamsInput<Params> & { search?: z.input<Search>; children?: React.ReactNode })) {
         const parsedParams = info.params.parse(props) as z.core.input<Params>
         const params = parsedParams as Record<string, any>
         const extraProps = { ...props }

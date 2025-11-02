@@ -2,7 +2,7 @@ services:
     # Database for development
     api-db-dev:
         container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-db-dev
-        image: postgres:16-alpine
+        image: postgres:17-alpine
         restart: unless-stopped
         environment:
             POSTGRES_USER: ${DB_USER:-postgres}
@@ -18,21 +18,6 @@ services:
         networks:
             - app_network_dev
 
-    # # Redis cache for development
-    # api-cache-dev:
-    #     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-cache-dev
-    #     image: redis:8-alpine
-    #     restart: unless-stopped
-    #     healthcheck:
-    #         test: ["CMD-SHELL", "[ $$(redis-cli ping) = 'PONG' ]"]
-    #         interval: 10s
-    #         timeout: 5s
-    #         retries: 5
-    #         start_interval: 5s
-    #         start_period: 30s
-    #     networks:
-    #         - app_network_dev
-
     # NestJS API for development
     api-dev:
         container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-dev
@@ -46,8 +31,6 @@ services:
         depends_on:
             api-db-dev:
                 condition: service_healthy
-            # api-cache-dev:
-            #     condition: service_healthy
         restart: unless-stopped
         mem_limit: 2g
         memswap_limit: 2g

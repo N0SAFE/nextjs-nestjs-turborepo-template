@@ -2,4 +2,4 @@
 echo "🚀 Running pre-push hook with turbo..."
 
 # Run turbo with the specific commit range
-bun x turbo run compile lint test --affected
+bun run check -- --affected

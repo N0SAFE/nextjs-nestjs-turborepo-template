@@ -16,7 +16,7 @@ export function keysToSnake<T extends Record<string, unknown>>(object: T) {
             acc[snakeKey as keyof typeof acc] = object[key]
             return acc
         },
-        {}
+        {} as Record<SnakeCaseSeq<keyof T extends string ? keyof T : never>, unknown>
     ) as T extends Record<string, unknown>
         ? {
               [K in keyof T as SnakeCaseSeq<K & string>]: T[K] extends Record<

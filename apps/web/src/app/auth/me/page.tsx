@@ -117,7 +117,7 @@ const ProfilePage: React.FC = () => {
             if (result.error) {
                 setError(result.error.message ?? 'Failed to load sessions')
             } else {
-                setSessions((result.data ?? []) as SessionItem[])
+                setSessions((result.data ?? []))
             }
         } catch (err) {
             console.error('Error loading sessions:', err)
@@ -279,11 +279,16 @@ const ProfilePage: React.FC = () => {
         return <Monitor className="h-4 w-4" />
     }
 
-    const getSessionDeviceIcon = (userAgent?: string) => {
+    const getSessionDeviceIcon = (userAgent?: string | null) => {
         if (userAgent && (/Mobile|Android|iPhone|iPad/.test(userAgent))) {
             return <Smartphone className="h-4 w-4" />
         }
         return <Monitor className="h-4 w-4" />
+    }
+    
+    const getLocationInfo = (ipAddress?: string | null) => {
+        // In a real app, you might want to do IP geolocation
+        return ipAddress ?? 'Unknown Location'
     }
 
     const formatDate = (date: Date | string) => {
@@ -297,7 +302,7 @@ const ProfilePage: React.FC = () => {
         })
     }
 
-    const getUserAgentInfo = (userAgent?: string) => {
+    const getUserAgentInfo = (userAgent?: string | null) => {
         if (!userAgent) {
             return 'Unknown'
         }

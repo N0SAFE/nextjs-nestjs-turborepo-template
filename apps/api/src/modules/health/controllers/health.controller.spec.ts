@@ -71,12 +71,12 @@ describe("HealthController", () => {
 
         it("should be able to call getDetailedHealth service method directly", async () => {
             const mockDetailedHealth = {
-                status: "ok",
+                status: "ok" as const,
                 timestamp: new Date().toISOString(),
                 service: "nestjs-api",
                 uptime: 123,
                 memory: { used: 1000, free: 2000, total: 3000 },
-                database: { status: "ok" },
+                database: { status: "ok" as const, timestamp: "2023-01-01T00:00:00Z", responseTime: 100 },
             };
             vi.mocked(service.getDetailedHealth).mockResolvedValue(mockDetailedHealth);
 

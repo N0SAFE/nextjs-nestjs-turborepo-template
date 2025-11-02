@@ -1,12 +1,9 @@
 import { Inject, Logger, Module } from "@nestjs/common";
-import type { DynamicModule, MiddlewareConsumer, ModuleMetadata, NestModule, OnModuleInit, Provider, Type } from "@nestjs/common";
+import type { DynamicModule, ModuleMetadata, OnModuleInit, Provider, Type } from "@nestjs/common";
 import { APP_FILTER, DiscoveryModule, DiscoveryService, HttpAdapterHost, MetadataScanner } from "@nestjs/core";
-import { toNodeHandler } from "better-auth/node";
 import { createAuthMiddleware } from "better-auth/plugins";
-import type { Request, Response } from "express";
 import { APIErrorExceptionFilter } from "./filters/api-error-exception-filter";
 import { AuthService } from "./services/auth.service";
-import { SkipBodyParsingMiddleware } from "./middlewares/middlewares";
 import { AFTER_HOOK_KEY, AUTH_INSTANCE_KEY, AUTH_MODULE_OPTIONS_KEY, BEFORE_HOOK_KEY, HOOK_KEY } from "./types/symbols";
 import { AuthController } from "./controllers/auth.controller";
 import { AuthGuard } from "./guards/auth.guard";
@@ -87,7 +84,7 @@ const HOOKS = [
     providers: [AuthGuard, AuthService],
     controllers: [AuthController],
 })
-export class AuthModule implements NestModule, OnModuleInit {
+export class AuthModule implements  OnModuleInit {
     private readonly logger = new Logger(AuthModule.name);
     constructor(
         @Inject(AUTH_INSTANCE_KEY) private readonly auth: Auth,
@@ -113,59 +110,16 @@ export class AuthModule implements NestModule, OnModuleInit {
             );
 
         for (const provider of providers) {
+            console.log('AuthModule: Found provider with hooks metadata');
             const providerPrototype = Object.getPrototypeOf(provider.instance) as typeof provider.instance;
             const methods = this.metadataScanner.getAllMethodNames(providerPrototype);
 
+            console.log('AuthModule: Scanning methods for hooks:', methods);
             for (const method of methods) {
                 const providerMethod = providerPrototype[method];
                 this.setupHooks(providerMethod, provider.instance);
             }
         }
-    }
-
-    configure(consumer: MiddlewareConsumer): void {
-        const trustedOrigins = "trustedOrigins" in this.auth.options ? this.auth.options : null;
-        // function-based trustedOrigins requires a Request (from web-apis) object to evaluate, which is not available in NestJS (we only have a express Request object)
-        // if we ever need this, take a look at better-call which show an implementation for this
-        const isNotFunctionBased = trustedOrigins && Array.isArray(trustedOrigins);
-
-        if (!this.options.disableTrustedOriginsCors && isNotFunctionBased) {
-            this.adapter.httpAdapter.enableCors({
-                origin: trustedOrigins,
-                methods: ["GET", "POST", "PUT", "DELETE"],
-                credentials: true,
-            });
-        } else if (trustedOrigins && !this.options.disableTrustedOriginsCors && !isNotFunctionBased)
-            throw new Error("Function-based trustedOrigins not supported in NestJS. Use string array or disable CORS with disableTrustedOriginsCors: true.");
-
-        if (!this.options.disableBodyParser) consumer.apply(SkipBodyParsingMiddleware).forRoutes("*path");
-
-        // Get basePath from options or use default
-        let basePath = "basePath" in this.auth.options && typeof this.auth.options.basePath === "string" ? this.auth.options.basePath : "/api/auth";
-
-        // Ensure basePath starts with /
-        if (!basePath.startsWith("/")) {
-            basePath = `/${basePath}`;
-        }
-
-        // Ensure basePath doesn't end with /
-        if (basePath.endsWith("/")) {
-            basePath = basePath.slice(0, -1);
-        }
-
-        const handler = toNodeHandler(this.auth);
-        this.adapter.httpAdapter
-            .getInstance<{
-                use: (path: string, handler: (req: Request, res: Response) => void | Promise<void>) => void;
-            }>()
-            // little hack to ignore any global prefix
-            // for now i'll just not support a global prefix
-            .use(`${basePath}/*path`, async (req: Request, res: Response) => {
-                req.url = req.originalUrl;
-
-                await handler(req, res);
-            });
-        this.logger.log(`AuthModule initialized BetterAuth on '${basePath}/*'`);
     }
 
     private setupHooks(providerMethod: (...args: unknown[]) => unknown, providerClass: new (...args: unknown[]) => unknown) {

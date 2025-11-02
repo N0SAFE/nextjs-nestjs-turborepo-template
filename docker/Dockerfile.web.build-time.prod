@@ -107,4 +107,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
 
 WORKDIR /app
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "bun x turbo run web#start"]
+CMD ["sh", "-c", "bun run --cwd=apps/web start"]

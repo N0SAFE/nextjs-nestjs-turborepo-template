@@ -17,7 +17,7 @@
         "target": "ES2017"
     },
     "include": [
-        "tailwind.config.ts",
+        "tailwind.config.mts",
         "eslint.config.ts",
         "next-env.d.ts",
         "**/*.ts",

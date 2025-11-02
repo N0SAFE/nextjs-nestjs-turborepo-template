@@ -9,9 +9,27 @@ export class UserController {
 
   @Implement(userContract.list)
   list() {
-    return implement(userContract.list).handler(async ({ input }) => {
-      return await this.userService.getUsers(input);
+    try {
+      return implement(userContract.list).handler(async ({ input }) => {
+      const result = await this.userService.getUsers(input);
+      return {
+        users: result.users.filter((user): user is NonNullable<typeof user> => user !== null).map(user => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        })),
+        meta: result.meta,
+      };
     });
+    } catch (error) {
+      console.error('UserController: Error in list method:', error);
+      throw error;
+    }
+    
   }
 
   @Implement(userContract.findById)
@@ -24,21 +42,49 @@ export class UserController {
   @Implement(userContract.create)
   create() {
     return implement(userContract.create).handler(async ({ input }) => {
-      return await this.userService.createUser(input);
+      const user = await this.userService.createUser(input);
+      if (!user) {
+        throw new Error('Failed to create user');
+      }
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
     });
   }
 
   @Implement(userContract.update)
   update() {
     return implement(userContract.update).handler(async ({ input }) => {
-      return await this.userService.updateUser(input.id, input);
+      const user = await this.userService.updateUser(input.id, input);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
     });
   }
 
   @Implement(userContract.delete)
   delete() {
     return implement(userContract.delete).handler(async ({ input }) => {
-      return await this.userService.deleteUser(input.id);
+      const user = await this.userService.deleteUser(input.id);
+      if (!user) {
+        return { success: false, message: 'User not found' };
+      }
+      return { success: true };
     });
   }
 

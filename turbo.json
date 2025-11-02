@@ -20,7 +20,19 @@
         "NODE_ENV",
         "PHASE",
         "NEXT_PUBLIC_WEB_URL",
-        "API_PORT"
+        "API_PORT",
+        "DEV_AUTH_KEY",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "REDIS_URL",
+        "CORS_ORIGIN",
+        "LOG_LEVEL",
+        "CHOKIDAR_USEPOLLING",
+        "TRAEFIK_DOMAIN",
+        "TRAEFIK_ACME_EMAIL",
+        "PASSKEY_RPID",
+        "PASSKEY_RPNAME",
+        "PASSKEY_ORIGIN"
     ],
     "tasks": {
         "dev": {
@@ -93,8 +105,7 @@
             "cache": false
         },
         "type-check": {
-            "cache": false,
-            "inputs": ["src/**", "*.config.*", "package.json", "tsconfig.json"]
+            "inputs": ["**/*.ts", "**/*.tsx", "package.json", "tsconfig.json"]
         }
     }
 }

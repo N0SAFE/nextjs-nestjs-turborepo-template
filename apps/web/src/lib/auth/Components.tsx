@@ -55,7 +55,7 @@ export function LogoutButton(props: React.ComponentProps<typeof Button>) {
                 void new Promise((resolve) => {
                     void signOut().then(() => {
                         props.onClick?.(e)
-                        resolve()
+                        resolve(void 0)
                     })
                 })
             }}

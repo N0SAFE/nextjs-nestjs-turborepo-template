@@ -26,5 +26,6 @@
     "paths": {
       "@/*": ["./src/*"],
     }
-  }
+  },
+  "exclude": ["vitest.config.mts"]
 }

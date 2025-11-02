@@ -26,7 +26,7 @@ const sharedRules: Partial<Linter.RulesRecord> = {
 
 const base = defineConfig([
     coreBase,
-    eslintNestJs.configs.flatRecommended,
+    ...(eslintNestJs.configs.flatRecommended as any),
     {
         rules: sharedRules
     },
@@ -34,7 +34,7 @@ const base = defineConfig([
 
 const test = defineConfig([
     coreTest,
-    eslintNestJs.configs.flatRecommended,
+    ...(eslintNestJs.configs.flatRecommended as any),
     {
         rules: sharedRules
     },

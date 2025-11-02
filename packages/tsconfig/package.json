@@ -8,6 +8,7 @@
     "vitest": "catalog:testing"
   },
   "scripts": {
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

@@ -2,7 +2,7 @@ services:
   # API services (defined directly to override networks)
   api-db-prod:
     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-db-prod
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
@@ -15,20 +15,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app_network_prod
-
-  api-cache-prod:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-cache-prod
-    image: redis:8-alpine
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "[ $$(redis-cli ping) = 'PONG' ]"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_interval: 5s
-      start_period: 30s
     networks:
       - app_network_prod
 
@@ -45,8 +31,6 @@ services:
     depends_on:
       api-db-prod:
         condition: service_healthy
-      api-cache-prod:
-        condition: service_healthy
     restart: unless-stopped
     ports:
       - "${API_PORT:-3001}:${API_PORT:-3001}"
@@ -60,6 +44,8 @@ services:
       NEXT_PUBLIC_WEB_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # CORS Configuration for cross-origin requests from web app
       CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      # Development auth key (for development convenience)
+      DEV_AUTH_KEY: ${DEV_AUTH_KEY:-dev-auth-key}
       # Production optimizations
       LOG_LEVEL: warn
     healthcheck:
@@ -110,6 +96,7 @@ services:
       - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:3020}
       - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
       - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
     networks:
       - app_network_prod
     volumes:

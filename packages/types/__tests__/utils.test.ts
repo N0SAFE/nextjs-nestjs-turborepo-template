@@ -10,13 +10,12 @@ import type {
   ObjectFromPascalToSnake,
   ObjectFromSnakeToPascal,
   ObjectFromPascalToCamel,
-  UnionToArray,
   ArrayContains,
   Prettify,
   OmitNever,
   TupleIndices,
-} from './utils'
-import { days } from './utils'
+} from '../src/utils'
+import { days } from '../src/utils'
 
 describe('String Case Transformation Types', () => {
   describe('Snake Case Transformations', () => {
@@ -128,18 +127,6 @@ describe('String Case Transformation Types', () => {
 })
 
 describe('Utility Types', () => {
-  describe('UnionToArray', () => {
-    it('should convert union types to array types', () => {
-      type Union = 'a' | 'b' | 'c'
-      type ArrayType = UnionToArray<Union>
-      
-      // This is a compile-time test - the type should include all union members
-      const array: ArrayType = ['a', 'b', 'c']
-      
-      expect(array).toEqual(['a', 'b', 'c'])
-    })
-  })
-
   describe('ArrayContains', () => {
     it('should check if array contains a type', () => {
       type TestArray = ['a', 'b', 'c']

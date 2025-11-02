@@ -56,7 +56,7 @@
                 "babel-plugin-react-compiler": "^1.0.0"
             },
             "tanstack": {
-                "@tanstack/react-devtools": "^0.7.10",
+                "@tanstack/react-devtools": "^0.8.0",
                 "@tanstack/react-query": "^5.81.5",
                 "@tanstack/react-query-devtools": "^5.81.5",
                 "@tanstack/eslint-plugin-query": "^5.81.5"
@@ -180,7 +180,7 @@
         }
     },
     "scripts": {
-        "dev": "docker compose up",
+        "dev": "dotenv -e .env -- docker compose up",
         "dev:api": "docker compose -f ./docker-compose.api.yml up",
         "dev:web": "docker compose -f ./docker-compose.web.yml up",
         "dev:api:build": "docker compose -f ./docker-compose.api.yml up --build",
@@ -225,7 +225,7 @@
         "docker:cleanup:all": "docker system prune -a -f",
         "docker:size": "docker system df",
         "docker:images": "docker images --format \"table {{.Repository}}\\t{{.Tag}}\\t{{.Size}}\\t{{.CreatedAt}}\"",
-        "prod": "docker compose -f ./docker-compose.prod.yml up",
+        "prod": "dotenv -e .env -- docker compose -f ./docker-compose.prod.yml up",
         "prod:new": "bun --bun run prod:down:volumes && docker compose -f ./docker-compose.prod.yml up --build",
         "prod:down": "docker compose -f ./docker-compose.prod.yml down",
         "prod:down:volumes": "docker compose -f ./docker-compose.prod.yml down --volumes",
@@ -255,10 +255,10 @@
         "@repo/mcp-repo-manager": "dotenv -e .env -- bun --bun --cwd=./packages/mcp-repo-manager run --",
         ".": "dotenv -e .env -- bun --bun --cwd=./ run --",
         "rm:node_modules": "concurrently \"bun --bun x rimraf node_modules\" \"bun --bun x rimraf --glob packages/*/node_modules\" \"bun --bun x rimraf --glob apps/*/node_modules\"",
+        "check": "bun x turbo run compile lint test type-check",
         " ": " "
     },
     "devDependencies": {
-        "@happy-dom/global-registrator": "^20.0.10",
         "@n0safe/envcli": "^1.0.2",
         "@n0safe/rununtil": "^1.0.5",
         "@n0safe/trycli": "^1.0.4",
@@ -266,19 +266,17 @@
         "@types/bun": "latest",
         "concurrently": "catalog:dev",
         "dotenv-cli": "catalog:dev",
-        "lint-staged": "^16.2.6",
         "nyc": "^17.1.0",
-        "prompts": "catalog:utils",
         "rimraf": "catalog:build",
-        "turbo": "2.5.9-canary.10",
+        "turbo": "2.6.0",
         "vite": "catalog:build",
-        "vitest": "^4.0.4"
+        "vitest": "catalog:testing"
     },
     "engines": {
         "bun": ">=1.3.1"
     },
     "packageManager": "bun@1.3.1",
     "peerDependencies": {
-        "typescript": "^5"
+        "typescript": "catalog:build"
     }
 }

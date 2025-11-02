@@ -82,4 +82,4 @@ RUN --mount=type=cache,target=/root/.bun \
     bun x turbo run build --filter=web... --filter=!web
 
 # Start the development web server at container runtime only.
-CMD ["sh", "-c", "bun x turbo run web#dev"]
+CMD ["sh", "-c", "bun x turbo run dev --filter=web..."]

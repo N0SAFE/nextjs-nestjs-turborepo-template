@@ -33,45 +33,47 @@ export const masterTokenPlugin = (options: MasterTokenOptions): BetterAuthPlugin
                         // Hook into all API calls
                         return context.path === "/get-session" || context.path === "/session" || context.path.includes("/session");
                     },
-                    handler: createAuthMiddleware((ctx) => {
-                        return new Promise((resolve) => {
-                            if (!enabled) return;
+                    handler: createAuthMiddleware((ctx): Promise<unknown> => {
+                        if (!enabled) {
+                            return Promise.resolve({ response: undefined });
+                        }
 
-                            // Check for master token
-                            const authHeader = ctx.headers?.get("authorization");
+                        // Check for master token
+                        const authHeader = ctx.headers?.get("authorization");
 
-                            if (authHeader?.startsWith("Bearer ")) {
-                                const token = authHeader.substring(7);
+                        if (authHeader?.startsWith("Bearer ")) {
+                            const token = authHeader.substring(7);
 
-                                if (token === devAuthKey) {
-                                    // If the response is null/empty (no session found), inject our master session
-                                    if (!ctx.body) {
-                                        const masterSession = {
-                                            session: {
-                                                id: `master-session-${String(Date.now())}`,
-                                                userId: masterUser.id,
-                                                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                                                userAgent: ctx.headers?.get("user-agent") ?? "unknown",
-                                                createdAt: new Date().toISOString(),
-                                                updatedAt: new Date().toISOString(),
-                                            },
-                                            user: {
-                                                id: masterUser.id,
-                                                email: masterUser.email,
-                                                emailVerified: true,
-                                                name: masterUser.name,
-                                                createdAt: new Date().toISOString(),
-                                                updatedAt: new Date().toISOString(),
-                                            },
-                                        };
+                            if (token === devAuthKey) {
+                                // If the response is null/empty (no session found), inject our master session
+                                if (!ctx.body) {
+                                    const masterSession = {
+                                        session: {
+                                            id: `master-session-${String(Date.now())}`,
+                                            userId: masterUser.id,
+                                            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                                            userAgent: ctx.headers?.get("user-agent") ?? "unknown",
+                                            createdAt: new Date().toISOString(),
+                                            updatedAt: new Date().toISOString(),
+                                        },
+                                        user: {
+                                            id: masterUser.id,
+                                            email: masterUser.email,
+                                            emailVerified: true,
+                                            name: masterUser.name,
+                                            createdAt: new Date().toISOString(),
+                                            updatedAt: new Date().toISOString(),
+                                        },
+                                    };
 
-                                        resolve({
-                                            response: Response.json(masterSession),
-                                        });
-                                    }
+                                    return Promise.resolve({
+                                        response: Response.json(masterSession),
+                                    });
                                 }
                             }
-                        });
+                        }
+
+                        return Promise.resolve({ response: undefined });
                     }),
                 },
             ],

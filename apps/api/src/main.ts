@@ -1,7 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { apiReference } from "@scalar/nestjs-api-reference";
-import { FlubErrorHandler } from "nestjs-flub";
 import { generateSpec } from "./openapi";
 import { AuthService } from "./core/modules/auth/services/auth.service";
 import { isErrorResult, merge } from "openapi-merge";
@@ -15,7 +14,6 @@ async function bootstrap() {
 
   const authService = app.get<AuthService>(AuthService);
 
-  app.useGlobalFilters(new FlubErrorHandler());
   // Enable CORS for Next.js frontend
   app.enableCors({
     origin: process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000",
