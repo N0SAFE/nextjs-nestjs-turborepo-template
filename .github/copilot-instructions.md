@@ -11,6 +11,194 @@
 
 ---
 
+## ⚡ EFFICIENCY PRINCIPLES
+
+### 1. Batch Tool Calls Whenever Possible
+
+**CRITICAL**: Always analyze your task and identify opportunities to execute multiple independent operations in parallel. This significantly improves performance and reduces user wait time.
+
+#### When to Batch
+
+Batch tool calls when operations are **independent** (no data dependencies between them):
+
+✅ **GOOD - Parallel Execution**:
+```typescript
+// Reading multiple unrelated files
+read_file({ filePath: 'apps/api/src/auth.ts' })
+read_file({ filePath: 'apps/web/src/lib/api.ts' })
+read_file({ filePath: 'packages/api-contracts/index.ts' })
+
+// Creating multiple independent files
+create_file({ filePath: 'components/Header.tsx', content: '...' })
+create_file({ filePath: 'components/Footer.tsx', content: '...' })
+create_file({ filePath: 'components/Sidebar.tsx', content: '...' })
+
+// Multiple independent edits to different files
+replace_string_in_file({ filePath: 'file1.ts', ... })
+replace_string_in_file({ filePath: 'file2.ts', ... })
+replace_string_in_file({ filePath: 'file3.ts', ... })
+```
+
+❌ **BAD - Sequential When Unnecessary**:
+```typescript
+// Don't do this if operations are independent
+await read_file({ filePath: 'apps/api/src/auth.ts' })
+// wait...
+await read_file({ filePath: 'apps/web/src/lib/api.ts' })
+// wait...
+await read_file({ filePath: 'packages/api-contracts/index.ts' })
+```
+
+#### When NOT to Batch
+
+Execute sequentially when operations have **dependencies**:
+
+```typescript
+// Must read file first to know what to edit
+1. read_file({ filePath: 'config.ts' })
+// analyze content...
+2. replace_string_in_file({ filePath: 'config.ts', ... })
+
+// Must get list before processing items
+1. list_dir({ path: 'src/components' })
+// analyze structure...
+2. create_file({ filePath: 'src/components/NewComponent.tsx', ... })
+```
+
+#### Use multi_replace_string_in_file for Multiple Edits
+
+When editing multiple parts of the same file or multiple files, use `multi_replace_string_in_file`:
+
+```typescript
+// Instead of multiple sequential edits
+multi_replace_string_in_file({
+  explanation: 'Update imports and add new function across multiple files',
+  replacements: [
+    { filePath: 'file1.ts', oldString: '...', newString: '...', explanation: '...' },
+    { filePath: 'file2.ts', oldString: '...', newString: '...', explanation: '...' },
+    { filePath: 'file3.ts', oldString: '...', newString: '...', explanation: '...' }
+  ]
+})
+```
+
+#### Efficiency Checklist
+
+Before executing tools, ask yourself:
+- [ ] Can these operations run in parallel?
+- [ ] Are there any data dependencies between them?
+- [ ] Am I making multiple edits that could use `multi_replace_string_in_file`?
+- [ ] Would batching reduce total execution time?
+
+**Remember**: Batching is not just about speed—it improves user experience by reducing back-and-forth and shows professional-grade code organization.
+
+### 2. Minimize runSubagent Usage for Better Context Management
+
+**IMPORTANT**: While `runSubagent` is a powerful tool, it should be used **sparingly and strategically**. Overuse leads to context fragmentation, increased latency, and reduced efficiency.
+
+#### When runSubagent is Appropriate
+
+✅ **Use runSubagent for**:
+
+1. **Large-scale codebase searches** where you need to find patterns across many files:
+   ```typescript
+   runSubagent({
+     description: 'Find all ORPC violations',
+     prompt: 'Search entire codebase for direct ORPC usage in React components (files in apps/web/src/). Report file paths and line numbers of violations.'
+   })
+   ```
+
+2. **Complex research requiring multiple discovery steps**:
+   ```typescript
+   runSubagent({
+     description: 'Research authentication patterns',
+     prompt: 'Investigate how authentication works: 1) Find Better Auth config, 2) Trace AuthService usage, 3) Document the flow. Return comprehensive summary.'
+   })
+   ```
+
+3. **Self-contained feature implementations** where isolation is beneficial:
+   ```typescript
+   runSubagent({
+     description: 'Implement user settings API',
+     prompt: 'Create complete user settings feature: ORPC contract, NestJS controller with Service-Adapter pattern, client hooks. Follow all core concepts.'
+   })
+   ```
+
+4. **Tasks requiring specialized context** that would pollute your current context:
+   ```typescript
+   runSubagent({
+     description: 'Analyze test coverage gaps',
+     prompt: 'Review all test files and identify modules without adequate test coverage. Return prioritized list with file paths.'
+   })
+   ```
+
+#### When NOT to Use runSubagent
+
+❌ **Avoid runSubagent for**:
+
+1. **Simple, well-defined tasks** you can handle directly:
+   ```typescript
+   // Don't use subagent for this
+   ❌ runSubagent({ description: 'Read auth config', prompt: 'Read apps/api/src/auth.ts' })
+   
+   // Just do it directly
+   ✅ read_file({ filePath: 'apps/api/src/auth.ts' })
+   ```
+
+2. **Tasks where you already have the context loaded**:
+   ```typescript
+   // You just read the file, don't delegate the edit
+   ❌ const content = await read_file(...)
+      runSubagent({ prompt: 'Edit this file...' })
+   
+   // Edit it yourself
+   ✅ const content = await read_file(...)
+      replace_string_in_file(...)
+   ```
+
+3. **Sequential steps in a single workflow**:
+   ```typescript
+   // Don't break up a coherent workflow
+   ❌ runSubagent({ prompt: 'Create ORPC contract' })
+      runSubagent({ prompt: 'Create controller for that contract' })
+      runSubagent({ prompt: 'Create client hooks' })
+   
+   // Handle the complete workflow yourself
+   ✅ // Create contract, controller, and hooks in sequence
+   ```
+
+4. **Quick clarifications or information retrieval**:
+   ```typescript
+   // Don't use subagent for simple searches
+   ❌ runSubagent({ prompt: 'What files are in src/components?' })
+   
+   // Use direct tools
+   ✅ list_dir({ path: 'src/components' })
+   ```
+
+#### Context Management Best Practices
+
+**Why minimize runSubagent?**
+- **Context continuity**: Keep related work in the same execution context
+- **Reduced latency**: Direct tool calls are faster than spawning subagents
+- **Better error handling**: Immediate access to results and errors
+- **Token efficiency**: Avoid context duplication between agents
+- **Clearer responsibility**: You maintain full control and understanding
+
+**Decision Framework**:
+```
+Is the task...
+├─ Complex multi-step research? → Consider runSubagent
+├─ Large codebase search (100+ files)? → Consider runSubagent
+├─ Self-contained feature implementation? → Consider runSubagent
+├─ Something you can handle with direct tools? → Use direct tools ✅
+├─ Part of your current workflow? → Handle it yourself ✅
+└─ Simple read/edit/create operation? → Use direct tools ✅
+```
+
+**Golden Rule**: Default to direct tool usage. Only delegate to `runSubagent` when the task genuinely benefits from isolation or specialized context that would be inefficient to load yourself.
+
+---
+
 ## IMPORTANT STARTUP CHECKLIST
 
 Before doing anything, you MUST use the MCP Repo Manager and AGENTS.md files to load context and rules.
@@ -33,7 +221,9 @@ Error handling protocol (CRITICAL):
    - Missing dependency: add via `add-dependency` (use internal workspace version `*` when applicable) and retry
    - Service not available: start required stack using root scripts (`bun run dev`, `bun run dev:api`, or `bun run dev:web`) with the appropriate compose file
    - Inconsistent graph: inspect with `repo://graph/uses/{name}` and `repo://graph/used-by/{name}` then adjust
-- Retry up to two times before escalating; surface the exact tool call, parameters, and error message in your report.
+- **Use direct tools for fixes** - Don't delegate simple corrections to runSubagent
+- **Batch multiple fixes** when possible (e.g., adding multiple missing dependencies in parallel)
+- Retry up to two times before escalating; surface the exact tool call, parameters, and error message.
 - Validate readiness with `repo://commit/plan` or the `commit-plan` prompt before finalizing changes.
 
 
@@ -88,6 +278,8 @@ Import like: `import { Button } from '@repo/ui'`
 
 ## Key Commands & Workflows
 
+**Efficiency Note**: Use `run_in_terminal` directly for these commands. Only use runSubagent for complex multi-step workflows that require research or exploration.
+
 ### Development
 ```bash
 bun run dev                    # Start full development stack
@@ -111,7 +303,11 @@ bun run api -- db:migrate     # Run migrations
 bun run api -- db:seed        # Seed development data
 ```
 
+**Tip**: When running multiple commands in sequence, consider if they can be batched or run in parallel (e.g., starting multiple services).
+
 ## File Organization Patterns
+
+**Efficiency Tip**: When exploring file structure, batch `read_file` calls for related files instead of sequential reads. Use `list_dir` first to understand structure, then read needed files in parallel.
 
 ### Next.js App (apps/web/)
 - **App Router**: `src/app/*/page.tsx` with co-located `page.info.ts`
@@ -132,10 +328,13 @@ bun run api -- db:seed        # Seed development data
 ## Common Gotchas
 
 1. **Route Changes**: Always run `bun run web -- dr:build` after modifying route structure
+   - Use direct `run_in_terminal` tool - don't delegate to runSubagent
 2. **Docker Networking**: Use container names (`api:3001`) for server-side, localhost for client-side
 3. **Type Generation**: API contract changes require `bun run web -- generate`
+   - Batch this with other build commands when possible
 4. **Hot Reloading**: Files are mounted in Docker - changes should reflect immediately
 5. **Database**: PostgreSQL runs in Docker - connection strings use container networking
+   - Use direct MCP tools for database operations, not subagents
 
 ## Testing Strategy
 
@@ -149,6 +348,8 @@ bun run dev:api:logs          # View API container logs
 bun run dev:web:logs          # View web container logs
 docker exec -it [container] sh # Shell into containers
 ```
+
+**Efficiency Note**: When debugging multiple services, use `run_in_terminal` in parallel to check logs simultaneously. Don't delegate simple log viewing to runSubagent.
 
 When making changes, follow this order: API contracts → API implementation → route generation → frontend implementation.
 
@@ -199,7 +400,7 @@ For detailed information on specific topics, reference these documentation files
 
 ## Documentation Maintenance
 
-**IMPORTANT**: As an AI coding agent, you have a responsibility to keep documentation accurate and up-to-date. 
+**IMPORTANT**: As an AI coding agent, you have a responsibility to keep documentation accurate and up-to-date.
 
 ### When to Update Documentation
 
@@ -220,9 +421,12 @@ Update relevant documentation whenever you:
 
 1. **Identify Impact**: Determine which documentation files are affected by your changes
 2. **Update Content**: Modify the documentation to reflect new reality
+   - **Batch edits**: Use `multi_replace_string_in_file` when updating multiple documentation files
 3. **Verify Accuracy**: Ensure examples, commands, and procedures are correct
 4. **Check Cross-References**: Update any links or references in other documentation files
+   - **Parallel reads**: Load all related docs simultaneously to verify cross-references
 5. **Test Instructions**: Verify that documented procedures actually work
+   - Use direct tools to test commands, not runSubagent
 
 ### Documentation Quality Standards
 
