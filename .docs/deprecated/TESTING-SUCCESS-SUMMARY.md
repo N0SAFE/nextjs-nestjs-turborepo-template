@@ -33,9 +33,9 @@ bun run test:coverage
 
 | Package | Tests | Status | Notes |
 |---------|-------|--------|--------|
-| @repo/eslint-config | 8/8 | ✅ | ESLint configs validated |
+| @repo-configs/eslint | 8/8 | ✅ | ESLint configs validated |
 | @repo/prettier-config | 12/12 | ✅ | Formatting configs working |
-| @repo/tsconfig | 26/26 | ✅ | TypeScript configs fixed |
+| @repo-configs/typescript | 26/26 | ✅ | TypeScript configs fixed |
 | @repo/tailwind-config | 17/17 | ✅ | Tailwind configs validated |
 | @repo/types | 16/16 | ✅ | Utility types working |
 | @repo/ui | 44/44 | ✅ | React components tested |

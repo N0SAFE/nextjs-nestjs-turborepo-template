@@ -1,0 +1,15 @@
+{
+  "extends": "../../configs/typescript/config/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "composite": false,
+    "lib": ["ES2020"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["*.ts", "__tests__/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

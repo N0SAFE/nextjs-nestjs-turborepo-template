@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { createBaseConfig } from '@repo/vitest-config/base'
+import { createBaseConfig } from '@repo-configs/vitest/base'
 
 export default defineConfig(
     createBaseConfig({

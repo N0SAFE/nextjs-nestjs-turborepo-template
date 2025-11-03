@@ -1,0 +1,20 @@
+{
+  "name": "@repo-configs/tailwind",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.mts",
+  "types": "index.mts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@repo-configs/vitest": "*",
+    "tailwind-variants": "catalog:styling",
+    "tailwindcss": "catalog:styling",
+    "tailwindcss-animate": "catalog:styling",
+    "vitest": "catalog:testing"
+  }
+}

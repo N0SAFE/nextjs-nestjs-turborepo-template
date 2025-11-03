@@ -1,0 +1,37 @@
+{
+  "name": "@repo/api-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    },
+    "./*": "./*.ts"
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "bun scripts/build.ts",
+    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
+    "dev": "bun run build -- --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@orpc/contract": "catalog:orpc",
+    "@orpc/shared": "catalog:orpc",
+    "zod": "catalog:utils"
+  },
+  "peerDependencies": {
+    "@orpc/contract": "catalog:orpc",
+    "@orpc/shared": "catalog:orpc",
+    "zod": "catalog:utils"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:build",
+    "chokidar": "catalog:build",
+    "@repo-configs/typescript": "*",
+    "typescript": "catalog:build"
+  }
+}

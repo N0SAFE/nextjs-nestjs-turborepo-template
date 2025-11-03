@@ -2,7 +2,7 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import * as path from 'path'
-import { createNextJsConfig } from '@repo/vitest-config'
+import { createNextJsConfig } from '@repo-configs/vitest'
 
 export default defineConfig(
     createNextJsConfig({

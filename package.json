@@ -3,8 +3,8 @@
     "private": true,
     "workspaces": {
         "packages": [
-            "apps/*",
-            "packages/*"
+            "apps/**",
+            "packages/**"
         ],
         "catalogs": {
             "build": {
@@ -249,9 +249,9 @@
         "doc": "dotenv -e .env -- bun --bun --cwd=./apps/doc run --",
         "@repo/ui": "dotenv -e .env -- bun --bun --cwd=./packages/ui run --",
         "@repo/types": "dotenv -e .env -- bun --bun --cwd=./packages/types run --",
-        "@repo/tsconfig": "dotenv -e .env -- bun --bun --cwd=./packages/tsconfig run --",
-        "@repo/tailwind-config": "dotenv -e .env -- bun --bun --cwd=./packages/tailwind-config run --",
-        "@repo/eslint-config": "dotenv -e .env -- bun --bun --cwd=./packages/eslint-config run --",
+        "@repo-configs/typescript": "dotenv -e .env -- bun --bun --cwd=./packages/configs/typescript run --",
+        "@repo-configs/tailwind": "dotenv -e .env -- bun --bun --cwd=./packages/configs/tailwind run --",
+        "@repo-configs/eslint": "dotenv -e .env -- bun --bun --cwd=./packages/configs/eslint run --",
         "@repo/mcp-repo-manager": "dotenv -e .env -- bun --bun --cwd=./packages/mcp-repo-manager run --",
         ".": "dotenv -e .env -- bun --bun --cwd=./ run --",
         "rm:node_modules": "concurrently \"bun --bun x rimraf node_modules\" \"bun --bun x rimraf --glob packages/*/node_modules\" \"bun --bun x rimraf --glob apps/*/node_modules\"",
@@ -262,7 +262,7 @@
         "@n0safe/envcli": "^1.0.2",
         "@n0safe/rununtil": "^1.0.5",
         "@n0safe/trycli": "^1.0.4",
-        "@repo/vitest-config": "*",
+        "@repo-configs/vitest": "*",
         "@types/bun": "latest",
         "concurrently": "catalog:dev",
         "dotenv-cli": "catalog:dev",

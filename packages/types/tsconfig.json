@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/tsconfig/config/base.json",
+  "extends": "@repo-configs/typescript/config/base.json",
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",

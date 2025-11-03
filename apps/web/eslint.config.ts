@@ -1,5 +1,5 @@
-import nextjsConfig from '@repo/eslint-config/nextjs'
-import { defineConfig } from "@repo/eslint-config";
+import nextjsConfig from '@repo-configs/eslint/nextjs'
+import { defineConfig } from "@repo-configs/eslint";
 
 export default defineConfig([
     {

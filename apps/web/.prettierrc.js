@@ -1,1 +1,1 @@
-module.exports = require('@repo/prettier-config/tailwind')
+module.exports = require('@repo-configs/prettier/tailwind')

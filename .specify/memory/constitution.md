@@ -46,7 +46,7 @@ feature modules live in `apps/api/src/modules/`; frontend lives in `apps/web/`.
 - ✅ Feature modules in `apps/api/src/modules/` implement HTTP endpoints + domain logic
 - ✅ Core modules CANNOT import feature modules (dependency inversion enforced)
 - ✅ Shared UI components live in `packages/ui/` as Shadcn components
-- ✅ All test configurations inherit from `@repo/vitest-config`
+- ✅ All test configurations inherit from `@repo-configs/vitest`
 
 **Rationale:** Clear boundaries prevent circular dependencies; workspace references force explicit
 versioning; Turborepo caching accelerates builds and tests; shared packages unify patterns.
@@ -73,12 +73,12 @@ simplifies deployment to Render and other platforms; isolates service dependenci
 
 ### IV. Centralized Testing via Vitest & Unified Coverage
 
-All tests MUST use Vitest with configurations inherited from `@repo/vitest-config`. Test files
+All tests MUST use Vitest with configurations inherited from `@repo-configs/vitest`. Test files
 colocate with source (`__tests__/` directories), and coverage is merged centrally.
 
 **Rules:**
 - ✅ All unit/integration tests use Vitest across packages and apps
-- ✅ Test config per-package inherits from `@repo/vitest-config`
+- ✅ Test config per-package inherits from `@repo-configs/vitest`
 - ✅ Coverage reports merged centrally: `bun run test:coverage`
 - ✅ Minimum coverage enforced in critical packages (API, UI, contracts)
 - ✅ Contract changes require tests proving both API + frontend integration

@@ -1,0 +1,19 @@
+{
+  "name": "@repo-configs/typescript",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "@repo-configs/vitest": "*",
+    "vitest": "catalog:testing"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@repo-bin/runthenkill",
+  "version": "1.0.0",
+  "description": "CLI tool to run a process and manage port state after termination",
+  "main": "index.ts",
+  "bin": {
+    "runthenkill": "./index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": ["cli", "port", "process", "kill"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "catalog:utils"
+  },
+  "devDependencies": {
+    "@repo-configs/vitest": "*",
+    "vitest": "catalog:testing",
+    "@types/node": "catalog:build"
+  }
+}

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import * as path from 'path'
-import { createNodeConfig } from '@repo/vitest-config/node'
+import { createNodeConfig } from '@repo-configs/vitest/node'
 
 export default defineConfig(
   createNodeConfig({

@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "catalog:linting",
-    "@repo/eslint-config": "*",
+    "@repo-configs/eslint": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
     "@types/node": "^24.9.2",

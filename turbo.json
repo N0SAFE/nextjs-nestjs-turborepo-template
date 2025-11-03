@@ -76,30 +76,30 @@
             "cache": false
         },
         "test": {
-            "dependsOn": ["@repo/vitest-config#build"],
+            "dependsOn": ["@repo-configs/vitest#build"],
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "test:watch": {
             "cache": false,
             "persistent": true,
-            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"]
+            "dependsOn": ["^build", "@repo-configs/eslint#build", "@repo-configs/prettier#build", "@repo-configs/vitest#build"]
         },
         "test:ui": {
             "cache": false,
             "persistent": true,
-            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"]
+            "dependsOn": ["^build", "@repo-configs/eslint#build", "@repo-configs/prettier#build", "@repo-configs/vitest#build"]
         },
         "test:coverage": {
-            "dependsOn": ["^build", "@repo/eslint-config#build", "@repo/prettier-config#build", "@repo/vitest-config#build"],
+            "dependsOn": ["^build", "@repo-configs/eslint#build", "@repo-configs/prettier#build", "@repo-configs/vitest#build"],
             "outputs": ["coverage/**"],
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "lint": {
-            "dependsOn": ["@repo/eslint-config#build"],
+            "dependsOn": ["@repo-configs/eslint#build"],
             "inputs": ["src/**", "*.config.*", "package.json"]
         },
         "prettify": {
-            "dependsOn": ["^lint", "@repo/prettier-config#build"]
+            "dependsOn": ["^lint", "@repo-configs/prettier#build"]
         },
         "clean": {
             "cache": false
