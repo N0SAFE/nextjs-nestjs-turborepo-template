@@ -1,13 +1,29 @@
 # 🎯 AI Coding Agent Instructions
 
-## 🔴 MANDATORY FIRST STEP - READ DOCUMENTATION HUB
+## 🔴 DOCUMENTATION AWARENESS - KNOW WHAT'S AVAILABLE
 
-**CRITICAL**: Before taking ANY action on this project, you MUST:
+**CRITICAL**: You must be AWARE of the project's documentation structure and read relevant files as needed:
 
-1. **Read the [Documentation Hub](../.docs/core-concepts/README.md)** - the source of truth for all patterns
-2. This file delegates ALL governance rules to that hub - do not rely on duplication here
-3. Only use this file for Copilot-specific setup and context  
-4. **The core-concepts hub is non-negotiable** - refer to it for every major decision
+1. **Know the Documentation Hub exists** at `.docs/README.md` - the central navigation point
+2. **Know the Core Concepts directory** at `.docs/core-concepts/` - fundamental patterns and rules
+3. **Read relevant documentation BEFORE implementing** - don't guess patterns
+4. **Don't read everything upfront** - be selective and efficient
+5. **Use the Documentation Hub** to discover what's available and navigate to what you need
+
+### When to Read Documentation
+
+- **Before ANY implementation**: Check if relevant docs exist for the task
+- **When encountering new concepts**: Read the specific core concept or guide
+- **When uncertain about patterns**: Navigate via `.docs/README.md` to find the right guide
+- **NOT every single time**: Don't re-read familiar patterns you've already applied
+
+### Documentation Discovery Pattern
+
+1. **Start at `.docs/README.md`**: Understand what documentation categories exist
+2. **Check Core Concepts Index** at `.docs/core-concepts/README.md`: See what fundamental rules exist
+3. **Navigate to relevant files**: Read only what's needed for your current task
+4. **Keep key patterns in context**: Remember Service-Adapter, ORPC Client Hooks, etc.
+5. **Re-read when needed**: If a pattern is unfamiliar or you're unsure, read the docs again
 
 ---
 

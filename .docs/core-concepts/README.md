@@ -11,27 +11,30 @@ This directory contains the **CORE CONCEPTS** of this project - the fundamental 
 
 ## Critical Rules
 
-### 1. Always Load Core Concepts in Memory
+### 1. Be Aware of Core Concepts and Read What's Needed
 
-Before starting ANY task, AI assistants MUST:
-1. Read `docs/core-concepts/README.md` (this file)
-2. Read **ALL** files in `docs/core-concepts/`
-3. Keep these concepts loaded in context throughout the conversation
+AI assistants MUST:
+1. **Know that `docs/core-concepts/` exists** and contains fundamental patterns
+2. **Read `docs/core-concepts/README.md`** (this file) to see what concepts exist
+3. **Read relevant core concept files** for the current task
+4. **Don't re-read familiar concepts** you've already applied successfully
 
-**Documentation Loading Hierarchy**:
+**Documentation Discovery Hierarchy**:
 ```
-docs/README.md (main documentation hub)
+.docs/README.md (central navigation hub)
     ↓
-docs/core-concepts/README.md (mandatory patterns index)
+.docs/core-concepts/README.md (index of fundamental patterns)
     ↓
-All core concept files in docs/core-concepts/
+Identify which concepts apply to your task
     ↓
-Navigate to relevant subdirectories via README structure
+Read ONLY the relevant core concept files
     ↓
-Check subdirectory READMEs for specific topics
+Navigate to task-specific guides as needed
     ↓
-Read individual files as needed for deep understanding
+Check feature/reference docs for details
 ```
+
+**Key Principle**: Be aware of what documentation exists, read what you need when you need it.
 
 **See**: [06-README-FIRST-DOCUMENTATION-DISCOVERY.md](./06-README-FIRST-DOCUMENTATION-DISCOVERY.md) for complete documentation discovery pattern.
 
@@ -114,10 +117,13 @@ How would you like to proceed?
 
 ### For AI Assistants
 
-1. **At conversation start**: Load all core concept files
-2. **Before each task**: Verify no conflicts with core concepts
-3. **When learning new patterns**: Check if should be added as core concept
-4. **When user requests conflict**: Request approval to update core concept
+1. **At conversation start**: Check `.docs/README.md` and `.docs/core-concepts/README.md` to know what's available
+2. **Before each task**: Identify which core concepts apply and read them
+3. **When implementing**: Use patterns from relevant core concepts
+4. **When uncertain**: Read the specific core concept or guide you need
+5. **When learning new patterns**: Check if should be added as core concept
+6. **When user requests conflict**: Request approval to update core concept
+7. **Don't re-read**: Skip documentation for patterns you're already familiar with
 
 ### For Developers
 

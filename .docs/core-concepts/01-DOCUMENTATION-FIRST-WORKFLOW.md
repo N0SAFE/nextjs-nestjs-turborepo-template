@@ -12,40 +12,54 @@ This is the **MOST IMPORTANT** rule for this project. You MUST follow this workf
 
 ## Core Principle
 
-**⚠️ SILENTLY READ DOCUMENTATION BEFORE IMPLEMENTATION**
+**⚠️ BE AWARE OF DOCUMENTATION AND READ WHAT'S NEEDED**
 
-Before writing ANY code, making ANY changes, or answering ANY questions, read documentation **WITHOUT announcement**.
+Before writing ANY code or making ANY changes, check if relevant documentation exists and read it **WITHOUT announcement**.
 
-## Step 1: Silently Read Documentation First
+## Step 1: Know What Documentation Exists
 
-Read these files in parallel (no announcements):
+**First time or when uncertain**, understand the documentation structure:
 
-1. `docs/README.md` - Overview of all available documentation
-2. Relevant concept documentation from `docs/concepts/`
-3. Relevant architecture documentation from `docs/architecture/`
-4. Relevant feature documentation from `docs/features/`
-5. Relevant specification from `docs/specifications/`
-6. **ALL files in `docs/core-concepts/`** - These are mandatory
+1. `.docs/README.md` - Central navigation hub for all documentation
+2. `.docs/core-concepts/README.md` - Index of fundamental patterns and rules
+3. `.docs/guides/` - Setup, workflows, deployment guides
+4. `.docs/features/` - Feature-specific documentation
+5. `.docs/reference/` - Architecture, tech stack references
 
-## Step 2: Keep Core Documentation in Memory
+## Step 2: Read Relevant Documentation Silently
 
-Load these documents at start of EVERY conversation:
+**For each task**, identify and read (no announcements):
 
-### Required Core Documents (Load Silently)
+### Always Check These First
 
-1. **`docs/core-concepts/README.md`** - Core concepts index and rules
-2. **All `docs/core-concepts/*.md`** - All core concept files
-3. **`docs/README.md`** - Documentation hub
-4. **`docs/concepts/SERVICE-ADAPTER-PATTERN.md`** - Core architectural pattern
-5. **`docs/concepts/FRONTEND-DEVELOPMENT-PATTERNS.md`** - Frontend patterns
-6. **`docs/architecture/CORE-VS-FEATURE-ARCHITECTURE.md`** - Module organization
-7. **`docs/architecture/CORE-MODULE-ARCHITECTURE.md`** - Core module dependencies
+1. **`.docs/README.md`** - Quick reference to find what you need
+2. **`.docs/core-concepts/README.md`** - See if any core concepts apply to your task
+3. **Relevant core concept files** - Read ONLY the ones that apply to your current task
 
-### Specifications (Load When Relevant)
+### Task-Specific Documentation
 
-- **`docs/specifications/ENVIRONMENT-SPECIFICATION.md`** - Environment variables
-- **`docs/specifications/FRONTEND-SPECIFICATION.md`** - Frontend architecture
-- **`docs/specifications/MULTI-DEPLOYMENT-ORCHESTRATION-SPECIFICATION.md`** - Deployment orchestration
+**For API Development:**
+- `.docs/core-concepts/02-SERVICE-ADAPTER-PATTERN.md`
+- `.docs/core-concepts/09-ORPC-IMPLEMENTATION-PATTERN.md`
+- `.docs/features/ORPC-TYPE-CONTRACTS.md`
+
+**For Frontend Development:**
+- `.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`
+- `apps/web/src/routes/README.md`
+- `.docs/guides/DEVELOPMENT-WORKFLOW.md`
+
+**For Database Work:**
+- `.docs/guides/DEVELOPMENT-WORKFLOW.md` (Database Operations section)
+
+**For Deployment/Docker:**
+- `.docs/guides/DOCKER-BUILD-STRATEGIES.md`
+- `.docs/guides/PRODUCTION-DEPLOYMENT.md`
+
+### DON'T Read Everything Every Time
+
+- If you know the Service-Adapter pattern, don't re-read it
+- If you've implemented ORPC hooks before, you remember the pattern
+- Only re-read when uncertain or encountering a new variation
 
 ## Step 3: Workflow for Every Task
 
@@ -56,17 +70,24 @@ Load these documents at start of EVERY conversation:
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│ 2. Silently Read ALL Required Context       │
-│    - docs/core-concepts/ (ALL files)        │
-│    - docs/README.md                         │
-│    - Core concepts                          │
-│    - Relevant features/specs                │
+│ 2. Identify What Documentation You Need     │
+│    - What type of task? (API/Frontend/DB)   │
+│    - Check .docs/README.md for relevant docs│
+│    - Check core-concepts index              │
+└────────────────┬────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────┐
+│ 3. Silently Read ONLY Relevant Docs         │
+│    - Read applicable core concepts          │
+│    - Read task-specific guides              │
+│    - Skip familiar patterns you know        │
 │    (NO announcements about reading)         │
 └────────────────┬────────────────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│ 3. Verify Understanding Internally          │
+│ 4. Verify Understanding Internally          │
 │    - Correct pattern?                       │
 │    - Correct folder structure?              │
 │    - Dependencies clear?                    │
@@ -75,7 +96,7 @@ Load these documents at start of EVERY conversation:
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│ 4. Check for Core Concept Conflicts         │
+│ 5. Check for Core Concept Conflicts         │
 │    - Does request violate core concept?     │
 │    - If yes: Request user approval          │
 │    - Show what would change                 │
@@ -83,7 +104,7 @@ Load these documents at start of EVERY conversation:
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│ 5. Implement Immediately                    │
+│ 6. Implement Immediately                    │
 │    - Use exact patterns from docs           │
 │    - No explanations for standard work      │
 │    - Only explain critical decisions        │
@@ -91,7 +112,7 @@ Load these documents at start of EVERY conversation:
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│ 6. Show Completed Work                      │
+│ 7. Show Completed Work                      │
 │    - Present results                        │
 │    - Update docs if needed                  │
 └─────────────────────────────────────────────┘
@@ -104,7 +125,9 @@ Load these documents at start of EVERY conversation:
 ```
 User: "Create a new user service"
 
-[Silently reads: docs/core-concepts/, docs/README.md, SERVICE-ADAPTER-PATTERN.md, CORE-VS-FEATURE-ARCHITECTURE.md]
+[Checks: This is API work, I need Service-Adapter pattern]
+[Silently reads: .docs/core-concepts/02-SERVICE-ADAPTER-PATTERN.md]
+[Already familiar with core-vs-feature rules, skips re-reading]
 [Implements service following patterns]
 [Shows completed implementation]
 ```
@@ -128,23 +151,23 @@ and finally implement the service following the documented patterns.
 
 **NEVER** announce you're searching documentation.
 
-## Documentation Loading Checklist
+## Documentation Awareness Checklist
 
 Internal verification (do not announce):
 
-- [ ] Read `docs/core-concepts/README.md`
-- [ ] Read ALL files in `docs/core-concepts/`
-- [ ] Read `docs/README.md`
-- [ ] Loaded `SERVICE-ADAPTER-PATTERN.md`
-- [ ] Loaded `FRONTEND-DEVELOPMENT-PATTERNS.md` (for frontend)
-- [ ] Loaded `CORE-VS-FEATURE-ARCHITECTURE.md`
-- [ ] Loaded `CORE-MODULE-ARCHITECTURE.md`
-- [ ] Identified relevant feature/spec docs
-- [ ] Understand patterns for task
+- [ ] Checked `.docs/README.md` to know what's available
+- [ ] Reviewed `.docs/core-concepts/README.md` index
+- [ ] Identified which core concepts apply to this task
+- [ ] Read ONLY the relevant core concept files
+- [ ] Identified task-specific guides (API/frontend/deployment/etc.)
+- [ ] Read applicable guides and features docs
+- [ ] Understand patterns needed for task
 - [ ] No conflicts with core concepts
 - [ ] Ready to implement
 
-**If not ready, read more documentation silently.**
+**If uncertain about a pattern, read the specific documentation for it.**
+
+**Don't re-read documentation you're already familiar with.**
 
 ## Why This Matters
 
