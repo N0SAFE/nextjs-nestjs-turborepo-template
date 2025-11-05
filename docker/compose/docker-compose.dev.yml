@@ -1,0 +1,6 @@
+include:
+  - path:
+      - api/docker-compose.api.dev.yml
+      - web/docker-compose.web.dev.yml
+      - doc/docker-compose.doc.dev.yml
+      - docker-compose.dev.override.yml

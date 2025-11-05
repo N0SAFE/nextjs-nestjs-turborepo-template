@@ -1,0 +1,16 @@
+# Development environment override
+# Adds dev-specific configurations: dependencies, polling, dev auth, debug settings
+# Automatically merged when running docker compose from this directory
+
+services:
+  # Web Development Configuration
+  web-dev:
+    depends_on:
+      api-dev:
+        condition: service_healthy
+
+  # Doc Development Configuration
+  doc-dev:
+    depends_on:
+      api-dev:
+        condition: service_healthy

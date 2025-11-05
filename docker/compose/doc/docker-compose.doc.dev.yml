@@ -1,0 +1,113 @@
+services:
+  # Fumadocs docs app for development with HMR
+  doc-dev:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev
+    build:
+      context: ../../..
+      dockerfile: ./docker/builder/doc/Dockerfile.doc.dev
+      tags:
+        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:latest"
+        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:${DOC_VERSION:-dev}"
+    restart: unless-stopped
+    mem_limit: 2g
+    memswap_limit: 2g
+    ports:
+      - "${NEXT_PUBLIC_DOC_PORT:-3020}:3020"
+    develop:
+      watch:
+        # Restart when Docker Compose configuration changes
+        - action: restart
+          path: ../../..
+          target: /app
+          include:
+            - docker/compose/doc/docker-compose.doc.dev.yaml
+            - docker/compose/docker-compose.dev.override.yml
+            - docker/compose/docker-compose.dev.yml
+        # Rebuild when critical dependency or config files change
+        - action: rebuild
+          path: ../../..
+          target: /app
+          include:
+            - package.json
+            - bun.lock*
+            - turbo.json
+            - apps/doc/package.json
+            - apps/doc/tsconfig.json
+            - apps/doc/tsconfig.*.json
+            - apps/doc/next.config.ts
+            - apps/doc/next.config.js
+            - apps/doc/next.config.mjs
+            - apps/doc/source.config.ts
+            - apps/doc/postcss.config.*
+            - docker/builder/doc/Dockerfile.doc.dev
+            - packages/**/package.json
+        # Sync source code excluding node_modules and build artifacts
+        - action: sync
+          path: ../../..
+          target: /app
+          ignore:
+            # Dependencies
+            - node_modules/
+            - "**/node_modules/"
+            - bun.lock*
+            - package-lock.json
+            - yarn.lock
+            - pnpm-lock.yaml
+            # Build outputs
+            - "**/dist/"
+            - "**/build/"
+            - "**/.next/"
+            - "**/out/"
+            - "**/.output/"
+            # Cache directories
+            - "**/.turbo/"
+            - "**/.cache/"
+            - "**/.parcel-cache/"
+            - "**/.vite/"
+            # Logs
+            - "**/*.log"
+            - "**/logs/"
+            # Git
+            - .git/
+            - .gitignore
+            # Docker
+            - docker/
+            - Dockerfile*
+            - docker-compose*.yml
+            - .dockerignore
+            # IDE
+            - "**/.vscode/"
+            - "**/.idea/"
+            - "**/*.swp"
+            - "**/*.swo"
+            # Testing
+            - "**/coverage/"
+            - "**/.nyc_output/"
+            # OS files
+            - "**/.DS_Store"
+            - "**/Thumbs.db"
+    volumes:
+      # Persistent caches
+      - bun_cache_dev:/root/.bun/install/cache
+      - turbo_cache_dev:/root/.cache/turbo
+    environment:
+      - NODE_ENV=development
+      # Enable hot reloading
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - NEXT_WEBPACK_USEPOLLING=1
+    networks:
+      - app_network_dev
+
+networks:
+  app_network_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_app_network_dev
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
+
+volumes:
+  bun_cache_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_dev
+  turbo_cache_dev:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_dev

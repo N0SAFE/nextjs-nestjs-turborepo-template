@@ -8,6 +8,11 @@ yarn-error.log*
 .next
 out
 build
+dist
+**/dist
+**/build
+**/.next
+**/out
 
 # Environment files
 .env.local

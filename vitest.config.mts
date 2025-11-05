@@ -5,8 +5,10 @@ export default defineConfig(
     createBaseConfig({
         test: {
             projects: [
-                "apps/*/vitest.config.mts",
-                "packages/*/vitest.config.mts",
+                "apps/**/vitest.config.mts",
+                "packages/**/vitest.config.mts",
+                "apps/**/vitest.config.ts",
+                "packages/**/vitest.config.ts",
             ],
             coverage: {
                 provider: 'v8',

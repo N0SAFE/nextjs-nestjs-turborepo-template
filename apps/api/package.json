@@ -28,6 +28,9 @@
     "db:studio": "drizzle-kit studio",
     "auth:generate": "bun x @better-auth/cli generate --config src/auth.ts --output src/config/drizzle/schema/auth.ts --y && bun run db:generate"
   },
+  "overrides": {
+    "cli-cursor": "^5"
+  },
   "dependencies": {
     "eslint": "catalog:linting",
     "@mguay/nestjs-better-auth": "catalog:auth",
