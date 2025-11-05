@@ -4,13 +4,13 @@
 
 services:
   # Web Production Configuration
-  web-dev:
+  web-prod:
     depends_on:
-      api-dev:
+      api-prod:
         condition: service_healthy
 
   # Doc Production Configuration
-  doc-dev:
+  doc-prod:
     depends_on:
-      api-dev:
+      api-prod:
         condition: service_healthy
