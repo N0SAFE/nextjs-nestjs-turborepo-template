@@ -10,15 +10,15 @@ interface GitRemoteConfig {
 }
 
 const REMOTE_CONFIG: GitRemoteConfig = {
-  name: 'upstream',
-  url: 'https://github.com/N0SAFE/nextjs-directus-turborepo-template.git',
+  name: 'template',
+  url: 'https://github.com/N0SAFE/nextjs-nestjs-turborepo-template.git',
   readonly: true,
 }
 
 /**
  * Check if a git remote already exists
  */
-function hasUpstream(remoteName: string): boolean {
+function hasTemplate(remoteName: string): boolean {
   try {
     const remotes = execSync('git remote', { encoding: 'utf8' })
     return remotes.split(/\r?\n/).includes(remoteName)
@@ -40,10 +40,10 @@ function getRemotes(): string[] {
 }
 
 /**
- * Add upstream remote configuration
+ * Add template remote configuration
  */
-function addUpstream(config: GitRemoteConfig): void {
-  if (hasUpstream(config.name)) {
+function addTemplate(config: GitRemoteConfig): void {
+  if (hasTemplate(config.name)) {
     console.log(`ℹ️  Remote '${config.name}' already exists.`)
     return
   }
@@ -95,7 +95,7 @@ function verifyGitRepository(): boolean {
  * Main execution
  */
 function main(): void {
-  console.log('🔗 Setting up upstream remote...\n')
+  console.log('🔗 Setting up template remote...\n')
 
   if (!verifyGitRepository()) {
     process.exit(1)
@@ -105,10 +105,10 @@ function main(): void {
   console.log(`📍 Current remotes: ${currentRemotes.length > 0 ? currentRemotes.join(', ') : 'none'}`)
   console.log()
 
-  addUpstream(REMOTE_CONFIG)
+  addTemplate(REMOTE_CONFIG)
 
-  console.log('\n✨ Upstream remote setup complete!')
-  console.log('You can now run: git fetch upstream && git rebase upstream/main')
+  console.log('\n✨ Template remote setup complete!')
+  console.log('You can now run: git fetch template && git merge template/main --allow-unrelated-histories')
 }
 
 main()
