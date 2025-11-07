@@ -66,6 +66,7 @@ RUN ln -sf $(which bun) /usr/local/bin/npm
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV LOG_LEVEL=debug
+ENV PLATFORM_LIBC=musl
 
 COPY scripts/diagnose-build.ts ./scripts/diagnose-build.ts
 COPY --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./

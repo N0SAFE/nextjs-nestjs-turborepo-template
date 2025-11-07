@@ -108,6 +108,7 @@ export function createORPCClientWithCookies() {
         fetch(request, init, options) {
             return fetch(request, {
                 ...init,
+                credentials: 'include',
                 cache: options.context.cache,
                 next: options.context.next
                     ??

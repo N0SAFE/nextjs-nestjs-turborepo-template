@@ -139,7 +139,7 @@ const MainNavigation: React.FC = () => {
                 <div className="flex items-center space-x-2">
                     {isPending ? (
                         <div className="bg-muted h-8 w-8 animate-pulse rounded-md" />
-                    ) : session ? (
+                    ) : session?.user ? (
                         <div className="flex items-center space-x-2">
                             <AuthMe.Link>
                                 <Button

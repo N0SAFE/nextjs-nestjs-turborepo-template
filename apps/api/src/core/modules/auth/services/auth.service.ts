@@ -1,6 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AUTH_INSTANCE_KEY } from "../types/symbols";
-import type { Auth } from "@/core/modules/auth/types/auth";
+import type { Auth } from "@/auth";
+import {
+	type AuthModuleOptions,
+	MODULE_OPTIONS_TOKEN,
+} from "../definitions/auth-module-definition"
 
 /**
  * NestJS service that provides access to the Better Auth instance
@@ -9,15 +12,15 @@ import type { Auth } from "@/core/modules/auth/types/auth";
 @Injectable()
 export class AuthService<T extends { api: T["api"] } = Auth> {
 	constructor(
-		@Inject(AUTH_INSTANCE_KEY)
-		private readonly auth: T,
+		@Inject(MODULE_OPTIONS_TOKEN)
+		private readonly options: AuthModuleOptions<T>,
 	) {}
 
 	/**
 	 * Returns the API endpoints provided by the auth instance
 	 */
 	get api(): T["api"] {
-		return this.auth.api;
+		return this.options.auth.api;
 	}
 
 	/**
@@ -25,6 +28,6 @@ export class AuthService<T extends { api: T["api"] } = Auth> {
 	 * Access this for plugin-specific functionality
 	 */
 	get instance(): T {
-		return this.auth;
+		return this.options.auth;
 	}
 }

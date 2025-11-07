@@ -3,12 +3,12 @@ import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { Auth } from "@/core/modules/auth/types/auth";
 import { APIError } from "better-auth/api";
-import { AUTH_INSTANCE_KEY } from "../types/symbols";
 import {
   type Permission,
   type RoleName,
   PermissionChecker,
 } from "@/config/auth/permissions";
+import { MODULE_OPTIONS_TOKEN, type AuthModuleOptions } from "../definitions/auth-module-definition";
 
 /**
  * NestJS guard that handles role and permission-based access control
@@ -38,8 +38,8 @@ export class RoleGuard implements CanActivate {
   constructor(
     @Inject(Reflector)
     private readonly reflector: Reflector,
-    @Inject(AUTH_INSTANCE_KEY)
-    private readonly auth: Auth,
+    @Inject(MODULE_OPTIONS_TOKEN)
+		private readonly options: AuthModuleOptions,
   ) {}
 
   /**
@@ -149,7 +149,7 @@ export class RoleGuard implements CanActivate {
 
       try {
         // Use Better Auth's userHasPermission API to check permissions
-        const hasPermission = await this.auth.api.userHasPermission({
+        const hasPermission = await this.options.auth.api.userHasPermission({
           body: {
             userId: user.id,
             permissions: requiredPermissions,

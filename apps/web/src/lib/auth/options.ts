@@ -12,5 +12,8 @@ const appUrl = validateEnvPath(
 export const options = {
     basePath: '/api/auth',
     baseURL: appUrl,
+    fetchOptions: {
+        credentials: 'include',
+    },
     plugins: [passkeyClient(), masterTokenClient(), loginAsClientPlugin()],
 } satisfies BetterAuthClientOptions

@@ -26,6 +26,7 @@ import { REQUEST } from '@nestjs/core'
       imports: [DatabaseModule, EnvModule],
       useFactory: betterAuthFactory,
       inject: [DATABASE_CONNECTION, EnvService],
+      disableBodyParser: false,
     }),
     HealthModule,
     UserModule,

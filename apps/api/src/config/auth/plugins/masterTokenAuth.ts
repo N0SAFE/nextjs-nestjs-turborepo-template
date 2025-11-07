@@ -35,7 +35,7 @@ export const masterTokenPlugin = (options: MasterTokenOptions): BetterAuthPlugin
                     },
                     handler: createAuthMiddleware((ctx): Promise<unknown> => {
                         if (!enabled) {
-                            return Promise.resolve({ response: undefined });
+                            return Promise.resolve(void 0)
                         }
 
                         // Check for master token
@@ -73,7 +73,7 @@ export const masterTokenPlugin = (options: MasterTokenOptions): BetterAuthPlugin
                             }
                         }
 
-                        return Promise.resolve({ response: undefined });
+                        return Promise.resolve(void 0)
                     }),
                 },
             ],

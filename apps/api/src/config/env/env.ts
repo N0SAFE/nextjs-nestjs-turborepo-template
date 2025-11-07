@@ -19,6 +19,8 @@ export const envSchema = z.object({
   
   // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  
+  NEXT_PUBLIC_WEB_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

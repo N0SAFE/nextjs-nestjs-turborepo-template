@@ -1,13 +1,11 @@
 import { Command, CommandRunner } from 'nest-commander';
-import { Injectable, Inject } from '@nestjs/common';
-import { DATABASE_CONNECTION } from '../../core/modules/database/database-connection';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from '../../config/drizzle/schema'; // Runtime import
-import { AUTH_INSTANCE_KEY } from '@/core/modules/auth/types/symbols';
-import type { Auth } from '@/auth';
+import { Injectable } from '@nestjs/common';
+import * as schema from '../../config/drizzle/schema';
 import { nanoid } from 'nanoid';
 import { roles } from '@/config/auth/permissions'; // Correct relative path
 import { eq } from 'drizzle-orm';
+import { AuthService } from '@/core/modules/auth/services/auth.service';
+import type { DatabaseService } from '@/core/modules/database/database.service';
 
 // Seed version identifier - increment this when you want to re-seed
 const SEED_VERSION = 'v1.0.0';
@@ -19,10 +17,8 @@ const SEED_VERSION = 'v1.0.0';
 })
 export class SeedCommand extends CommandRunner {
   constructor(
-    @Inject(DATABASE_CONNECTION)
-    private readonly db: NodePgDatabase<typeof schema>,
-    @Inject(AUTH_INSTANCE_KEY)
-    private readonly auth: Auth,
+    private readonly databaseService: DatabaseService,
+		private readonly authService: AuthService,
   ) {
     super();
   }
@@ -32,7 +28,7 @@ export class SeedCommand extends CommandRunner {
 
     try {
       // Check if this seed version has already been applied
-      const existingSeed = await this.db
+      const existingSeed = await this.databaseService.db
         .select()
         .from(schema.seedVersion)
         .where(eq(schema.seedVersion.version, SEED_VERSION))
@@ -55,7 +51,7 @@ export class SeedCommand extends CommandRunner {
         for (let i = 1; i <= usersPerRole; i++) {
           const email = `${role}${String(i)}@test.com`;
           const password = 'password123';
-          const userResult = await this.auth.api.createUser({
+          const userResult = await this.authService.api.createUser({
             body: {
               name: `${role.charAt(0).toUpperCase() + role.slice(1)} User ${String(i)}`,
               email,
@@ -92,7 +88,7 @@ export class SeedCommand extends CommandRunner {
       console.log('Seeded API Keys for MCP (store securely):', JSON.stringify(seededData.apiKeys, null, 2));
 
       // Record that this seed version has been applied
-      await this.db.insert(schema.seedVersion).values({
+      await this.databaseService.db.insert(schema.seedVersion).values({
         version: SEED_VERSION,
       });
 

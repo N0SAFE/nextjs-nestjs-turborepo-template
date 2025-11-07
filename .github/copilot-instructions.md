@@ -411,6 +411,7 @@ For detailed information on specific topics, reference these documentation files
 | Production deployment | `.docs/guides/PRODUCTION-DEPLOYMENT.md` | Production Environment Variables |
 | Environment configuration | `.docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md` | Template System |
 | Testing setup | `.docs/features/TESTING.md` | Running Tests |
+| GitHub project management | See memory bank | `github-project-management-workflow.md` |
 
 **Note**: Always check these documentation files for the most up-to-date and detailed information before implementing features or resolving issues.
 
@@ -597,3 +598,99 @@ If you realize you've made an error in this file:
 5. **Document the correction** in commit messages with clear explanation
 
 **Remember**: This file is not just documentation—it's the intelligence that guides all future development. Every change ripples through the entire project ecosystem. Treat it with the reverence it deserves.
+
+---
+
+## GitHub Project Management Integration
+
+### Creating and Managing GitHub Issues with Projects V2
+
+This project uses GitHub Projects V2 for task tracking. Follow this workflow when creating issues that need project board integration.
+
+#### Essential Workflow Steps
+
+1. **Create GitHub Issue**: Use `mcp_github_github_issue_write` with comprehensive description, labels, and metadata
+2. **Find Project**: Use `mcp_github_github_list_projects` with `owner_type: 'user'` for personal projects
+3. **Link Issue**: Use `mcp_github_github_add_project_item` with issue's **internal ID** (not issue number)
+4. **Discover Fields**: Use `mcp_github_github_list_project_fields` to get field IDs and option IDs
+5. **Set Field Values**: Use `mcp_github_github_update_project_item` for Status, Priority, Size, etc.
+
+#### Critical Points
+
+- **Issue IDs vs Numbers**: Projects require the internal `id` (e.g., 3600653715), NOT the issue `number` (e.g., 110)
+- **Field Option IDs**: Use exact option ID strings (e.g., "f75ad846" for "Backlog"), not display names
+- **Sequential Updates**: Field updates must be done one at a time (cannot batch)
+- **Tool Activation**: If tools are disabled, use `activate_github_project_management_tools()` first
+
+#### Common Field Mappings
+
+**Status Field (230515571)**:
+- Backlog (f75ad846): New issues not yet started
+- Ready (61e4505c): Prepared for implementation  
+- In progress (47fc9ee4): Active development
+- In review (df73e18b): PR submitted for review
+- Done (98236657): Completed and merged
+
+**Priority Field (230515768)**:
+- P0 (79628723): Critical/urgent
+- P1 (0a877460): High priority/medium urgency
+- P2 (da944a9c): Low priority/nice-to-have
+
+**Size Field (230515769)**:
+- XS (6c6483d2): < 1 hour
+- S (f784b110): 1-2 hours
+- M (7515a9f1): 4-6 hours
+- L (817d0097): 1-2 days  
+- XL (db339eb2): > 2 days
+
+#### Quick Example
+
+```typescript
+// 1. Create issue and get internal ID
+const issue = await mcp_github_github_issue_write({...})
+// issue.id = 3600653715 (internal ID), issue.number = 110
+
+// 2. Find project
+const projects = await mcp_github_github_list_projects({
+  owner: 'N0SAFE',
+  owner_type: 'user'
+})
+// project_number = 3
+
+// 3. Link to project
+const item = await mcp_github_github_add_project_item({
+  project_number: 3,
+  content_id: 3600653715  // Use issue.id!
+})
+// item.id = '137943189'
+
+// 4. Discover fields
+const fields = await mcp_github_github_list_project_fields({...})
+
+// 5. Set Status = Backlog
+await mcp_github_github_update_project_item({
+  item_id: '137943189',
+  updated_field: { id: '230515571', value: 'f75ad846' }
+})
+
+// 6. Set Priority = P1
+await mcp_github_github_update_project_item({
+  item_id: '137943189',
+  updated_field: { id: '230515768', value: '0a877460' }
+})
+
+// 7. Set Size = M
+await mcp_github_github_update_project_item({
+  item_id: '137943189',
+  updated_field: { id: '230515769', value: '7515a9f1' }
+})
+```
+
+#### Troubleshooting
+
+- **404 errors**: Verify project_number is correct using list_projects
+- **Field not found**: Ensure field is configured in GitHub UI first
+- **Invalid option**: Use list_project_fields to get correct option IDs
+- **Tools disabled**: Run activate_github_project_management_tools()
+
+**For complete workflow documentation, see the memory bank file: `github-project-management-workflow.md`**

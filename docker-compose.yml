@@ -1,2 +1,2 @@
 include:
-  - docker/compose/docker-compose.yml
+  - docker/compose/docker-compose.dev.yml

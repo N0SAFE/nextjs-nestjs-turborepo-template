@@ -1,12 +1,42 @@
-import { Inject, Injectable } from "@nestjs/common";
-import type { CanActivate, ExecutionContext } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import type { CanActivate, ContextType, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { Auth } from "@/core/modules/auth/types/auth";
-import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
-import { AUTH_INSTANCE_KEY } from "../types/symbols";
 import type { IncomingHttpHeaders } from "http";
 import { getRequestFromContext } from "../utils/context";
+import { MODULE_OPTIONS_TOKEN, type AuthModuleOptions } from "../definitions/auth-module-definition";
+
+
+export const AuthErrorType = {
+	UNAUTHORIZED: "UNAUTHORIZED",
+	FORBIDDEN: "FORBIDDEN",
+} as const;
+
+export const AuthContextErrorMap: Record<
+	Exclude<ContextType, 'ws'>, // omit ws since we do not handle websocket yet
+	Record<keyof typeof AuthErrorType, (args?: unknown) => Error>
+> = {
+	http: {
+		UNAUTHORIZED: (args) =>
+			new UnauthorizedException(
+				args ?? {
+					code: "UNAUTHORIZED",
+					message: "Unauthorized",
+				},
+			),
+		FORBIDDEN: (args) =>
+			new ForbiddenException(
+				args ?? {
+					code: "FORBIDDEN",
+					message: "Insufficient permissions",
+				},
+			),
+	},
+	rpc: {
+		UNAUTHORIZED: () => new Error("UNAUTHORIZED"),
+		FORBIDDEN: () => new Error("FORBIDDEN"),
+	},
+};
 
 /**
  * NestJS guard that handles authentication for protected routes
@@ -17,8 +47,8 @@ export class AuthGuard implements CanActivate {
 	constructor(
 		@Inject(Reflector)
 		private readonly reflector: Reflector,
-		@Inject(AUTH_INSTANCE_KEY)
-		private readonly auth: Auth,
+		@Inject(MODULE_OPTIONS_TOKEN)
+		private readonly options: AuthModuleOptions,
 	) {}
 
 	/**
@@ -29,7 +59,10 @@ export class AuthGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = getRequestFromContext(context);
-		const session = await this.auth.api.getSession({
+		console.log(`[AuthGuard] 🛡️ Checking auth for: ${request.method} ${request.url}`);
+		
+		console.log(`[AuthGuard] Getting session...`);
+		const session = await this.options.auth.api.getSession({
 			headers: fromNodeHeaders(request.headers as unknown as IncomingHttpHeaders),
 		});
 
@@ -40,22 +73,32 @@ export class AuthGuard implements CanActivate {
 			context.getHandler(),
 			context.getClass(),
 		]);
+		console.log(`[AuthGuard] Is public route?`, isPublic);
 
-		if (isPublic) return true;
+		if (isPublic) {
+			console.log(`[AuthGuard] ✅ Public route, allowing access`);
+			return true;
+		}
 
 		const isOptional = this.reflector.getAllAndOverride<boolean>("OPTIONAL", [
 			context.getHandler(),
 			context.getClass(),
 		]);
+		console.log(`[AuthGuard] Is optional auth?`, isOptional);
 
-		if (isOptional && !session) return true;
+		if (isOptional && !session) {
+			console.log(`[AuthGuard] ✅ Optional auth, no session, allowing access`);
+			return true;
+		}
 
-		if (!session)
-			throw new APIError(401, {
-				code: "UNAUTHORIZED",
-				message: "Unauthorized",
-			});
+		const ctxType = context.getType<Exclude<ContextType, 'ws'>>();
 
+		if (!session) {
+			console.log(`[AuthGuard] ❌ No session and route is protected, throwing UNAUTHORIZED`);
+			throw AuthContextErrorMap[ctxType].UNAUTHORIZED();
+		}
+
+		console.log(`[AuthGuard] ✅ Session valid, allowing access`);
 		return true;
 	}
 }

@@ -10,7 +10,7 @@
     "dev": "dotenv -e .env -- bun --bun scripts/entrypoint.dev.ts",
     "prod": "bun --bun scripts/entrypoint.prod.ts",
     "start": "bun --bun nest start --preserveWatchOutput",
-    "start:dev": "bun --bun src/main",
+    "start:dev": "bun --bun src/main --watch",
     "start:debug": "bun --bun nest start --debug --watch --preserveWatchOutput",
     "start:prod": "bun --bun dist/main",
     "clean": "rimraf dist",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "eslint": "catalog:linting",
-    "@mguay/nestjs-better-auth": "catalog:auth",
+    "@thallesp/nestjs-better-auth": "catalog:auth",
     "@nestjs/common": "catalog:api:nest",
     "@nestjs/config": "catalog:api:nest",
     "@nestjs/core": "catalog:api:nest",
