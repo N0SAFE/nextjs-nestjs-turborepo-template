@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 import { roles } from '@/config/auth/permissions'; // Correct relative path
 import { eq } from 'drizzle-orm';
 import { AuthService } from '@/core/modules/auth/services/auth.service';
-import type { DatabaseService } from '@/core/modules/database/database.service';
+import { DatabaseService } from '@/core/modules/database/database.service';
 
 // Seed version identifier - increment this when you want to re-seed
 const SEED_VERSION = 'v1.0.0';
