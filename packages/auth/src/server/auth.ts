@@ -6,7 +6,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { IEnvService } from "../types";
 import { masterTokenPlugin } from "./plugins/masterTokenAuth";
 import { loginAsPlugin } from "./plugins/loginAs";
-import { useAdmin } from "./permissions/index";
+import { useAdmin } from "../permissions/index";
 
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
     database: NodePgDatabase<TSchema>,

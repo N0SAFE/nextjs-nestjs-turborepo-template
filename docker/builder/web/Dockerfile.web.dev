@@ -32,28 +32,52 @@ FROM base AS pruner
 
 WORKDIR /app
 
-# Copy workspace configuration files needed for turbo prune
-COPY package.json bun.lock* ./
-COPY turbo.json ./
-COPY apps/ ./apps/
-COPY packages/ ./packages/
+# Copy only the files needed for turbo prune (workspace package.json files)
+# This prevents cache invalidation when source code changes
+COPY package.json bun.lock* turbo.json ./
+COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
 
 # Run turbo prune to isolate web app and its dependencies (use cache mount for bun)
 RUN --mount=type=cache,target=/root/.bun \
     bun x turbo prune web --docker
+
+FROM base AS config-copier
+WORKDIR /app
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+RUN --mount=type=bind,source=.,target=/mnt/source \
+    cd /mnt/source && \
+    cp package.json turbo.json /app/ 2>/dev/null || true && \
+    cp bun.lock* /app/ 2>/dev/null || true && \
+    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
+        mkdir -p /app/apps/doc && \
+        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
+    fi
 
 FROM base AS installer
 RUN apk update
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# First install the dependencies (as they change less often)
-# Use BuildKit cache mounts for bun cache to speed up repeated builds
 COPY --from=pruner /app/out/full/ .
-COPY --from=pruner /app/out/bun.lock* ./
+COPY --from=config-copier /app/ /app/
 RUN --mount=type=cache,target=/root/.bun \
     --mount=type=cache,target=/root/.cache \
     bun i --verbose
+
+FROM base AS source-copier
+WORKDIR /app
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+RUN --mount=type=bind,source=.,target=/mnt/source \
+    cd /mnt/source && \
+    for pkgJson in $(find /tmp/prune-structure -name "package.json" -type f); do \
+        relPath=$(echo "$pkgJson" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
+        if [ -d "/mnt/source/$relPath" ]; then \
+            mkdir -p "/app/$relPath"; \
+            tar cf - "$relPath" | tar xf - -C /app/; \
+        fi; \
+    done && \
+    cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
+    cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
 
 # ===================================
 # Stage 3: Runner - Development runtime
@@ -69,11 +93,7 @@ ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV LOG_LEVEL=debug
 
-COPY scripts/diagnose-build.ts ./scripts/diagnose-build.ts
-COPY apps/web/scripts/entrypoint.dev.ts ./apps/web/scripts/entrypoint.dev.ts
-COPY --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./
-COPY --from=pruner /app/out/full/apps/ /app/apps/
-COPY --from=pruner /app/out/full/packages/ /app/packages/
+COPY --from=source-copier /app/ /app/
 
 # Copy all node_modules using bind mount to avoid --parents issues
 # Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)

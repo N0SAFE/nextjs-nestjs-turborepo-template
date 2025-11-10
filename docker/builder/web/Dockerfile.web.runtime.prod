@@ -37,9 +37,26 @@ WORKDIR /app
 
 # Stage 2: Pruner - Prune monorepo for web app dependencies
 FROM base AS pruner
-COPY . .
+
+# Copy only the files needed for turbo prune (workspace package.json files)
+# This prevents cache invalidation when source code changes
+COPY package.json bun.lock* turbo.json ./
+COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
+
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune web --docker
+
+FROM base AS config-copier
+WORKDIR /app
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+RUN --mount=type=bind,source=.,target=/mnt/source \
+    cd /mnt/source && \
+    cp package.json turbo.json /app/ 2>/dev/null || true && \
+    cp bun.lock* /app/ 2>/dev/null || true && \
+    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
+        mkdir -p /app/apps/doc && \
+        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
+    fi
 
 # Stage 3: Installer - Install dependencies from pruned lockfile
 FROM base AS installer
@@ -77,9 +94,7 @@ RUN ln -sf $(which bun) /usr/local/bin/npm
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --chown=nextjs:nodejs --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./
-COPY --chown=nextjs:nodejs --from=pruner /app/out/full/apps*/ /app/apps/
-COPY --chown=nextjs:nodejs --from=pruner /app/out/full/packages*/ /app/packages/
+COPY --chown=nextjs:nodejs --from=source-copier /app/ /app/
 
 # Copy all node_modules using bind mount to avoid --parents issues
 # Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)

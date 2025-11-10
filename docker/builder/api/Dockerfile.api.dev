@@ -30,28 +30,71 @@ WORKDIR /app
 # ===================================
 FROM base AS pruner
 
-# Copy workspace configuration files needed for turbo prune
-COPY . .
+# Copy only package.json, lock files, and turbo.json - these define dependencies
+# Using glob patterns to automatically include all workspace package.json files
+# This prevents cache invalidation when source code changes
+COPY package.json bun.lock* turbo.json ./
+COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
 
 # Run turbo prune to isolate api and its dependencies (use cache mount for bun)
 RUN --mount=type=cache,target=/root/.bun \
     bun x turbo prune api --docker
 
+# ===================================
+# Stage 2.5: Config Copier - Copy ONLY config files needed by postinstall
+# ===================================
+FROM base AS config-copier
+WORKDIR /app
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+# Copy only root files and specific config files for postinstall scripts
+RUN --mount=type=bind,source=.,target=/mnt/source \
+    cd /mnt/source && \
+    cp package.json turbo.json /app/ 2>/dev/null || true && \
+    cp bun.lock* /app/ 2>/dev/null || true && \
+    # For doc app: copy source.config.ts if doc is in pruned structure
+    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
+        mkdir -p /app/apps/doc && \
+        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
+    fi
+
+# ===================================
+# Stage 3: Installer - Install dependencies
+# ===================================
 FROM base AS installer
 RUN apk update
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# First install the dependencies (as they change less often)
-# Use BuildKit cache mounts for bun cache to speed up repeated builds
+# Copy pruned package.json structure and config files needed by postinstall
 COPY --from=pruner /app/out/full/ .
-COPY --from=pruner /app/out/bun.lock* ./
+COPY --from=config-copier /app/ /app/
+
+# Install dependencies (postinstall scripts can now access config files)
 RUN --mount=type=cache,target=/root/.bun \
     --mount=type=cache,target=/root/.cache \
     bun i --verbose
 
 # ===================================
-# Stage 3: Runner - Development runtime
+# Stage 4: Source Copier - Copy all source files
+# ===================================
+FROM base AS source-copier
+WORKDIR /app
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+# Copy ALL source files for pruned workspaces
+RUN --mount=type=bind,source=.,target=/mnt/source \
+    cd /mnt/source && \
+    for pkgJson in $(find /tmp/prune-structure -name "package.json" -type f); do \
+        relPath=$(echo "$pkgJson" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
+        if [ -d "/mnt/source/$relPath" ]; then \
+            mkdir -p "/app/$relPath"; \
+            tar cf - "$relPath" | tar xf - -C /app/; \
+        fi; \
+    done && \
+    cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
+    cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
+
+# ===================================
+# Stage 5: Runner - Development runtime
 # ===================================
 FROM base AS runner
 WORKDIR /app
@@ -63,11 +106,8 @@ RUN ln -sf $(which bun) /usr/local/bin/npm
 ENV NODE_ENV=development
 ENV LOG_LEVEL=debug
 
-COPY scripts/diagnose-build.ts ./scripts/diagnose-build.ts
-COPY apps/api/scripts/entrypoint.dev.ts ./apps/api/scripts/entrypoint.dev.ts
-COPY --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./
-COPY --from=pruner /app/out/full/apps/ /app/apps/
-COPY --from=pruner /app/out/full/packages/ /app/packages/
+# Copy source files from source-copier stage (only pruned workspaces)
+COPY --from=source-copier /app/ /app/
 
 # Copy all node_modules using bind mount to avoid --parents issues
 # Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)
