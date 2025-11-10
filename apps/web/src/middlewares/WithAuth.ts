@@ -12,7 +12,8 @@ import { validateEnvSafe } from '#/env'
 import { toAbsoluteUrl } from '@/lib/utils'
 import { Authsignin } from '@/routes/index'
 import { createDebug } from '@/lib/debug'
-import { getSessionCookie } from "better-auth/cookies";
+import { getCookieCache, getSessionCookie } from "better-auth/cookies";
+import type { Session } from '@repo/auth'
 
 const debugAuth = createDebug('middleware/auth')
 const debugAuthError = createDebug('middleware/auth/error')
@@ -47,6 +48,10 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
             debugAuth('Getting session using Better Auth')
             
             sessionCookie = getSessionCookie(request);
+            
+            const s = await getCookieCache<Session>(request)
+            
+            console.log(s)
             
             debugAuth('Session processed:', {
                 hasSession: !!sessionCookie,

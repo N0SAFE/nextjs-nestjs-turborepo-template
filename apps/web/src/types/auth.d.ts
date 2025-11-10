@@ -1,5 +1,7 @@
 // Better Auth types - this file defines the Better Auth session structure
-import { Session, User } from '../lib/auth/auth-client'
+import type { authClient } from '../lib/auth'
+type Session = typeof authClient.$Infer.Session
+type User = typeof authClient.$Infer.Session.user
 
 export interface AuthRefresh {
     access_token?: string | null

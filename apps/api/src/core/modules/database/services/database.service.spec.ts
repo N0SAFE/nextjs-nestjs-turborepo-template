@@ -1,7 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { DatabaseService } from '../database.service';
+import { DatabaseService } from './database.service';
 import { DATABASE_CONNECTION } from '../database-connection';
 
 describe('DatabaseService', () => {

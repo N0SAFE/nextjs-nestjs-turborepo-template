@@ -7,7 +7,7 @@ import {
   type Permission,
   type RoleName,
   PermissionChecker,
-} from "@/config/auth/permissions";
+} from "@repo/auth/permissions";
 import { MODULE_OPTIONS_TOKEN, type AuthModuleOptions } from "../definitions/auth-module-definition";
 
 /**

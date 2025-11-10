@@ -16,7 +16,7 @@ import {
 } from './decorators';
 
 // Mock the permissions module with complete types
-vi.mock('@/config/auth/permissions', () => ({
+vi.mock('@repo/auth/permissions', () => ({
   PermissionChecker: {
     getUserRoles: vi.fn(),
   },
@@ -30,11 +30,7 @@ vi.mock('@/config/auth/permissions', () => ({
     sessionManagement: {
       session: ['list', 'revoke', 'delete']
     }
-  }
-}));
-
-// Mock the statements module to provide test roles and permissions
-vi.mock('@/config/auth/permissions/statements', () => ({
+  },
   statement: {
     user: ['create', 'list', 'set-role', 'ban', 'impersonate', 'delete', 'set-password'],
     session: ['list', 'revoke', 'delete'],

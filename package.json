@@ -146,15 +146,15 @@
                 "@types/bcrypt": "^6.0.0"
             },
             "orpc": {
-                "@orpc/openapi-client": "^1.7.8",
-                "@orpc/client": "^1.7.8",
-                "@orpc/contract": "^1.7.8",
-                "@orpc/tanstack-query": "^1.7.8",
-                "@orpc/nest": "^1.7.8",
-                "@orpc/openapi": "^1.7.8",
-                "@orpc/server": "^1.7.8",
-                "@orpc/shared": "^1.7.8",
-                "@orpc/zod": "^1.7.8"
+                "@orpc/openapi-client": "next",
+                "@orpc/client": "next",
+                "@orpc/contract": "next",
+                "@orpc/tanstack-query": "next",
+                "@orpc/nest": "next",
+                "@orpc/openapi": "next",
+                "@orpc/server": "next",
+                "@orpc/shared": "next",
+                "@orpc/zod": "next"
             },
             "api:nest": {
                 "@nestjs/cli": "^11.0.10",
@@ -196,6 +196,8 @@
     },
     "scripts": {
         "dev": "dotenv -e .env -- docker compose -f ./docker/compose/docker-compose.dev.yml up --watch",
+        "dev:down": "docker compose -f ./docker/compose/docker-compose.dev.yml down",
+        "dev:down:volumes": "docker compose -f ./docker/compose/docker-compose.dev.yml down --volumes",
         "dev:api": "docker compose -f ./docker/compose/api/docker-compose.api.dev.yml up --watch",
         "dev:web": "docker compose -f ./docker/compose/web/docker-compose.web.dev.yml up --watch",
         "dev:api:build": "docker compose -f ./docker/compose/api/docker-compose.api.dev.yml up --build --watch",
@@ -299,7 +301,6 @@
         "typescript": "catalog:build"
     },
     "dependencies": {
-        "detect-libc": "^2.1.2",
-        "estree-walker": "^3.0.3"
+        "detect-libc": "^2.1.2"
     }
 }

@@ -1,0 +1,57 @@
+import { createAuthClient } from 'better-auth/react'
+import type { BetterAuthClientOptions, BetterAuthClientPlugin } from 'better-auth/client'
+import { passkeyClient } from 'better-auth/client/plugins'
+import { nextCookies } from "better-auth/next-js"
+import masterTokenClient from './plugins/masterToken'
+import { loginAsClientPlugin } from './plugins/loginAs'
+
+export interface CreateAuthClientFactoryOptions {
+  /**
+   * Base path for auth endpoints
+   * @default '/api/auth'
+   */
+  basePath?: string
+  /**
+   * Base URL for the application
+   */
+  baseURL: string
+  /**
+   * Additional plugins to add to the auth client
+   * @default []
+   */
+  additionalPlugins?: BetterAuthClientPlugin[]
+  /**
+   * Fetch options
+   */
+  fetchOptions?: BetterAuthClientOptions['fetchOptions']
+}
+
+/**
+ * Factory function to create a Better Auth client with default plugins
+ * and support for additional plugins
+ */
+export const createAuthClientFactory = (options: CreateAuthClientFactoryOptions) => {
+  const {
+    basePath = '/api/auth',
+    baseURL,
+    additionalPlugins = [],
+    fetchOptions = {
+      credentials: 'include',
+    },
+  } = options
+
+  const clientOptions = {
+    basePath,
+    baseURL,
+    fetchOptions,
+    plugins: [
+      passkeyClient(),
+      masterTokenClient(),
+      loginAsClientPlugin(),
+      nextCookies(),
+      ...additionalPlugins,
+    ],
+  } satisfies BetterAuthClientOptions
+
+  return createAuthClient(clientOptions)
+}

@@ -52,7 +52,7 @@ RUN apk add --no-cache \
 
 COPY --from=pruner /app/out/full/ .
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun ci --verbose
+  bun i --verbose
 
 # Stage 4: Builder - Build the application
 FROM base AS builder
@@ -66,7 +66,22 @@ RUN apk add --no-cache \
 COPY --from=pruner /app/out/full/package.json /app/out/bun.lock* /app/out/full/turbo.json ./
 COPY --from=pruner /app/out/full/apps*/ /app/apps/
 COPY --from=pruner /app/out/full/packages*/ /app/packages/
-COPY --from=installer --parents /app/node_modules /app/**/node_modules /
+
+# Copy all node_modules using bind mount to avoid --parents issues
+# Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)
+RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app && \
+    find /mnt/installer/apps -name node_modules -type d | while read dir; do \
+        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "$(dirname "$target_dir")"; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+    done && \
+    find /mnt/installer/packages -name node_modules -type d | while read dir; do \
+        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "$(dirname "$target_dir")"; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+    done
+
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \

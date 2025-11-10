@@ -1,0 +1,33 @@
+{
+  "name": "@repo/auth",
+  "version": "1.0.0",
+  "description": "Shared authentication configuration for Better Auth",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./client": "./src/client/index.ts",
+    "./permissions": "./src/permissions/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-auth": "catalog:auth",
+    "zod": "catalog:utils",
+    "react": "catalog:react",
+    "sonner": "catalog:ui"
+  },
+  "devDependencies": {
+    "@repo-configs/eslint": "*",
+    "@repo-configs/prettier": "*",
+    "@repo-configs/typescript": "*",
+    "@types/react": "catalog:react",
+    "typescript": "catalog:build"
+  },
+  "peerDependencies": {
+    "drizzle-orm": "catalog:database"
+  }
+}

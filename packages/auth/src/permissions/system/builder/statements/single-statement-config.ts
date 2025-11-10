@@ -151,7 +151,7 @@ export class StatementConfig<TActions extends readonly string[] = readonly strin
    * Remove duplicates
    */
   unique(): StatementConfig<TActions> {
-    return new StatementConfig<TActions>([...new Set(this._actions)] as unknown as TActions);
+    return new StatementConfig<TActions>(Array.from(new Set(this._actions)) as unknown as TActions);
   }
 
   /**

@@ -1,8 +1,7 @@
-import { createAuthClient } from 'better-auth/react'
-import { hasMasterTokenPlugin } from './plugins/guards'
-import { options } from './options'
+import { hasMasterTokenPlugin } from '@repo/auth/client'
+import { authClient } from './options'
 
-export const authClient = createAuthClient(options)
+export { authClient }
 
 export const {
     signIn,

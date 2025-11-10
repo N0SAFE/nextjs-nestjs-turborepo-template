@@ -10,8 +10,7 @@ import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import { orpc } from '@/lib/orpc'
 import { useQuery } from '@tanstack/react-query'
 import { authClient, useSession } from '@/lib/auth'
-import MasterTokenProvider, { useMasterToken } from '@/lib/auth/plugins/masterToken/components/provider'
-import { hasMasterTokenPlugin } from '@/lib/auth/plugins/guards'
+import { hasMasterTokenPlugin, MasterTokenProvider, useMasterToken } from '@repo/auth/client'
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -1119,10 +1118,13 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
         return null
     }
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { refetch } = useSession()
+    
     const providers: React.FC<{ children: React.ReactNode }>[] = []
     if (hasMasterTokenPlugin(authClient)) {
         providers.push(({ children }) => (
-            <MasterTokenProvider>{children}</MasterTokenProvider>
+            <MasterTokenProvider refetch={refetch}>{children}</MasterTokenProvider>
         ))
     }
 

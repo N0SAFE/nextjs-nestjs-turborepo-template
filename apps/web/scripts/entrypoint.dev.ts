@@ -1,6 +1,32 @@
 #!/usr/bin/env -S bun
 
-import { spawn } from 'child_process'
+import { spawn, spawnSync } from 'child_process'
+import { existsSync } from 'fs'
+import { join } from 'path'
+
+/**
+ * Ensure routes are generated before starting Next.js
+ */
+function ensureRoutesGenerated(): void {
+  const routesIndexPath = join(process.cwd(), 'src/routes/index.ts')
+  
+  if (!existsSync(routesIndexPath)) {
+    console.log('⚠️  Routes not found, generating initial routes...')
+    const result = spawnSync('bun', ['x', 'declarative-routing', 'build'], {
+      stdio: 'inherit',
+      shell: true,
+    })
+    
+    if (result.status !== 0) {
+      console.error('❌ Failed to generate routes')
+      process.exit(1)
+    }
+    
+    console.log('✅ Initial routes generated')
+  } else {
+    console.log('✅ Routes already exist')
+  }
+}
 
 /**
  * Start Next.js and Declarative Routing processes concurrently
@@ -65,6 +91,10 @@ function startProcesses(): void {
  */
 function main(): void {
   console.log('🎯 Web Development Entrypoint Started\n')
+  
+  // Ensure routes are generated before starting Next.js
+  ensureRoutesGenerated()
+  
   startProcesses()
 }
 

@@ -6,7 +6,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import { RoleGuard } from './role.guard';
 import { AUTH_INSTANCE_KEY } from '../types/symbols';
 import { APIError } from 'better-auth/api';
-import { PermissionChecker } from '@/config/auth/permissions';
+import { PermissionChecker } from '@repo/auth/permissions';
 
 // Mock the permissions module
 vi.mock('@/config/auth/permissions', () => ({

@@ -70,6 +70,9 @@ services:
             - "**/.cache/"
             - "**/.parcel-cache/"
             - "**/.vite/"
+            # Generated files (declarative-routing)
+            - "apps/web/src/routes/index.ts"
+            - "apps/web/src/routes/openapi.ts"
             # Logs
             - "**/*.log"
             - "**/logs/"

@@ -59,9 +59,6 @@ export class AuthGuard implements CanActivate {
 	 */
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = getRequestFromContext(context);
-		console.log(`[AuthGuard] 🛡️ Checking auth for: ${request.method} ${request.url}`);
-		
-		console.log(`[AuthGuard] Getting session...`);
 		const session = await this.options.auth.api.getSession({
 			headers: fromNodeHeaders(request.headers as unknown as IncomingHttpHeaders),
 		});
@@ -73,10 +70,8 @@ export class AuthGuard implements CanActivate {
 			context.getHandler(),
 			context.getClass(),
 		]);
-		console.log(`[AuthGuard] Is public route?`, isPublic);
 
 		if (isPublic) {
-			console.log(`[AuthGuard] ✅ Public route, allowing access`);
 			return true;
 		}
 
@@ -84,21 +79,16 @@ export class AuthGuard implements CanActivate {
 			context.getHandler(),
 			context.getClass(),
 		]);
-		console.log(`[AuthGuard] Is optional auth?`, isOptional);
 
 		if (isOptional && !session) {
-			console.log(`[AuthGuard] ✅ Optional auth, no session, allowing access`);
 			return true;
 		}
 
 		const ctxType = context.getType<Exclude<ContextType, 'ws'>>();
 
 		if (!session) {
-			console.log(`[AuthGuard] ❌ No session and route is protected, throwing UNAUTHORIZED`);
 			throw AuthContextErrorMap[ctxType].UNAUTHORIZED();
 		}
-
-		console.log(`[AuthGuard] ✅ Session valid, allowing access`);
 		return true;
 	}
 }

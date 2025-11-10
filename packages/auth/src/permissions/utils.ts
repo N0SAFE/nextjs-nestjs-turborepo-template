@@ -46,11 +46,11 @@ export class PermissionChecker {
   }
 
   static isValidRoleName(role: string): role is RoleName {
-    return Object.prototype.hasOwnProperty.call<boolean>(roles, role);
+    return Object.prototype.hasOwnProperty.call(roles, role);
   }
 
   static isValidResource(resource: string): resource is Resource {
-    return Object.prototype.hasOwnProperty.call<boolean>(statement, resource);
+    return Object.prototype.hasOwnProperty.call(statement, resource);
   }
 
   static isValidActionForResource(resource: keyof typeof statement, action: string): boolean {

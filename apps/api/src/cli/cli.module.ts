@@ -6,7 +6,7 @@ import { DATABASE_CONNECTION } from '../core/modules/database/database-connectio
 import { SeedCommand } from './commands/seed.command';
 import { MigrateCommand } from './commands/migrate.command';
 import { ResetCommand } from './commands/reset.command';
-import { betterAuthFactory } from '@/config/auth/auth';
+import { createBetterAuth } from '@/config/auth/auth';
 import { EnvService } from '@/config/env/env.service';
 
 @Module({
@@ -15,7 +15,7 @@ import { EnvService } from '@/config/env/env.service';
     DatabaseModule,
     AuthModule.forRootAsync({
       imports: [DatabaseModule, EnvModule],
-      useFactory: betterAuthFactory,
+      useFactory: createBetterAuth,
       inject: [DATABASE_CONNECTION, EnvService],
     }),
   ],
