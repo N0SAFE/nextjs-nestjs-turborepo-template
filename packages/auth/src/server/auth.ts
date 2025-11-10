@@ -10,11 +10,23 @@ import { useAdmin } from "../permissions/index";
 
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
     database: NodePgDatabase<TSchema>,
-    envService: IEnvService
+    env: {
+        DEV_AUTH_KEY: string;
+        PASSKEY_RPID: string;
+        PASSKEY_RPNAME: string;
+        PASSKEY_ORIGIN: string;
+        NODE_ENV: string;
+    }
 ) => {
     const dbInstance = database;
 
-    const devAuthKey = envService.get("DEV_AUTH_KEY");
+    const {
+        DEV_AUTH_KEY,
+        PASSKEY_RPID,
+        PASSKEY_RPNAME,
+        PASSKEY_ORIGIN,
+        NODE_ENV,
+    } = env
 
     return {
         auth: betterAuth({
@@ -32,18 +44,18 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
             },
             plugins: [
                 passkey({
-                    rpID: envService.get("PASSKEY_RPID"),
-                    rpName: envService.get("PASSKEY_RPNAME"),
-                    origin: envService.get("PASSKEY_ORIGIN"),
+                    rpID: PASSKEY_RPID,
+                    rpName: PASSKEY_RPNAME,
+                    origin: PASSKEY_ORIGIN,
                 }),
                 useAdmin(),
                 masterTokenPlugin({
-                    devAuthKey: devAuthKey ?? "",
-                    enabled: envService.get("NODE_ENV") === "development" && !!devAuthKey,
+                    devAuthKey: DEV_AUTH_KEY ?? "",
+                    enabled: NODE_ENV === "development" && !!DEV_AUTH_KEY,
                 }),
                 loginAsPlugin({
-                    enabled: envService.get("NODE_ENV") === "development" && !!devAuthKey,
-                    devAuthKey: devAuthKey ?? "",
+                    enabled: NODE_ENV === "development" && !!DEV_AUTH_KEY,
+                    devAuthKey: DEV_AUTH_KEY ?? "",
                 }),
                 openAPI(),
             ],
