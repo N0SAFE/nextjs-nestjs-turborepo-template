@@ -3,22 +3,21 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "better-auth/plugins/passkey";
 import { openAPI } from "better-auth/plugins";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { IEnvService } from "../types";
 import { masterTokenPlugin } from "./plugins/masterTokenAuth";
 import { loginAsPlugin } from "./plugins/loginAs";
 import { useAdmin } from "../permissions/index";
 
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
-    database: NodePgDatabase<TSchema>,
+    database: unknown,
     env: {
-        DEV_AUTH_KEY: string;
+        DEV_AUTH_KEY: string | undefined;
         PASSKEY_RPID: string;
         PASSKEY_RPNAME: string;
         PASSKEY_ORIGIN: string;
         NODE_ENV: string;
     }
 ) => {
-    const dbInstance = database;
+    const dbInstance = database as NodePgDatabase<TSchema>;
 
     const {
         DEV_AUTH_KEY,

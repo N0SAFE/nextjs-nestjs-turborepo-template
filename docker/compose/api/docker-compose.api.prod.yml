@@ -1,23 +1,4 @@
 services:
-  # Database for production
-  api-db-prod:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-db-prod
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_DATABASE:-nestjs_api}
-    volumes:
-      - api_db_data_prod:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_DATABASE:-nestjs_api}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app_network_prod
-
   # NestJS API for production
   api-prod:
     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod
@@ -29,9 +10,6 @@ services:
         - API_PORT=${API_PORT:-3001}
         - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
         - API_PING_PATH=${API_PING_PATH:-/health}
-    depends_on:
-      api-db-prod:
-        condition: service_healthy
     restart: unless-stopped
     ports:
       - "${API_PORT:-3001}:${API_PORT:-3001}"
@@ -64,8 +42,8 @@ services:
     environment:
       NODE_ENV: production
       API_PORT: ${API_PORT:-3001}
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@api-db-prod:5432/${DB_DATABASE:-nestjs_api}
-      REDIS_URL: redis://api-cache-prod:6379
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://api-cache-prod:6379}
       JWT_SECRET: ${JWT_SECRET:-jwt-fallback-secret}
       AUTH_SECRET: ${AUTH_SECRET:-auth-fallback-secret}
       NEXT_PUBLIC_WEB_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
@@ -93,8 +71,6 @@ networks:
     driver: bridge
 
 volumes:
-  api_db_data_prod:
-    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_api_db_data_prod
   bun_cache_prod:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_prod
   turbo_cache_prod:

@@ -134,8 +134,10 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
         target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
         mkdir -p "$(dirname "$target_dir")"; \
         cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
-    done && \
-    chown -R nextjs:nodejs ./node_modules ./apps/*/node_modules ./packages/*/node_modules
+    done
+
+# Change ownership of copied node_modules (must be separate RUN after bind mount is unmounted)
+RUN chown -R nextjs:nodejs /app/node_modules /app/apps/*/node_modules /app/packages/*/node_modules 2>/dev/null || true
 
 COPY --chown=nextjs:nodejs --parents --chmod=a+w .turbo/ **/.turbo/ ./
 

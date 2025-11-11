@@ -77,6 +77,7 @@ RUN apk add --no-cache \
     musl-dev
 
 COPY --from=pruner /app/out/full/ .
+COPY --from=config-copier /app/ /app/
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun i --verbose
 
