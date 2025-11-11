@@ -2,8 +2,10 @@
 # Production Dockerfile for NestJS API
 # Multi-stage build for optimized production image
 
+# ===================================
 # Stage 1: Base - Install global dependencies and set environment
-FROM oven/bun:1.2.21-alpine AS base
+# ===================================
+FROM oven/bun:1.3.1-alpine AS base
 ENV NODE_ENV=production
 
 # Install system dependencies and Turbo
@@ -15,7 +17,9 @@ RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 RUN apk add --no-cache nodejs
 WORKDIR /app
 
-# Stage 2: Pruner - Prune monorepo for API dependencies
+# ===================================
+# Stage 2: Pruner - Prune monorepo for api dependencies
+# ===================================
 FROM base AS pruner
 
 # Copy only the files needed for turbo prune (workspace package.json files)
@@ -26,7 +30,9 @@ COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune api --docker
 
-# Stage 2.5: Config Copier - Copy ONLY config files needed by postinstall
+# ===================================
+# Stage 2.5: Config-Copier - Copy minimal config files for postinstall
+# ===================================
 FROM base AS config-copier
 WORKDIR /app
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
@@ -39,7 +45,9 @@ RUN --mount=type=bind,source=.,target=/mnt/source \
         cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
     fi
 
+# ===================================
 # Stage 3: Installer - Install dependencies from pruned lockfile
+# ===================================
 FROM base AS installer
 RUN apk add --no-cache python3 make g++ gcc musl-dev
 RUN bun install -g node-gyp
@@ -66,7 +74,9 @@ RUN --mount=type=bind,source=.,target=/mnt/source \
     cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
     cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
 
-# Stage 4: Builder - Build the application
+# ===================================
+# Stage 4: Builder - Build the application (generate + build)
+# ===================================
 FROM base AS builder
 RUN apk add --no-cache python3 make g++ gcc musl-dev
 
@@ -93,7 +103,9 @@ COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun turbo run build --filter=api...
 
-# Stage 5: Production Runner - Run the built application
+# ===================================
+# Stage 5: Runner - Production runtime
+# ===================================
 FROM base AS runner
 WORKDIR /app
 

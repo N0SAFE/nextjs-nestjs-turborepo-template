@@ -1,0 +1,16 @@
+# Production environment override
+# Use with: docker compose -f docker-compose.yml -f compose.prod.yml up
+# Adds prod-specific configurations: no polling, optimized settings, health checks
+
+services:
+  # Web Production Configuration
+  web-prod:
+    depends_on:
+      api-prod:
+        condition: service_healthy
+
+  # Doc Production Configuration
+  doc-prod:
+    depends_on:
+      api-prod:
+        condition: service_healthy

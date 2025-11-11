@@ -1,0 +1,59 @@
+services:
+  # Fumadocs docs app for production
+  doc-prod:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-prod
+    build:
+      context: ../../..
+      dockerfile: ./docker/builder/doc/Dockerfile.doc.build-time.prod
+      args:
+        - NODE_ENV=production
+    restart: unless-stopped
+    ports:
+      - "3020:3020"
+    develop:
+      watch:
+        # Restart when Docker Compose configuration changes
+        - action: restart
+          path: ../../..
+          target: /app
+          include:
+            - docker/compose/doc/docker-compose.doc.prod.yml
+            - docker/compose/docker-compose.yml
+            - docker/compose/docker-compose.dev.override.yml
+            - docker/compose/docker-compose.prod.yml
+            - docker/compose/docker-compose.prod.override.yml
+        # Rebuild when any source code or dependency changes
+        - action: rebuild
+          path: ../../..
+          target: /app
+          ignore:
+            - .git/
+            - .gitignore
+            - node_modules/
+            - "**/node_modules/"
+            - "**/.turbo/"
+            - "**/.cache/"
+            - "**/coverage/"
+            - "**/*.log"
+            - "**/.DS_Store"
+    depends_on:
+      api-prod:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app_network_prod
+    volumes:
+      - bun_cache_prod:/root/.bun/install/cache
+      - turbo_cache_prod:/root/.cache/turbo
+
+networks:
+  app_network_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_app_network_prod
+    driver: bridge
+
+volumes:
+  bun_cache_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_prod
+  turbo_cache_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_prod

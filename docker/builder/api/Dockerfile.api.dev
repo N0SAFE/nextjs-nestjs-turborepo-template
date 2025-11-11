@@ -75,7 +75,7 @@ RUN --mount=type=cache,target=/root/.bun \
     bun i --verbose
 
 # ===================================
-# Stage 4: Source Copier - Copy all source files
+# Stage 3.5: Source-Copier - Copy full source from host
 # ===================================
 FROM base AS source-copier
 WORKDIR /app

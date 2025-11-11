@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.bun \
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for web app and install dependencies
+# Stage 2: Pruner - Prune monorepo for web
 # ===================================
 FROM base AS pruner
 
@@ -41,6 +41,9 @@ COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.
 RUN --mount=type=cache,target=/root/.bun \
     bun x turbo prune web --docker
 
+# ===================================
+# Stage 2.5: Config-Copier - Copy minimal config files for postinstall
+# ===================================
 FROM base AS config-copier
 WORKDIR /app
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
@@ -53,6 +56,9 @@ RUN --mount=type=bind,source=.,target=/mnt/source \
         cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
     fi
 
+# ===================================
+# Stage 3: Installer - Install dependencies
+# ===================================
 FROM base AS installer
 RUN apk update
 RUN apk add --no-cache libc6-compat
@@ -64,6 +70,9 @@ RUN --mount=type=cache,target=/root/.bun \
     --mount=type=cache,target=/root/.cache \
     bun i --verbose
 
+# ===================================
+# Stage 3.5: Source-Copier - Copy full source from host
+# ===================================
 FROM base AS source-copier
 WORKDIR /app
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
@@ -80,7 +89,7 @@ RUN --mount=type=bind,source=.,target=/mnt/source \
     cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
 
 # ===================================
-# Stage 3: Runner - Development runtime
+# Stage 5: Runner - Development runtime
 # ===================================
 FROM base AS runner
 WORKDIR /app

@@ -1,0 +1,84 @@
+services:
+  # Next.js web app for production
+  web-prod:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod
+    build:
+      context: ../../..
+      dockerfile: ./docker/builder/web/Dockerfile.web.runtime.prod
+      args:
+        - NODE_ENV=production
+        - API_URL=http://api-prod:${API_PORT:-3001}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        - API_PORT=${API_PORT:-3001}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+        - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
+        - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
+        - API_PING_PATH=${API_PING_PATH:-/health}
+    restart: unless-stopped
+    ports:
+      - "${NEXT_PUBLIC_APP_PORT:-3000}:${NEXT_PUBLIC_APP_PORT:-3000}"
+    develop:
+      watch:
+        # Restart when Docker Compose configuration changes
+        - action: restart
+          path: ../../..
+          target: /app
+          include:
+            - docker/compose/web/docker-compose.web.prod.yml
+            - docker/compose/docker-compose.yml
+            - docker/compose/docker-compose.dev.override.yml
+            - docker/compose/docker-compose.prod.yml
+            - docker/compose/docker-compose.prod.override.yml
+        # Rebuild when any source code or dependency changes
+        - action: rebuild
+          path: ../../..
+          target: /app
+          ignore:
+            - .git/
+            - .gitignore
+            - node_modules/
+            - "**/node_modules/"
+            - "**/.turbo/"
+            - "**/.cache/"
+            - "**/coverage/"
+            - "**/*.log"
+            - "**/.DS_Store"
+    depends_on:
+      api-prod:
+        condition: service_healthy
+    environment:
+      - RUST_BACKTRACE=full
+      - NODE_ENV=production
+      - API_PING_PATH=/health
+      # Server-side API URL (internal Docker network) - Use container name
+      - API_URL=http://api-prod:${API_PORT:-3001}
+      # Client-side API URL (external access) - Browser needs to reach this URL
+      # For production, this should be set to your actual server's public URL
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_API_PORT=${API_PORT:-3001}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+      # Docs URL (for navbar link)
+      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
+      - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:3020}
+      - API_ADMIN_TOKEN=${API_ADMIN_TOKEN:-secret-admin-token}
+      - AUTH_SECRET=${AUTH_SECRET:-QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
+    networks:
+      - app_network_prod
+    volumes:
+      # Cache directories to speed rebuilds (only useful if containers are recreated frequently on same host)
+      - bun_cache_prod:/root/.bun/install/cache
+      - turbo_cache_prod:/root/.cache/turbo
+
+networks:
+  app_network_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_app_network_prod
+    driver: bridge
+
+volumes:
+  bun_cache_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_prod
+  turbo_cache_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_prod

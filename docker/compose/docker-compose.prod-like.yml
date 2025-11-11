@@ -1,0 +1,6 @@
+include:
+  - path:
+      - api/docker-compose.api.prod-like.yml
+      - web/docker-compose.web.prod-like.yml
+      - doc/docker-compose.doc.prod-like.yml
+      - docker-compose.prod-like.override.yml
