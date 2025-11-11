@@ -2,7 +2,7 @@ import { z } from 'zod/v4';
 
 export const envSchema = z.object({
   // Database
-  DATABASE_URL: z.url('DATABASE_URL must be a valid URL'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   
   // API
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
@@ -20,7 +20,7 @@ export const envSchema = z.object({
   // Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   
-  NEXT_PUBLIC_WEB_URL: z.url(),
+  NEXT_PUBLIC_APP_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

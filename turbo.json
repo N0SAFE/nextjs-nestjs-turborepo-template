@@ -20,7 +20,7 @@
         "JWT_SECRET",
         "NODE_ENV",
         "PHASE",
-        "NEXT_PUBLIC_WEB_URL",
+        "NEXT_PUBLIC_APP_URL",
         "API_PORT",
         "DEV_AUTH_KEY",
         "BETTER_AUTH_SECRET",

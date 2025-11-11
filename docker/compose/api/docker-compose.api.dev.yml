@@ -122,7 +122,7 @@ services:
       PASSKEY_RPNAME: ${PASSKEY_RPNAME:-NestJS App}
       PASSKEY_ORIGIN: ${PASSKEY_ORIGIN:-http://localhost:3000}
       REDIS_URL: redis://api-cache-dev:6379
-      NEXT_PUBLIC_WEB_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # CORS Configuration for cross-origin requests from web app
       CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # Development specific settings

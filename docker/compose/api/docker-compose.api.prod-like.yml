@@ -68,7 +68,7 @@ services:
       REDIS_URL: redis://api-cache-prod:6379
       JWT_SECRET: ${JWT_SECRET:-jwt-fallback-secret}
       AUTH_SECRET: ${AUTH_SECRET:-auth-fallback-secret}
-      NEXT_PUBLIC_WEB_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # CORS Configuration for cross-origin requests from web app
       CORS_ORIGIN: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
       # Development auth key (for development convenience)
