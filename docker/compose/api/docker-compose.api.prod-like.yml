@@ -77,6 +77,9 @@ services:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-auth-fallback-secret}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
+      
+      # Enable seeding for mock data (prod-like mode)
+      - ENABLE_SEEDING='true'
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://127.0.0.1:${API_PORT:-3001}/health || exit 1
       start_period: 15s
