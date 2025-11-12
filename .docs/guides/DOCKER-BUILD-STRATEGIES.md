@@ -185,7 +185,6 @@ Both strategies support the same environment variables:
 **Build-time arguments (for build-time compilation):**
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_APP_URL` 
-- `BETTER_AUTH_SECRET`
 - `API_PORT`
 
 **Runtime environment variables (for both strategies):**

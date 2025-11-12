@@ -6,7 +6,7 @@ import { RoleConfigCollection } from './role-config-collection';
  * RolesConfig - Manages all roles in the permission system
  * Provides methods to manipulate and query the entire role collection
  */
-export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<TRoles> {
+export class RolesConfig<TRoles extends Record<string, Record<string, readonly string[]>>> extends BaseConfig<TRoles> {
   /**
    * Get a specific role as a RoleConfig instance
    * This enables chained operations on individual roles
@@ -82,7 +82,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
    * Get all roles as RoleConfig instances
    */
   values(): RoleConfig<TRoles[keyof TRoles]>[] {
-    return Object.values<TRoles[keyof TRoles]>(this._roles).map(role => new RoleConfig(role));
+    return Object.values(this._roles as unknown as Record<string, TRoles[keyof TRoles]>).map(role => new RoleConfig(role));
   }
 
   /**
@@ -98,17 +98,17 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
   /**
    * Add a new role
    */
-  add<K extends string>(key: K, role: unknown): RolesConfig<TRoles & Record<K, any>> {
+  add<K extends string>(key: K, role: Record<string, readonly string[]>): RolesConfig<TRoles & Record<K, Record<string, readonly string[]>>> {
     return new RolesConfig({
       ...this._roles,
       [key]: role
-    } as TRoles & Record<K, any>);
+    } as TRoles & Record<K, Record<string, readonly string[]>>);
   }
 
   /**
    * Add multiple roles
    */
-  addMany<T extends Record<string, any>>(roles: T): RolesConfig<TRoles & T> {
+  addMany<T extends Record<string, Record<string, readonly string[]>>>(roles: T): RolesConfig<TRoles & T> {
     return new RolesConfig({
       ...this._roles,
       ...roles
@@ -160,11 +160,11 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
   /**
    * Filter roles based on predicate
    */
-  filter(predicate: (key: keyof TRoles, role: TRoles[keyof TRoles]) => boolean): RolesConfig<Partial<TRoles>> {
-    const filtered = {} as Partial<TRoles>;
+  filter(predicate: (key: keyof TRoles, role: TRoles[keyof TRoles]) => boolean): RolesConfig<Record<string, Record<string, readonly string[]>>> {
+    const filtered: Record<string, Record<string, readonly string[]>> = {};
     for (const [key, role] of Object.entries(this._roles)) {
       if (predicate(key as keyof TRoles, role as TRoles[keyof TRoles])) {
-        filtered[key as keyof TRoles] = role as TRoles[keyof TRoles];
+        filtered[key] = role;
       }
     }
     return new RolesConfig(filtered);
@@ -192,7 +192,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
   /**
    * Merge with another RolesConfig
    */
-  merge<T extends Record<string, any>>(other: RolesConfig<T>): RolesConfig<TRoles & T> {
+  merge<T extends Record<string, Record<string, readonly string[]>>>(other: RolesConfig<T>): RolesConfig<TRoles & T> {
     return new RolesConfig({
       ...this._roles,
       ...other.build()
@@ -268,7 +268,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.every(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions?.length === 1 && permissions[0] === 'read';
+        return permissions.length === 1 && permissions[0] === 'read';
       });
     });
   }
@@ -282,7 +282,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
       const resources = roleConfig.getResources();
       return resources.some(resource => {
         const permissions = roleConfig.getPermissions(resource);
-        return permissions?.some(p => ['create', 'update', 'delete'].includes(p));
+        return permissions.some(p => ['create', 'update', 'delete'].includes(p));
       });
     });
   }
@@ -303,7 +303,7 @@ export class RolesConfig<TRoles extends Record<string, any>> extends BaseConfig<
     }
     
     return Object.values(this._roles).every(role => 
-      typeof role === 'object' && role !== null
+      typeof role === 'object'
     );
   }
 

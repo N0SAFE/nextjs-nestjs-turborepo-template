@@ -3,6 +3,26 @@
 import { spawn, spawnSync } from 'child_process'
 import { existsSync } from 'fs'
 import { join } from 'path'
+import { validateWebEnvSafe, webEnvIsValid } from '@repo/env'
+import zod from 'zod/v4'
+
+/**
+ * Validate environment variables at startup
+ */
+function validateEnvironment(): void {
+  console.log('🔍 Validating environment variables...')
+  
+  if (!webEnvIsValid(process.env)) {
+    const result = validateWebEnvSafe(process.env)
+    console.error('❌ Environment validation failed:')
+    if (!result.success) {
+      console.error(zod.prettifyError(result.error))
+    }
+    process.exit(1)
+  }
+  
+  console.log('✅ Environment validation passed\n')
+}
 
 /**
  * Ensure routes are generated before starting Next.js
@@ -91,6 +111,9 @@ function startProcesses(): void {
  */
 function main(): void {
   console.log('🎯 Web Development Entrypoint Started\n')
+  
+  // Validate environment before starting
+  validateEnvironment()
   
   // Ensure routes are generated before starting Next.js
   ensureRoutesGenerated()

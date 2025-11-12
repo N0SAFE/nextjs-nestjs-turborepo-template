@@ -2,12 +2,32 @@
 
 import { existsSync } from 'fs'
 import { execSync, spawn } from 'child_process'
+import { validateApiEnv, apiEnvIsValid, validateApiEnvSafe } from '@repo/env'
+import zod from 'zod/v4'
 
 interface EntrypointConfig {
   skipMigrations: boolean
   diagnosePath: string
   migrateScript: string
   seedScript: string
+}
+
+/**
+ * Validate environment variables at startup
+ */
+function validateEnvironment(): void {
+  console.log('🔍 Validating environment variables...')
+  
+  if (!apiEnvIsValid(process.env)) {
+    const result = validateApiEnvSafe(process.env)
+    console.error('❌ Environment validation failed:')
+    if (!result.success) {
+      console.error(zod.prettifyError(result.error))
+    }
+    process.exit(1)
+  }
+  
+  console.log('✅ Environment validation passed\n')
 }
 
 /**
@@ -124,6 +144,9 @@ function main(): void {
   }
 
   console.log('🎯 API Development Entrypoint Started\n')
+
+  // Validate environment before starting
+  validateEnvironment()
 
   runDiagnostics(config)
   runMigrations(config)

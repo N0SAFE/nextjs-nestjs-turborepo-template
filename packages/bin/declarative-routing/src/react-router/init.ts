@@ -67,7 +67,8 @@ export async function setupReactRouter() {
 
   writeConfig({
     mode: "react-router",
-    routes: response.routes
+    routes: response.routes,
+    src: "./src"
   });
 
   await setup();

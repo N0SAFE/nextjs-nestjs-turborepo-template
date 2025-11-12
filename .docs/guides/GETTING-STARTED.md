@@ -107,13 +107,10 @@ The template uses several environment files for different services and environme
 #### API (NestJS):
 - `DATABASE_URL`: PostgreSQL connection string
 - `API_PORT`: Port for the NestJS API (default: 3001)
-- `BETTER_AUTH_SECRET`: Secret key for Better Auth
-- `REDIS_URL`: Redis connection string
 
 #### Web (Next.js):
 - `NEXT_PUBLIC_API_URL`: URL to the NestJS API
 - `NEXT_PUBLIC_APP_URL`: URL where the web app is accessible
-- `BETTER_AUTH_URL`: Auth callback URL
 - `NEXT_PUBLIC_APP_PORT`: Port for the Next.js app (default: 3000)
 - `NEXT_PUBLIC_DOC_URL`: URL to your documentation site (when set, a "Docs" link appears in the navbar)
 - `NEXT_PUBLIC_DOC_PORT`: Port for the docs site (optional helper used by Docker compose defaults)

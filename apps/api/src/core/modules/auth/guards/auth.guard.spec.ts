@@ -4,8 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Reflector } from '@nestjs/core';
 import type { ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
-import { AUTH_INSTANCE_KEY } from '../types/symbols';
-import { APIError } from 'better-auth/api';
+import { MODULE_OPTIONS_TOKEN } from '../definitions/auth-module-definition';
 
 // Mock better-auth/node
 vi.mock('better-auth/node', () => ({
@@ -51,8 +50,13 @@ describe('AuthGuard', () => {
           },
         },
         {
-          provide: AUTH_INSTANCE_KEY,
-          useValue: mockAuth,
+          provide: MODULE_OPTIONS_TOKEN,
+          useValue: {
+            auth: mockAuth,
+            disableTrustedOriginsCors: false,
+            disableBodyParser: false,
+            disableGlobalAuthGuard: false,
+          },
         },
       ],
     }).compile();
@@ -124,11 +128,11 @@ describe('AuthGuard', () => {
       });
     });
 
-    it('should throw APIError for unauthenticated requests on protected routes', async () => {
+    it('should throw UnauthorizedException for unauthenticated requests on protected routes', async () => {
       vi.mocked(reflector.getAllAndOverride).mockReturnValue(false);
       vi.mocked(mockAuth.api.getSession).mockResolvedValue(null);
 
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(APIError);
+      await expect(guard.canActivate(mockContext)).rejects.toThrow('Unauthorized');
       expect(mockRequest.session).toBeNull();
       expect(mockRequest.user).toBeUndefined();
     });

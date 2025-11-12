@@ -10,7 +10,7 @@ export const commonPermissions = {
     }),
 
     projectEditor: permissionConfig.createPermission(({ statementsConfig }) => ({
-        project: statementsConfig.get("project").omit(["delete"]),
+        project: statementsConfig.get("project").omit(["delete"]).all(),
     })),
 
     organizationFullAccess: permissionConfig.createPermission(({ statementsConfig }) => ({
@@ -18,7 +18,7 @@ export const commonPermissions = {
     })),
 
     organizationManagement: permissionConfig.createPermission(({ statementsConfig }) => ({
-        organization: statementsConfig.get("organization").omit(["create", "delete"]),
+        organization: statementsConfig.get("organization").omit(["create", "delete"]).all(),
     })),
 
     organizationReadOnly: permissionConfig.createPermission({
@@ -30,7 +30,7 @@ export const commonPermissions = {
     })),
 
     userViewing: permissionConfig.createPermission(({ statementsConfig }) => ({
-        user: statementsConfig.get("user").pick(["list", "get"]),
+        user: statementsConfig.get("user").pick(["list", "get"]).all(),
     })),
 
     sessionManagement: permissionConfig.createPermission(({ statementsConfig }) => ({
@@ -66,13 +66,11 @@ export const commonPermissions = {
     }),
 
     // Using collection API to get read-only access across all resources
-    readOnlyAccess: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getAll().readOnly()
-    ),
-
-    contentManagement: permissionConfig.createPermission(({ statementsConfig }) => ({
+    readOnlyAccess: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getAll().readOnly().all()
+    ),    contentManagement: permissionConfig.createPermission(({ statementsConfig }) => ({
         project: statementsConfig.get("project").all(),
-        organization: statementsConfig.get("organization").omit(["create", "delete"]),
+        organization: statementsConfig.get("organization").omit(["create", "delete"]).all(),
         analytics: ["read"],
     })),
 
@@ -80,7 +78,7 @@ export const commonPermissions = {
         user: statementsConfig.get("user").all(),
         session: statementsConfig.get("session").all(),
         project: statementsConfig.get("project").all(),
-        organization: statementsConfig.get("organization").omit(["create", "delete"]),
+        organization: statementsConfig.get("organization").omit(["create", "delete"]).all(),
         billing: ["read"],
         analytics: ["read"],
     })),
@@ -91,33 +89,25 @@ export const commonPermissions = {
     ),
 
     // Using collection API to get only CRUD operations across all resources
-    crudAccess: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getAll().crudOnly()
-    ),
-
-    // Using collection API to get write operations (create, update, delete) across all resources
-    writeAccess: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getAll().writeOnly()
-    ),
-
-    // Using collection API to pick specific actions across all resources
-    listAndReadAccess: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getAll().pick(["list", "read"])
-    ),
-
-    // Using collection API on specific resources only
+    crudAccess: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getAll().crudOnly().all()
+    ),    // Using collection API to get write operations (create, update, delete) across all resources
+    writeAccess: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getAll().writeOnly().all()
+    ),    // Using collection API to pick specific actions across all resources
+    listAndReadAccess: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getAll().pick(["list", "read"]).all()
+    ),    // Using collection API on specific resources only
     userProjectManagement: permissionConfig.createPermission(({ statementsConfig }) => 
         statementsConfig.getMany(["user", "project"]).all()
     ),
 
     // Using collection API to omit dangerous actions across all resources
-    safeModeAccess: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getAll().omit(["delete"])
-    ),
-
-    // Example: Using collection with specific resources and filters
-    analyticsAndBillingRead: permissionConfig.createPermission(({ statementsConfig }) => 
-        statementsConfig.getMany(["analytics", "billing"]).pick(["read"])
+    safeModeAccess: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getAll().omit(["delete"]).all()
+    ),    // Example: Using collection with specific resources and filters
+    analyticsAndBillingRead: permissionConfig.createPermission(({ statementsConfig }) =>
+        statementsConfig.getMany(["analytics", "billing"]).pick(["read"]).all()
     ),
 } as const;
 

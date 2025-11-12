@@ -2,7 +2,7 @@
  * RoleConfig - Manages a single role's permissions
  * Provides utility methods to manipulate and query role permissions
  */
-export class RoleConfig<TRole = any> {
+export class RoleConfig<TRole = Record<string, readonly string[]>> {
   constructor(private readonly _role: TRole) {}
 
   /**
@@ -40,8 +40,15 @@ export class RoleConfig<TRole = any> {
       return false;
     }
     
-    if (action === undefined) {
+    // If no action parameter provided (not undefined explicitly), check if resource exists
+    // Using arguments.length to distinguish between has('resource') and has('resource', undefined)
+    if (arguments.length === 1) {
       return true;
+    }
+    
+    // If action is not a string or is explicitly undefined, return false
+    if (typeof action !== 'string') {
+      return false;
     }
     
     const actions = roleObj[resource];
@@ -51,31 +58,31 @@ export class RoleConfig<TRole = any> {
   /**
    * Check if role has all specified permissions
    */
-  hasAll(permissions: Record<keyof TRole, string[]>): boolean {
-    return Object.entries<string[]>(permissions).every(([resource, actions]) =>
-      actions.every(action => this.has(resource as keyof TRole, action))
+  hasAll(permissions: { resource: keyof TRole; action: string }[]): boolean {
+    return permissions.every(({ resource, action }) =>
+      this.has(resource, action)
     );
   }
 
   /**
    * Check if role has any of the specified permissions
    */
-  hasAny(permissions: Record<keyof TRole, string[]>): boolean {
-    return Object.entries<string[]>(permissions).some(([resource, actions]) =>
-      actions.some(action => this.has(resource as keyof TRole, action))
+  hasAny(permissions: { resource: keyof TRole; action: string }[]): boolean {
+    return permissions.some(({ resource, action }) =>
+      this.has(resource, action)
     );
   }
 
   /**
    * Get permissions for a specific resource
    */
-  getPermissions(resource: string): string[] | undefined {
+  getPermissions<R extends keyof TRole>(resource: R): TRole[R] {
     if (typeof this._role !== 'object' || this._role === null) {
-      return undefined;
+      return [] as TRole[R];
     }
     
-    const roleObj = this._role;
-    return roleObj[resource] as string[];
+    const roleObj: TRole = this._role;
+    return roleObj[resource] ?? [] as TRole[R];
   }
 
   /**
@@ -128,21 +135,21 @@ export class RoleConfig<TRole = any> {
   /**
    * Filter resources based on predicate
    */
-  filter(predicate: (resource: string, actions: readonly string[]) => boolean): Record<string, readonly string[]> {
+  filter<R extends keyof TRole>(predicate: (resource: R, actions: readonly string[]) => boolean): RoleConfig<Pick<TRole, R>> {
     if (typeof this._role !== 'object' || this._role === null) {
-      return {};
+      return new RoleConfig({} as Pick<TRole, R>);
     }
     
-    const result: Record<string, readonly string[]> = {};
+    const result: Partial<Pick<TRole, R>> = {};
     const roleObj = this._role;
     
     for (const [resource, actions] of Object.entries(roleObj)) {
-      if (Array.isArray(actions) && predicate(resource, actions)) {
-        result[resource] = actions;
+      if (Array.isArray(actions) && predicate(resource as R, actions)) {
+        result[resource as R] = actions as TRole[R];
       }
     }
     
-    return result;
+    return new RoleConfig(result as Pick<TRole, R>);
   }
 
   /**
@@ -162,7 +169,7 @@ export class RoleConfig<TRole = any> {
   /**
    * Get only read permissions
    */
-  readOnly(): Record<string, readonly string[]> {
+  readOnly(): RoleConfig<Pick<TRole, keyof TRole>> {
     return this.filter((_, actions) => 
       actions.length === 1 && actions[0] === 'read'
     );
@@ -171,7 +178,7 @@ export class RoleConfig<TRole = any> {
   /**
    * Get write permissions (create, update, delete)
    */
-  writeOnly(): Record<string, readonly string[]> {
+  writeOnly(): RoleConfig<Pick<TRole, keyof TRole>> {
     return this.filter((_, actions) =>
       actions.some(a => ['create', 'update', 'delete'].includes(a))
     );

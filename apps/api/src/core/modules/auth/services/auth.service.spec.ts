@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthService } from './auth.service';
-import { AUTH_INSTANCE_KEY } from '../types/symbols';
+import { MODULE_OPTIONS_TOKEN } from '../definitions/auth-module-definition';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -23,8 +23,13 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: AUTH_INSTANCE_KEY,
-          useValue: mockAuth,
+          provide: MODULE_OPTIONS_TOKEN,
+          useValue: {
+            auth: mockAuth,
+            disableTrustedOriginsCors: false,
+            disableBodyParser: false,
+            disableGlobalAuthGuard: false,
+          },
         },
       ],
     }).compile();

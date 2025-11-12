@@ -33,7 +33,7 @@ import { REQUEST } from '@nestjs/core'
     ORPCModule.forRootAsync({
       useFactory: (request: Request) => ({
         interceptors: [
-          onError((error, ctx) => {
+          onError((error, _ctx) => {
             console.error(
               "oRPC Error:",
               error

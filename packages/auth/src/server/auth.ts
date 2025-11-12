@@ -7,6 +7,7 @@ import { masterTokenPlugin } from "./plugins/masterTokenAuth";
 import { loginAsPlugin } from "./plugins/loginAs";
 import { useAdmin } from "../permissions/index";
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
     database: unknown,
     env: {

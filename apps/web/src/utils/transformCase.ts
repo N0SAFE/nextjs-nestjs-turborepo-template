@@ -8,11 +8,9 @@ export function keysToSnake<T extends Record<string, unknown>>(object: T) {
             unknown
         >>(
         (acc, key) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             const snakeKey = snakeCase(key) as SnakeCaseSeq<
                 keyof T extends string ? keyof T : never
             >
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             acc[snakeKey as keyof typeof acc] = object[key]
             return acc
         },

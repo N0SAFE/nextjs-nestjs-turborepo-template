@@ -28,8 +28,6 @@ jobs:
       # Essential environment variables for the monorepo
       NEXT_PUBLIC_API_URL: http://localhost:8055/
       NEXT_PUBLIC_API_PORT: 8055
-      API_PING_PATH: /server/health
-      API_ADMIN_TOKEN: copilot-test-admin-token
       NEXT_PUBLIC_APP_URL: http://localhost:3003/
       NEXT_PUBLIC_APP_PORT: 3003
       AUTH_SECRET: copilot-test-auth-secret-QgafJQw3O-k1gambz7YGKjtj5ZZe0dnL-WlSw4PtMDc
@@ -44,13 +42,11 @@ jobs:
       DIRECTUS_ADMIN_PASSWORD: copilot-test-password
       
       # Next.js Configuration
-      NEXT_TELEMETRY_DISABLED: 1
       NODE_ENV: development
       
       # Development tools (disabled for performance)
       MILLION_LINT: false
       REACT_SCAN: false
-      SHOW_AUTH_LOGS: false
       NEXT_PUBLIC_SHOW_AUTH_LOGS: false
       
       # Build optimization
@@ -144,8 +140,6 @@ jobs:
           # API Configuration
           NEXT_PUBLIC_API_URL=http://localhost:8055/
           NEXT_PUBLIC_API_PORT=8055
-          API_PING_PATH=/server/health
-          API_ADMIN_TOKEN=copilot-test-admin-token
 
           # App Configuration  
           NEXT_PUBLIC_APP_URL=http://localhost:3003/
@@ -164,11 +158,9 @@ jobs:
           DIRECTUS_ADMIN_PASSWORD=copilot-test-password
 
           # Development Configuration
-          NEXT_TELEMETRY_DISABLED=1
           NODE_ENV=development
           MILLION_LINT=false
           REACT_SCAN=false
-          SHOW_AUTH_LOGS=false
           NEXT_PUBLIC_SHOW_AUTH_LOGS=false
           SKIP_STATIC_GENERATION=true
           EOF

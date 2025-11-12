@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unused-vars */
 'use client'
 
 import React from 'react'
@@ -94,7 +93,7 @@ const ProfilePage: React.FC = () => {
             if (result.error) {
                 setError(result.error.message ?? 'Failed to load passkeys')
             } else {
-                setPasskeys((result.data ?? []))
+                setPasskeys(result.data)
             }
         } catch (err) {
             console.error('Error loading passkeys:', err)
@@ -117,7 +116,7 @@ const ProfilePage: React.FC = () => {
             if (result.error) {
                 setError(result.error.message ?? 'Failed to load sessions')
             } else {
-                setSessions((result.data ?? []))
+                setSessions(result.data)
             }
         } catch (err) {
             console.error('Error loading sessions:', err)
@@ -325,12 +324,6 @@ const ProfilePage: React.FC = () => {
         }
         
         return 'Unknown Browser'
-    }
-
-    const getSessionLocation = (ipAddress: string) => {
-        // In a real app, you might want to do IP geolocation
-        // For now, just show the IP or a placeholder
-        return ipAddress ?? 'Unknown Location'
     }
 
     const isCurrentSession = (sessionToken: string) => {

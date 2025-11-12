@@ -103,97 +103,102 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   }
 
   /**
+   * Build and return the final statement object
+   * Alias for all() to maintain consistency with other config classes
+   */
+  build(): TStatement {
+    return this._statements;
+  }
+
+  /**
    * Picks specific actions from all statements
-   * Only includes resources that have at least one of the picked actions
+   * Includes all resources, with empty arrays for non-matching actions
    * @param actions - Actions to pick
    * @returns Object with filtered resources and their picked actions
    */
   pick<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
-  ): FilteredStatement<TStatement, TActions> {
-    const result = {} as Record<string, readonly string[]>;
+  ): StatementConfigCollection<FilteredStatement<TStatement, TActions>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
 
     for (const [key, config] of Object.entries(this._statements)) {
       const filteredActions = config.filter((action) => actions.includes(action));
-      if (filteredActions.length > 0) {
-        result[key] = filteredActions as readonly string[];
-      }
+      // Always include the resource, even if empty
+      result[key as keyof TStatement] = filteredActions.length > 0 ? filteredActions as readonly string[] : [];
     }
 
-    return result as FilteredStatement<TStatement, TActions>;
+    return new StatementConfigCollection(result as unknown as FilteredStatement<TStatement, TActions>);
   }
 
   /**
    * Omits specific actions from all statements
-   * Only includes resources that have remaining actions after omission
+   * Includes all resources, with empty arrays if all actions are omitted
    * @param actions - Actions to omit
    * @returns Object with filtered resources and their remaining actions
    */
   omit<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
-  ): OmittedStatement<TStatement, TActions> {
-    const result = {} as Record<string, readonly string[]>;
+  ): StatementConfigCollection<OmittedStatement<TStatement, TActions>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
 
     for (const [key, config] of Object.entries(this._statements)) {
       const remainingActions = config.filter((action) => !actions.includes(action));
-      if (remainingActions.length > 0) {
-        result[key] = remainingActions as readonly string[];
-      }
+      // Always include the resource, even if empty
+      result[key as keyof TStatement] = remainingActions.length > 0 ? remainingActions as readonly string[] : [];
     }
 
-    return result as OmittedStatement<TStatement, TActions>;
+    return new StatementConfigCollection(result as unknown as OmittedStatement<TStatement, TActions>);
   }
 
   /**
    * Get only read-only permissions (resources with only "read" action)
    * Excludes resources that don't have "read" or have other actions
    */
-  readOnly(): FilteredStatement<TStatement, readonly ['read']> {
-    const result: Partial<FilteredStatement<TStatement, readonly ['read']>> = {};
+  readOnly(): StatementConfigCollection<FilteredStatement<TStatement, readonly ['read']>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (resourceActions.includes('read')) {
-        result[resource] = ['read'] as const;
+        result[resource as keyof TStatement] = ['read'] as const;
       }
     }
     
-    return result as unknown as FilteredStatement<TStatement, readonly ['read']>;
+    return new StatementConfigCollection(result as unknown as FilteredStatement<TStatement, readonly ['read']>);
   }
 
   /**
    * Get only write permissions (create, update, delete)
    * Excludes resources that don't have any write actions
    */
-  writeOnly(): FilteredStatement<TStatement, readonly ['create', 'update', 'delete']> {
-    const result: Partial<FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>> = {};
+  writeOnly(): StatementConfigCollection<FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     const writeActions = ['create', 'update', 'delete'];
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       const filtered = resourceActions.filter(a => writeActions.includes(a));
-      if (filtered.length > 0) {
-        result[resource] = filtered;
-      }
+      // Always include resource, even with empty array
+      result[resource as keyof TStatement] = filtered;
     }
     
-    return result as unknown as FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>;
+    return new StatementConfigCollection(result as unknown as FilteredStatement<TStatement, readonly ['create', 'update', 'delete']>);
   }
 
   /**
    * Get CRUD-only permissions (create, read, update, delete)
    * Excludes resources that don't have any CRUD actions
    */
-  crudOnly(): FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']> {
-    const result: Partial<FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>> = {};
+  crudOnly(): StatementConfigCollection<FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     const crudActions = ['create', 'read', 'update', 'delete'];
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       const filtered = resourceActions.filter(a => crudActions.includes(a));
       if (filtered.length > 0) {
-        result[resource] = filtered;
+        result[resource as keyof TStatement] = filtered;
       }
     }
     
-    return result as unknown as FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>;
+    return new StatementConfigCollection(result as unknown as FilteredStatement<TStatement, readonly ['create', 'read', 'update', 'delete']>);
   }
 
   /**
@@ -202,42 +207,42 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    */
   filter(
     predicate: (resource: string, actions: readonly string[]) => boolean
-  ): Partial<TStatement> {
-    const result: Partial<TStatement> = {};
+  ): StatementConfigCollection<TStatement> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
 
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (predicate(resource, resourceActions)) {
-        (result as Record<string, readonly string[]>)[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
 
-    return result as unknown as Partial<TStatement>;
+    return new StatementConfigCollection(result as TStatement);
   }
 
   /**
    * Map resources to new values
    */
   map<U>(
-    mapper: (resource: string, actions: readonly string[]) => U
+    mapper: (resource: string, config: StatementConfig) => U
   ): U[] {
     return Object.entries(this._statements).map(([resource, actions]) =>
-      mapper(resource, actions)
+      mapper(resource, new StatementConfig(actions))
     );
   }
 
   /**
    * Get resources that have a specific action
    */
-  withAction<TAction extends AllActions<TStatement>>(action: TAction): WithAction<TStatement, TAction> {
-    const result: Partial<FilteredStatement<TStatement, readonly [TAction]>> = {};
+  withAction<TAction extends AllActions<TStatement>>(action: TAction): StatementConfigCollection<WithAction<TStatement, TAction>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (resourceActions.includes(action)) {
-        result[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
     
-    return result as unknown as WithAction<TStatement, TAction>;
+    return new StatementConfigCollection(result as unknown as WithAction<TStatement, TAction>);
   }
 
   /**
@@ -245,16 +250,16 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    */
   withAllActions<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
-  ): WithAllActions<TStatement, TActions> {
-    const result: Partial<FilteredStatement<TStatement, TActions>> = {};
+  ): StatementConfigCollection<WithAllActions<TStatement, TActions>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (actions.every(a => resourceActions.includes(a))) {
-        result[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
     
-    return result as unknown as WithAllActions<TStatement, TActions>;
+    return new StatementConfigCollection(result as unknown as WithAllActions<TStatement, TActions>);
   }
 
   /**
@@ -262,31 +267,31 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
    */
   withAnyAction<TActions extends readonly AllActions<TStatement>[]>(
     actions: TActions,
-  ): WithAnyAction<TStatement, TActions> {
-    const result: Partial<FilteredStatement<TStatement, TActions>> = {};
+  ): StatementConfigCollection<WithAnyAction<TStatement, TActions>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (actions.some(a => resourceActions.includes(a))) {
-        result[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
     
-    return result as unknown as WithAnyAction<TStatement, TActions>;
+    return new StatementConfigCollection(result as unknown as WithAnyAction<TStatement, TActions>);
   }
 
   /**
    * Exclude resources that have a specific action
    */
-  withoutAction<TAction extends AllActions<TStatement>>(action: TAction): WithoutAction<TStatement, TAction> {
-    const result: Partial<FilteredStatement<TStatement, readonly [TAction]>> = {};
+  withoutAction<TAction extends AllActions<TStatement>>(action: TAction): StatementConfigCollection<WithoutAction<TStatement, TAction>> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (!resourceActions.includes(action)) {
-        result[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
     
-    return result as unknown as WithoutAction<TStatement, TAction>;
+    return new StatementConfigCollection(result as unknown as WithoutAction<TStatement, TAction>);
   }
 
   /**
@@ -330,45 +335,43 @@ export class StatementConfigCollection<TStatement extends Record<string, readonl
   /**
    * Apply a transformer to each resource's actions
    */
-  transform(
-    transformer: (resource: string, actions: readonly string[]) => readonly string[]
-  ): Partial<TStatement> {
-    const result: Partial<TStatement> = {};
+  transform<U>(
+    transformer: (resource: string, config: StatementConfig) => U
+  ): Record<string, U> {
+    const result: Record<string, U> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
-      const transformed = transformer(resource, resourceActions);
-      if (transformed.length > 0) {
-        (result as Record<string, readonly string[]>)[resource] = transformed;
-      }
+      result[resource] = transformer(resource, new StatementConfig(resourceActions));
     }
     
     return result;
   }
 
   /**
-   * Merge with another statement object
+   * Merge with another statement object or collection
    */
   merge<T extends Record<string, readonly string[]>>(
-    other: T
+    other: T | StatementConfigCollection<T>
   ): StatementConfigCollection<TStatement & T> {
+    const otherObj = other instanceof StatementConfigCollection ? other.all() : other;
     return new StatementConfigCollection({
       ...this._statements,
-      ...other,
+      ...otherObj,
     });
   }
 
   /**
    * Return only resources with non-empty actions
    */
-  compact(): Partial<TStatement> {
-    const result: Partial<TStatement> = {};
+  compact(): StatementConfigCollection<TStatement> {
+    const result: Partial<Record<keyof TStatement, readonly string[]>> = {};
     
     for (const [resource, resourceActions] of Object.entries(this._statements)) {
       if (resourceActions.length > 0) {
-        (result as Record<string, readonly string[]>)[resource] = resourceActions;
+        result[resource as keyof TStatement] = resourceActions;
       }
     }
     
-    return result;
+    return new StatementConfigCollection(result as TStatement);
   }
 }

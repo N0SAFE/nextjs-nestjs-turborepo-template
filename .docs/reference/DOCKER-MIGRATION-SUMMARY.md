@@ -82,7 +82,6 @@ This document summarizes all the changes made to migrate the Docker and Docker C
   - `NEXT_PUBLIC_API_PORT`
 - Added NestJS-specific variables:
   - `API_PORT`
-  - `JWT_SECRET`
   - `DB_USER`
   - `DB_PASSWORD`
   - `DATABASE_URL` (PostgreSQL format)

@@ -11,8 +11,11 @@
     "./permissions": "./src/permissions/index.ts"
   },
   "scripts": {
-    "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "lint": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "better-auth": "catalog:auth",
@@ -21,11 +24,14 @@
     "sonner": "catalog:ui"
   },
   "devDependencies": {
+    "eslint": "catalog:linting",
     "@repo-configs/eslint": "*",
     "@repo-configs/prettier": "*",
     "@repo-configs/typescript": "*",
     "@types/react": "catalog:react",
-    "typescript": "catalog:build"
+    "typescript": "catalog:build",
+    "vitest": "catalog:testing",
+    "@vitest/coverage-v8": "catalog:testing"
   },
   "peerDependencies": {
     "drizzle-orm": "catalog:database"

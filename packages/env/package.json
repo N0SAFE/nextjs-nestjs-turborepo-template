@@ -1,0 +1,36 @@
+{
+  "name": "@repo/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts",
+    "./utils": "./src/utils.ts",
+    "./constants": "./src/constants.ts",
+    "./validate": "./src/validate.ts",
+    "./mock": "./src/mock.ts"
+  },
+  "bin": {
+    "check": "./src/cli.ts",
+    "load": "./src/cli.ts",
+    "mock": "./src/cli.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "check": "bun src/cli.ts check",
+    "load": "bun src/cli.ts load",
+    "mock": "bun src/cli.ts mock",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "catalog:dev",
+    "zod": "catalog:utils"
+  },
+  "devDependencies": {
+    "@repo-configs/typescript": "*",
+    "typescript": "catalog:build",
+    "vitest": "catalog:testing",
+    "@vitest/coverage-v8": "catalog:testing"
+  }
+}

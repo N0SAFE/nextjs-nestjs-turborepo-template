@@ -34,7 +34,7 @@ import { RolesConfig } from "./roles/roles-config";
 export class ResourceBuilder<
   TStatement extends Record<string, readonly string[]>,
   TResource extends string,
-  TRoles extends Record<string, any> = object
+  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>
 > {
   constructor(
     private builder: PermissionBuilder<TStatement, TRoles>,
@@ -65,7 +65,7 @@ export class ResourceBuilder<
  */
 export class RoleBuilder<
   TStatement extends Record<string, readonly string[]>,
-  TRoles extends Record<string, any>,
+  TRoles extends Record<string, Record<string, readonly string[]>>,
   TRoleName extends string = string
 > {
   constructor(
@@ -88,7 +88,7 @@ export class RoleBuilder<
   ): PermissionBuilder<TStatement, TRoles & Record<typeof this.roleName, TPermissions>> {
     // @ts-expect-error - Type manipulation for builder pattern
     this.builder._roles[this.roleName] = this.ac.newRole(permissions);
-    return this.builder as PermissionBuilder<
+    return this.builder as unknown as PermissionBuilder<
       TStatement,
       TRoles & Record<typeof this.roleName, TPermissions>
     >;
@@ -101,7 +101,7 @@ export class RoleBuilder<
   allPermissions(): PermissionBuilder<TStatement, TRoles & Record<typeof this.roleName, TStatement>> {
     // @ts-expect-error - Type manipulation for builder pattern
     this.builder._roles[this.roleName] = this.ac.newRole(this.builder._statement);
-    return this.builder as PermissionBuilder<
+    return this.builder as unknown as PermissionBuilder<
       TStatement,
       TRoles & Record<typeof this.roleName, TStatement>
     >;
@@ -116,7 +116,7 @@ export class RoleBuilder<
  */
 export class PermissionBuilder<
   TStatement extends Record<string, readonly string[]> = Record<string, readonly string[]>,
-  TRoles extends Record<string, any> = object
+  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>
 > extends BaseConfig<{
   statementsConfig: StatementsConfig<TStatement>;
   rolesConfig: RolesConfig<TRoles>;
@@ -128,9 +128,9 @@ export class PermissionBuilder<
   _statement: Record<string, readonly string[]> = {};
   
   /** @internal */
-  _roles: Record<string, any> = {};
+  _roles: Record<string, unknown> = {};
   
-  private _ac?: ReturnType<typeof createAccessControl<any>>;
+  private _ac?: ReturnType<typeof createAccessControl<TStatement>>;
   private _statementsConfig?: StatementsConfig<TStatement>;
   private _rolesConfig?: RolesConfig<TRoles>;
 
@@ -183,7 +183,7 @@ export class PermissionBuilder<
   role<TRole extends string>(
     name: TRole
   ): RoleBuilder<TStatement, TRoles, TRole> {
-    this._ac ??= createAccessControl(this._statement);
+    this._ac ??= createAccessControl(this._statement as TStatement);
     return new RoleBuilder<TStatement, TRoles, TRole>(this, name, this._ac);
   }
 
@@ -192,13 +192,13 @@ export class PermissionBuilder<
    * @param roles - Function that receives the ac instance and returns roles
    * @returns The PermissionBuilder for method chaining
    */
-  roles<TNewRoles extends Record<string, any>>(
+  roles<TNewRoles extends Record<string, unknown>>(
     rolesFactory: (ac: ReturnType<typeof createAccessControl<TStatement>>) => TNewRoles
   ): PermissionBuilder<TStatement, TRoles & TNewRoles> {
-    this._ac ??= createAccessControl(this._statement);
+    this._ac ??= createAccessControl(this._statement as TStatement);
     const newRoles = rolesFactory(this._ac);
     Object.assign(this._roles, newRoles);
-    return this as PermissionBuilder<TStatement, TRoles & TNewRoles>;
+    return this as unknown as PermissionBuilder<TStatement, TRoles & TNewRoles>;
   }
 
   /**
@@ -206,7 +206,7 @@ export class PermissionBuilder<
    * @returns Object containing statementsConfig, rolesConfig, statement, ac, and roles
    */
   build() {
-    this._ac = createAccessControl(this._statement);
+    this._ac = createAccessControl(this._statement as TStatement);
     this._statementsConfig = new StatementsConfig(this._statement as TStatement);
     this._rolesConfig = new RolesConfig(this._roles as TRoles);
 
@@ -214,7 +214,8 @@ export class PermissionBuilder<
       statementsConfig: this._statementsConfig,
       rolesConfig: this._rolesConfig,
       statement: this._statement as TStatement & Statements,
-      ac: this._ac as ReturnType<typeof createAccessControl<TStatement>>,
+       
+      ac: this._ac,
       roles: this._roles as TRoles & AccessControlRoles,
     };
   }
@@ -244,7 +245,7 @@ export class PermissionBuilder<
    * Get the access control instance (creates if needed)
    */
   getAc(): ReturnType<typeof createAccessControl<TStatement>> {
-    return this._ac ??= createAccessControl(this._statement);
+    return this._ac ??= createAccessControl(this._statement as TStatement);
   }
 
   /**

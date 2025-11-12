@@ -59,7 +59,7 @@ export const MasterTokenProvider: React.FC<MasterTokenProviderProps> = ({
     }, [])
 
     useEffect(() => {
-        refetch()
+        void refetch()
     }, [enabled, refetch])
 
     return (

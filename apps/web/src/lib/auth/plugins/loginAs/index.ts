@@ -4,6 +4,6 @@ export const loginAsClientPlugin = () => {
     return {
         id: 'login-as',
          
-        $InferServerPlugin: {} as ReturnType<typeof import('@api/config/auth/plugins').loginAsPlugin>,
+        $InferServerPlugin: {} as ReturnType<typeof import('@repo/auth/server').loginAsPlugin>,
     } satisfies BetterAuthClientPlugin
 }

@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { Implement, implement } from '@orpc/nest';
 import { HealthService } from '../services/health.service';
 import { healthContract } from '@repo/api-contracts';
-import { Public } from '@/core/modules/auth/decorators/decorators';
+import { AllowAnonymous } from '@/core/modules/auth/decorators/decorators';
 
 @Controller()
 export class HealthController {
@@ -11,7 +11,7 @@ export class HealthController {
   /**
    * Implement the entire health contract
    */
-  @Public()
+  @AllowAnonymous()
   @Implement(healthContract.check)
   check() {
     return implement(healthContract.check).handler(() => {

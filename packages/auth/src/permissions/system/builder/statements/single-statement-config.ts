@@ -21,18 +21,20 @@ export class StatementConfig<TActions extends readonly string[] = readonly strin
 
   /**
    * Pick specific actions from the statement
-   * Returns the filtered actions array directly
+   * Returns a new StatementConfig instance with filtered actions
    */
-  pick(actions: readonly (TActions[number])[]): readonly (TActions[number])[] {
-    return this._actions.filter(a => actions.includes(a));
+  pick(actions: readonly (TActions[number])[]): StatementConfig<readonly (TActions[number])[]> {
+    const filtered = this._actions.filter(a => actions.includes(a));
+    return new StatementConfig(filtered);
   }
 
   /**
    * Omit specific actions from the statement
-   * Returns the filtered actions array directly
+   * Returns a new StatementConfig instance with filtered actions
    */
-  omit(actions: readonly (TActions[number])[]): readonly (Exclude<TActions[number], typeof actions[number]>)[] {
-    return this._actions.filter((a): a is Exclude<TActions[number], typeof actions[number]> => !actions.includes(a));
+  omit(actions: readonly (TActions[number])[]): StatementConfig<readonly (Exclude<TActions[number], typeof actions[number]>)[]> {
+    const filtered = this._actions.filter((a): a is Exclude<TActions[number], typeof actions[number]> => !actions.includes(a));
+    return new StatementConfig(filtered);
   }
 
   /**

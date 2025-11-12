@@ -72,24 +72,33 @@ export class PermissionChecker {
     return Object.keys(roles);
   }
 
+   
+   
   static hasHigherPrivilege(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _userRole: RoleName,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _requiredRole: RoleName
   ): boolean {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getRoleLevel(_role: RoleName): number {
     return 0;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userHasRole(_userId: string, _role: string): Promise<boolean> {
     throw new Error("Implement userHasRole based on your auth system");
   }
 
+   
   userHasPermissions(
-    _userId: string,
-    _permissions: Record<string, string[]>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    permissions: Record<string, string[]>
   ): Promise<boolean> {
     throw new Error("Implement userHasPermissions based on your auth system");
   }

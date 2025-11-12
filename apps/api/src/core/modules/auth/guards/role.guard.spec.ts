@@ -4,12 +4,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Reflector } from '@nestjs/core';
 import type { ExecutionContext } from '@nestjs/common';
 import { RoleGuard } from './role.guard';
-import { AUTH_INSTANCE_KEY } from '../types/symbols';
+import { MODULE_OPTIONS_TOKEN } from '../definitions/auth-module-definition';
 import { APIError } from 'better-auth/api';
 import { PermissionChecker } from '@repo/auth/permissions';
 
 // Mock the permissions module
-vi.mock('@/config/auth/permissions', () => ({
+vi.mock('@repo/auth/permissions', () => ({
   PermissionChecker: {
     hasRole: vi.fn(),
     getUserRoles: vi.fn(),
@@ -71,8 +71,13 @@ describe('RoleGuard', () => {
           },
         },
         {
-          provide: AUTH_INSTANCE_KEY,
-          useValue: mockAuth,
+          provide: MODULE_OPTIONS_TOKEN,
+          useValue: {
+            auth: mockAuth,
+            disableTrustedOriginsCors: false,
+            disableBodyParser: false,
+            disableGlobalAuthGuard: false,
+          },
         },
       ],
     }).compile();
@@ -101,7 +106,7 @@ describe('RoleGuard', () => {
 
     beforeEach(() => {
       vi.mocked(reflector.getAllAndOverride).mockReturnValue(undefined);
-      vi.mocked(PermissionChecker.validatePermission).mockReturnValue(true);
+      (PermissionChecker.validatePermission as any).mockReturnValue(true);
     });
 
     it('should be defined', () => {
@@ -385,7 +390,7 @@ describe('RoleGuard', () => {
     });
 
     it('should check role using PermissionChecker.hasRole', () => {
-      vi.mocked(PermissionChecker.hasRole).mockReturnValue(true);
+      (PermissionChecker.hasRole as any).mockReturnValue(true);
 
       const result = RoleGuard.hasRole('admin,manager', 'admin');
 
@@ -394,7 +399,7 @@ describe('RoleGuard', () => {
     });
 
     it('should get user roles using PermissionChecker.getUserRoles', () => {
-      vi.mocked(PermissionChecker.getUserRoles).mockReturnValue(['admin', 'manager']);
+      (PermissionChecker.getUserRoles as any).mockReturnValue(['admin', 'manager']);
 
       const result = RoleGuard.getUserRoles('admin,manager');
 

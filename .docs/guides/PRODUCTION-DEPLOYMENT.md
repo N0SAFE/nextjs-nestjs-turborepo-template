@@ -63,15 +63,9 @@ DB_PASSWORD=use-a-secure-password-in-production
 DB_DATABASE=nestjs_api
 DATABASE_URL=postgresql://postgres:your-password@api-db-prod:5432/nestjs_api
 
-# API Security
-BETTER_AUTH_SECRET=generate-a-secure-random-value-for-production
-
 # API
 API_PORT=3001
 NEXT_PUBLIC_API_URL=https://api.your-domain.com/
-
-# Redis
-REDIS_URL=redis://api-cache-prod:6379
 
 # Production Optimizations
 LOG_LEVEL=warn
@@ -89,10 +83,6 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com/
 # Web App
 NEXT_PUBLIC_APP_URL=https://www.your-domain.com
 NEXT_PUBLIC_APP_PORT=3000
-
-# Authentication
-BETTER_AUTH_URL=https://www.your-domain.com
-BETTER_AUTH_SECRET=your-secure-auth-secret
 
 # Production Mode Configuration
 NODE_ENV=production
