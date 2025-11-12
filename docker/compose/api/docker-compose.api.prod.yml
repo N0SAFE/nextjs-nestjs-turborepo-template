@@ -12,32 +12,6 @@ services:
     restart: unless-stopped
     ports:
       - "${API_PORT}:${API_PORT}"
-    develop:
-      watch:
-        # Restart when Docker Compose configuration changes
-        - action: restart
-          path: ../../..
-          target: /app
-          include:
-            - docker/compose/api/docker-compose.api.prod.yml
-            - docker/compose/docker-compose.yml
-            - docker/compose/docker-compose.dev.override.yml
-            - docker/compose/docker-compose.prod.yml
-            - docker/compose/docker-compose.prod.override.yml
-        # Rebuild when any source code or dependency changes
-        - action: rebuild
-          path: ../../..
-          target: /app
-          ignore:
-            - .git/
-            - .gitignore
-            - node_modules/
-            - "**/node_modules/"
-            - "**/.turbo/"
-            - "**/.cache/"
-            - "**/coverage/"
-            - "**/*.log"
-            - "**/.DS_Store"
     environment:
       # Runtime
       - NODE_ENV=production

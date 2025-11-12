@@ -15,32 +15,6 @@ services:
     restart: unless-stopped
     ports:
       - "${NEXT_PUBLIC_APP_PORT}:${NEXT_PUBLIC_APP_PORT}"
-    develop:
-      watch:
-        # Restart when Docker Compose configuration changes
-        - action: restart
-          path: ../../..
-          target: /app
-          include:
-            - docker/compose/web/docker-compose.web.prod.yml
-            - docker/compose/docker-compose.yml
-            - docker/compose/docker-compose.dev.override.yml
-            - docker/compose/docker-compose.prod.yml
-            - docker/compose/docker-compose.prod.override.yml
-        # Rebuild when any source code or dependency changes
-        - action: rebuild
-          path: ../../..
-          target: /app
-          ignore:
-            - .git/
-            - .gitignore
-            - node_modules/
-            - "**/node_modules/"
-            - "**/.turbo/"
-            - "**/.cache/"
-            - "**/coverage/"
-            - "**/*.log"
-            - "**/.DS_Store"
     depends_on:
       api-prod:
         condition: service_healthy
