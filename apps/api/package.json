@@ -12,7 +12,7 @@
     "dev": "dotenv -e .env -- bun --bun scripts/entrypoint.dev.ts",
     "prod": "bun --bun scripts/entrypoint.prod.ts",
     "start": "bun --bun nest start --preserveWatchOutput",
-    "start:dev": "bun --bun src/main --watch",
+    "start:dev": "bun --bun scripts/watch.ts",
     "start:debug": "bun --bun nest start --debug --watch --preserveWatchOutput",
     "start:prod": "bun --bun dist/main",
     "clean": "rimraf dist",

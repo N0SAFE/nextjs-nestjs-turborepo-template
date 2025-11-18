@@ -73,6 +73,25 @@ async function bootstrap() {
     `📘 OpenAPI JSON available at http://localhost:${String(port)}/openapi.json`
   );
   console.log(`📗 Scalar API Reference at http://localhost:${String(port)}/reference`);
+
+  // Enable graceful shutdown for hot reload
+  app.enableShutdownHooks();
+
+  // Handle termination signals for graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`\n${signal} received, starting graceful shutdown...`);
+    try {
+      await app.close();
+      console.log('Application closed gracefully');
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => void gracefulShutdown('SIGINT'));
 }
 
 bootstrap().catch((error: unknown) => {

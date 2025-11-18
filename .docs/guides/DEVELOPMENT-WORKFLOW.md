@@ -65,21 +65,76 @@ bun run web -- dev
 bun run web -- dev:open
 ```
 
+### Hot Reloading and Auto-Restart
+
+The development environment includes automatic restart functionality for both the API and web applications when source files change.
+
+#### API Hot Reload (NestJS)
+
+The API uses a **custom watch script** (using Bun + Chokidar) for watching file changes and automatically restarting the process:
+
+- **What it watches**: All files in `apps/api/src/` with `.ts`, `.js`, and `.json` extensions
+- **Restart behavior**: When a file changes, the watcher sends SIGTERM to the process, waits for graceful shutdown, then starts a new process
+- **Configuration**: See `apps/api/scripts/watch.ts` for settings
+- **Debounce delay**: 1 second (prevents rapid restarts from multiple file changes)
+- **Docker compatibility**: Uses chokidar with polling enabled (`usePolling: true`) for reliable file watching in Docker volumes
+
+**Why not `bun --watch`?**
+Bun's built-in `--watch` flag uses native file system events (inotify) which don't work properly with Docker bind mounts. Our custom watcher uses chokidar with polling to detect changes reliably.
+
+**How it works:**
+1. Docker Compose `sync` action updates files in the container
+2. Chokidar (with polling) detects the file change
+3. Watch script sends SIGTERM to the running Bun process
+4. NestJS gracefully shuts down (closes database connections, releases port)
+5. Watch script starts a new process with `bun --bun src/main.ts`
+6. New process is ready in 2-3 seconds
+
+**Manual restart**: Press Ctrl+C twice in the API console to stop and restart.
+
+#### Web Hot Reload (Next.js)
+
+Next.js has built-in Fast Refresh for React components:
+
+- **Instant updates**: Changes to React components update in the browser without full reload
+- **State preservation**: Component state is preserved when possible
+- **Error recovery**: Syntax errors are displayed in browser overlay
+
+#### What Triggers Restarts
+
+**API Restarts Required:**
+- Changes to `.ts`, `.js`, or `.json` files in `apps/api/src/`
+- ORPC contract changes in `packages/api-contracts/`
+- Database schema changes (after running migrations)
+
+**API Container Rebuild Required:**
+- Changes to `package.json` files
+- Changes to `Dockerfile.api.dev`
+- Changes to lock files
+
+**No Restart Needed:**
+- Test file changes (`.spec.ts`, `.test.ts`)
+- Changes in ignored directories
+
 ## Daily Development Tasks
 
 ### 1. API Development with NestJS
 
+When working on the API:
+
 1. Create or modify API endpoints in `apps/api/src`
 2. Update ORPC contracts in `packages/api-contracts/`
-3. Use the package manager to install dependencies:
-   ```bash
-   cd apps/api
-   bun install your-dependency
-   ```
-4. Restart the API service to apply changes:
-   ```bash
-   bun run dev:api
-   ```
+3. Save your changes - the API will automatically restart (see [Hot Reloading](#hot-reloading-and-auto-restart))
+
+**Adding Dependencies:**
+```bash
+cd apps/api
+bun install your-dependency
+```
+Note: Adding dependencies requires rebuilding the Docker container:
+```bash
+docker compose -f ./docker/compose/docker-compose.dev.yml up --build api-dev
+```
 
 #### Working with Database
 
