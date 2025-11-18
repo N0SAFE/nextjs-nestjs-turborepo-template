@@ -8,19 +8,21 @@ This document describes the implementation of automatic API restart functionalit
 
 The original implementation used `bun src/main.ts --watch`, which had the following issues:
 
-1. **Inconsistent file watching**: Bun's `--watch` flag was not reliably detecting file changes in Docker volume mounts
-2. **Process not restarting**: When changes were detected, the entire process wasn't being properly killed and restarted
-3. **Resource leaks**: Without proper shutdown handling, resources (database connections, ports) weren't being released
-4. **Poor developer experience**: Developers had to manually restart containers or processes
+1. **Bun's --watch doesn't work in Docker**: Bun's `--watch` flag uses native file system events (inotify on Linux) which are not propagated through Docker bind mounts
+2. **No polling support**: As of Bun 1.3.x, the `--watch` flag doesn't support polling mode, making it incompatible with Docker volume mounts
+3. **Process not restarting**: File changes weren't detected, so the process never restarted
+4. **Resource leaks**: Without proper shutdown handling, resources (database connections, ports) weren't being released
+5. **Poor developer experience**: Developers had to manually restart containers or processes
 
 ## Solution Architecture
 
 ### Components
 
-1. **Nodemon**: Battle-tested file watcher and process manager
-2. **Docker Compose Sync**: Syncs local files to container
-3. **Graceful Shutdown**: NestJS application shutdown hooks
-4. **Legacy Watch Mode**: Polling-based file watching for Docker compatibility
+1. **Custom Watch Script**: TypeScript script using chokidar for file watching
+2. **Chokidar with Polling**: File watcher that respects `CHOKIDAR_USEPOLLING=true`
+3. **Bun Runtime**: Continues using `bun --bun src/main.ts` as requested
+4. **Docker Compose Sync**: Syncs local files to container
+5. **Graceful Shutdown**: NestJS application shutdown hooks
 
 ### Flow Diagram
 
@@ -29,11 +31,11 @@ Developer saves file
     ↓
 Docker Compose sync action copies file to container
     ↓
-Nodemon (polling mode) detects file change
+Chokidar (polling mode) detects file change
     ↓
-Nodemon waits 1 second (debounce delay)
+Watch script waits 1 second (debounce delay)
     ↓
-Nodemon sends SIGTERM to current process
+Watch script sends SIGTERM to current Bun process
     ↓
 NestJS receives SIGTERM
     ↓
@@ -43,7 +45,7 @@ Graceful shutdown begins:
   - Clean up resources
   - Exit with code 0
     ↓
-Nodemon starts new process: bun --bun src/main.ts
+Watch script starts new process: bun --bun src/main.ts
     ↓
 NestJS application bootstraps
     ↓
@@ -52,31 +54,31 @@ API ready (2-3 seconds total)
 
 ## Implementation Details
 
-### 1. Nodemon Configuration (`apps/api/nodemon.json`)
+### 1. Custom Watch Script (`apps/api/scripts/watch.ts`)
 
-```json
-{
-  "watch": ["src"],
-  "ext": "ts,js,json",
-  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts", "node_modules"],
-  "exec": "bun --bun src/main.ts",
-  "restartable": "rs",
-  "env": {
-    "NODE_ENV": "development"
-  },
-  "delay": 1000,
-  "verbose": true,
-  "signal": "SIGTERM",
-  "legacyWatch": true
+The watch script is a TypeScript file that uses chokidar to watch for file changes and restart the Bun process:
+
+```typescript
+import { watch } from 'chokidar'
+import { spawn, type ChildProcess } from 'child_process'
+
+const config = {
+  watchPaths: ['src/**/*.ts', 'src/**/*.js', 'src/**/*.json'],
+  ignorePaths: ['**/node_modules/**', '**/*.spec.ts', '**/*.test.ts'],
+  command: 'bun',
+  args: ['--bun', 'src/main.ts'],
+  debounceMs: 1000,
+  usePolling: process.env.CHOKIDAR_USEPOLLING === 'true' || process.env.NODE_ENV === 'development',
 }
 ```
 
-**Key Settings:**
+**Key Features:**
 
-- `legacyWatch: true` - Uses polling instead of fsevents (required for Docker volumes)
-- `delay: 1000` - 1 second debounce to avoid rapid restarts from multiple file changes
-- `signal: "SIGTERM"` - Clean shutdown signal (vs SIGKILL)
-- `exec: "bun --bun src/main.ts"` - Uses Bun runtime directly
+- `usePolling: true` - Uses polling instead of inotify (required for Docker volumes)
+- `debounceMs: 1000` - 1 second debounce to avoid rapid restarts from multiple file changes
+- Sends SIGTERM for clean shutdown (vs SIGKILL)
+- `command: 'bun'` with `args: ['--bun', 'src/main.ts']` - Uses Bun runtime as requested
+- Respects `CHOKIDAR_USEPOLLING` environment variable
 
 ### 2. Graceful Shutdown Implementation (`apps/api/src/main.ts`)
 
@@ -119,10 +121,10 @@ Changed from:
 
 To:
 ```json
-"start:dev": "nodemon"
+"start:dev": "bun --bun scripts/watch.ts"
 ```
 
-Nodemon automatically reads `nodemon.json` configuration.
+This runs our custom watch script which handles file watching with polling and process management.
 
 ### 4. Docker Compose Configuration (Already Present)
 
@@ -144,18 +146,18 @@ The `CHOKIDAR_USEPOLLING=true` environment variable ensures that both nodemon's 
 
 ## Why This Solution Works
 
-### Nodemon Advantages
+### Custom Watch Script Advantages
 
-1. **Proven reliability**: Used in production by millions of Node.js developers
-2. **Docker-optimized**: Legacy watch mode specifically designed for containerized environments
-3. **Process management**: Properly kills and restarts entire process tree
-4. **Signal handling**: Sends configurable signals (SIGTERM for graceful shutdown)
+1. **Docker-compatible**: Uses chokidar with polling, specifically designed for containerized environments
+2. **Keeps Bun runtime**: Continues using `bun --bun src/main.ts` as the execution command
+3. **Process management**: Properly kills and restarts the Bun process with SIGTERM
+4. **Signal handling**: Sends SIGTERM for graceful shutdown before restart
 5. **Debouncing**: Built-in delay to handle rapid file changes
-6. **Manual restart**: Type `rs` + Enter in console for manual restart
+6. **Transparent**: Full control over watch logic, easy to debug and customize
 
 ### Graceful Shutdown Advantages
 
-1. **No port conflicts**: Port 3005 is properly released before restart
+1. **No port conflicts**: Port is properly released before restart
 2. **No database connection leaks**: All connections closed properly
 3. **Fast restarts**: Clean shutdown enables fast startup (2-3 seconds)
 4. **No orphaned processes**: No zombie processes left behind
@@ -163,12 +165,14 @@ The `CHOKIDAR_USEPOLLING=true` environment variable ensures that both nodemon's 
 
 ### Why Not Bun's --watch?
 
-Bun's `--watch` flag has limitations:
+Bun's `--watch` flag has fundamental limitations in Docker:
 
-1. **File watching in Docker**: Uses inotify events which don't work well with Docker volume mounts
-2. **Process restart**: May not kill the entire process tree properly
-3. **Maturity**: Newer implementation with less battle-testing in containerized environments
-4. **Shutdown handling**: No built-in graceful shutdown mechanism
+1. **No polling support**: As of Bun 1.3.x, `--watch` only uses inotify (native file system events)
+2. **Docker incompatibility**: inotify events are not propagated through Docker bind mounts
+3. **No workaround**: Cannot be fixed with environment variables or configuration
+4. **Upstream issue**: This is a known limitation in Bun's implementation
+
+**The fix**: Use chokidar (which powers nodemon, webpack, and many other tools) with polling enabled. This is the industry-standard solution for file watching in Docker.
 
 ## Performance Characteristics
 
@@ -180,22 +184,23 @@ Bun's `--watch` flag has limitations:
 ## Manual Operations
 
 ### Force Restart
+Press `Ctrl+C` to stop the watcher and process. Then restart with:
+```bash
+bun run start:dev
 ```
-rs [Enter]
-```
-Type `rs` in the terminal where the API is running and press Enter.
 
-### View Nodemon Status
-Nodemon outputs verbose logs showing:
+### View Watch Status
+The watch script outputs verbose logs showing:
 - Files being watched
+- Polling configuration
 - File changes detected
 - Process starts/stops
 
-### Debugging Nodemon
-```bash
-# Run nodemon with debugging
-DEBUG=nodemon:* nodemon
-```
+### Debugging the Watch Script
+The script provides detailed console output by default. Check for:
+- "File watcher ready!" message on startup
+- "File changed: <path>" when changes are detected
+- "Stopping current process..." during restart
 
 ## Testing the Implementation
 
@@ -282,9 +287,10 @@ If changes aren't detected:
 
 ### Related Files
 
-- `apps/api/nodemon.json` - Nodemon configuration
+- `apps/api/scripts/watch.ts` - Custom watch script implementation
 - `apps/api/src/main.ts` - Application bootstrap and shutdown
 - `apps/api/scripts/entrypoint.dev.ts` - Development entrypoint
+- `apps/api/package.json` - NPM scripts including start:dev
 - `docker/compose/api/docker-compose.api.dev.yml` - Docker Compose configuration
 - `.docs/guides/DEVELOPMENT-WORKFLOW.md` - Developer documentation
 
@@ -292,20 +298,21 @@ If changes aren't detected:
 
 | Solution | Pros | Cons | Verdict |
 |----------|------|------|---------|
-| **Nodemon** ✅ | Battle-tested, Docker-optimized, graceful restart | Extra dependency | **Best choice** |
-| tsx --watch | TypeScript-native, fast | Less mature in Docker, fewer options | Good alternative |
-| Bun --watch | Native to Bun, fast | Docker issues, new/immature | Not recommended for Docker |
-| Custom chokidar | Full control | Maintenance burden, reinventing wheel | Overkill |
+| **Custom watch (Bun + Chokidar)** ✅ | Keeps Bun runtime, Docker-optimized, full control | Custom code to maintain | **Chosen solution** |
+| Nodemon | Battle-tested, zero config | Adds wrapper, not using Bun directly | Good but not requested |
+| tsx --watch | TypeScript-native, fast | Less mature in Docker, not Bun | Good alternative |
+| Bun --watch | Native to Bun, fast | **Doesn't work in Docker** (no polling) | Won't work |
 | Manual restart | No dependencies | Poor DX, error-prone | Development nightmare |
 
 ## Conclusion
 
-The nodemon-based hot reload implementation provides:
-- ✅ Reliable file watching in Docker volumes
+The custom watch script (Bun + Chokidar) hot reload implementation provides:
+- ✅ Continues using `bun --bun src/main.ts` as requested
+- ✅ Reliable file watching in Docker volumes with polling
 - ✅ Proper process management and restarts
 - ✅ Graceful shutdown preventing resource leaks
 - ✅ Fast restart times (2-3 seconds)
-- ✅ Battle-tested and maintainable solution
+- ✅ Transparent, maintainable custom solution
 - ✅ Excellent developer experience
 
-This implementation follows industry best practices and provides a robust foundation for development workflow.
+This implementation solves the fundamental limitation of `bun --watch` in Docker (no polling support) while keeping the Bun runtime as the execution environment.

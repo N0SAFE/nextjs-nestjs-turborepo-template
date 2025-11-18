@@ -71,23 +71,26 @@ The development environment includes automatic restart functionality for both th
 
 #### API Hot Reload (NestJS)
 
-The API uses **nodemon** for watching file changes and automatically restarting the process:
+The API uses a **custom watch script** (using Bun + Chokidar) for watching file changes and automatically restarting the process:
 
 - **What it watches**: All files in `apps/api/src/` with `.ts`, `.js`, and `.json` extensions
-- **Restart behavior**: When a file changes, nodemon sends SIGTERM to the process, waits for graceful shutdown, then starts a new process
-- **Configuration**: See `apps/api/nodemon.json` for settings
+- **Restart behavior**: When a file changes, the watcher sends SIGTERM to the process, waits for graceful shutdown, then starts a new process
+- **Configuration**: See `apps/api/scripts/watch.ts` for settings
 - **Debounce delay**: 1 second (prevents rapid restarts from multiple file changes)
-- **Docker compatibility**: Uses `legacyWatch: true` (polling) for reliable file watching in Docker volumes
+- **Docker compatibility**: Uses chokidar with polling enabled (`usePolling: true`) for reliable file watching in Docker volumes
+
+**Why not `bun --watch`?**
+Bun's built-in `--watch` flag uses native file system events (inotify) which don't work properly with Docker bind mounts. Our custom watcher uses chokidar with polling to detect changes reliably.
 
 **How it works:**
 1. Docker Compose `sync` action updates files in the container
-2. Nodemon detects the file change
-3. Nodemon sends SIGTERM to the running NestJS process
+2. Chokidar (with polling) detects the file change
+3. Watch script sends SIGTERM to the running Bun process
 4. NestJS gracefully shuts down (closes database connections, releases port)
-5. Nodemon starts a new process with `bun --bun src/main.ts`
+5. Watch script starts a new process with `bun --bun src/main.ts`
 6. New process is ready in 2-3 seconds
 
-**Manual restart**: Type `rs` in the API console and press Enter to force a restart.
+**Manual restart**: Press Ctrl+C twice in the API console to stop and restart.
 
 #### Web Hot Reload (Next.js)
 
