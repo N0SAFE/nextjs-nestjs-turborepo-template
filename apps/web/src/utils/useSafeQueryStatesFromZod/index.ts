@@ -32,11 +32,11 @@ export type QueryStateFromZodOptions = BaseOptions & {
 function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
     callback: T,
     delay: number
-): T {
+): (...args: Parameters<T>) => void {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     
     const debouncedCallback = useCallback(
-        ((...args: Parameters<T>) => {
+        (...args: Parameters<T>) => {
             // Clear previous timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current)
@@ -46,7 +46,7 @@ function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
             timeoutRef.current = setTimeout(() => {
                 callback(...args)
             }, delay)
-        }) as T,
+        },
         [callback, delay]
     )
 
@@ -322,32 +322,25 @@ export function useSafeQueryStatesFromZod<T extends z.ZodObject>(
     // Always merge with defaults to ensure we have complete objects
     const mergedValues = mergeWithDefaults(schema, rawValues)
 
-    if (!delay) {
-        const setter = (value: Partial<z.infer<T>> | null) => {
-            setRawValues(value as any)
-            
-            // Handle reset keys
-            if (value !== null && resetKeys.length > 0) {
-                console.warn('Reset key functionality needs to be handled externally when using batched updates')
-            }
-        }
-        
-        return [mergedValues, setter]
-    }
+    // Always call hooks unconditionally to satisfy React's rules of hooks
+    // When delay is not set, we use a delay of 0 (effectively no debounce) 
+    // and ignore the internal state
+    const effectiveDelay = delay ?? 0
+    const useDebounce = Boolean(delay)
 
     const [internalValues, setInternalValues] = useState<z.infer<T>>(mergedValues)
 
     const debouncedSet = useDebouncedCallback((...args: unknown[]) => {
         const v = args[0] as Partial<z.infer<T>> | null
-        setRawValues(v as any)
+        void setRawValues(v as any)
 
         // Handle reset keys - limited in batched context
         if (resetKeys.length > 0) {
             console.warn('Reset key functionality needs to be handled externally when using batched updates')
         }
-    }, delay)
+    }, effectiveDelay)
 
-    const set = useCallback((v: Partial<z.infer<T>> | null) => {
+    const debouncedSetter = useCallback((v: Partial<z.infer<T>> | null) => {
         if (v === null) {
             // Reset to default values from schema
             const defaultValues = getSchemaDefaults(schema)
@@ -359,10 +352,31 @@ export function useSafeQueryStatesFromZod<T extends z.ZodObject>(
         }
     }, [debouncedSet, schema])
 
-    useEffect(() => {
-        const newMergedValues = mergeWithDefaults(schema, rawValues)
-        setInternalValues(newMergedValues)
-    }, [rawValues, schema])
+    // Track changes to rawValues for syncing
+    // When rawValues changes, we update the key which triggers useState to re-initialize
+    const rawValuesKey = JSON.stringify(rawValues)
+    const [lastRawValuesKey, setLastRawValuesKey] = useState(rawValuesKey)
+    
+    // If rawValues changed externally, update internal state synchronously during render
+    // This is the React 18+ recommended pattern instead of useEffect
+    if (rawValuesKey !== lastRawValuesKey) {
+        setLastRawValuesKey(rawValuesKey)
+        setInternalValues(mergedValues)
+    }
 
-    return [internalValues, set]
+    // Return appropriate values based on whether debounce is enabled
+    if (!useDebounce) {
+        const immediateSetter = (value: Partial<z.infer<T>> | null) => {
+            void setRawValues(value as any)
+            
+            // Handle reset keys
+            if (value !== null && resetKeys.length > 0) {
+                console.warn('Reset key functionality needs to be handled externally when using batched updates')
+            }
+        }
+        
+        return [mergedValues, immediateSetter]
+    }
+
+    return [internalValues, debouncedSetter]
 }

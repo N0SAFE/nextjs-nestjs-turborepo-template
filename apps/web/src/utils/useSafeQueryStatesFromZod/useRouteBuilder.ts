@@ -124,7 +124,8 @@ export function useRouteBuilder<T extends z.ZodObject>(
                 searchParams.append(key, String(item))
               }
             })
-          } else if (typeof value === 'object' && value !== null) {
+          } else if (typeof value === 'object') {
+            // value is already known to be non-null from outer check
             searchParams.set(key, JSON.stringify(value))
           } else {
             searchParams.set(key, String(value as string | number | boolean))
