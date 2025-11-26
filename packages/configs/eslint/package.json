@@ -41,7 +41,7 @@
     },
     "devDependencies": {
         "@darraghor/eslint-plugin-nestjs-typed": "^6.9.3",
-        "@eslint/compat": "^1.0.3",
+        "@eslint/compat": "^2.0.0",
         "@eslint/js": "^9.4.0",
         "@repo-configs/vitest": "*",
         "@tanstack/eslint-plugin-query": "catalog:tanstack",

@@ -133,6 +133,7 @@ export const invitePlugin = <TRoles extends string>(
 
           // Check if user can create invites
           if (options.canCreateInvite !== undefined) {
+            // @ts-expect-error UserWithRole type assertion
             const canCreateInvite = options.canCreateInvite(user);
             if (!canCreateInvite) {
               throw ctx.error("BAD_REQUEST", {

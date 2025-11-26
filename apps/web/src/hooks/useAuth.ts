@@ -79,30 +79,6 @@ export function useSignUpEmailMutation() {
 }
 
 /**
- * Hook to send password reset email
- */
-export function useForgetPasswordMutation() {
-  return useMutation({
-    mutationFn: async (params: { email: string; redirectTo?: string }) => {
-      return authClient.forgetPassword({
-        email: params.email,
-        redirectTo: params.redirectTo,
-      })
-    },
-    onSuccess: ({ error }) => {
-      if (error) {
-        toast.error(error.message ?? 'Failed to send reset email')
-      } else {
-        toast.success('Password reset email sent')
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to send reset email: ${error.message}`)
-    },
-  })
-}
-
-/**
  * Hook to reset password
  */
 export function useResetPasswordMutation() {
@@ -135,7 +111,6 @@ export function useAuthActions() {
   const signInEmail = useSignInEmailMutation()
   const signOut = useSignOutMutation()
   const signUpEmail = useSignUpEmailMutation()
-  const forgetPassword = useForgetPasswordMutation()
   const resetPassword = useResetPasswordMutation()
 
   return {
@@ -146,8 +121,6 @@ export function useAuthActions() {
     signOutAsync: signOut.mutateAsync,
     signUpEmail: signUpEmail.mutate,
     signUpEmailAsync: signUpEmail.mutateAsync,
-    forgetPassword: forgetPassword.mutate,
-    forgetPasswordAsync: forgetPassword.mutateAsync,
     resetPassword: resetPassword.mutate,
     resetPasswordAsync: resetPassword.mutateAsync,
     
@@ -156,7 +129,6 @@ export function useAuthActions() {
       signInEmail: signInEmail.isPending,
       signOut: signOut.isPending,
       signUpEmail: signUpEmail.isPending,
-      forgetPassword: forgetPassword.isPending,
       resetPassword: resetPassword.isPending,
     },
     
@@ -165,7 +137,6 @@ export function useAuthActions() {
       signInEmail: signInEmail.error,
       signOut: signOut.error,
       signUpEmail: signUpEmail.error,
-      forgetPassword: forgetPassword.error,
       resetPassword: resetPassword.error,
     },
   }

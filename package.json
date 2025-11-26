@@ -12,7 +12,7 @@
                 "rimraf": "^6.0.1",
                 "@types/node": "^24.9.2",
                 "vite": "^7.2.2",
-                "chokidar": "^4.0.3",
+                "chokidar": "^5.0.0",
                 "@parcel/watcher": "^2.5.0"
             },
             "dev": {
@@ -83,7 +83,7 @@
                 "@vitest/coverage-istanbul": "^4.0.8"
             },
             "ui": {
-                "lucide-react": "^0.553.0",
+                "lucide-react": "^0.555.0",
                 "@radix-ui/react-alert-dialog": "^1.1.1",
                 "@radix-ui/react-dialog": "^1.1.2",
                 "@radix-ui/react-dropdown-menu": "^2.1.2",
@@ -129,7 +129,7 @@
                 "execa": "^9.6.0",
                 "fs-extra": "^11.2.0",
                 "@types/fs-extra": "^11.0.4",
-                "glob": "^11.0.3",
+                "glob": "^13.0.0",
                 "handlebars": "^4.7.8",
                 "kleur": "^4.1.5",
                 "log-symbols": "^7.0.1",
@@ -146,15 +146,15 @@
                 "@types/bcrypt": "^6.0.0"
             },
             "orpc": {
-                "@orpc/openapi-client": "next",
-                "@orpc/client": "next",
-                "@orpc/contract": "next",
-                "@orpc/tanstack-query": "next",
-                "@orpc/nest": "next",
-                "@orpc/openapi": "next",
-                "@orpc/server": "next",
-                "@orpc/shared": "next",
-                "@orpc/zod": "next"
+                "@orpc/openapi-client": "1.11.3",
+                "@orpc/client": "1.11.3",
+                "@orpc/contract": "1.11.3",
+                "@orpc/tanstack-query": "1.11.3",
+                "@orpc/nest": "1.11.3",
+                "@orpc/openapi": "1.11.3",
+                "@orpc/server": "1.11.3",
+                "@orpc/shared": "1.11.3",
+                "@orpc/zod": "1.11.3"
             },
             "api:nest": {
                 "@nestjs/cli": "^11.0.10",
@@ -190,7 +190,7 @@
             "doc": {
                 "fumadocs-ui": "^16.0.8",
                 "fumadocs-core": "^16.0.8",
-                "fumadocs-mdx": "^13.0.0",
+                "fumadocs-mdx": "^14.0.3",
                 "@types/mdx": "^2.0.13"
             }
         }
@@ -293,7 +293,7 @@
         "dotenv-cli": "catalog:dev",
         "nyc": "^17.1.0",
         "rimraf": "catalog:build",
-        "turbo": "2.6.1-canary.1",
+        "turbo": "2.6.1",
         "vite": "catalog:build",
         "vitest": "catalog:testing"
     },

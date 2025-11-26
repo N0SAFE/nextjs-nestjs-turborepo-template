@@ -51,7 +51,7 @@ export const loginAsPlugin = (options: LoginAsOptions) => {
 
                         try {
                             // Create session for the user
-                            const session = await ctx.context.internalAdapter.createSession(user.id, ctx);
+                            const session = await ctx.context.internalAdapter.createSession(user.id);
 
                             await setSessionCookie(ctx, {
                                 session,
