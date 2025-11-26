@@ -38,7 +38,20 @@ services:
         max_attempts: 3
         window: 120s
 
-
+  doc-prod:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   api-db-prod:
     deploy:

@@ -1,20 +1,17 @@
 services:
-  # Next.js web app for production
-  web-prod:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod
+  # Fumadocs documentation app for prod-like environment
+  doc-prod:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-prod
     build:
       context: ../../..
-      dockerfile: ./docker/builder/web/Dockerfile.web.runtime.prod
+      dockerfile: ./docker/builder/doc/Dockerfile.doc.runtime.prod
       args:
         - NODE_ENV=production
-        - API_PORT=${API_PORT:-3001}
-        - API_URL=http://api-prod:${API_PORT:-3001}
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-        - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+        - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:3020}
+        - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
     restart: unless-stopped
     ports:
-      - "${NEXT_PUBLIC_APP_PORT:-3000}:${NEXT_PUBLIC_APP_PORT:-3000}"
+      - "${NEXT_PUBLIC_DOC_PORT:-3020}:${NEXT_PUBLIC_DOC_PORT:-3020}"
     develop:
       watch:
         # Restart when Docker Compose configuration changes
@@ -22,22 +19,25 @@ services:
           path: ../../..
           target: /app
           include:
-            - docker/compose/web/docker-compose.web.prod-like.yml
+            - docker/compose/doc/docker-compose.doc.prod-like.yml
             - docker/compose/docker-compose.yml
             - docker/compose/docker-compose.prod-like.yml
             - docker/compose/docker-compose.prod-like.override.yml
-        # Rebuild when australia app source code changes
+        # Rebuild when doc app source code changes
         - action: rebuild
           path: ../../..
           target: /app
           include:
-            - apps/web/**/*.ts
-            - apps/web/**/*.tsx
-            - apps/web/**/*.js
-            - apps/web/**/*.jsx
-            - apps/web/**/*.json
-            - apps/web/**/*.css
-            - apps/web/package.json
+            - apps/doc/**/*.ts
+            - apps/doc/**/*.tsx
+            - apps/doc/**/*.js
+            - apps/doc/**/*.jsx
+            - apps/doc/**/*.json
+            - apps/doc/**/*.css
+            - apps/doc/**/*.mdx
+            - apps/doc/**/*.md
+            - apps/doc/package.json
+            - apps/doc/source.config.ts
             - packages/**/*.ts
             - packages/**/*.tsx
             - packages/**/package.json
@@ -48,29 +48,13 @@ services:
             - "**/*.test.tsx"
             - "**/*.spec.ts"
             - "**/__tests__/**"
-    depends_on:
-      api-prod:
-        condition: service_healthy
     environment:
       # Runtime
       - NODE_ENV=production
       
-      # URLs - Server-side (internal Docker network)
-      - API_URL=http://api-prod:${API_PORT:-3001}
-      - APP_URL=${APP_URL:-http://web-prod:3000}
-      
       # URLs - Client-side (external access)
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-      - NEXT_PUBLIC_API_PORT=${API_PORT:-3001}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
       - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:3020}
       - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
-      
-      # Authentication
-      - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
-      - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
-      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
     networks:
       - app_network_prod
     volumes:
