@@ -120,6 +120,7 @@ services:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
       - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - AUTH_BASE_DOMAIN=${AUTH_BASE_DOMAIN:-http://localhost}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
       - NEXT_PUBLIC_DEV_AUTH_KEY=${NEXT_PUBLIC_DEV_AUTH_KEY:-${DEV_AUTH_KEY:-dev-fallback-key}}
       

@@ -31,12 +31,11 @@ services:
       - NEXT_PUBLIC_API_PORT=${API_PORT}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT}
-      - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL}
-      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT}
       
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET}
       - BETTER_AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_BASE_DOMAIN=${AUTH_BASE_DOMAIN}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY}
     networks:
       - app_network_prod

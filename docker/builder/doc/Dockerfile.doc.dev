@@ -1,92 +1,84 @@
 # syntax=docker/dockerfile:1-labs
-# Development Dockerfile for Next.js doc App
-# Multi-stage build with separate installer and runner stages
-# Supports BuildKit cache mounts for faster rebuilds
+# Development Dockerfile for Fumadocs Doc App
+# Multi-stage build optimized for caching:
+# base -> pruner -> installer -> source-copier -> runner
 
 # ===================================
-# Stage 1: Base - Common dependencies
+# Stage 1: Base - System dependencies
 # ===================================
-FROM oven/bun:1.3.1-alpine AS base
+FROM oven/bun:1.3.3-alpine AS base
 
-# Install system dependencies including build tools for native modules
-RUN apk add --no-cache \
-    libc6-compat \
-    curl \
-    bash \
-    python3 \
-    make \
-    g++ \
-    gcc \
-    musl-dev
+# Install system dependencies
+RUN apk add --no-cache libc6-compat curl bash python3 make g++ gcc musl-dev tar
 
 # Install Turbo globally with cache mount
-RUN --mount=type=cache,target=/root/.bun \
-    bun install -g turbo@^2
+RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2
 
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for doc
+# Stage 2: Pruner - Determine which workspaces are needed
 # ===================================
 FROM base AS pruner
-
 WORKDIR /app
 
-# Copy only the files needed for turbo prune (workspace package.json files)
-# This prevents cache invalidation when source code changes
-COPY package.json bun.lock* turbo.json ./
-COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
+# Copy ALL source files (turbo prune needs full source to determine dependencies)
+COPY . .
 
-# Run turbo prune to isolate doc app and its dependencies (use cache mount for bun)
+# Run turbo prune to identify which apps/packages are needed for doc
 RUN --mount=type=cache,target=/root/.bun \
     bun x turbo prune doc --docker
 
 # ===================================
-# Stage 2.5: Config-Copier - Copy minimal config files for postinstall
-# ===================================
-FROM base AS config-copier
-WORKDIR /app
-COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-    cd /mnt/source && \
-    cp package.json turbo.json /app/ 2>/dev/null || true && \
-    cp bun.lock* /app/ 2>/dev/null || true && \
-    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
-        mkdir -p /app/apps/doc && \
-        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
-    fi
-
-# ===================================
-# Stage 3: Installer - Install dependencies
+# Stage 3: Installer - Install dependencies for pruned workspaces only
 # ===================================
 FROM base AS installer
-RUN apk update
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY --from=pruner /app/out/full/ .
-COPY --from=config-copier /app/ /app/
+# Copy ONLY the pruned package.json structure (not all workspaces)
+COPY --from=pruner /app/out/json/ .
+# Use full original lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
+COPY --from=pruner /app/bun.lock ./bun.lock
+# Copy source.config.ts needed for fumadocs postinstall script
+COPY --from=pruner /app/apps/doc/source.config.ts ./apps/doc/source.config.ts
+
+# Install dependencies for pruned workspaces only
 RUN --mount=type=cache,target=/root/.bun \
     --mount=type=cache,target=/root/.cache \
-    bun i --verbose
+    bun install --frozen-lockfile || bun install
 
 # ===================================
-# Stage 3.5: Source-Copier - Copy full source from host
+# Stage 4: Source-Copier - Extract only the pruned source files
 # ===================================
 FROM base AS source-copier
 WORKDIR /app
+
+# Copy the pruned output structure to know which workspaces we need
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-    cd /mnt/source && \
-    for pkgJson in $(find /tmp/prune-structure -name "package.json" -type f); do \
-        relPath=$(echo "$pkgJson" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
-        if [ -d "/mnt/source/$relPath" ]; then \
-            mkdir -p "/app/$relPath"; \
-            tar cf - "$relPath" | tar xf - -C /app/; \
+
+# Copy only the source files for workspaces identified by turbo prune
+RUN --mount=type=bind,from=pruner,source=/app,target=/mnt/pruner \
+    # Copy root config files
+    cp /mnt/pruner/package.json /mnt/pruner/turbo.json /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bun.lock* /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bunfig.toml /app/ 2>/dev/null || true && \
+    # Copy pruned apps (full source, not just package.json)
+    for appPkg in $(find /tmp/prune-structure/apps -name "package.json" -type f 2>/dev/null); do \
+        appDir=$(dirname "$appPkg" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$appDir" ]; then \
+            mkdir -p "/app/$appDir" && \
+            cp -r /mnt/pruner/$appDir/. /app/$appDir/ 2>/dev/null || true; \
         fi; \
     done && \
-    cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
-    cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
+    # Copy pruned packages (full source, not just package.json)
+    for pkgJson in $(find /tmp/prune-structure/packages -name "package.json" -type f 2>/dev/null); do \
+        pkgDir=$(dirname "$pkgJson" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$pkgDir" ]; then \
+            mkdir -p "/app/$pkgDir" && \
+            cp -r /mnt/pruner/$pkgDir/. /app/$pkgDir/ 2>/dev/null || true; \
+        fi; \
+    done
 
 # ===================================
 # Stage 5: Runner - Development runtime
@@ -101,40 +93,35 @@ RUN ln -sf $(which bun) /usr/local/bin/npm
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV LOG_LEVEL=debug
-ENV PLATFORM_LIBC=musl
 
-COPY --from=source-copier /app/ /app/
+# Copy pruned source files from source-copier
+COPY --from=source-copier /app/ .
 
-# Copy all node_modules using bind mount to avoid --parents issues
-# Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)
+# Copy node_modules from installer
+# Use bind mount + tar to preserve symlinks and set ownership
 RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
-    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app && \
-    find /mnt/installer/apps -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+    # Copy root node_modules
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
+    # Copy app-level node_modules if they exist
+    find /mnt/installer/apps -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done && \
-    find /mnt/installer/packages -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+    # Copy package-level node_modules if they exist
+    find /mnt/installer/packages -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
+# Copy turbo cache directories
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
-# Run build during image build (runner stage) so the heavy compile work
-# happens at build time instead of container startup. Use BuildKit cache for bun.
+# Build doc app dependencies (packages that doc depends on)
 RUN --mount=type=cache,target=/root/.bun \
-    echo "🔨 Building doc dependencies (including declarative-routing)..." && \
-    bun x turbo run build --filter=doc... --filter=!doc && \
-    echo "✅ Build complete. Checking declarative-routing binary..." && \
-    ls -la packages/bin/declarative-routing/dist/ || echo "⚠️  declarative-routing dist/ not found!" && \
-    echo "📦 Verifying bun can find declarative-routing binary..." && \
-    cd apps/doc && bun x declarative-routing --version || echo "⚠️  declarative-routing binary not executable!" && \
-    echo "🛣️  Generating declarative routes for doc app..." && \
-    bun x declarative-routing build && \
-    echo "✅ Routes generated. Verifying routes/index.ts exists..." && \
-    ls -la src/routes/index.ts && cd /app || (echo "⚠️  routes/index.ts not found!" && cd /app)
+    echo "🔨 Building doc dependencies..." && \
+    bun x turbo run build --filter=doc... --filter=!doc
 
-# Start the development doc server at container runtime only.
+# Start the development doc server at container runtime
 CMD ["sh", "-c", "echo '🚀 Starting doc dev server...' && bun x turbo run dev --filter=doc..."]

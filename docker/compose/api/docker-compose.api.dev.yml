@@ -34,8 +34,8 @@ services:
       api-db-dev:
         condition: service_healthy
     restart: unless-stopped
-    mem_limit: 2g
-    memswap_limit: 2g
+    mem_limit: 6g
+    memswap_limit: 6g
     ports:
       - "${API_PORT:-3005}:${API_PORT:-3005}"
       - "${DRIZZLE_STUDIO_PORT:-4983}:4983"
@@ -119,6 +119,8 @@ services:
       # Persistent caches (shared with web/doc for faster cold starts)
       - bun_cache_dev:/root/.bun/install/cache
       - turbo_cache_dev:/root/.cache/turbo
+      # Persistent uploads directory for media files
+      - api_uploads_dev:/app/apps/api/uploads
     environment:
       # Runtime
       - NODE_ENV=development
@@ -140,8 +142,17 @@ services:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
       - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - AUTH_BASE_DOMAIN=${AUTH_BASE_DOMAIN:-http://localhost}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+      
+      # Passkey Configuration
+      - PASSKEY_RPID=${PASSKEY_RPID:-localhost}
+      - PASSKEY_RPNAME=${PASSKEY_RPNAME:-NestJS App}
+      - PASSKEY_ORIGIN=${PASSKEY_ORIGIN:-http://localhost:3000}
+      
+      # Uploads directory path (absolute path in container)
+      - UPLOADS_DIR=${UPLOADS_DIR:-/app/apps/api/uploads}
 
       # Default Admin Credentials (for seeding)
       - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL:-admin@admin.com}

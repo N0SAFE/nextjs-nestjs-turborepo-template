@@ -83,8 +83,12 @@ services:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
       - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - AUTH_BASE_DOMAIN=${AUTH_BASE_DOMAIN:-http://localhost}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+      
+      # Uploads
+      - UPLOADS_DIR=${UPLOADS_DIR:-/app/apps/api/uploads}
 
       # Default Admin Credentials (for seeding)
       - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL:-admin@admin.com}

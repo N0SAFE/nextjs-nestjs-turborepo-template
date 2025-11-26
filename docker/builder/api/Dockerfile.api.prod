@@ -5,16 +5,14 @@
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
 # ===================================
-FROM oven/bun:1.3.1-alpine AS base
+FROM oven/bun:1.3.3-alpine AS base
 ENV NODE_ENV=production
 
-# Install system dependencies and Turbo
-RUN apk add --no-cache libc6-compat
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+# Install system dependencies and Node.js
+RUN apk add --no-cache libc6-compat tar nodejs
 
-# Copy Node.js 22 from later stage if available, otherwise use system Node
-# Install Node.js for NestJS compatibility
-RUN apk add --no-cache nodejs
+# Install Turbo globally with cache mount
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
 # ===================================
@@ -31,48 +29,20 @@ RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune api --docker
 
 # ===================================
-# Stage 2.5: Config-Copier - Copy minimal config files for postinstall
-# ===================================
-FROM base AS config-copier
-WORKDIR /app
-COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-    cd /mnt/source && \
-    cp package.json turbo.json /app/ 2>/dev/null || true && \
-    cp bun.lock* /app/ 2>/dev/null || true && \
-    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
-        mkdir -p /app/apps/doc && \
-        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
-    fi
-
-# ===================================
 # Stage 3: Installer - Install dependencies from pruned lockfile
 # ===================================
 FROM base AS installer
+
+# Install build tools needed for native dependencies
 RUN apk add --no-cache python3 make g++ gcc musl-dev
-RUN bun install -g node-gyp
 
-# Only copy pruned package structure for dependency installation
-COPY --from=pruner /app/out/full/ .
-COPY --from=config-copier /app/ /app/
+# Only copy pruned package.json structure for dependency installation (NOT source code)
+COPY --from=pruner /app/out/json/ .
+# Use full lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
+COPY --from=pruner /app/bun.lock ./bun.lock
+# Use bun install instead of bun ci (pruned structure may not match lockfile exactly)
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun i --verbose
-
-# Stage 3.5: Source Copier - Copy all source files
-FROM base AS source-copier
-WORKDIR /app
-COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-    cd /mnt/source && \
-    for pkgJson in $(find /tmp/prune-structure -name "package.json" -type f); do \
-        relPath=$(echo "$pkgJson" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
-        if [ -d "/mnt/source/$relPath" ]; then \
-            mkdir -p "/app/$relPath"; \
-            tar cf - "$relPath" | tar xf - -C /app/; \
-        fi; \
-    done && \
-    cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
-    cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
+  bun install --frozen-lockfile || bun install
 
 # ===================================
 # Stage 4: Builder - Build the application (generate + build)
@@ -80,22 +50,24 @@ RUN --mount=type=bind,source=.,target=/mnt/source \
 FROM base AS builder
 RUN apk add --no-cache python3 make g++ gcc musl-dev
 
-# Copy source files from source-copier stage (only pruned workspaces)
-COPY --from=source-copier /app/ /app/
+# Copy pruned full source (turbo prune already determined exactly what's needed)
+COPY --from=pruner /app/out/full/ .
+# Copy the original lockfile (out/full/ doesn't include it, and we need it for turbo)
+COPY --from=pruner /app/bun.lock ./bun.lock
 
 # Copy all node_modules using bind mount to avoid --parents issues
-# Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)
+# Use tar to preserve all symlinks correctly and set ownership to root (builder stage)
 RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
-    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app && \
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
     find /mnt/installer/apps -name node_modules -type d | while read dir; do \
         target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
         mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
     done && \
     find /mnt/installer/packages -name node_modules -type d | while read dir; do \
         target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
         mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
     done
 
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
@@ -109,19 +81,36 @@ RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache 
 FROM base AS runner
 WORKDIR /app
 
-# Install runtime dependencies for NestJS
-RUN apk add --no-cache curl wget bash python3 make g++
+# Install only runtime dependencies (no build tools in production)
+RUN apk add --no-cache curl wget bash && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
 
-# Create app user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
-
-# Copy built application from builder stage
-COPY --from=builder --chown=nestjs:nodejs /app ./
-
-# Ensure writable directories exist and are owned by the app user
-RUN mkdir -p /app/uploads /app/extracted /app/static-files && \
-  chown -R nestjs:nodejs /app
+# Copy only what's needed to run the API:
+# - Root workspace files
+COPY --from=builder --chown=nestjs:nodejs /app/package.json /app/turbo.json ./
+# - Built API app (dist + package.json)
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
+# - Node modules (root + api)
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./apps/api/node_modules
+# - Built packages (only dist directories needed at runtime)
+RUN --mount=type=bind,from=builder,source=/app,target=/mnt/builder \
+    cd /mnt/builder && \
+    for pkg in packages/*/dist packages/*/*/dist; do \
+        if [ -d "$pkg" ]; then \
+            mkdir -p "/app/$(dirname $pkg)" && \
+            cp -r "$pkg" "/app/$(dirname $pkg)/"; \
+        fi; \
+    done && \
+    for pkg in packages/*/package.json packages/*/*/package.json; do \
+        if [ -f "$pkg" ]; then \
+            mkdir -p "/app/$(dirname $pkg)" && \
+            cp "$pkg" "/app/$pkg"; \
+        fi; \
+    done && \
+    chown -R nestjs:nodejs /app/packages
 
 # Switch to non-root user
 USER nestjs

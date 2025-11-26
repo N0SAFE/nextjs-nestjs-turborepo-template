@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1-labs
-# Production Dockerfile for doc App - BUILD-TIME COMPILATION
+# Production Dockerfile for Web App - BUILD-TIME COMPILATION
 # This version builds the Next.js app during Docker build phase
 # Recommended for: Render, Vercel, and platforms that scan for open ports during build
 
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
 # ===================================
-FROM oven/bun:1.3.1-alpine AS base
+FROM oven/bun:1.3.3-alpine AS base
 ENV NODE_ENV=production
 
 # Set build-time environment variables for Next.js
@@ -28,8 +28,10 @@ ENV NEXT_PUBLIC_DOC_URL=$NEXT_PUBLIC_DOC_URL
 ENV NEXT_PUBLIC_DOC_PORT=$NEXT_PUBLIC_DOC_PORT
 ENV AUTH_SECRET=$AUTH_SECRET
 
-# Install system dependencies and Turbo
-RUN apk add --no-cache libc6-compat dumb-init
+# Install system dependencies
+RUN apk add --no-cache libc6-compat dumb-init tar
+
+# Install Turbo globally with cache mount
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
@@ -52,75 +54,65 @@ RUN --mount=type=cache,target=/root/.cache/turbo \
 FROM base AS config-copier
 WORKDIR /app
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+# Dynamically copy config files needed by postinstall scripts based on pruned structure
 RUN --mount=type=bind,source=.,target=/mnt/source \
     cd /mnt/source && \
     cp package.json turbo.json /app/ 2>/dev/null || true && \
     cp bun.lock* /app/ 2>/dev/null || true && \
-    if [ -f /tmp/prune-structure/apps/doc/package.json ]; then \
-        mkdir -p /app/apps/doc && \
-        cp apps/doc/source.config.ts /app/apps/doc/ 2>/dev/null || true; \
-    fi
+    # Copy any source.config.ts files for apps that need them (fumadocs postinstall)
+    for appPkg in $(find /tmp/prune-structure/apps -name "package.json" -type f 2>/dev/null); do \
+        appDir=$(dirname "$appPkg" | sed 's|/tmp/prune-structure/||'); \
+        if [ -f "/mnt/source/$appDir/source.config.ts" ]; then \
+            mkdir -p "/app/$appDir" && \
+            cp "/mnt/source/$appDir/source.config.ts" "/app/$appDir/" 2>/dev/null || true; \
+        fi; \
+    done
 
 # ===================================
 # Stage 3: Installer - Install dependencies from pruned lockfile
 # ===================================
 FROM base AS installer
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    gcc \
-    musl-dev
-
-COPY --from=pruner /app/out/full/ .
-COPY --from=config-copier /app/ /app/
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun i --verbose
-
-# ===================================
-# Stage 3.5: Source-Copier - Copy full source from host
-# ===================================
-FROM base AS source-copier
 WORKDIR /app
-COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-    cd /mnt/source && \
-    for pkgJson in $(find /tmp/prune-structure -name "package.json" -type f); do \
-        relPath=$(echo "$pkgJson" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
-        if [ -d "/mnt/source/$relPath" ]; then \
-            mkdir -p "/app/$relPath"; \
-            tar cf - "$relPath" | tar xf - -C /app/; \
-        fi; \
-    done && \
-    cp /mnt/source/package.json /mnt/source/turbo.json /app/ 2>/dev/null || true && \
-    cp /mnt/source/bun.lock* /app/ 2>/dev/null || true
+
+# Install build tools needed for native dependencies
+RUN apk add --no-cache python3 make g++ gcc musl-dev
+
+# Copy only pruned package.json structure for dependency installation (NOT source code)
+COPY --from=pruner /app/out/json/ .
+# Use full lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
+COPY --from=pruner /app/bun.lock ./bun.lock
+# Copy config files needed by postinstall (source.config.ts for fumadocs)
+COPY --from=config-copier /app/ /app/
+# Use bun install instead of bun ci (pruned structure may not match lockfile exactly)
+RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+  bun install --frozen-lockfile || bun install
 
 # ===================================
 # Stage 4: Builder - Build the application (generate + build)
 # ===================================
 FROM base AS builder
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    gcc \
-    musl-dev
 
-COPY --from=source-copier /app/ /app/
+# Install build tools needed for native dependencies
+RUN apk add --no-cache python3 make g++ gcc musl-dev
+
+# Copy pruned full source (turbo prune already determined exactly what's needed)
+COPY --from=pruner /app/out/full/ .
+# Copy the original lockfile (out/full/ doesn't include it, and we need it for turbo)
+COPY --from=pruner /app/bun.lock ./bun.lock
 
 # Copy all node_modules using bind mount to avoid --parents issues
-# Use tar to preserve all symlinks correctly (cp can follow symlinks in bind mounts)
+# Use tar to preserve all symlinks correctly and set ownership to root (builder stage)
 RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
-    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app && \
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
     find /mnt/installer/apps -name node_modules -type d | while read dir; do \
         target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
         mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
     done && \
     find /mnt/installer/packages -name node_modules -type d | while read dir; do \
         target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
         mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app; \
+        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
     done
 
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
@@ -136,17 +128,46 @@ RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache 
 # ===================================
 FROM base AS runner
 
-# Install Node.js and other production runtime dependencies
-RUN apk add --no-cache nodejs
+# Install Node.js and create user in single layer (no build tools in production)
+RUN apk add --no-cache nodejs && \
+    ln -sf $(which bun) /usr/local/bin/npm && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 ENV PATH="/usr/bin:${PATH}"
-RUN ln -sf $(which bun) /usr/local/bin/npm
 
-# Don't run production as root
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy only built application from builder stage
-COPY --from=builder --chown=nextjs:nodejs /app ./
+# Copy only what's needed to run Next.js:
+# - Root workspace files
+COPY --from=builder --chown=nextjs:nodejs /app/package.json /app/turbo.json ./
+# - Built doc app (.next + public + package.json)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/doc/.next ./apps/doc/.next
+COPY --from=builder --chown=nextjs:nodejs /app/apps/doc/public ./apps/doc/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/doc/package.json ./apps/doc/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/doc/next.config.ts ./apps/doc/
+# - Node modules (root + doc)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/apps/doc/node_modules ./apps/doc/node_modules
+# - Built packages (only dist directories needed at runtime)
+RUN --mount=type=bind,from=builder,source=/app,target=/mnt/builder \
+    cd /mnt/builder && \
+    for pkg in packages/*/dist packages/*/*/dist; do \
+        if [ -d "$pkg" ]; then \
+            mkdir -p "/app/$(dirname $pkg)" && \
+            cp -r "$pkg" "/app/$(dirname $pkg)/"; \
+        fi; \
+    done && \
+    for pkg in packages/*/package.json packages/*/*/package.json; do \
+        if [ -f "$pkg" ]; then \
+            mkdir -p "/app/$(dirname $pkg)" && \
+            cp "$pkg" "/app/$pkg"; \
+        fi; \
+    done && \
+    for pkg in packages/*/node_modules packages/*/*/node_modules; do \
+        if [ -d "$pkg" ]; then \
+            mkdir -p "/app/$(dirname $pkg)" && \
+            cp -r "$pkg" "/app/$(dirname $pkg)/"; \
+        fi; \
+    done && \
+    chown -R nextjs:nodejs /app/packages
 
 # Switch to nextjs user
 USER nextjs
@@ -161,7 +182,7 @@ ENV PORT=${NEXT_PUBLIC_APP_PORT}
 
 # Health check for deployment platforms
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider ${NEXT_PUBLIC_DOC_URL} || exit 1
+  CMD wget --no-verbose --tries=1 --spider ${NEXT_PUBLIC_APP_URL} || exit 1
 
 WORKDIR /app
 ENTRYPOINT ["dumb-init", "--"]

@@ -54,15 +54,24 @@ services:
       - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod:${API_PORT}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       
+      # Passkey Configuration (WebAuthn)
+      - PASSKEY_ORIGIN=${PASSKEY_ORIGIN}
+      - PASSKEY_RPID=${PASSKEY_RPID}
+      - PASSKEY_RPNAME=${PASSKEY_RPNAME}
+      
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET}
       - BETTER_AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_BASE_DOMAIN=${AUTH_BASE_DOMAIN}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}
       
       # Default Admin User
       - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL}
       - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
+      
+      # Uploads
+      - UPLOADS_DIR=${UPLOADS_DIR:-/app/apps/api/uploads}
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:${API_PORT}/health || exit 1
       start_period: 15s

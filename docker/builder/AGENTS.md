@@ -1,154 +1,276 @@
-# Docker Builder AGENTS — Pruner / Config-Copier / Installer / Source-Copier
+# Docker Builder AGENTS — Multi-Stage Build Architecture
 
-This file documents the recommended multi-stage Docker build behaviour for this monorepo to maximize layer caching while still supporting packages that run postinstall scripts which need a small set of source/config files.
+This file documents the multi-stage Docker build architecture for this monorepo, designed to maximize layer caching and minimize rebuild times.
 
-Goals
-- Keep the Installer stage cacheable so `bun i` does NOT rerun on unrelated source edits.
-- Provide the minimal set of files required for `postinstall` scripts to run during install.
-- Copy full workspace source only after installation (in `source-copier`) so heavy operations and edits won't invalidate `installer`.
-- Preserve node_modules symlinks when transferring between stages (use tar pipeline).
+## Goals
 
-High-level stages
-1. pruner — produce a minimal package.json tree for the target (ONLY package.json / dependency graph)
-2. config-copier — copy minimal config files required by postinstall scripts (e.g. `apps/doc/source.config.ts`, other small config files)
-3. installer — copy pruner output + config files, run `bun i` and any postinstall that depends only on these config files
-4. source-copier — copy the full source tree for the pruned workspaces from the host (bind mount), independent of installer
-5. runner/builder — copy node_modules (tar preserve symlinks) and run builds or start commands
+1. **Maximize cache hits**: Source code changes should NOT invalidate `node_modules` installation
+2. **Fast rebuilds**: Code-only changes should rebuild in ~10-20 seconds
+3. **Preserve symlinks**: Bun/npm workspaces use symlinked `node_modules`
+4. **Support postinstall**: Some packages (fumadocs) need config files during `bun install`
 
-Why this ordering?
-- `bun i` often runs package `postinstall` scripts. If those scripts need small config files, copy only those into the installer stage so the installer can run successfully without the entire source.
-- Source edits should not invalidate the `installer` stage; editing app source should only trigger `source-copier`.
-- The pruner output is cheap and only invalidates when package.json / lockfiles change.
+## Architecture Overview
 
-Mermaid diagram
+All Dockerfiles follow a **5-stage architecture**:
+
+```
+BASE → PRUNER → INSTALLER → SOURCE-COPIER → RUNNER
+```
 
 ```mermaid
-flowchart LR
-  subgraph build
-    P[Pruner]\n(copy package.json tree)
-    C[Config-Copier]\n(copy minimal config files for postinstall)
-    I[Installer]\n(bun i + postinstall)
-    S[Source-Copier]\n(copy full workspace sources from host)
-    R[Runner/Builder]\n(copy node_modules via tar + build/start)
-  end
-
-  P --> C --> I --> S --> R
-
-  %% Caching notes
-  click P href "#pruner-caching" "Pruner caching"
-  click I href "#installer-caching" "Installer caching"
-  click S href "#source-copier-caching" "Source-copier caching"
-
-  style P fill:#f9f,stroke:#333,stroke-width:1px
-  style C fill:#fffae6,stroke:#333
-  style I fill:#e6fffa,stroke:#333
-  style S fill:#e6f0ff,stroke:#333
-  style R fill:#f0f0f0,stroke:#333
+flowchart TB
+    subgraph STAGES["🏗️ Docker Build Stages"]
+        direction TB
+        
+        BASE["1️⃣ BASE<br/>Alpine + bun + turbo + system deps"]
+        PRUNER["2️⃣ PRUNER<br/>COPY . . → turbo prune {app} --docker<br/>Output: out/json/ + out/full/"]
+        INSTALLER["3️⃣ INSTALLER<br/>COPY out/json/ + bun.lock<br/>bun install"]
+        SOURCE["4️⃣ SOURCE-COPIER<br/>Copy pruned source from pruner"]
+        RUNNER["5️⃣ RUNNER<br/>Combine source + node_modules<br/>Build deps → Run dev server"]
+        
+        BASE --> PRUNER
+        BASE --> INSTALLER
+        BASE --> SOURCE
+        BASE --> RUNNER
+        PRUNER --> INSTALLER
+        PRUNER --> SOURCE
+        INSTALLER --> RUNNER
+        SOURCE --> RUNNER
+    end
 ```
 
-Detailed behaviour and examples
+## Stage Details
 
-## 1) Pruner
-- Copy only `package.json`, `bun.lock*`, `turbo.json` and workspace package.json files with `COPY --parents apps/*/package.json packages/*/package.json ...`.
-- Run `bun x turbo prune <target> --docker` to create `/app/out/json/` which contains a tree of package.json files for the target and its internal deps.
-- This stage invalidates only when dependencies (package.json/bun.lock/turbo.json) change.
+### Stage 1: BASE
 
-## 2) Config-Copier (new)
-- Purpose: copy only small config files needed by postinstall scripts. Examples: `apps/doc/source.config.ts`, any `scripts/config.*`, small `.md` or templates used at install time.
-- Implementation pattern (in Dockerfile):
+Common system dependencies for all subsequent stages.
 
 ```dockerfile
-FROM base AS config-copier
+FROM oven/bun:1.3.3-alpine AS base
+RUN apk add --no-cache libc6-compat curl bash python3 make g++ gcc musl-dev tar
+RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2
 WORKDIR /app
-COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-# bind the host workspace and copy only config files referenced by postinstall
-RUN --mount=type=bind,source=.,target=/mnt/source \
-  && for pkg in $(find /tmp/prune-structure -name "package.json"); do \
-       rel=$(echo "$pkg" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
-       # If this package has small config files under ./config or known paths, copy them
-       if [ -f "/mnt/source/$rel/source.config.ts" ]; then \
-         mkdir -p "/app/$rel"; \
-         cp "/mnt/source/$rel/source.config.ts" "/app/$rel/source.config.ts"; \
-       fi; \
-     done
-# Also copy root config that installer may need
-COPY --from=pruner /app/out/bun.lock* ./
-COPY --from=pruner /app/out/package.json ./
 ```
 
-Notes:
-- Keep this list minimal. Don't copy entire `src/` trees here.
-- Prefer to standardize small config filenames across packages (eg `source.config.ts`, `install.config.json`) so Dockerfile can copy them deterministically.
+**Caching**: ✅ Rarely invalidates (only on base image or system deps change)
 
-## 3) Installer
-- Copy pruner's `/app/out/full/` (the pruned package manifest tree) and config files from `config-copier`.
-- Run `bun i --verbose` with BuildKit caches:
+---
+
+### Stage 2: PRUNER
+
+Uses `turbo prune --docker` to determine which workspaces are needed for the target app.
+
+```dockerfile
+FROM base AS pruner
+WORKDIR /app
+COPY . .
+RUN bun x turbo prune {app} --docker
+```
+
+**Output structure:**
+```
+/app/out/
+├── json/           # ONLY package.json files (for installer)
+│   ├── package.json
+│   ├── apps/web/package.json
+│   └── packages/ui/package.json
+├── full/           # Complete source (for source-copier)
+│   ├── apps/web/src/...
+│   └── packages/ui/src/...
+└── bun.lock        # ⚠️ BUGGY - DO NOT USE (turborepo#10783)
+```
+
+**Caching**: ⚠️ Invalidates on ANY file change, but runs fast (~2-3s)
+
+---
+
+### Stage 3: INSTALLER
+
+Installs dependencies using ONLY the pruned `package.json` structure.
 
 ```dockerfile
 FROM base AS installer
 WORKDIR /app
-COPY --from=pruner /app/out/full/ ./
-COPY --from=config-copier /app/ ./
+
+# Copy ONLY package.json files from pruner's out/json/
+COPY --from=pruner /app/out/json/ .
+
+# Use ORIGINAL bun.lock (not out/bun.lock which is buggy!)
+COPY --from=pruner /app/bun.lock ./bun.lock
+
+# Install with fallback (frozen-lockfile may fail on pruned structure)
 RUN --mount=type=cache,target=/root/.bun \
     --mount=type=cache,target=/root/.cache \
-    bun i --verbose
+    bun install --frozen-lockfile || bun install
 ```
 
-- Rationale: postinstall scripts will find the minimal config files they need. `bun i` and postinstall will succeed, and the layer is cacheable unless package manifests or the small config files change.
+**Key insight**: This stage only sees `out/json/` which contains **ONLY package.json files**. 
+Source code changes don't affect this stage's cache!
 
-## 4) Source-Copier
-- Now copy the full source for pruned workspaces using the pruner's `/app/out/json/` as the guide.
-- This stage uses a bind mount to the host workspace and tars the required directories to preserve symlinks when extracting into the image:
+**Caching**: ✅ Only invalidates when `package.json` or `bun.lock` changes
+
+**Known bug workaround**: `turbo prune` generates a corrupted `out/bun.lock` 
+(see [turborepo#10783](https://github.com/vercel/turborepo/issues/10783), [#11074](https://github.com/vercel/turborepo/issues/11074)).
+We copy the **original** `bun.lock` from the pruner stage instead.
+
+---
+
+### Stage 4: SOURCE-COPIER
+
+Copies the full pruned source code (without `node_modules`).
 
 ```dockerfile
 FROM base AS source-copier
 WORKDIR /app
+
 COPY --from=pruner /app/out/json/ /tmp/prune-structure/
-RUN --mount=type=bind,source=.,target=/mnt/source \
-  && cd /mnt_source && \
-    for p in $(find /tmp/prune-structure -name "package.json" -type f); do \
-      rel=$(echo "$p" | sed 's|/tmp/prune-structure/||' | sed 's|/package.json||'); \
-      if [ -d "/mnt_source/$rel" ]; then \
-         tar cf - "$rel" | tar xf - -C /app; \
-      fi; \
+
+RUN --mount=type=bind,from=pruner,source=/app,target=/mnt/pruner \
+    # Copy root config files
+    cp /mnt/pruner/package.json /mnt/pruner/turbo.json /app/ && \
+    cp /mnt/pruner/bun.lock* /app/ && \
+    # Copy pruned apps
+    for appPkg in $(find /tmp/prune-structure/apps -name "package.json"); do \
+        appDir=$(dirname "$appPkg" | sed 's|/tmp/prune-structure/||'); \
+        cp -r /mnt/pruner/$appDir/. /app/$appDir/; \
+    done && \
+    # Copy pruned packages
+    for pkgJson in $(find /tmp/prune-structure/packages -name "package.json"); do \
+        pkgDir=$(dirname "$pkgJson" | sed 's|/tmp/prune-structure/||'); \
+        cp -r /mnt/pruner/$pkgDir/. /app/$pkgDir/; \
     done
 ```
 
-- This stage invalidates when any file in the copied source changes (expected).
+**Caching**: ⚠️ Invalidates on source changes (expected, but fast ~1-2s)
 
-## 5) Runner/Builder
-- Copy node_modules from `installer` via tar to preserve symlinks; then run any heavy build steps (turbo run build) at this stage if desired.
+---
+
+### Stage 5: RUNNER
+
+Combines source code + `node_modules` and runs the dev server.
 
 ```dockerfile
 FROM base AS runner
 WORKDIR /app
-# copy full source
-COPY --from=source-copier /app/ /app/
-# copy node_modules via tar from installer
+
+# Copy source from source-copier
+COPY --from=source-copier /app/ .
+
+# Copy node_modules via tar to preserve symlinks
 RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
-    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app
-# run build
-RUN --mount=type=cache,target=/root/.bun \
-    bun x turbo run build --filter=<target>...
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app && \
+    # Also copy nested node_modules in apps/ and packages/
+    find /mnt/installer/apps -name node_modules -type d | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app; \
+    done && \
+    find /mnt/installer/packages -name node_modules -type d | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app; \
+    done
+
+# Build dependencies
+RUN bun x turbo run build --filter={app}... --filter=!{app}
+
+# Start dev server
+CMD ["sh", "-c", "bun x turbo run dev --filter={app}..."]
 ```
 
-Cache invalidation summary
-- Pruner: invalidates on package.json / lock file changes
-- Config-copier: invalidates when the small config files change (these should be rare). Keep configs minimal.
-- Installer: invalidates when pruner OR config-copier output changes (dependencies or config change)
-- Source-copier: invalidates when full source files change (expected)
-- Runner: invalidates when node_modules or source copy changes (build step)
+**Why tar?** Bun workspaces use symlinks in `node_modules`. Regular `COPY` or `cp` breaks them.
 
-Recommendations
-- Keep postinstall scripts minimal and only depend on small, deterministic config files.
-- Prefer generating non-code artifacts in CI rather than during postinstall where possible.
-- Standardize minimal config filenames (e.g. `install.config.json`, `source.config.ts`) so `config-copier` can deterministically copy them.
-- Validate `postinstall` step locally: run `bun i` inside a container that has only pruner+config-copier output.
-
-Appendix — example snippet for Dockerfile change
-
-Replace the previous pattern where installer ran before source-copying with the above order (pruner -> config-copier -> installer -> source-copier -> runner). Keep the `COPY --parents apps/*/package.json ...` for pruner to avoid invalidating that stage on source edits.
+**Caching**: ⚠️ Invalidates on source or dependency changes
 
 ---
 
-File: `docker/builder/AGENTS.md` — created by automation to explain the multi-stage caching strategy.
+## Cache Behavior by Change Type
+
+### Scenario 1: Source Code Change (e.g., edit `src/app/page.tsx`)
+
+| Stage | Status | Time |
+|-------|--------|------|
+| BASE | ✅ Cached | 0s |
+| PRUNER | 🔄 Re-runs | ~2-3s |
+| INSTALLER | ✅ **CACHED** | 0s |
+| SOURCE-COPIER | 🔄 Re-runs | ~1-2s |
+| RUNNER | 🔄 Re-runs | ~5-15s |
+
+**Total: ~10-20 seconds** ⚡
+
+### Scenario 2: Dependency Change (e.g., edit `package.json`)
+
+| Stage | Status | Time |
+|-------|--------|------|
+| BASE | ✅ Cached | 0s |
+| PRUNER | 🔄 Re-runs | ~2-3s |
+| INSTALLER | 🔄 Re-runs | ~30-120s |
+| SOURCE-COPIER | 🔄 Re-runs | ~1-2s |
+| RUNNER | 🔄 Re-runs | ~10-30s |
+
+**Total: ~60-180 seconds** 🐢
+
+### Scenario 3: No Changes (rebuild)
+
+| Stage | Status | Time |
+|-------|--------|------|
+| All stages | ✅ Cached | ~2-5s |
+
+---
+
+## Doc App Special Case: `source.config.ts`
+
+The `doc` app uses **fumadocs** which runs a postinstall script that imports `source.config.ts`.
+This means the installer stage needs this file to succeed.
+
+**Doc Dockerfile difference:**
+
+```dockerfile
+# In INSTALLER stage (doc only):
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/bun.lock ./bun.lock
+# ⚠️ Doc-specific: fumadocs postinstall needs this file
+COPY --from=pruner /app/apps/doc/source.config.ts ./apps/doc/source.config.ts
+RUN bun install --frozen-lockfile || bun install
+```
+
+**Cache impact**: If you edit `source.config.ts`, the installer will re-run.
+But this file rarely changes (it just defines content directories).
+
+---
+
+## Why Not Share Dockerfile Stages?
+
+Docker does NOT support importing stages from external Dockerfiles. Each Dockerfile must be self-contained.
+
+**Alternatives considered:**
+1. **Single unified Dockerfile with ARGs** - Possible but complex
+2. **Pre-built base image** - Requires separate build + registry
+3. **Copy-paste stages** - Current approach, explicit and simple
+
+---
+
+## Recommendations
+
+1. **Keep postinstall scripts minimal** - Only depend on small config files
+2. **Don't edit `source.config.ts` frequently** - It invalidates doc's installer cache
+3. **Use BuildKit cache mounts** - `--mount=type=cache,target=/root/.bun`
+4. **Preserve symlinks with tar** - Never use plain `COPY` for `node_modules`
+5. **Use original `bun.lock`** - The pruned one is buggy
+
+---
+
+## File Structure
+
+```
+docker/builder/
+├── AGENTS.md                          # This file
+├── api/
+│   └── Dockerfile.api.dev             # API development build
+├── doc/
+│   └── Dockerfile.doc.dev             # Doc development build (has source.config.ts)
+└── web/
+    └── Dockerfile.web.dev             # Web development build
+```
+
+---
+
+File: `docker/builder/AGENTS.md` — Documents the multi-stage Docker build architecture.
