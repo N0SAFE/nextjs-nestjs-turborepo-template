@@ -52,6 +52,7 @@ services:
         - action: sync
           path: ../../..
           target: /app
+          initial_sync: true
           ignore:
             # Dependencies
             - node_modules/
@@ -106,6 +107,7 @@ services:
       
       # URLs - Server-side (internal Docker network)
       - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-dev:${API_PORT:-3005}
+      - APP_URL=${APP_URL:-http://web-dev:3000}
       
       # URLs - Client-side (browser access via localhost)
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3005}
@@ -116,6 +118,9 @@ services:
       - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
       
       # Authentication
+      - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
       - NEXT_PUBLIC_DEV_AUTH_KEY=${NEXT_PUBLIC_DEV_AUTH_KEY:-${DEV_AUTH_KEY:-dev-fallback-key}}
       
       # Debug Configuration

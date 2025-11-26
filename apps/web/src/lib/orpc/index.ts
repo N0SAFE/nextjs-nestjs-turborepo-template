@@ -3,7 +3,6 @@ import { type AppContract, appContract } from '@repo/api-contracts'
 import { OpenAPILink } from '@orpc/openapi-client/fetch'
 import { ContractRouterClient } from '@orpc/contract'
 import { validateEnvPath } from '#/env'
-import { Authsignin } from '@/routes/index'
 import { toAbsoluteUrl } from '@/lib/utils'
 import clientRedirect from '@/actions/redirect'
 import { hasMasterTokenPlugin } from '../auth/plugins/guards'
@@ -11,11 +10,6 @@ import { parseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
 import { authClient } from '../auth'
-
-const APP_URL = validateEnvPath(
-    process.env.NEXT_PUBLIC_APP_URL ?? '',
-    'NEXT_PUBLIC_APP_URL'
-)
 
 export function createORPCClientWithCookies() {
     const link = new OpenAPILink<{
@@ -37,10 +31,6 @@ export function createORPCClientWithCookies() {
                     try {
                         const nh = await import('next/headers')
                         headers.cookie = (await nh.cookies()).toString()
-                        console.log(
-                            'ORPC Server-side Request - setting cookies',
-                            headers.cookie
-                        )
                     } catch {
                         console.log(
                             'Warning: next/headers could not be imported. Are you running in a non-Next.js environment?'
@@ -101,10 +91,13 @@ export function createORPCClientWithCookies() {
                 })
             },
         ],
+        // Use direct API URLs, bypassing Next.js proxy
+        // Server: API_URL (private Docker network endpoint)
+        // Browser: NEXT_PUBLIC_API_URL (public endpoint)
         url:
             typeof window === 'undefined'
                 ? validateEnvPath(process.env.API_URL ?? '', 'API_URL')
-                : `${APP_URL}/api/nest`,
+                : validateEnvPath(process.env.NEXT_PUBLIC_API_URL ?? '', 'NEXT_PUBLIC_API_URL'),
         fetch(request, init, options) {
             return fetch(request, {
                 ...init,
@@ -118,7 +111,7 @@ export function createORPCClientWithCookies() {
             })
         },
         interceptors: [
-            onError(async (error, options) => {
+            onError((error, options) => {
                 if (
                     (error as Error | undefined)?.name === 'AbortError' ||
                     (error &&
@@ -142,34 +135,10 @@ export function createORPCClientWithCookies() {
                 ) {
                     console.log('ORPC Unauthorized - redirecting to login')
                     if (typeof window !== 'undefined') {
-                        const currentPath =
-                            window.location.pathname + window.location.search
-
-                        const loginUrl = toAbsoluteUrl(
-                            Authsignin(
-                                {},
-                                {
-                                    callbackUrl: currentPath,
-                                }
-                            )
-                        )
-
+                        const loginUrl = toAbsoluteUrl('/login')
                         void clientRedirect(loginUrl)
                     } else {
-                        const headerList = await (
-                            await import('next/headers')
-                        ).headers()
-                        const currentPath = headerList.get('x-pathname') ?? '/'
-
-                        const loginUrl = toAbsoluteUrl(
-                            Authsignin(
-                                {},
-                                {
-                                    callbackUrl: currentPath,
-                                }
-                            )
-                        )
-
+                        const loginUrl = toAbsoluteUrl('/login')
                         redirect(loginUrl, RedirectType.replace)
                     }
                 }

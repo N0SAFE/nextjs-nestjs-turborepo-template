@@ -54,9 +54,14 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
         }
     }, [])
 
+    // Use ref to avoid refetch dependency in useEffect
+    const refetchRef = React.useRef(refetch)
+    // eslint-disable-next-line react-hooks/refs
+    refetchRef.current = refetch
+    
     useEffect(() => {
-        refetch()
-    }, [enabled, refetch])
+        refetchRef.current()
+    }, [enabled])
 
     return (
         <MasterTokenContext.Provider

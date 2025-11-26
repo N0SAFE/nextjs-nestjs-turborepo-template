@@ -55,14 +55,18 @@ async function killProcessOnPort(port: number): Promise<boolean> {
                 return resolve(false);
             }
             
+            const lines = output.trim().split('\n');
+            const firstLine = lines[0];
+            if (!firstLine) return resolve(false);
+            
             let pid: string | undefined;
             if (process.platform === 'win32') {
                 // Extract PID from the last column of netstat output
-                const match = output.trim().split('\n')[0].trim().split(/\s+/).pop();
+                const match = firstLine.trim().split(/\s+/).pop();
                 if (match) pid = match;
             } else {
                 // lsof directly returns the PID
-                pid = output.trim().split('\n')[0];
+                pid = firstLine;
             }
             
             if (!pid) return resolve(false);

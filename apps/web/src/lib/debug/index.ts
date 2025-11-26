@@ -27,7 +27,10 @@ function expandBracePattern(pattern: string): string[] {
         return [pattern] // No braces, return as-is
     }
     
-    const [, prefix, options, suffix] = braceMatch
+    const [, prefix = '', options, suffix = ''] = braceMatch
+    if (!options) {
+        return [pattern] // No options captured, return as-is
+    }
     const optionsList = options.split(',').map(opt => opt.trim())
     
     return optionsList.map(option => `${prefix}${option}${suffix}`)

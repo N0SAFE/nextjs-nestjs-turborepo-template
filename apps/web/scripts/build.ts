@@ -19,6 +19,7 @@ async function runCommand(
       stdio: 'inherit',
       shell: true,
       cwd: process.cwd(),
+      env: { ...process.env, NODE_ENV: 'production' },
     })
 
     childProcess.on('exit', (code: number | null) => {

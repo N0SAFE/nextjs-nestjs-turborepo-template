@@ -25,7 +25,10 @@ const dashboardRegexpAndChildren = /^\/dashboard(\/.*)?$/
 
 const withAuth: MiddlewareFactory = (next: NextProxy) => {
     if (!env) {
-        debugAuthError('Environment variables are not valid')
+        debugAuthError('Environment variables are not valid', {
+            env: process.env,
+            error: validateEnvSafe(process.env).error
+        })
         throw new Error('env is not valid')
     }
     return async (request: NextRequest, _next: NextFetchEvent) => {
@@ -49,12 +52,16 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
             
             sessionCookie = getSessionCookie(request);
             
-            const s = await getCookieCache<Session>(request)
-            
-            console.log(s)
+            const s = await getCookieCache<Session>(request, {
+                secret: env.BETTER_AUTH_SECRET,
+                // Match the cookie security setting from the API
+                // In Docker without HTTPS termination, use non-secure cookies
+                isSecure: env.NEXT_PUBLIC_API_URL?.startsWith('https://') ?? false
+            })
             
             debugAuth('Session processed:', {
                 hasSession: !!sessionCookie,
+                hasCachedSession: !!s,
             })
             
         } catch (error) {
@@ -84,9 +91,50 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
         })
 
         if (isAuth) {
+            // // Check if user is trying to access /admin routes
+            // const isAdminRoute = adminRegexpAndChildren.test(pathname)
+            
+            // if (isAdminRoute) {
+            //     // For admin routes, we need to verify the user has admin role
+            //     // Since middleware can't easily access session data, we'll check via API
+            //     try {
+            //         const apiUrl = env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+            //         const sessionResponse = await fetch(`${apiUrl}/api/auth/get-session`, {
+            //             headers: {
+            //                 'cookie': request.headers.get('cookie') || '',
+            //             },
+            //         })
+
+            //         if (sessionResponse.ok) {
+            //             const sessionData = await sessionResponse.json() as { user?: { role?: string } }
+            //             const userRole = sessionData?.user?.role
+                        
+            //             debugAuth('User role check for admin route:', {
+            //                 pathname,
+            //                 userRole,
+            //                 isAdmin: userRole === 'admin' || userRole?.includes('admin')
+            //             })
+
+            //             // Only admin role can access /admin routes
+            //             if (userRole !== 'admin' && !userRole?.includes('admin')) {
+            //                 debugAuth(`Blocking non-admin user from ${pathname}`)
+            //                 return NextResponse.redirect(toAbsoluteUrl('/home'))
+            //             }
+            //         } else {
+            //             // If we can't verify role, redirect to home for safety
+            //             debugAuthError('Failed to verify user role for admin route')
+            //             return NextResponse.redirect(toAbsoluteUrl('/home'))
+            //         }
+            //     } catch (error) {
+            //         debugAuthError('Error checking user role:', error)
+            //         // If there's an error checking role, redirect to home for safety
+            //         return NextResponse.redirect(toAbsoluteUrl('/home'))
+            //     }
+            // }
+
             const matcher = matcherHandler(request.nextUrl.pathname, [
                 {
-                    and: [showcaseRegexpAndChildren, '/me/customer'],
+                    and: ['/me/customer'],
                 },
                 () => {
                     // in this route we can check if the user is authenticated with the customer role

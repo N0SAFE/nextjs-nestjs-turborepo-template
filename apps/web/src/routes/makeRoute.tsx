@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /*
 Derived from: https://www.flightcontrol.dev/blog/fix-nextjs-routing-to-have-full-type-safety
 */
@@ -15,10 +14,12 @@ export { emptySchema }
 
 type LinkProps = Parameters<typeof Link>[0]
 
-// Helper type to check if params input is empty
-type ParamsInput<T extends z.ZodType> = z.input<T> extends Record<string, never>
-    ? Record<string, never>
-    : z.input<T>
+// When Params is an empty z.object({}), z.input<Params> can resolve to Record<string, never>,
+// which poisons intersections (e.g., children: ReactNode becomes never). This conditional
+// removes the index-signature when there are no params so React props work as expected.
+type ParamProps<P extends z.ZodType> = z.input<P> extends Record<string, never>
+    ? object
+    : z.input<P>
 
 export interface RouteInfo<
     Params extends z.ZodType,
@@ -116,6 +117,37 @@ type DeleteRouteBuilder<Params extends z.ZodType> = CoreRouteElements<
     z.ZodType
 > & ((p?: z.input<Params>, options?: FetchOptions) => Promise<void>)
 
+
+// Page component props that all pages receive
+export interface BasePageProps {
+    children?: React.ReactNode
+}
+
+// Typed page props including params and search
+export type PageProps<
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+> = {
+    params: Promise<z.output<Params>>
+    searchParams: Promise<z.output<Search>>
+} & BasePageProps
+
+// Page wrapper component type
+export type PageComponent<
+    Params extends z.ZodType,
+    Search extends z.ZodType,
+    AdditionalProps = object,
+> = React.FC<PageProps<Params, Search> & AdditionalProps>
+
+// Utility types to extract params and search types from RouteBuilder
+export type RouteBuilderParams<T extends RouteBuilder<any, any>> = T extends RouteBuilder<infer Params, any> 
+    ? z.output<Params> 
+    : never
+
+export type RouteBuilderSearch<T extends RouteBuilder<any, any>> = T extends RouteBuilder<any, infer Search> 
+    ? z.output<Search> 
+    : never
+
 export type RouteBuilder<
     Params extends z.ZodType,
     Search extends z.ZodType,
@@ -132,17 +164,24 @@ export type RouteBuilder<
 
     Link: React.FC<
         Omit<LinkProps, 'href'> &
-            (ParamsInput<Params> extends Record<string, never>
-                ? { search?: z.input<Search>; children?: React.ReactNode }
-                : ParamsInput<Params> & { search?: z.input<Search>; children?: React.ReactNode })
+            ParamProps<Params> & {
+                search?: z.input<Search>
+            } & { children?: React.ReactNode }
     >
     ParamsLink: React.FC<
         Omit<LinkProps, 'href'> & {
             params?: z.input<Params>
             search?: z.input<Search>
-            children?: React.ReactNode
-        }
+        } & { children?: React.ReactNode }
     >
+
+    Page: <AdditionalProps = object>(
+        component: PageComponent<Params, Search, AdditionalProps>
+    ) => PageComponent<Params, Search, AdditionalProps>
+
+    // Validation helpers
+    validateParams: (params: unknown) => z.output<Params>
+    validateSearch: (search: unknown) => z.output<Search>
 }
 
 function createPathBuilder<T extends Record<string, string | string[]>>(
@@ -159,7 +198,7 @@ function createPathBuilder<T extends Record<string, string | string[]>>(
         const catchKey = pop.replace('[[...', '').replace(']]', '')
         catchAllSegment = (params: T) => {
             const catchAll = params[catchKey] as unknown as string[]
-            return catchAll ? `/${catchAll.join('/')}` : ''
+            return `/${catchAll.join('/')}`
         }
     }
 
@@ -200,22 +239,19 @@ function createRouteBuilder<
 
     return (params?: z.input<Params>, search?: z.input<Search>) => {
         let checkedParams: Partial<z.core.output<Params>> = params ?? {}
-        if (info.params) {
             const safeParams = info.params.safeParse(checkedParams)
-            if (!safeParams?.success) {
+            if (!safeParams.success) {
                 throw new Error(
                     `Invalid params for route ${info.name}: ${safeParams.error.message}`
                 )
             } else {
                 checkedParams = safeParams.data
             }
-        }
-        const safeSearch = info.search
-            ? info.search?.safeParse(search ?? {})
-            : null
-        if (info.search && !safeSearch?.success) {
+        
+        const safeSearch = info.search.safeParse(search ?? {})
+        if (!safeSearch.success) {
             throw new Error(
-                `Invalid search params for route ${info.name}: ${String(safeSearch?.error.message)}`
+                `Invalid search params for route ${info.name}: ${safeSearch.error.message}`
             )
         }
 
@@ -483,9 +519,9 @@ export function makeRoute<
         children,
         ...props
     }: Omit<LinkProps, 'href'> &
-        (ParamsInput<Params> extends Record<string, never>
+        (ParamProps<Params> extends Record<string, never>
             ? { search?: z.input<Search>; children?: React.ReactNode }
-            : ParamsInput<Params> & { search?: z.input<Search>; children?: React.ReactNode })) {
+            : ParamProps<Params> & { search?: z.input<Search>; children?: React.ReactNode })) {
         const parsedParams = info.params.parse(props) as z.core.input<Params>
         const params = parsedParams as Record<string, any>
         const extraProps = { ...props }
@@ -501,6 +537,29 @@ export function makeRoute<
                 {children}
             </Link>
         )
+    }
+
+    urlBuilder.Page = function PageWrapper<AdditionalProps = object>(
+        component: PageComponent<Params, Search, AdditionalProps>
+    ) {
+        const WrappedComponent = (props: PageProps<Params, Search> & AdditionalProps) => {
+            // Always use props as-is since they're already properly typed
+            // The hooks should be used directly in components that need reactive updates
+            return component(props)
+        }
+        
+        // Preserve component name for debugging
+        WrappedComponent.displayName = `RoutePageWrapper(${(component.displayName ?? component.name) || 'Component'})`
+        
+        return WrappedComponent as PageComponent<Params, Search, AdditionalProps>
+    }
+
+    urlBuilder.validateParams = function validateParams(params: unknown) {
+        return info.params.parse(params)
+    }
+
+    urlBuilder.validateSearch = function validateSearch(search: unknown) {
+        return info.search.parse(search)
     }
 
     urlBuilder.params = undefined as z.output<Params>

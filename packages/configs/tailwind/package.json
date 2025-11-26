@@ -11,6 +11,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@repo-configs/typescript": "*",
     "@repo-configs/vitest": "*",
     "tailwind-variants": "catalog:styling",
     "tailwindcss": "catalog:styling",

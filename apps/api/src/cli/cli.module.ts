@@ -6,6 +6,7 @@ import { DATABASE_CONNECTION } from '../core/modules/database/database-connectio
 import { SeedCommand } from './commands/seed.command';
 import { MigrateCommand } from './commands/migrate.command';
 import { ResetCommand } from './commands/reset.command';
+import { CreateDefaultAdminCommand } from './commands/create-default-admin.command';
 import { createBetterAuth } from '@/config/auth/auth';
 import { EnvService } from '@/config/env/env.service';
 
@@ -23,6 +24,7 @@ import { EnvService } from '@/config/env/env.service';
     SeedCommand,
     MigrateCommand,
     ResetCommand,
+    CreateDefaultAdminCommand,
   ],
 })
 export class CLIModule {}

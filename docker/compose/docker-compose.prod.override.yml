@@ -1,16 +1,56 @@
-# Production environment override
-# Use with: docker compose -f docker-compose.yml -f compose.prod.yml up
-# Adds prod-specific configurations: no polling, optimized settings, health checks
+# Production override file
+# Customizations for production deployment
 
 services:
-  # Web Production Configuration
-  web-prod:
-    depends_on:
-      api-prod:
-        condition: service_healthy
+  api-prod:
+    environment:
+      # Production logging
+      - LOG_LEVEL=warn
+      - NODE_ENV=production
+      # Disable development features
+      - DEV_AUTH_KEY=
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
-  # Doc Production Configuration
-  doc-prod:
-    depends_on:
-      api-prod:
-        condition: service_healthy
+  web-prod:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+
+
+  api-db-prod:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s

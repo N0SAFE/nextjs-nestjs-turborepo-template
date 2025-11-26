@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
-# Production Dockerfile for Documentation App - BUILD-TIME COMPILATION
-# This version builds the documentation during Docker build phase
+# Production Dockerfile for doc App - BUILD-TIME COMPILATION
+# This version builds the Next.js app during Docker build phase
 # Recommended for: Render, Vercel, and platforms that scan for open ports during build
 
 # ===================================
@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for documentation dependencies
+# Stage 2: Pruner - Prune monorepo for doc app dependencies
 # ===================================
 FROM base AS pruner
 
@@ -126,16 +126,15 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run generate --filter=doc...
+  bun turbo run generate --filter=doc... --remote-only
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run build --filter=doc...
+  bun turbo run build --filter=doc... --remote-only
 
 # ===================================
 # Stage 5: Runner - Production runtime
 # ===================================
 FROM base AS runner
-WORKDIR /app
 
 # Install Node.js and other production runtime dependencies
 RUN apk add --no-cache nodejs
@@ -146,19 +145,19 @@ RUN ln -sf $(which bun) /usr/local/bin/npm
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application from builder stage
+# Copy only built application from builder stage
 COPY --from=builder --chown=nextjs:nodejs /app ./
 
 # Switch to nextjs user
 USER nextjs
 
 # Expose port
-EXPOSE 3020
+EXPOSE 3000
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=${NEXT_PUBLIC_DOC_PORT}
+ENV PORT=${NEXT_PUBLIC_APP_PORT}
 
 # Health check for deployment platforms
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \

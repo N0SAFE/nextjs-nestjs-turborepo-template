@@ -13,7 +13,6 @@ export function stackMiddlewares(
     index = 0
 ): CustomNextMiddleware {
     const current = functions[index]
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (current) {
         const next = stackMiddlewares(functions, config, index + 1)
         if (typeof current === 'function') {

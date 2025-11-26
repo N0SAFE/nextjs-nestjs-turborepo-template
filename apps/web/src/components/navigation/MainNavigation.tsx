@@ -39,7 +39,7 @@ const MainNavigation: React.FC = () => {
     const isActive = (path: string) => pathname === path
 
     return (
-        <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+        <nav className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
             <div className="container flex h-14 items-center justify-between">
                 <div className="flex items-center space-x-4">
                     <Home.Link className="flex items-center space-x-2">

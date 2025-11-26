@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1-labs
-# Development Dockerfile for Documentation Site
+# Development Dockerfile for Next.js doc App
 # Multi-stage build with separate installer and runner stages
 # Supports BuildKit cache mounts for faster rebuilds
 
@@ -30,12 +30,14 @@ WORKDIR /app
 # ===================================
 FROM base AS pruner
 
+WORKDIR /app
+
 # Copy only the files needed for turbo prune (workspace package.json files)
 # This prevents cache invalidation when source code changes
 COPY package.json bun.lock* turbo.json ./
 COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
 
-# Run turbo prune to isolate doc and its dependencies (use cache mount for bun)
+# Run turbo prune to isolate doc app and its dependencies (use cache mount for bun)
 RUN --mount=type=cache,target=/root/.bun \
     bun x turbo prune doc --docker
 
@@ -123,7 +125,16 @@ COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 # Run build during image build (runner stage) so the heavy compile work
 # happens at build time instead of container startup. Use BuildKit cache for bun.
 RUN --mount=type=cache,target=/root/.bun \
-    bun x turbo run build --filter=doc... --filter=!doc
+    echo "🔨 Building doc dependencies (including declarative-routing)..." && \
+    bun x turbo run build --filter=doc... --filter=!doc && \
+    echo "✅ Build complete. Checking declarative-routing binary..." && \
+    ls -la packages/bin/declarative-routing/dist/ || echo "⚠️  declarative-routing dist/ not found!" && \
+    echo "📦 Verifying bun can find declarative-routing binary..." && \
+    cd apps/doc && bun x declarative-routing --version || echo "⚠️  declarative-routing binary not executable!" && \
+    echo "🛣️  Generating declarative routes for doc app..." && \
+    bun x declarative-routing build && \
+    echo "✅ Routes generated. Verifying routes/index.ts exists..." && \
+    ls -la src/routes/index.ts && cd /app || (echo "⚠️  routes/index.ts not found!" && cd /app)
 
-# Start the documentation dev server at container runtime only.
-CMD ["sh", "-c", "bun x turbo run dev --filter=doc..."]
+# Start the development doc server at container runtime only.
+CMD ["sh", "-c", "echo '🚀 Starting doc dev server...' && bun x turbo run dev --filter=doc..."]

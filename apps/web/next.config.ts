@@ -1,4 +1,3 @@
-import MillionLint from "@million/lint";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 import { NextConfig } from "next";
 import { envSchema } from "./env";
@@ -94,17 +93,6 @@ let exp: NextConfig = nextConfig;
 
 if (process.env.ANALYZE === "true") {
   exp = withBundleAnalyzer()(exp);
-}
-
-if (
-  process.env.NODE_ENV === "development" &&
-  process.env.MILLION_LINT === "true"
-) {
-  const millionLintConfig = {
-    rsc: true,
-    dev: "debug" as const,
-  };
-  exp = MillionLint.next(millionLintConfig)(exp);
 }
 
 module.exports = (

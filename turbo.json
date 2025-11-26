@@ -13,18 +13,19 @@
         "TURBO_TOKEN",
         "TURBO_TEAM",
         "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
         "AUTH_SECRET",
         "NODE_ENV",
         "PHASE",
         "NEXT_PUBLIC_APP_URL",
+        "APP_URL",
+        "NEXT_PUBLIC_API_URL",
         "API_PORT",
         "DEV_AUTH_KEY",
         "CORS_ORIGIN",
         "LOG_LEVEL",
         "CHOKIDAR_USEPOLLING",
-        "PASSKEY_RPID",
-        "PASSKEY_RPNAME",
-        "PASSKEY_ORIGIN"
+        "TRUSTED_ORIGINS"
     ],
     "tasks": {
         "dev": {

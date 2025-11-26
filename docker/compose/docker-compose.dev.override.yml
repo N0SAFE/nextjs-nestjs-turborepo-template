@@ -8,9 +8,3 @@ services:
     depends_on:
       api-dev:
         condition: service_healthy
-
-  # Doc Development Configuration
-  doc-dev:
-    depends_on:
-      api-dev:
-        condition: service_healthy

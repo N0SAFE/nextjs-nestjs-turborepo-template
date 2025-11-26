@@ -1,18 +1,24 @@
 services:
-  # Fumadocs docs app for development with HMR
-  doc-dev:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev
+  # Next.js web app for development with HMR
+  web-dev:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-dev
     build:
       context: ../../..
-      dockerfile: ./docker/builder/doc/Dockerfile.doc.dev
+      dockerfile: ./docker/builder/web/Dockerfile.web.dev
       tags:
-        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:latest"
-        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-dev:${DOC_VERSION:-dev}"
+        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-dev:latest"
+        - "${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-dev:${WEB_VERSION:-dev}"
+      args:
+        - NODE_ENV=development
+        - API_PORT=${API_PORT:-3005}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3005}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
     restart: unless-stopped
-    mem_limit: 2g
-    memswap_limit: 2g
+    mem_limit: 4g
+    memswap_limit: 4g
     ports:
-      - "${NEXT_PUBLIC_DOC_PORT:-3020}:3020"
+      - "${NEXT_PUBLIC_APP_PORT:-3000}:${NEXT_PUBLIC_APP_PORT:-3000}"
     develop:
       watch:
         # Restart when Docker Compose configuration changes
@@ -20,7 +26,7 @@ services:
           path: ../../..
           target: /app
           include:
-            - docker/compose/doc/docker-compose.doc.dev.yaml
+            - docker/compose/web/docker-compose.web.dev.yml
             - docker/compose/docker-compose.dev.override.yml
             - docker/compose/docker-compose.dev.yml
         # Rebuild when critical dependency or config files change
@@ -31,20 +37,22 @@ services:
             - package.json
             - bun.lock*
             - turbo.json
-            - apps/doc/package.json
-            - apps/doc/tsconfig.json
-            - apps/doc/tsconfig.*.json
-            - apps/doc/next.config.ts
-            - apps/doc/next.config.js
-            - apps/doc/next.config.mjs
-            - apps/doc/source.config.ts
-            - apps/doc/postcss.config.*
-            - docker/builder/doc/Dockerfile.doc.dev
+            - apps/web/package.json
+            - apps/web/tsconfig.json
+            - apps/web/tsconfig.*.json
+            - apps/web/next.config.ts
+            - apps/web/next.config.js
+            - apps/web/next.config.mjs
+            - apps/web/tailwind.config.*
+            - apps/web/postcss.config.*
+            - apps/web/declarative-routing.config.json
+            - docker/builder/web/Dockerfile.web.dev
             - packages/**/package.json
         # Sync source code excluding node_modules and build artifacts
         - action: sync
           path: ../../..
           target: /app
+          initial_sync: true
           ignore:
             # Dependencies
             - node_modules/
@@ -64,6 +72,9 @@ services:
             - "**/.cache/"
             - "**/.parcel-cache/"
             - "**/.vite/"
+            # Generated files (declarative-routing)
+            - "apps/web/src/routes/index.ts"
+            - "apps/web/src/routes/openapi.ts"
             # Logs
             - "**/*.log"
             - "**/logs/"
@@ -87,15 +98,42 @@ services:
             - "**/.DS_Store"
             - "**/Thumbs.db"
     volumes:
-      # Persistent caches
+      # Persistent build caches (named volumes) to speed up installs/builds
       - bun_cache_dev:/root/.bun/install/cache
       - turbo_cache_dev:/root/.cache/turbo
     environment:
+      # Runtime
       - NODE_ENV=development
-      # Enable hot reloading
+      
+      # URLs - Server-side (internal Docker network)
+      - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-dev:${API_PORT:-3005}
+      - APP_URL=${APP_URL:-http://web-dev:3000}
+      
+      # URLs - Client-side (browser access via localhost)
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3005}
+      - NEXT_PUBLIC_API_PORT=${API_PORT:-3005}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT:-3000}
+      - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL:-http://localhost:${NEXT_PUBLIC_DOC_PORT:-3020}}
+      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
+      
+      # Authentication
+      - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
+      - NEXT_PUBLIC_DEV_AUTH_KEY=${NEXT_PUBLIC_DEV_AUTH_KEY:-${DEV_AUTH_KEY:-dev-fallback-key}}
+      
+      # Debug Configuration
+      - NEXT_PUBLIC_DEBUG=${NEXT_PUBLIC_DEBUG}
+      
+      # Development Tools - Hot Reloading
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
       - NEXT_WEBPACK_USEPOLLING=1
+      
+      # Turbo Remote Cache
+      - TURBO_TOKEN=${TURBO_TOKEN}
+      - TURBO_TEAM=${TURBO_TEAM}
     networks:
       - app_network_dev
 

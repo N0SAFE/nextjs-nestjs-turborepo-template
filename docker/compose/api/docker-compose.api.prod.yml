@@ -1,5 +1,25 @@
 services:
   # NestJS API for production
+  # 
+  # Database Connection Strategy:
+  # ============================
+  # This container connects to PostgreSQL running on the host machine.
+  # 
+  # Option 1 (Recommended): Use host.docker.internal
+  #   - DATABASE_URL=postgresql://user:pass@host.docker.internal:5432/db
+  #   - Requires: extra_hosts configuration (already set below)
+  #   - Pros: Clean, portable hostname that works across different Docker networks
+  # 
+  # Option 2 (Alternative): Use Docker gateway IP
+  #   - DATABASE_URL=postgresql://user:pass@172.18.0.1:5432/db
+  #   - The gateway IP is stable for each Docker network
+  #   - Pros: No extra configuration needed, always works
+  #   - Cons: IP might differ if network is recreated (172.17-21.0.1 are common)
+  # 
+  # PostgreSQL Configuration Required:
+  #   - pg_hba.conf must allow Docker network ranges (172.17-21.0.0/16)
+  #   - deploy.sh automatically configures this during deployment
+  # 
   api-prod:
     container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod
     build:
@@ -12,6 +32,11 @@ services:
     restart: unless-stopped
     ports:
       - "${API_PORT}:${API_PORT}"
+    networks:
+      - app_network_prod
+    # Allow container to reach host services (PostgreSQL) via host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # Runtime
       - NODE_ENV=production
@@ -23,24 +48,32 @@ services:
       # API Configuration
       - API_PORT=${API_PORT}
       
-      # URLs
+      # Web app URLs
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - APP_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod:${NEXT_PUBLIC_APP_PORT}
       - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod:${API_PORT}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY}
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}
+      
+      # Default Admin User
+      - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
     healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://127.0.0.1:${API_PORT}/health || exit 1
+      test: wget --no-verbose --tries=1 --spider http://localhost:${API_PORT}/health || exit 1
       start_period: 15s
       interval: 15s
       timeout: 15s
       retries: 5
-    networks:
-      - app_network_prod
     volumes:
       - bun_cache_prod:/root/.bun/install/cache
       - turbo_cache_prod:/root/.cache/turbo
+      # Persistent uploads directory for media files
+      - api_uploads_prod:/app/apps/api/uploads
 
 networks:
   app_network_prod:
@@ -52,3 +85,5 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_prod
   turbo_cache_prod:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_prod
+  api_uploads_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_api_uploads_prod

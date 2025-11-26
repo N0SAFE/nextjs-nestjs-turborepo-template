@@ -1,23 +1,47 @@
 services:
-  # Fumadocs docs app for production
-  doc-prod:
-    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-doc-prod
+  # Next.js web app for production
+  web-prod:
+    container_name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod
     build:
       context: ../../..
-      dockerfile: ./docker/builder/doc/Dockerfile.doc.build-time.prod
+      dockerfile: ./docker/builder/web/Dockerfile.web.runtime.prod
       args:
         - NODE_ENV=production
+        - API_PORT=${API_PORT}
+        - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod:${API_PORT}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+        - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT}
     restart: unless-stopped
     ports:
-      - "3020:3020"
+      - "${NEXT_PUBLIC_APP_PORT}:${NEXT_PUBLIC_APP_PORT}"
     depends_on:
       api-prod:
         condition: service_healthy
     environment:
+      # Runtime
       - NODE_ENV=production
+      
+      # URLs - Server-side (internal Docker network)
+      - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod:${API_PORT}
+      - APP_URL=${APP_URL:-http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod:${NEXT_PUBLIC_APP_PORT}}
+      
+      # URLs - Client-side (external access - must be public URL in production)
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_API_PORT=${API_PORT}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - NEXT_PUBLIC_APP_PORT=${NEXT_PUBLIC_APP_PORT}
+      - NEXT_PUBLIC_DOC_URL=${NEXT_PUBLIC_DOC_URL}
+      - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT}
+      
+      # Authentication
+      - AUTH_SECRET=${AUTH_SECRET}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY}
     networks:
       - app_network_prod
     volumes:
+      # Cache directories to speed rebuilds (only useful if containers are recreated frequently on same host)
       - bun_cache_prod:/root/.bun/install/cache
       - turbo_cache_prod:/root/.cache/turbo
 

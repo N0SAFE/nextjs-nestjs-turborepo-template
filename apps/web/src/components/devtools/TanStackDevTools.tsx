@@ -1117,7 +1117,7 @@ export const TanStackDevTools: React.FC<TanStackDevToolsProps> = ({
     if (process.env.NODE_ENV === 'production' && !showInProduction) {
         return null
     }
-
+    
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { refetch } = useSession()
     

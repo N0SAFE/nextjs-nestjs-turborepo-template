@@ -1,58 +1,52 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 import { z } from 'zod'
-import { safeParse } from 'zod/v4'
 
 interface ParsedData<T> { error?: string; data?: T }
 
-export function safeParseSearchParams<T extends z.ZodType>(
+type ZodSchema = z.ZodType
+
+export function safeParseSearchParams<T extends ZodSchema>(
     schema: T,
     searchParams: URLSearchParams
-): any {
+): z.infer<T> {
     const paramsArray = getAllParamsAsArrays(searchParams)
-    return processSchema(schema, paramsArray)
+    return processSchema(schema, paramsArray) as z.infer<T>
 }
 
 function processSchema(
-    schema: any,
+    schema: ZodSchema,
     paramsArray: Record<string, string[]>
 ): Record<string, unknown> {
+    // Unwrap optional wrapper if present
+    let unwrappedSchema = schema
     if (schema instanceof z.ZodOptional) {
-        schema = schema.def.innerType
+        unwrappedSchema = schema.unwrap()
     }
-    switch ((schema as object).constructor) {
-        case z.ZodObject: {
-            const { shape } = schema as z.ZodObject<z.ZodRawShape>
-            return parseShape(shape, paramsArray)
-        }
-        case z.ZodUnion: {
-            const { options } = (
-                schema as z.ZodUnion<
-                    [
-                        z.ZodObject<z.ZodRawShape>,
-                        ...z.ZodObject<z.ZodRawShape>[],
-                    ]
-                >
-            ).def
-            for (const option of options) {
-                const { shape } = option
-                const requireds = getRequireds(shape)
 
-                const result = parseShape(shape, paramsArray, true)
-                const keys = Object.keys(result)
+    if (unwrappedSchema instanceof z.ZodObject) {
+        const shape = unwrappedSchema.shape as z.ZodRawShape
+        return parseShape(shape, paramsArray)
+    }
 
-                if (requireds.every((key) => keys.includes(key))) {
-                    return result
-                }
+    if (unwrappedSchema instanceof z.ZodUnion) {
+        const options = unwrappedSchema.options as z.ZodObject<z.ZodRawShape>[]
+        for (const option of options) {
+            const shape = option.shape
+            const requireds = getRequireds(shape)
+
+            const result = parseShape(shape, paramsArray, true)
+            const keys = Object.keys(result)
+
+            if (requireds.every((key) => keys.includes(key))) {
+                return result
             }
-            return {}
         }
-        default:
-            throw new Error('Unsupported schema type')
+        return {}
     }
+
+    throw new Error('Unsupported schema type')
 }
 
-function getRequireds(shape: z.ZodRawShape) {
+function getRequireds(shape: z.ZodRawShape): string[] {
     const keys: string[] = []
     for (const key in shape) {
         const fieldShape = shape[key]
@@ -76,11 +70,11 @@ function parseShape(
     for (const key in shape) {
         if (Object.hasOwn(shape, key)) {
             const fieldSchema = shape[key]
-            if (paramsArray[key]) {
-                const fieldData = convertToRequiredType(
-                    paramsArray[key],
-                    fieldSchema
-                )
+            if (!fieldSchema) continue
+            
+            const values = paramsArray[key]
+            if (values) {
+                const fieldData = convertToRequiredType(values, fieldSchema)
 
                 if (fieldData.error) {
                     if (isPartOfUnion) {
@@ -88,12 +82,14 @@ function parseShape(
                     }
                     continue
                 }
-                const result = safeParse(fieldSchema, fieldData.data)
-                if (result.success) {
-                    parsed[key] = result.data
+                if (fieldData.data !== undefined) {
+                    const result = (fieldSchema as z.ZodType).safeParse(fieldData.data)
+                    if (result.success) {
+                        parsed[key] = result.data
+                    }
                 }
             } else if (fieldSchema instanceof z.ZodDefault) {
-                const result = fieldSchema.safeParse(undefined)
+                const result = (fieldSchema as z.ZodType).safeParse(undefined)
                 if (result.success) {
                     parsed[key] = result.data
                 }
@@ -110,9 +106,7 @@ function getAllParamsAsArrays(
     const params: Record<string, string[]> = {}
 
     searchParams.forEach((value, key) => {
-        if (!params[key]) {
-            params[key] = []
-        }
+        params[key] ??= []
         params[key].push(value)
     })
 
@@ -121,57 +115,64 @@ function getAllParamsAsArrays(
 
 function convertToRequiredType(
     values: string[],
-    schema: z.core.$ZodType
+    schema: ZodSchema
 ): ParsedData<unknown> {
     const usedSchema = getInnerType(schema)
     if (values.length > 1 && !(usedSchema instanceof z.ZodArray)) {
         return { error: 'Multiple values for non-array field' }
     }
     const value = parseValues(usedSchema, values)
-    if (value.error && schema.constructor === z.ZodDefault) {
+    if (value.error && schema instanceof z.ZodDefault) {
         return { data: undefined }
     }
     return value
 }
 
-function parseValues(schema: z.core.$ZodType, values: string[]): ParsedData<unknown> {
-    switch (schema.constructor) {
-        case z.ZodNumber:
-            return parseNumber(values[0])
-        case z.ZodBoolean:
-            return parseBoolean(values[0])
-        case z.ZodString:
-            return { data: values[0] }
-        case z.ZodArray: {
-            const elementSchema = schema._zod.def.type
-            switch (elementSchema.constructor) {
-                case z.ZodNumber:
-                    return parseArray(values, parseNumber)
-                case z.ZodBoolean:
-                    return parseArray(values, parseBoolean)
-                case z.ZodString:
-                    return { data: values }
-                default:
-                    return {
-                        error:
-                            'unsupported array element type ' +
-                            String(elementSchema.constructor),
-                    }
-            }
-        }
-        default:
-            return { error: 'unsupported type ' + String(schema.constructor) }
+function parseValues(schema: ZodSchema, values: string[]): ParsedData<unknown> {
+    const firstValue = values[0]
+    
+    if (schema instanceof z.ZodNumber) {
+        if (firstValue === undefined) return { error: 'No value provided for number field' }
+        return parseNumber(firstValue)
     }
+    
+    if (schema instanceof z.ZodBoolean) {
+        if (firstValue === undefined) return { error: 'No value provided for boolean field' }
+        return parseBoolean(firstValue)
+    }
+    
+    if (schema instanceof z.ZodString) {
+        return { data: firstValue }
+    }
+    
+    if (schema instanceof z.ZodArray) {
+        const elementSchema = schema.element
+        
+        if (elementSchema instanceof z.ZodNumber) {
+            return parseArray(values, parseNumber)
+        }
+        if (elementSchema instanceof z.ZodBoolean) {
+            return parseArray(values, parseBoolean)
+        }
+        if (elementSchema instanceof z.ZodString) {
+            return { data: values }
+        }
+        return {
+            error: 'unsupported array element type ' + elementSchema.constructor.name,
+        }
+    }
+    
+    return { error: 'unsupported type ' + schema.constructor.name }
 }
 
-function getInnerType(schema: z.core.$ZodType) {
-    switch (schema.constructor) {
-        case z.ZodOptional:
-        case z.ZodDefault:
-            return (schema._zod.def as unknown as {innerType: z.core.$ZodType}).innerType
-        default:
-            return schema
+function getInnerType(schema: ZodSchema): ZodSchema {
+    if (schema instanceof z.ZodOptional) {
+        return schema.unwrap()
     }
+    if (schema instanceof z.ZodDefault) {
+        return schema.unwrap()
+    }
+    return schema
 }
 
 function parseNumber(str: string): ParsedData<number> {
@@ -194,10 +195,10 @@ function parseArray<T>(
     values: string[],
     parseFunction: (str: string) => ParsedData<T>
 ): ParsedData<T[]> {
-    const numbers = values.map(parseFunction)
-    const error = numbers.find((n) => n.error)?.error
-    if (error) {
-        return { error }
+    const results = values.map(parseFunction)
+    const errorResult = results.find((n) => n.error)
+    if (errorResult?.error) {
+        return { error: errorResult.error }
     }
-    return { data: numbers.filter((n): n is Omit<ParsedData<T>, "data"> & {data: T} => Boolean(n.data)).map((n) => n.data) }
+    return { data: results.map((n) => n.data).filter((d): d is T => d !== undefined) }
 }

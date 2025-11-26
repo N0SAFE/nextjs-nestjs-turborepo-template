@@ -184,7 +184,8 @@
             "web": {
                 "@million/lint": "^1.0.14",
                 "@types/nprogress": "^0.2.3",
-                "nprogress": "^0.2.0"
+                "nprogress": "^0.2.0",
+                "nuqs": "^2.7.3"
             },
             "doc": {
                 "fumadocs-ui": "^16.0.8",
@@ -213,6 +214,7 @@
         "dev:api:run": "envcli docker exec -it ${COMPOSE_PROJECT_NAME:-nextjs-directus}-api-dev /bin/sh",
         "dev:web:run": "envcli docker exec -it ${COMPOSE_PROJECT_NAME:-nextjs-directus}-web-dev /bin/sh",
         "dev:local": "turbo dev",
+        "test:build": "bun packages/env/src/cli.ts mock --command 'bun run build'",
         "build": "turbo build",
         "compile": "bun packages/env/src/cli.ts mock --command 'turbo compile'",
         "local:build": "bun packages/env/src/cli.ts mock --command 'turbo build'",
@@ -267,7 +269,6 @@
         "kill:api": "trycli-options --command \"envcli kill-port $:{NEXT_PUBLIC_API_PORT} && envcli wait-on $:{NEXT_PUBLIC_API_URL} -r\" --silent",
         "api": "dotenv -e .env -- bun --bun --cwd=./apps/api run --",
         "web": "dotenv -e .env -- bun --bun --cwd=./apps/web run --",
-        "doc": "dotenv -e .env -- bun --bun --cwd=./apps/doc run --",
         "@repo/ui": "dotenv -e .env -- bun --bun --cwd=./packages/ui/base run --",
         "@repo/types": "dotenv -e .env -- bun --bun --cwd=./packages/types run --",
         "@repo/auth": "dotenv -e .env -- bun --bun --cwd=./packages/auth run --",

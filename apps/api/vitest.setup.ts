@@ -7,9 +7,6 @@ process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
 process.env.AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
 process.env.API_PORT = '3001';
-process.env.PASSKEY_RPID = 'localhost';
-process.env.PASSKEY_RPNAME = 'NestJS Directus Turborepo Template';
-process.env.PASSKEY_ORIGIN = 'http://localhost:3000';
 
 // Global test setup for NestJS API
 beforeEach(() => {

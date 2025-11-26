@@ -66,6 +66,7 @@ export class SeedCommand extends CommandRunner {
           const user = userResult.user;
 
           // Generate API key data (no DB insert; log for dev use)
+           
           const apiKeyData = {
             userId: user.id,
             name: `${role}-key-${String(i)}`,

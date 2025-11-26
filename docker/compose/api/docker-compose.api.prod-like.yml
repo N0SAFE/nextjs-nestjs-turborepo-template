@@ -41,25 +41,28 @@ services:
           path: ../../..
           target: /app
           include:
-            - docker/compose/api/docker-compose.api.prod.yml
+            - docker/compose/api/docker-compose.api.prod-like.yml
             - docker/compose/docker-compose.yml
-            - docker/compose/docker-compose.dev.override.yml
-            - docker/compose/docker-compose.prod.yml
-            - docker/compose/docker-compose.prod.override.yml
-        # Rebuild when any source code or dependency changes
+            - docker/compose/docker-compose.prod-like.yml
+            - docker/compose/docker-compose.prod-like.override.yml
+        # Rebuild when API source code changes
         - action: rebuild
           path: ../../..
           target: /app
+          include:
+            - apps/api/**/*.ts
+            - apps/api/**/*.js
+            - apps/api/**/*.json
+            - apps/api/package.json
+            - packages/**/*.ts
+            - packages/**/*.js
+            - packages/**/package.json
+            - package.json
+            - turbo.json
           ignore:
-            - .git/
-            - .gitignore
-            - node_modules/
-            - "**/node_modules/"
-            - "**/.turbo/"
-            - "**/.cache/"
-            - "**/coverage/"
-            - "**/*.log"
-            - "**/.DS_Store"
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+            - "**/__tests__/**"
     environment:
       # Runtime
       - NODE_ENV=production
@@ -70,16 +73,25 @@ services:
       
       # API Configuration
       - API_PORT=${API_PORT:-3001}
+      - API_URL=http://api-prod:${API_PORT:-3001}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3005}
       
       # URLs
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - APP_URL=${APP_URL:-http://web-prod:3000}
       
       # Authentication
-      - AUTH_SECRET=${AUTH_SECRET:-auth-fallback-secret}
+      - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
-      
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+
+      # Default Admin Credentials (for seeding)
+      - DEFAULT_ADMIN_EMAIL=${DEFAULT_ADMIN_EMAIL:-admin@admin.com}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-adminadmin}
+
       # Enable seeding for mock data (prod-like mode)
-      - ENABLE_SEEDING='true'
+      - ENABLE_SEEDING=true
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://127.0.0.1:${API_PORT:-3001}/health || exit 1
       start_period: 15s
@@ -91,6 +103,8 @@ services:
     volumes:
       - bun_cache_prod:/root/.bun/install/cache
       - turbo_cache_prod:/root/.cache/turbo
+      # Persistent uploads directory for media files
+      - api_uploads_prod:/app/apps/api/uploads
 
 networks:
   app_network_prod:
@@ -104,3 +118,5 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_bun_cache_prod
   turbo_cache_prod:
     name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_turbo_cache_prod
+  api_uploads_prod:
+    name: ${COMPOSE_PROJECT_NAME:-nextjs-nestjs}_api_uploads_prod

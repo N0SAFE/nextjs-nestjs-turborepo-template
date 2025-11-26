@@ -126,10 +126,10 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run generate --filter=web...
+  bun turbo run generate --filter=web... --remote-only
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run build --filter=web...
+  bun turbo run build --filter=web... --remote-only
 
 # ===================================
 # Stage 5: Runner - Production runtime

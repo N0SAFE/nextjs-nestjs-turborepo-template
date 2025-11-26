@@ -5,6 +5,11 @@ export default defineConfig([
     {
         extends: [nextjsConfig.configs.base],
         files: ["src/**/*.{ts,tsx,js,jsx}"],
+        ignores: [
+            // Ignore node_modules and external packages for type-checking
+            "**/node_modules/**",
+            "**/.next/**",
+        ],
         rules: {
             // Disable this rule to prevent stack overflow on complex recursive types
             "@typescript-eslint/no-unnecessary-type-parameters": "off",

@@ -24,6 +24,7 @@ services:
       
       # URLs - Server-side (internal Docker network)
       - API_URL=http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-api-prod:${API_PORT}
+      - APP_URL=${APP_URL:-http://${COMPOSE_PROJECT_NAME:-nextjs-nestjs}-web-prod:${NEXT_PUBLIC_APP_PORT}}
       
       # URLs - Client-side (external access - must be public URL in production)
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
@@ -34,6 +35,8 @@ services:
       - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT}
       
       # Authentication
+      - AUTH_SECRET=${AUTH_SECRET}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET}
       - DEV_AUTH_KEY=${DEV_AUTH_KEY}
     networks:
       - app_network_prod

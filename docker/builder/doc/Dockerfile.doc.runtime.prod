@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
-# Production Dockerfile for Documentation App - RUNTIME COMPILATION
-# This version builds the documentation when the container starts
+# Production Dockerfile for doc App - RUNTIME COMPILATION
+# This version builds the Next.js app when the container starts
 # Useful for flexible deployments where you want fresh builds at startup
 
 # ===================================
@@ -13,7 +13,7 @@ ENV NODE_ENV=production
 ARG API_URL=http://localhost:3001
 ARG NEXT_PUBLIC_API_URL=http://localhost:3001
 ARG API_PORT=3001
-ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_DOC_URL=http://localhost:3000
 ARG NEXT_PUBLIC_APP_PORT=3000
 ARG NEXT_PUBLIC_DOC_URL=http://localhost:3020
 ARG NEXT_PUBLIC_DOC_PORT=3020
@@ -22,7 +22,7 @@ ARG AUTH_SECRET=QgafJQw3O/k1gambz7YGKjtj5ZZe0dnL/WlSw4PtMDc=
 ENV API_URL=$API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV API_PORT=$API_PORT
-ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_DOC_URL=$NEXT_PUBLIC_DOC_URL
 ENV NEXT_PUBLIC_APP_PORT=$NEXT_PUBLIC_APP_PORT
 ENV NEXT_PUBLIC_DOC_URL=$NEXT_PUBLIC_DOC_URL
 ENV NEXT_PUBLIC_DOC_PORT=$NEXT_PUBLIC_DOC_PORT
@@ -34,10 +34,9 @@ RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for documentation dependencies
+# Stage 2: Pruner - Prune monorepo for doc app dependencies
 # ===================================
 FROM base AS pruner
-ENV TURBO_CACHE_DIR=/root/.cache/turbo
 
 # Copy only the files needed for turbo prune (workspace package.json files)
 # This prevents cache invalidation when source code changes
@@ -93,7 +92,7 @@ RUN apk add --no-cache \
     gcc \
     musl-dev
 
-# Install Node.js for documentation production
+# Install Node.js for Next.js production
 RUN apk add --no-cache nodejs
 ENV PATH="/usr/bin:${PATH}"
 RUN ln -sf $(which bun) /usr/local/bin/npm
@@ -146,7 +145,7 @@ EXPOSE 3020
 # Set environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=${NEXT_PUBLIC_DOC_PORT}
+ENV PORT=${NEXT_PUBLIC_APP_PORT}
 
 # Health check for deployment platforms
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
@@ -154,4 +153,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
 
 WORKDIR /app
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "bun x turbo run generate --filter=doc... && bun x turbo run doc#start"]
+CMD ["sh", "-c", "bun x turbo run generate --filter=doc... --remote-only && bun x turbo run doc#start --remote-only"]

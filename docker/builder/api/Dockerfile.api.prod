@@ -101,7 +101,7 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run build --filter=api...
+  bun turbo run build --filter=api... --remote-only
 
 # ===================================
 # Stage 5: Runner - Production runtime
@@ -136,5 +136,5 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Start the application
-CMD ["sh", "-c", "bun --bun --cwd=apps/api run db:migrate && bun x turbo run api#start"]
+# Start the application using the production entrypoint
+CMD ["bun", "--bun", "--cwd=apps/api", "run", "prod"]

@@ -22,25 +22,32 @@ services:
           path: ../../..
           target: /app
           include:
-            - docker/compose/web/docker-compose.web.prod.yml
+            - docker/compose/web/docker-compose.web.prod-like.yml
             - docker/compose/docker-compose.yml
-            - docker/compose/docker-compose.dev.override.yml
-            - docker/compose/docker-compose.prod.yml
-            - docker/compose/docker-compose.prod.override.yml
-        # Rebuild when any source code or dependency changes
+            - docker/compose/docker-compose.prod-like.yml
+            - docker/compose/docker-compose.prod-like.override.yml
+        # Rebuild when australia app source code changes
         - action: rebuild
           path: ../../..
           target: /app
+          include:
+            - apps/web/**/*.ts
+            - apps/web/**/*.tsx
+            - apps/web/**/*.js
+            - apps/web/**/*.jsx
+            - apps/web/**/*.json
+            - apps/web/**/*.css
+            - apps/web/package.json
+            - packages/**/*.ts
+            - packages/**/*.tsx
+            - packages/**/package.json
+            - package.json
+            - turbo.json
           ignore:
-            - .git/
-            - .gitignore
-            - node_modules/
-            - "**/node_modules/"
-            - "**/.turbo/"
-            - "**/.cache/"
-            - "**/coverage/"
-            - "**/*.log"
-            - "**/.DS_Store"
+            - "**/*.test.ts"
+            - "**/*.test.tsx"
+            - "**/*.spec.ts"
+            - "**/__tests__/**"
     depends_on:
       api-prod:
         condition: service_healthy
@@ -50,6 +57,7 @@ services:
       
       # URLs - Server-side (internal Docker network)
       - API_URL=http://api-prod:${API_PORT:-3001}
+      - APP_URL=${APP_URL:-http://web-prod:3000}
       
       # URLs - Client-side (external access)
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3001}
@@ -60,7 +68,9 @@ services:
       - NEXT_PUBLIC_DOC_PORT=${NEXT_PUBLIC_DOC_PORT:-3020}
       
       # Authentication
-      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-auth-key}
+      - AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - BETTER_AUTH_SECRET=${AUTH_SECRET:-fallback-auth-secret}
+      - DEV_AUTH_KEY=${DEV_AUTH_KEY:-dev-fallback-key}
     networks:
       - app_network_prod
     volumes:
