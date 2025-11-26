@@ -17,9 +17,9 @@ function processSchema(
     paramsArray: Record<string, string[]>
 ): Record<string, unknown> {
     // Unwrap optional wrapper if present
-    let unwrappedSchema = schema
+    let unwrappedSchema: ZodSchema = schema
     if (schema instanceof z.ZodOptional) {
-        unwrappedSchema = schema.unwrap()
+        unwrappedSchema = schema.unwrap() as ZodSchema
     }
 
     if (unwrappedSchema instanceof z.ZodObject) {
@@ -69,8 +69,7 @@ function parseShape(
 
     for (const key in shape) {
         if (Object.hasOwn(shape, key)) {
-            const fieldSchema = shape[key]
-            if (!fieldSchema) continue
+            const fieldSchema = shape[key] as ZodSchema
             
             const values = paramsArray[key]
             if (values) {
@@ -83,13 +82,13 @@ function parseShape(
                     continue
                 }
                 if (fieldData.data !== undefined) {
-                    const result = (fieldSchema as z.ZodType).safeParse(fieldData.data)
+                    const result = fieldSchema.safeParse(fieldData.data)
                     if (result.success) {
                         parsed[key] = result.data
                     }
                 }
             } else if (fieldSchema instanceof z.ZodDefault) {
-                const result = (fieldSchema as z.ZodType).safeParse(undefined)
+                const result = fieldSchema.safeParse(undefined)
                 if (result.success) {
                     parsed[key] = result.data
                 }
@@ -146,7 +145,7 @@ function parseValues(schema: ZodSchema, values: string[]): ParsedData<unknown> {
     }
     
     if (schema instanceof z.ZodArray) {
-        const elementSchema = schema.element
+        const elementSchema = schema.element as ZodSchema
         
         if (elementSchema instanceof z.ZodNumber) {
             return parseArray(values, parseNumber)
@@ -167,10 +166,10 @@ function parseValues(schema: ZodSchema, values: string[]): ParsedData<unknown> {
 
 function getInnerType(schema: ZodSchema): ZodSchema {
     if (schema instanceof z.ZodOptional) {
-        return schema.unwrap()
+        return schema.unwrap() as ZodSchema
     }
     if (schema instanceof z.ZodDefault) {
-        return schema.unwrap()
+        return schema.unwrap() as ZodSchema
     }
     return schema
 }
