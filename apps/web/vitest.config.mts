@@ -31,6 +31,7 @@ export default defineConfig(
                 '@': path.resolve(__dirname, './src'),
                 '#': path.resolve(__dirname, './'),
                 '~': path.resolve(__dirname, './'),
+                '@repo/env': path.resolve(__dirname, '../../packages/utils/env/src/index.ts'),
                 '@repo': path.resolve(__dirname, '../../packages'),
             },
         },

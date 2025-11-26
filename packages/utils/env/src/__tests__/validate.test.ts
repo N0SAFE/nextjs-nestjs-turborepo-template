@@ -23,6 +23,8 @@ describe('API Environment Validation', () => {
     DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
     API_PORT: 3001,
     AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+    BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+    NEXT_PUBLIC_API_URL: 'http://localhost:3001',
   }
 
   describe('validateApiEnv', () => {
@@ -142,6 +144,9 @@ describe('Web Environment Validation', () => {
     NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
     NODE_ENV: 'development' as const,
     API_URL: 'http://localhost:3001',
+    NEXT_PUBLIC_API_URL: 'http://localhost:3001',
+    AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+    BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
     NEXT_PUBLIC_SHOW_AUTH_LOGS: false,
     NEXT_PUBLIC_DEBUG: '',
     REACT_SCAN: false,
@@ -161,7 +166,10 @@ describe('Web Environment Validation', () => {
     it('should apply default values', () => {
       const minimal = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         API_URL: 'http://localhost:3001',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       const result = validateWebEnv(minimal)
       expect(result.NODE_ENV).toBe('development')
@@ -347,11 +355,16 @@ describe('All Apps Environment Validation', () => {
       DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
       API_PORT: 3001,
       AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+      BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+      NEXT_PUBLIC_API_URL: 'http://localhost:3001',
     },
     web: {
       NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
       NODE_ENV: 'development' as const,
       API_URL: 'http://localhost:3001',
+      NEXT_PUBLIC_API_URL: 'http://localhost:3001',
+      AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+      BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       NEXT_PUBLIC_SHOW_AUTH_LOGS: false,
       NEXT_PUBLIC_DEBUG: '',
       REACT_SCAN: false,
@@ -417,10 +430,12 @@ describe('Edge Cases and Error Handling', () => {
     it('should reject port below minimum', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         NODE_ENV: 'development' as const,
         DATABASE_URL: 'postgresql://localhost:5432/db',
         API_PORT: 0,
-        AUTH_SECRET: 'test-secret',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       expect(() => validateApiEnv(env)).toThrow()
     })
@@ -428,10 +443,12 @@ describe('Edge Cases and Error Handling', () => {
     it('should reject port above maximum', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         NODE_ENV: 'development' as const,
         DATABASE_URL: 'postgresql://localhost:5432/db',
         API_PORT: 70000,
-        AUTH_SECRET: 'test-secret',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       expect(() => validateApiEnv(env)).toThrow()
     })
@@ -439,10 +456,12 @@ describe('Edge Cases and Error Handling', () => {
     it('should accept minimum valid port', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         NODE_ENV: 'development' as const,
         DATABASE_URL: 'postgresql://localhost:5432/db',
         API_PORT: 1,
-        AUTH_SECRET: 'test-secret',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       const result = validateApiEnv(env)
       expect(result.API_PORT).toBe(1)
@@ -451,10 +470,12 @@ describe('Edge Cases and Error Handling', () => {
     it('should accept maximum valid port', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         NODE_ENV: 'development' as const,
         DATABASE_URL: 'postgresql://localhost:5432/db',
         API_PORT: 65535,
-        AUTH_SECRET: 'test-secret',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       const result = validateApiEnv(env)
       expect(result.API_PORT).toBe(65535)
@@ -465,7 +486,10 @@ describe('Edge Cases and Error Handling', () => {
     it('should reject malformed URLs', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'not-a-url',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001',
         API_URL: 'http://localhost:3001',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       expect(() => validateWebEnv(env)).toThrow()
     })
@@ -473,7 +497,10 @@ describe('Edge Cases and Error Handling', () => {
     it('should accept valid HTTPS URLs', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'https://example.com',
+        NEXT_PUBLIC_API_URL: 'https://api.example.com',
         API_URL: 'https://api.example.com',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       const result = validateWebEnv(env)
       expect(result.NEXT_PUBLIC_APP_URL).toBe('https://example.com')
@@ -483,7 +510,10 @@ describe('Edge Cases and Error Handling', () => {
     it('should trim trailing slashes from URLs', () => {
       const env = {
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000/',
+        NEXT_PUBLIC_API_URL: 'http://localhost:3001/',
         API_URL: 'http://localhost:3001/',
+        AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
+        BETTER_AUTH_SECRET: 'test-secret-key-at-least-32-chars-long',
       }
       const result = validateWebEnv(env)
       expect(result.NEXT_PUBLIC_APP_URL).toBe('http://localhost:3000')

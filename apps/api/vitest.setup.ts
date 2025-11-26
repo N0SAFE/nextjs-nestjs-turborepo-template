@@ -6,6 +6,8 @@ import 'reflect-metadata';
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
 process.env.AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
+process.env.BETTER_AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
 process.env.API_PORT = '3001';
 
 // Global test setup for NestJS API
