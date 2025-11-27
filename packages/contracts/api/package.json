@@ -16,7 +16,8 @@
     "build": "bun scripts/build.ts",
     "compile": "bun x cross-env COMPILE_MODE=true bun run build",
     "dev": "bun run build -- --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"**/*.ts\""
   },
   "dependencies": {
     "@orpc/contract": "catalog:orpc",
@@ -29,9 +30,11 @@
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "@repo-configs/eslint": "*",
+    "@repo-configs/typescript": "*",
     "@types/node": "catalog:build",
     "chokidar": "catalog:build",
-    "@repo-configs/typescript": "*",
+    "eslint": "catalog:linting",
     "typescript": "catalog:build"
   }
 }

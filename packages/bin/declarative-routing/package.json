@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\""
   },
   "keywords": [],
   "author": {
@@ -32,12 +33,15 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@repo-configs/eslint": "*",
+    "@repo-configs/typescript": "*",
     "@repo-configs/vitest": "*",
     "@types/diff": "catalog:utils",
     "@types/fs-extra": "catalog:utils",
     "@types/prompts": "catalog:utils",
     "@vitest/coverage-v8": "catalog:testing",
     "@vitest/ui": "catalog:testing",
+    "eslint": "catalog:linting",
     "type-fest": "catalog:utils",
     "typescript": "catalog:build",
     "vitest": "catalog:testing"

@@ -37,12 +37,14 @@
         }
     },
     "scripts": {
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --noEmit",
+        "lint": "eslint \"src/**/*.ts\""
     },
     "devDependencies": {
         "@darraghor/eslint-plugin-nestjs-typed": "^6.9.3",
         "@eslint/compat": "^2.0.0",
         "@eslint/js": "^9.4.0",
+        "@repo-configs/typescript": "*",
         "@repo-configs/vitest": "*",
         "@tanstack/eslint-plugin-query": "catalog:tanstack",
         "@typescript-eslint/eslint-plugin": "^8.15.0",
