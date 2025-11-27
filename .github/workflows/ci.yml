@@ -178,7 +178,7 @@ jobs:
         name: 🏗️ Build
         runs-on: ubuntu-latest
         timeout-minutes: 12
-        needs: [lint-and-typecheck, generate-declarative-routes]
+        needs: [generate-declarative-routes]
         env:
             # API Configuration
             API_URL: http://localhost:8055/
@@ -259,7 +259,7 @@ jobs:
         name: 🧪 Test
         runs-on: ubuntu-latest
         timeout-minutes: 12
-        needs: [lint-and-typecheck, generate-declarative-routes]
+        needs: [generate-declarative-routes]
         env:
             # API Configuration
             API_URL: http://localhost:8055/
