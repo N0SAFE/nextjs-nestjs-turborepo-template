@@ -8,11 +8,14 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint \"*.ts\" \"*.mts\""
   },
   "devDependencies": {
+    "@repo-configs/eslint": "*",
     "@repo-configs/typescript": "*",
     "@repo-configs/vitest": "*",
+    "eslint": "catalog:linting",
     "tailwind-variants": "catalog:styling",
     "tailwindcss": "catalog:styling",
     "tailwindcss-animate": "catalog:styling",

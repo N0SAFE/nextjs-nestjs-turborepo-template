@@ -4,7 +4,7 @@ import { defineConfig } from "@repo-configs/eslint";
 export default defineConfig([
     {
         extends: [libraryConfig.configs.base],
-        files: ["**/*.{ts,tsx}"],
+        files: ["*.ts", "*.mts"],
     },
     {
         extends: [libraryConfig.configs.test],
