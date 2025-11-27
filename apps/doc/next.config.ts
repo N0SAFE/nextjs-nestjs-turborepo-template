@@ -8,7 +8,7 @@ const config: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  reactCompiler: false, // disable react compiler because of errors with docker and new bun 1.3.0
+  reactCompiler: true, // disable react compiler because of errors with docker and new bun 1.3.0
 }
 
 export default withMDX(config)

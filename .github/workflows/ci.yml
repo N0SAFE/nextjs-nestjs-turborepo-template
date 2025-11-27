@@ -116,7 +116,7 @@ jobs:
         name: 🔍 Lint & Type Check
         runs-on: ubuntu-latest
         timeout-minutes: 8
-        needs: [setup]
+        needs: [setup, generate-declarative-routes]
         env:
             # Essential environment variables for linting/type checking
             API_URL: http://localhost:8055/
@@ -158,15 +158,27 @@ jobs:
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
 
-            - name: 🔍 Run ESLint
-              run: bun x turbo run lint --affected --concurrency 4
+            - name: � Restore declarative routes cache
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      apps/web/src/routes/index.ts
+                      apps/web/src/routes/openapi.ts
+                      apps/web/openapi-docs.yml
+                      apps/web/redoc-static.html
+                  key: declarative-routes-${{ runner.os }}-${{ hashFiles('apps/web/src/**/page.tsx', 'apps/web/src/**/page.info.ts') }}
+                  restore-keys: |
+                      declarative-routes-${{ runner.os }}-
+
+            - name: �🔍 Run ESLint
+              run: bun x turbo run lint --affected --concurrency=75%
 
     # Job 3: Build
     build:
         name: 🏗️ Build
         runs-on: ubuntu-latest
         timeout-minutes: 12
-        needs: [lint-and-typecheck, generate-declarative-routes]
+        needs: [generate-declarative-routes]
         env:
             # API Configuration
             API_URL: http://localhost:8055/
@@ -240,14 +252,14 @@ jobs:
             - name: 🏗️ Build packages
               run: |
                   # Build shared packages first
-                  bun x turbo run compile --affected --concurrency 4
+                  bun x turbo run compile --affected --concurrency=75%
 
     # Job 4: Test
     test:
         name: 🧪 Test
         runs-on: ubuntu-latest
         timeout-minutes: 12
-        needs: [lint-and-typecheck, generate-declarative-routes]
+        needs: [generate-declarative-routes]
         env:
             # API Configuration
             API_URL: http://localhost:8055/

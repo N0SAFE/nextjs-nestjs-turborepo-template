@@ -23,8 +23,8 @@
       "@/*": [
         "./src/*"
       ],
-      "@/.source": [
-        ".source"
+      "fumadocs-mdx:collections/*": [
+        ".source/*"
       ]
     },
     "plugins": [

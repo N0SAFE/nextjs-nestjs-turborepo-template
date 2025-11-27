@@ -2,6 +2,8 @@
 # Production Dockerfile for Web App - RUNTIME COMPILATION
 # This version builds the Next.js app when the container starts
 # Useful for flexible deployments where you want fresh builds at startup
+# Multi-stage build optimized for caching:
+# base -> pruner -> installer -> source-copier -> builder -> runner
 
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
@@ -10,27 +12,28 @@ FROM oven/bun:1.3.3-alpine AS base
 ENV NODE_ENV=production
 
 # Install system dependencies
-RUN apk add --no-cache libc6-compat dumb-init tar
+# jq is needed to parse package.json exports in runner stage
+RUN apk add --no-cache libc6-compat dumb-init tar jq
 
 # Install Turbo globally with cache mount
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for web app dependencies
+# Stage 2: Pruner - Determine which workspaces are needed
 # ===================================
 FROM base AS pruner
+WORKDIR /app
 
-# Copy only the files needed for turbo prune (workspace package.json files)
-# This prevents cache invalidation when source code changes
-COPY package.json bun.lock* turbo.json ./
-COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
+# Copy ALL source files (turbo prune needs full source to determine dependencies)
+COPY . .
 
+# Run turbo prune to identify which apps/packages are needed for web
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune web --docker
 
 # ===================================
-# Stage 3: Installer - Install dependencies from pruned lockfile
+# Stage 3: Installer - Install dependencies for pruned workspaces only
 # ===================================
 FROM base AS installer
 WORKDIR /app
@@ -38,54 +41,91 @@ WORKDIR /app
 # Install build tools needed for native dependencies
 RUN apk add --no-cache python3 make g++
 
-# Only copy pruned package.json structure for dependency installation (NOT source code)
+# Copy ONLY the pruned package.json structure (not all workspaces)
 COPY --from=pruner /app/out/json/ .
-# Use full lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
+# Use full original lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
 COPY --from=pruner /app/bun.lock ./bun.lock
-# Use bun install instead of bun ci (pruned structure may not match lockfile exactly)
+
+# Install dependencies for pruned workspaces only
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun install --frozen-lockfile || bun install
 
 # ===================================
-# Stage 4: Builder - Generate routes
+# Stage 4: Source-Copier - Extract only the pruned source files
+# ===================================
+FROM base AS source-copier
+WORKDIR /app
+
+# Copy the pruned output structure to know which workspaces we need
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
+
+# Copy only the source files for workspaces identified by turbo prune
+RUN --mount=type=bind,from=pruner,source=/app,target=/mnt/pruner \
+    # Copy root config files
+    cp /mnt/pruner/package.json /mnt/pruner/turbo.json /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bun.lock* /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bunfig.toml /app/ 2>/dev/null || true && \
+    # Copy pruned apps (full source, not just package.json)
+    for appPkg in $(find /tmp/prune-structure/apps -name "package.json" -type f 2>/dev/null); do \
+        appDir=$(dirname "$appPkg" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$appDir" ]; then \
+            mkdir -p "/app/$appDir" && \
+            cp -r /mnt/pruner/$appDir/. /app/$appDir/ 2>/dev/null || true; \
+        fi; \
+    done && \
+    # Copy pruned packages (full source, not just package.json)
+    for pkgJson in $(find /tmp/prune-structure/packages -name "package.json" -type f 2>/dev/null); do \
+        pkgDir=$(dirname "$pkgJson" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$pkgDir" ]; then \
+            mkdir -p "/app/$pkgDir" && \
+            cp -r /mnt/pruner/$pkgDir/. /app/$pkgDir/ 2>/dev/null || true; \
+        fi; \
+    done
+
+# ===================================
+# Stage 5: Builder - Generate routes (build happens at runtime)
 # ===================================
 FROM base AS builder
+WORKDIR /app
 
 # Install build tools needed for native dependencies
 RUN apk add --no-cache python3 make g++ gcc musl-dev
 
-# Copy pruned full source (turbo prune already determined exactly what's needed)
-COPY --from=pruner /app/out/full/ .
-# Copy the original lockfile (out/full/ doesn't include it, and we need it for turbo)
-COPY --from=pruner /app/bun.lock ./bun.lock
+# Copy pruned source files from source-copier
+COPY --from=source-copier /app/ .
 
 # Ensure routes directory exists and is writable for generate command
 RUN mkdir -p /app/apps/web/routes && chmod -R 755 /app/apps/web/routes
 
-# Copy all node_modules using bind mount to avoid --parents issues
-# Use tar to preserve all symlinks correctly and set ownership to root (builder stage)
+# Copy node_modules from installer using bind mount + tar to preserve symlinks
 RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
+    # Copy root node_modules
     cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
-    find /mnt/installer/apps -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
+    # Copy app-level node_modules if they exist
+    find /mnt/installer/apps -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done && \
-    find /mnt/installer/packages -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
+    # Copy package-level node_modules if they exist
+    find /mnt/installer/packages -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
+# Copy turbo cache directories
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
+# Generate routes (build happens at runtime for this dockerfile)
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun turbo run generate --filter=web... --remote-only
 
 # ===================================
-# Stage 5: Runner - Production runtime
+# Stage 6: Runner - Production runtime (builds at container start)
 # ===================================
 FROM base AS runner
+WORKDIR /app
 
 # Install only runtime dependencies (no build tools in production)
 RUN apk add --no-cache curl wget bash nodejs && \
@@ -94,7 +134,7 @@ RUN apk add --no-cache curl wget bash nodejs && \
     adduser --system --uid 1001 nextjs
 ENV PATH="/usr/bin:${PATH}"
 
-# Copy built application from builder stage
+# Copy full application from builder stage (needed for runtime build)
 COPY --from=builder --chown=nextjs:nodejs /app ./
 
 # Switch to nextjs user
@@ -106,11 +146,11 @@ EXPOSE 3000
 # Set environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=${NEXT_PUBLIC_APP_PORT}
+ENV PORT=3000
 
 # Health check for deployment platforms
 HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider ${NEXT_PUBLIC_APP_URL} || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
 WORKDIR /app
 ENTRYPOINT ["dumb-init", "--"]

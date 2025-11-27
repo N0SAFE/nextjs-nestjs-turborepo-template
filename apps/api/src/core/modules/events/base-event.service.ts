@@ -235,7 +235,7 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param handler - Function that performs the processing and emits events
    * @returns Promise that resolves when processing is complete (or queued/ignored)
    */
-  async startProcessing<K extends keyof TContracts & string>(
+  async startProcessing<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>,
     handler: (params: {
@@ -246,7 +246,7 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
   ): Promise<void> {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
     
     const strategy = contract.options?.strategy ?? ProcessingStrategy.PARALLEL;
     
@@ -346,13 +346,13 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param eventName - Name of the event to check
    * @param input - Input parameters for the event
    */
-  hasSubscribers<K extends keyof TContracts & string>(
+  hasSubscribers<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>
   ): boolean {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
     const subscription = this.events.get(fullEventName);
     return subscription ? subscription.asyncIterators.size > 0 : false;
@@ -364,13 +364,13 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param eventName - Name of the event to check
    * @param input - Input parameters for the event
    */
-  getSubscriberCount<K extends keyof TContracts & string>(
+  getSubscriberCount<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>
   ): number {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
     const subscription = this.events.get(fullEventName);
     return subscription ? subscription.asyncIterators.size : 0;
@@ -382,13 +382,13 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param eventName - Name of the event to check
    * @param input - Input parameters for the event
    */
-  isProcessing<K extends keyof TContracts & string>(
+  isProcessing<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>
   ): boolean {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
     const state = this.processingStates.get(fullEventName);
     return state?.isProcessing ?? false;
@@ -400,13 +400,13 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param eventName - Name of the event to check
    * @param input - Input parameters for the event
    */
-  getQueueLength<K extends keyof TContracts & string>(
+  getQueueLength<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>
   ): number {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
     const state = this.processingStates.get(fullEventName);
     return state?.queue.length ?? 0;
@@ -434,13 +434,13 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
    * @param eventName - Name of the event to clear
    * @param input - Input parameters for the event
    */
-  removeAllSubscribers<K extends keyof TContracts & string>(
+  removeAllSubscribers<K extends keyof TContracts>(
     eventName: K,
     input: EventInput<TContracts[K]>
   ): void {
     const contract = this.contracts[eventName];
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
-    const fullEventName = this.buildFullEventName(eventName, validatedInput as Record<string, unknown>);
+    const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
     const subscription = this.events.get(fullEventName);
     if (subscription) {

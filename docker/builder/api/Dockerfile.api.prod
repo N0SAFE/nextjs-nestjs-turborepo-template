@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1-labs
 # Production Dockerfile for NestJS API
-# Multi-stage build for optimized production image
+# Multi-stage build optimized for caching:
+# base -> pruner -> installer -> source-copier -> builder -> runner
 
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
@@ -9,74 +10,114 @@ FROM oven/bun:1.3.3-alpine AS base
 ENV NODE_ENV=production
 
 # Install system dependencies and Node.js
-RUN apk add --no-cache libc6-compat tar nodejs
+# jq is needed to parse package.json exports in runner stage
+RUN apk add --no-cache libc6-compat tar nodejs jq
 
 # Install Turbo globally with cache mount
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
 WORKDIR /app
 
 # ===================================
-# Stage 2: Pruner - Prune monorepo for api dependencies
+# Stage 2: Pruner - Determine which workspaces are needed
 # ===================================
 FROM base AS pruner
+WORKDIR /app
 
-# Copy only the files needed for turbo prune (workspace package.json files)
-# This prevents cache invalidation when source code changes
-COPY package.json bun.lock* turbo.json ./
-COPY --parents apps/*/package.json packages/*/package.json packages/*/*/package.json ./
+# Copy ALL source files (turbo prune needs full source to determine dependencies)
+COPY . .
 
+# Run turbo prune to identify which apps/packages are needed for api
 RUN --mount=type=cache,target=/root/.cache/turbo \
   turbo prune api --docker
 
 # ===================================
-# Stage 3: Installer - Install dependencies from pruned lockfile
+# Stage 3: Installer - Install dependencies for pruned workspaces only
 # ===================================
 FROM base AS installer
+WORKDIR /app
 
 # Install build tools needed for native dependencies
 RUN apk add --no-cache python3 make g++ gcc musl-dev
 
-# Only copy pruned package.json structure for dependency installation (NOT source code)
+# Copy ONLY the pruned package.json structure (not all workspaces)
 COPY --from=pruner /app/out/json/ .
-# Use full lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
+# Use full original lockfile (turbo prune's out/bun.lock is buggy - see turborepo#10783)
 COPY --from=pruner /app/bun.lock ./bun.lock
-# Use bun install instead of bun ci (pruned structure may not match lockfile exactly)
+
+# Install dependencies for pruned workspaces only
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun install --frozen-lockfile || bun install
 
 # ===================================
-# Stage 4: Builder - Build the application (generate + build)
+# Stage 4: Source-Copier - Extract only the pruned source files
 # ===================================
-FROM base AS builder
-RUN apk add --no-cache python3 make g++ gcc musl-dev
+FROM base AS source-copier
+WORKDIR /app
 
-# Copy pruned full source (turbo prune already determined exactly what's needed)
-COPY --from=pruner /app/out/full/ .
-# Copy the original lockfile (out/full/ doesn't include it, and we need it for turbo)
-COPY --from=pruner /app/bun.lock ./bun.lock
+# Copy the pruned output structure to know which workspaces we need
+COPY --from=pruner /app/out/json/ /tmp/prune-structure/
 
-# Copy all node_modules using bind mount to avoid --parents issues
-# Use tar to preserve all symlinks correctly and set ownership to root (builder stage)
-RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
-    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
-    find /mnt/installer/apps -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
+# Copy only the source files for workspaces identified by turbo prune
+RUN --mount=type=bind,from=pruner,source=/app,target=/mnt/pruner \
+    # Copy root config files
+    cp /mnt/pruner/package.json /mnt/pruner/turbo.json /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bun.lock* /app/ 2>/dev/null || true && \
+    cp /mnt/pruner/bunfig.toml /app/ 2>/dev/null || true && \
+    # Copy pruned apps (full source, not just package.json)
+    for appPkg in $(find /tmp/prune-structure/apps -name "package.json" -type f 2>/dev/null); do \
+        appDir=$(dirname "$appPkg" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$appDir" ]; then \
+            mkdir -p "/app/$appDir" && \
+            cp -r /mnt/pruner/$appDir/. /app/$appDir/ 2>/dev/null || true; \
+        fi; \
     done && \
-    find /mnt/installer/packages -name node_modules -type d | while read dir; do \
-        target_dir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
-        mkdir -p "$(dirname "$target_dir")"; \
-        cd /mnt/installer && tar cf - "$(echo "$dir" | sed 's|/mnt/installer/||')" | tar xf - -C /app --owner=root --group=root; \
+    # Copy pruned packages (full source, not just package.json)
+    for pkgJson in $(find /tmp/prune-structure/packages -name "package.json" -type f 2>/dev/null); do \
+        pkgDir=$(dirname "$pkgJson" | sed 's|/tmp/prune-structure/||'); \
+        if [ -d "/mnt/pruner/$pkgDir" ]; then \
+            mkdir -p "/app/$pkgDir" && \
+            cp -r /mnt/pruner/$pkgDir/. /app/$pkgDir/ 2>/dev/null || true; \
+        fi; \
     done
 
+# ===================================
+# Stage 5: Builder - Build the application
+# ===================================
+FROM base AS builder
+WORKDIR /app
+
+# Install build tools needed for native dependencies
+RUN apk add --no-cache python3 make g++ gcc musl-dev
+
+# Copy pruned source files from source-copier
+COPY --from=source-copier /app/ .
+
+# Copy node_modules from installer using bind mount + tar to preserve symlinks
+RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
+    # Copy root node_modules
+    cd /mnt/installer && tar cf - node_modules | tar xf - -C /app --owner=root --group=root && \
+    # Copy app-level node_modules if they exist
+    find /mnt/installer/apps -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
+    done && \
+    # Copy package-level node_modules if they exist
+    find /mnt/installer/packages -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/installer/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
+    done
+
+# Copy turbo cache directories
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
+# Build the API and its dependencies
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
   bun turbo run build --filter=api... --remote-only
 
 # ===================================
-# Stage 5: Runner - Production runtime
+# Stage 6: Runner - Production runtime
 # ===================================
 FROM base AS runner
 WORKDIR /app
@@ -86,31 +127,52 @@ RUN apk add --no-cache curl wget bash && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# Copy only what's needed to run the API:
-# - Root workspace files
-COPY --from=builder --chown=nestjs:nodejs /app/package.json /app/turbo.json ./
-# - Built API app (dist + package.json)
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/
-# - Node modules (root + api)
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./apps/api/node_modules
-# - Built packages (only dist directories needed at runtime)
+# Copy only what's needed to run the API using bind mount + tar approach
+# This preserves symlinks correctly and is more efficient
+# Uses jq to parse package.json exports and copy only required directories
 RUN --mount=type=bind,from=builder,source=/app,target=/mnt/builder \
-    cd /mnt/builder && \
-    for pkg in packages/*/dist packages/*/*/dist; do \
-        if [ -d "$pkg" ]; then \
-            mkdir -p "/app/$(dirname $pkg)" && \
-            cp -r "$pkg" "/app/$(dirname $pkg)/"; \
+    # Copy root workspace files
+    cp /mnt/builder/package.json /mnt/builder/turbo.json /app/ && \
+    # Copy built API app (dist + package.json + scripts for entrypoint)
+    mkdir -p /app/apps/api && \
+    cp -r /mnt/builder/apps/api/dist /app/apps/api/ && \
+    cp /mnt/builder/apps/api/package.json /app/apps/api/ && \
+    cp -r /mnt/builder/apps/api/scripts /app/apps/api/ && \
+    # Copy root node_modules using tar to preserve symlinks
+    cd /mnt/builder && tar cf - node_modules | tar xf - -C /app && \
+    # Copy api node_modules if exists
+    if [ -d /mnt/builder/apps/api/node_modules ]; then \
+        cd /mnt/builder && tar cf - apps/api/node_modules | tar xf - -C /app; \
+    fi && \
+    # Copy packages based on their package.json exports field
+    # This parses exports to find which directories (src, dist, etc.) are actually needed
+    for pkgJson in /mnt/builder/packages/*/package.json /mnt/builder/packages/*/*/package.json; do \
+        if [ -f "$pkgJson" ]; then \
+            pkgDir=$(dirname "$pkgJson"); \
+            relPkgDir=$(echo "$pkgDir" | sed 's|/mnt/builder/||'); \
+            mkdir -p "/app/$relPkgDir"; \
+            cp "$pkgJson" "/app/$relPkgDir/"; \
+            exportDirs=$(jq -r '.exports // {} | if type == "string" then . elif type == "object" then [.. | strings] | .[] else empty end' "$pkgJson" 2>/dev/null | grep -oE '^\./[^/]+' | sed 's|^\./||' | sort -u); \
+            mainDirs=$(jq -r '[.main, .module, .types] | .[] // empty' "$pkgJson" 2>/dev/null | grep -oE '^\./[^/]+' | sed 's|^\./||' | sort -u); \
+            allDirs=$(printf '%s\n%s' "$exportDirs" "$mainDirs" | grep -v '^$' | sort -u); \
+            for dir in $allDirs; do \
+                if [ -d "$pkgDir/$dir" ]; then \
+                    cp -r "$pkgDir/$dir" "/app/$relPkgDir/"; \
+                elif [ -f "$pkgDir/$dir" ]; then \
+                    cp "$pkgDir/$dir" "/app/$relPkgDir/"; \
+                fi; \
+            done; \
+            [ -f "$pkgDir/tsconfig.json" ] && cp "$pkgDir/tsconfig.json" "/app/$relPkgDir/" || true; \
         fi; \
     done && \
-    for pkg in packages/*/package.json packages/*/*/package.json; do \
-        if [ -f "$pkg" ]; then \
-            mkdir -p "/app/$(dirname $pkg)" && \
-            cp "$pkg" "/app/$pkg"; \
-        fi; \
+    # Copy package node_modules using tar to preserve symlinks
+    find /mnt/builder/packages -name node_modules -type d 2>/dev/null | while read dir; do \
+        relDir=$(echo "$dir" | sed 's|/mnt/builder/||'); \
+        mkdir -p "/app/$(dirname $relDir)" && \
+        cd /mnt/builder && tar cf - "$relDir" | tar xf - -C /app; \
     done && \
-    chown -R nestjs:nodejs /app/packages
+    # Set ownership for all copied files
+    chown -R nestjs:nodejs /app
 
 # Switch to non-root user
 USER nestjs

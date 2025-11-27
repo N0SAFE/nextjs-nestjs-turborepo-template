@@ -14,6 +14,8 @@ import Script from 'next/script'
 import { validateEnv } from '#/env'
 import MainNavigation from '@/components/navigation/MainNavigation'
 import { DynamicTanstackDevTools } from '@/components/devtools/DynamicTanstackDevTools'
+import { SerwistProvider } from '@/lib/serwist-client'
+import { InstallPrompt, UpdateNotification } from '@/components/pwa'
 
 const fontSans = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -32,6 +34,9 @@ export default function RootLayout({
     return (
         <html lang="en">
             <head>
+                <link rel="manifest" href="/site.webmanifest" />
+                <meta name="theme-color" content="#000000" />
+                <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
                 {process.env.NODE_ENV === 'development' && env.REACT_SCAN && (
                     <Script
                         src="https://unpkg.com/react-scan/dist/auto.global.js"
@@ -58,6 +63,7 @@ export default function RootLayout({
                         <></>
                     )}
                 <NextAuthProviders>
+                    <SerwistProvider swUrl="/serwist/sw.js">
                         <ThemeProvider
                             attribute="class"
                             defaultTheme="system"
@@ -81,7 +87,10 @@ export default function RootLayout({
                                 
                                 <DynamicTanstackDevTools />
                             </ReactQueryProviders>
+                            <InstallPrompt />
+                            <UpdateNotification />
                         </ThemeProvider>
+                    </SerwistProvider>
                 </NextAuthProviders>
             </body>
         </html>
