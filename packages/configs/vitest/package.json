@@ -40,6 +40,7 @@
   "license": "ISC",
   "devDependencies": {
     "chokidar": "catalog:build",
+    "eslint": "catalog:linting",
     "@testing-library/jest-dom": "catalog:testing",
     "@testing-library/react": "catalog:testing",
     "@testing-library/user-event": "catalog:testing",

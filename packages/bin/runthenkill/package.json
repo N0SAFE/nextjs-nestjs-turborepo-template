@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint \"*.ts\""
   },
   "keywords": ["cli", "port", "process", "kill"],
   "author": "",
@@ -19,7 +20,10 @@
     "commander": "catalog:utils"
   },
   "devDependencies": {
+    "@repo-configs/eslint": "*",
+    "@repo-configs/typescript": "*",
     "@repo-configs/vitest": "*",
+    "eslint": "catalog:linting",
     "vitest": "catalog:testing",
     "@types/node": "catalog:build"
   }

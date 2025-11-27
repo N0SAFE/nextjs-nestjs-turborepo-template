@@ -21,14 +21,17 @@
     "check": "bun src/cli.ts check",
     "load": "bun src/cli.ts load",
     "mock": "bun src/cli.ts mock",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "dotenv": "catalog:dev",
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "@repo-configs/eslint": "*",
     "@repo-configs/typescript": "*",
+    "eslint": "catalog:linting",
     "typescript": "catalog:build",
     "vitest": "catalog:testing",
     "@vitest/coverage-v8": "catalog:testing"

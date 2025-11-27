@@ -1,20 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@repo-configs/typescript/config/base.json",
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
     "composite": false,
-    "declaration": true,
-    "declarationMap": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
-    "moduleResolution": "bundler",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
     "preserveWatchOutput": true,
-    "skipLibCheck": true,
-    "strict": true,
     "isolatedModules": false,
     "baseUrl": ".",
     "paths": {

@@ -1,0 +1,19 @@
+import libraryConfig from "@repo-configs/eslint/library";
+import { defineConfig } from "@repo-configs/eslint";
+
+export default defineConfig([
+    {
+        extends: [libraryConfig.configs.base],
+        files: ["src/**/*.{ts,tsx}"],
+        rules: {
+            "@typescript-eslint/no-unsafe-assignment": "off",
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-unsafe-member-access": "off",
+            "@typescript-eslint/prefer-nullish-coalescing": "off",
+        },
+    },
+    {
+        extends: [libraryConfig.configs.test],
+        files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    },
+]);
