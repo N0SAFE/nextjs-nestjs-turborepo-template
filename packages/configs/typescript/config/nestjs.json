@@ -17,6 +17,7 @@
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": false,
     "declaration": false,
+    "declarationMap": false,
     "outDir": "./dist",
     "removeComments": true,
     "sourceMap": true,

@@ -89,7 +89,9 @@ export class AuthModule
 
             for (const method of methods) {
                 const providerMethod = providerPrototype[method];
-                this.setupHooks(providerMethod, provider.instance);
+                if (providerMethod) {
+                    this.setupHooks(providerMethod, provider.instance);
+                }
             }
         }
 	}

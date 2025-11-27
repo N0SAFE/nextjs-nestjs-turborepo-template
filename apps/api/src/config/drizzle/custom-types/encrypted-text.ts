@@ -70,7 +70,7 @@ function decrypt(encryptedText: string): string {
             throw new Error("Invalid encrypted data format");
         }
 
-        const [saltHex, ivHex, authTagHex, encryptedData] = parts;
+        const [saltHex, ivHex, authTagHex, encryptedData] = parts as [string, string, string, string];
 
         // Convert from hex
         const salt = Buffer.from(saltHex, "hex");
@@ -85,8 +85,7 @@ function decrypt(encryptedText: string): string {
         decipher.setAuthTag(authTag);
 
         // Decrypt the text
-        let decrypted = decipher.update(encryptedData, "hex", "utf8");
-        decrypted += decipher.final("utf8");
+        const decrypted = decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
 
         return decrypted;
     } catch (error) {

@@ -147,6 +147,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): EventSubscription<TContracts[K]> {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
 
     // Validate input
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
@@ -206,6 +209,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     output: EventOutput<TContracts[K]>
   ): void {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
 
     // Validate input and output
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
@@ -245,6 +251,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     }) => void | Promise<void>
   ): Promise<void> {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
     
@@ -351,6 +360,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): boolean {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
@@ -369,6 +381,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): number {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
@@ -387,6 +402,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): boolean {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
@@ -405,6 +423,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): number {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 
@@ -439,6 +460,9 @@ export abstract class BaseEventService<TContracts extends EventContracts = Event
     input: EventInput<TContracts[K]>
   ): void {
     const contract = this.contracts[eventName];
+    if (!contract) {
+      throw new Error(`Contract not found for event: ${String(eventName)}`);
+    }
     const validatedInput = contract.input.parse(input) as EventInput<TContracts[K]>;
     const fullEventName = this.buildFullEventName(String(eventName), validatedInput as Record<string, unknown>);
 

@@ -34,7 +34,7 @@ export class SeedCommand extends CommandRunner {
         .where(eq(schema.seedVersion.version, SEED_VERSION))
         .limit(1);
 
-      if (existingSeed.length > 0) {
+      if (existingSeed.length > 0 && existingSeed[0]) {
         console.log(`✅ Seed version ${SEED_VERSION} already applied at ${existingSeed[0].appliedAt.toISOString()}`);
         console.log('   Skipping seeding. To re-seed, increment SEED_VERSION in seed.command.ts');
         return;

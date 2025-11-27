@@ -12,17 +12,15 @@ export class UserController {
         return implement(userContract.list).handler(async ({ input }) => {
             const result = await this.userService.getUsers(input);
             return {
-                users: result.users
-                    .filter((user): user is NonNullable<typeof user> => user !== null)
-                    .map((user) => ({
-                        id: user.id,
-                        name: user.name,
-                        email: user.email,
-                        emailVerified: user.emailVerified,
-                        image: user.image,
-                        createdAt: user.createdAt,
-                        updatedAt: user.updatedAt,
-                    })),
+                users: result.users.map((user) => ({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    emailVerified: user.emailVerified,
+                    image: user.image,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt,
+                })),
                 meta: result.meta,
             };
         });

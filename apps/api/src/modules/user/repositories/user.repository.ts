@@ -23,6 +23,18 @@ export class UserRepository {
         T extends {
             createdAt: Date;
             updatedAt: Date;
+        }
+    >(user: T): Omit<T, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string };
+    private transformUser<
+        T extends {
+            createdAt: Date;
+            updatedAt: Date;
+        } | null
+    >(user: T): (Omit<NonNullable<T>, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }) | null;
+    private transformUser<
+        T extends {
+            createdAt: Date;
+            updatedAt: Date;
         } | null
     >(user: T) {
         if (!user) {
@@ -41,7 +53,7 @@ export class UserRepository {
     private transformUsers<T extends {
       createdAt: Date,
       updatedAt: Date
-    }>(users: T[]) {
+    }>(users: T[]): (Omit<T, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string })[] {
         return users.map((user) => this.transformUser(user));
     }
 
@@ -62,7 +74,7 @@ export class UserRepository {
             })
             .returning();
 
-        return this.transformUser(newUser[0]);
+        return this.transformUser(newUser[0] ?? null);
     }
 
     /**
@@ -71,7 +83,7 @@ export class UserRepository {
     async findById(id: string) {
         const foundUser = await this.databaseService.db.select().from(user).where(eq(user.id, id)).limit(1);
 
-        return this.transformUser(foundUser[0] || null);
+        return this.transformUser(foundUser[0] ?? null);
     }
 
     /**
@@ -80,7 +92,7 @@ export class UserRepository {
     async findByEmail(email: string) {
         const foundUser = await this.databaseService.db.select().from(user).where(eq(user.email, email)).limit(1);
 
-        return this.transformUser(foundUser[0] || null);
+        return this.transformUser(foundUser[0] ?? null);
     }
 
     /**
@@ -148,7 +160,7 @@ export class UserRepository {
             ? await this.databaseService.db.select({ count: count() }).from(user).where(whereCondition)
             : await this.databaseService.db.select({ count: count() }).from(user);
 
-        const total = totalResult[0]?.count || 0;
+        const total = totalResult[0]?.count ?? 0;
 
         return {
             users: this.transformUsers(users),
@@ -177,7 +189,7 @@ export class UserRepository {
             .where(eq(user.id, id))
             .returning();
 
-        return this.transformUser(updatedUser[0] || null);
+        return this.transformUser(updatedUser[0] ?? null);
     }
 
     /**
@@ -186,7 +198,7 @@ export class UserRepository {
     async delete(id: string) {
         const deletedUser = await this.databaseService.db.delete(user).where(eq(user.id, id)).returning();
 
-        return this.transformUser(deletedUser[0] || null);
+        return this.transformUser(deletedUser[0] ?? null);
     }
 
     /**
@@ -204,6 +216,6 @@ export class UserRepository {
     async getCount(): Promise<number> {
         const result = await this.databaseService.db.select({ count: count() }).from(user);
 
-        return result[0]?.count || 0;
+        return result[0]?.count ?? 0;
     }
 }
