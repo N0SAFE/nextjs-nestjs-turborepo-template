@@ -40,7 +40,7 @@ function runDiagnostics(config: EntrypointConfig): void {
     console.log('════════════════════════════════════════════════════════')
 
     try {
-      execSync(`bun --bun ${config.diagnosePath} --watch`, { stdio: 'inherit' })
+      execSync(`bun --bun --watch ${config.diagnosePath}`, { stdio: 'inherit' })
     } catch (error) {
       console.error('⚠️  Diagnostics failed, continuing...')
     }
