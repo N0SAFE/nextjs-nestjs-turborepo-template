@@ -38,6 +38,8 @@ const apiUrl = new URL(envSchema.shape.API_URL.parse(process.env.API_URL));
 const noCheck = process.env.CHECK_ON_BUILD !== "true";
 
 const nextConfig: NextConfig = {
+  // Required for @serwist/turbopack PWA support
+  serverExternalPackages: ["esbuild-wasm"],
   async rewrites() {
     return [
       {
