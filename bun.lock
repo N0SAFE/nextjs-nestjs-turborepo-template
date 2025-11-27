@@ -16,6 +16,7 @@
         "@types/bun": "latest",
         "@vitest/coverage-v8": "catalog:testing",
         "concurrently": "catalog:dev",
+        "cross-env": "^10.1.0",
         "dotenv-cli": "catalog:dev",
         "nyc": "^17.1.0",
         "rimraf": "catalog:build",
