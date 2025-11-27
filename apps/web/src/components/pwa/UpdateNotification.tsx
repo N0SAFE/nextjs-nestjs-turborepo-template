@@ -15,7 +15,7 @@ export function UpdateNotification() {
     };
 
     // Listen for service worker updates
-    navigator.serviceWorker.ready.then((registration) => {
+    void navigator.serviceWorker.ready.then((registration) => {
       registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
         if (newWorker) {

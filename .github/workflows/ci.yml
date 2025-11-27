@@ -159,7 +159,7 @@ jobs:
                       bun-deps-${{ runner.os }}-
 
             - name: 🔍 Run ESLint
-              run: bun x turbo run lint --affected --concurrency 4
+              run: bun x turbo run lint --affected --concurrency=75%
 
     # Job 3: Build
     build:
@@ -240,7 +240,7 @@ jobs:
             - name: 🏗️ Build packages
               run: |
                   # Build shared packages first
-                  bun x turbo run compile --affected --concurrency 4
+                  bun x turbo run compile --affected --concurrency=75%
 
     # Job 4: Test
     test:

@@ -16,7 +16,9 @@ export default function OfflinePage() {
           network settings and try again.
         </p>
         <Button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            window.location.reload();
+          }}
           className="flex items-center gap-2"
         >
           <RefreshCw className="h-4 w-4" />

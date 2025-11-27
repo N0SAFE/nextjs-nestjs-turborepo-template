@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@repo/ui/components/shadcn/button";
 import { X, Download } from "lucide-react";
 
@@ -13,17 +13,18 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    // Check if already installed during initial render
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
+  });
 
   useEffect(() => {
-    // Check if already installed
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone
-    ) {
-      setIsInstalled(true);
-      return;
-    }
+    // If already installed, nothing to do
+    if (isInstalled) return;
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -47,24 +48,26 @@ export function InstallPrompt() {
       );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []);
+  }, [isInstalled]);
 
-  const handleInstall = async () => {
+  const handleInstall = useCallback(() => {
     if (!deferredPrompt) return;
 
-    try {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+    void (async () => {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
 
-      if (outcome === "accepted") {
-        setShowPrompt(false);
+        if (outcome === "accepted") {
+          setShowPrompt(false);
+        }
+      } catch (error) {
+        console.error("Installation failed:", error);
       }
-    } catch (error) {
-      console.error("Installation failed:", error);
-    }
 
-    setDeferredPrompt(null);
-  };
+      setDeferredPrompt(null);
+    })();
+  }, [deferredPrompt]);
 
   const handleDismiss = () => {
     setShowPrompt(false);

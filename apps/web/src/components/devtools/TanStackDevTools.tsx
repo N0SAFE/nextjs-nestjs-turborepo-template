@@ -704,7 +704,7 @@ const ConfiguredAuth = () => {
                                                 },
                                             }
                                         )
-                                        refetch()
+                                        void refetch()
                                         return
                                     }
 

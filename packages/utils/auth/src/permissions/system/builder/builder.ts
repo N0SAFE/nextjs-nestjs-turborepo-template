@@ -34,6 +34,7 @@ type ActionsForResource<
  * Creates { resource1: actions1, resource2: actions2, ... } from all role statements
  */
 type MergeDefaultStatements<TDefaultRoles extends Record<string, { statements: Record<string, readonly string[]> }>> = {
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- intersection ensures string key filtering
   [Resource in AllResourceNames<ExtractStatementUnion<TDefaultRoles>> & string]: 
     ActionsForResource<ExtractStatementUnion<TDefaultRoles>, Resource>
 };
@@ -161,6 +162,7 @@ export class PermissionBuilder<
 > extends BaseConfig<{
   statementsConfig: StatementsConfig<TStatement>;
   rolesConfig: RolesConfig<TRoles>;
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- intersection ensures compatibility with better-auth Statements
   statement: TStatement & Statements;
   ac: ReturnType<typeof createAccessControl<TStatement>>;
   roles: RolesAsRoleObjects<TRoles>;

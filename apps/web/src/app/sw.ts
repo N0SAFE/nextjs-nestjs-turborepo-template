@@ -7,7 +7,7 @@ import { defaultCache } from "@serwist/turbopack/worker";
 
 declare global {
   interface WorkerGlobalScope {
-    __SW_MANIFEST: Array<{ url: string; revision: string | null }>;
+    __SW_MANIFEST: { url: string; revision: string | null }[];
   }
 }
 
