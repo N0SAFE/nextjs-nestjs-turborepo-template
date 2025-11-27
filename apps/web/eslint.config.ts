@@ -9,6 +9,9 @@ export default defineConfig([
             // Ignore node_modules and external packages for type-checking
             "**/node_modules/**",
             "**/.next/**",
+            // Ignore auto-generated declarative-routing files
+            "src/routes/index.ts",
+            "src/routes/openapi.ts",
         ],
         rules: {
             // Disable this rule to prevent stack overflow on complex recursive types
