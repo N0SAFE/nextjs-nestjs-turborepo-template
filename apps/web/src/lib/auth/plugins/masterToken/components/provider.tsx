@@ -60,7 +60,7 @@ export const MasterTokenProvider: React.FC<React.PropsWithChildren<object>> = ({
     refetchRef.current = refetch
     
     useEffect(() => {
-        refetchRef.current()
+        void refetchRef.current()
     }, [enabled])
 
     return (

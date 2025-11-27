@@ -58,7 +58,7 @@ class AllActionsTypeTests {
   invalidAction3: z.infer<typeof schemas.allActions> = 'approve';
   // Note: z.infer<typeof schemas.allActions> = undefined doesn't error because `undefined` 
   // is assignable when the context is not strict. Keep as runtime validation test only.
-  invalidAction4: z.infer<typeof schemas.allActions> | undefined = undefined;
+  invalidAction4: z.infer<typeof schemas.allActions> = undefined;
 }
 
 // Test Class: Capsule Resource Actions Type Inference

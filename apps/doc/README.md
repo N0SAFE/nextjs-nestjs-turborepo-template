@@ -1,4 +1,4 @@
-# docs-v2
+# doc-test
 
 This is a Next.js application generated with
 [Create Fumadocs](https://github.com/fuma-nama/fumadocs).

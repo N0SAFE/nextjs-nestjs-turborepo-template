@@ -150,6 +150,7 @@ export type KeysToCamel<T> = {
 }
 
 export type TupleIndices<A extends unknown[]> = A extends [unknown, ...infer T]
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
     ? TupleIndices<T> | T['length']
     : never
 

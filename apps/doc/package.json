@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
+    "build": "next build --turbopack",
+    "compile": "next build --experimental-build-mode=compile --turbopack --debug-prerender",
     "dev": "next dev -p 3020",
     "start": "next start -p 3020",
     "postinstall": "fumadocs-mdx",
@@ -12,7 +12,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/env": "*",
     "fumadocs-core": "catalog:doc",
     "fumadocs-mdx": "catalog:doc",
     "fumadocs-ui": "catalog:doc",
@@ -22,17 +21,17 @@
     "react-dom": "catalog:react"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "catalog:linting",
     "@repo-configs/eslint": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
-    "@types/node": "^24.9.2",
+    "@types/node": "catalog:build",
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
-    "eslint": "catalog:linting",
-    "eslint-config-next": "catalog:next",
     "postcss": "catalog:styling",
     "tailwindcss": "catalog:styling",
-    "typescript": "catalog:build"
+    "typescript": "catalog:build",
+    "eslint-config-next": "catalog:next",
+    "eslint": "catalog:linting",
+    "@eslint/eslintrc": "catalog:linting"
   }
 }
