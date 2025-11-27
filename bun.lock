@@ -296,10 +296,7 @@
       "name": "@repo-configs/prettier",
       "version": "1.0.0",
       "devDependencies": {
-        "@repo-configs/eslint": "*",
-        "@repo-configs/typescript": "*",
         "@repo-configs/vitest": "*",
-        "eslint": "catalog:linting",
         "prettier": "catalog:linting",
         "prettier-plugin-tailwindcss": "catalog:linting",
         "vitest": "catalog:testing",
@@ -309,10 +306,8 @@
       "name": "@repo-configs/tailwind",
       "version": "0.0.0",
       "devDependencies": {
-        "@repo-configs/eslint": "*",
         "@repo-configs/typescript": "*",
         "@repo-configs/vitest": "*",
-        "eslint": "catalog:linting",
         "tailwind-variants": "catalog:styling",
         "tailwindcss": "catalog:styling",
         "tailwindcss-animate": "catalog:styling",
