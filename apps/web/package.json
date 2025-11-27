@@ -59,7 +59,7 @@
     "clsx": "catalog:styling",
     "concurrently": "catalog:dev",
     "cross-env": "catalog:dev",
-    "esbuild-wasm": "^0.25.0",
+    "esbuild-wasm": "^0.27.0",
     "lodash.snakecase": "catalog:utils",
     "lucide-react": "catalog:ui",
     "next": "catalog:next",

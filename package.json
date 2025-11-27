@@ -157,7 +157,7 @@
                 "@orpc/zod": "1.11.3"
             },
             "api:nest": {
-                "@nestjs/cli": "^11.0.10",
+                "@nestjs/cli": "^11.0.13",
                 "@nestjs/schematics": "^11.0.9",
                 "@nestjs/testing": "^11.1.8",
                 "@nestjs/core": "^11.1.8",
