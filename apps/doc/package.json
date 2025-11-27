@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "compile": "bun x cross-env COMPILE_MODE=true bun run build",
+    "build": "next build --turbopack",
+    "compile": "next build --experimental-build-mode=compile --turbopack --debug-prerender",
     "dev": "next dev -p 3020",
     "start": "next start -p 3020",
     "postinstall": "fumadocs-mdx",

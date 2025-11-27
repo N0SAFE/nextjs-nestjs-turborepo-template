@@ -88,7 +88,7 @@
             "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*", "*.config.*", "vitest.config.*", "vitest.setup.*"]
         },
         "lint": {
-            "dependsOn": ["@repo-configs/eslint#build"],
+            "dependsOn": ["@repo-configs/eslint#build", "doc#compile"],
             "inputs": ["src/**", "*.config.*", "package.json"]
         },
         "prettify": {
