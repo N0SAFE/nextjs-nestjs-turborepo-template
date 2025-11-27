@@ -114,6 +114,33 @@
         "typescript": "catalog:build",
       },
     },
+    "apps/doc-test": {
+      "name": "doc-test",
+      "version": "0.0.0",
+      "dependencies": {
+        "fumadocs-core": "catalog:doc",
+        "fumadocs-mdx": "catalog:doc",
+        "fumadocs-ui": "catalog:doc",
+        "lucide-react": "catalog:ui",
+        "next": "catalog:next",
+        "react": "catalog:react",
+        "react-dom": "catalog:react",
+      },
+      "devDependencies": {
+        "@eslint/eslintrc": "catalog:linting",
+        "@repo-configs/eslint": "*",
+        "@tailwindcss/postcss": "catalog:styling",
+        "@types/mdx": "catalog:doc",
+        "@types/node": "catalog:build",
+        "@types/react": "catalog:react",
+        "@types/react-dom": "catalog:react",
+        "eslint": "catalog:linting",
+        "eslint-config-next": "catalog:next",
+        "postcss": "catalog:styling",
+        "tailwindcss": "catalog:styling",
+        "typescript": "catalog:build",
+      },
+    },
     "apps/web": {
       "name": "web",
       "version": "0.1.0",
@@ -2260,6 +2287,8 @@
     "dir-glob": ["dir-glob@3.0.1", "", { "dependencies": { "path-type": "^4.0.0" } }, "sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA=="],
 
     "doc": ["doc@workspace:apps/doc"],
+
+    "doc-test": ["doc-test@workspace:apps/doc-test"],
 
     "doctrine": ["doctrine@2.1.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw=="],
 

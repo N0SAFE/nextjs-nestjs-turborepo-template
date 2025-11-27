@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@repo/nextjs-devtool"],
   cacheComponents: true,
-  reactCompiler: false, // disable because of https://github.com/vercel/next.js/issues/85234
+  reactCompiler: true, // disable because of https://github.com/vercel/next.js/issues/85234
   images: {
     dangerouslyAllowSVG: true,
     remotePatterns: [
