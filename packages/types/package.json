@@ -20,7 +20,7 @@
     },
     "devDependencies": {
         "eslint": "catalog:linting",
-        "@eslint/eslintrc": "^3.1.0",
+        "@eslint/eslintrc": "^3.3.3",
         "@eslint/js": "^9.8.0",
         "@repo-configs/eslint": "*",
         "@repo-configs/prettier": "*",

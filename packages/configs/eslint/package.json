@@ -40,7 +40,7 @@
         "type-check": "tsc --noEmit"
     },
     "devDependencies": {
-        "@darraghor/eslint-plugin-nestjs-typed": "^6.9.3",
+        "@darraghor/eslint-plugin-nestjs-typed": "^6.9.14",
         "@eslint/compat": "^2.0.0",
         "@eslint/js": "^9.4.0",
         "@repo-configs/vitest": "*",

@@ -17,6 +17,19 @@ import { APP_GUARD } from "@nestjs/core";
 import { AuthGuard } from "./core/modules/auth/guards/auth.guard";
 import { RoleGuard } from "./core/modules/auth/guards/role.guard";
 import { REQUEST } from '@nestjs/core'
+import {
+  experimental_SmartCoercionPlugin as SmartCoercionPlugin
+} from '@orpc/json-schema'
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
+
+declare module '@orpc/nest' {
+  /**
+   * Extend oRPC global context to make it type-safe inside your handlers/middlewares
+   */
+  interface ORPCGlobalContext {
+    request: Request
+  }
+}
 
 @Module({
   imports: [
@@ -38,6 +51,13 @@ import { REQUEST } from '@nestjs/core'
               "oRPC Error:",
               error
             );
+          })
+        ],
+        plugins: [
+          new SmartCoercionPlugin({
+            schemaConverters: [
+              new ZodToJsonSchemaConverter()
+            ]
           })
         ],
         context: { request },

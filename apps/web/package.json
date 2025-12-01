@@ -80,7 +80,7 @@
   },
   "devDependencies": {
     "@asteasolutions/zod-to-openapi": "catalog:utils",
-    "@eslint/eslintrc": "^3",
+    "@eslint/eslintrc": "^3.3.3",
     "@repo-configs/eslint": "*",
     "@repo-configs/prettier": "*",
     "@repo-configs/tailwind": "*",
