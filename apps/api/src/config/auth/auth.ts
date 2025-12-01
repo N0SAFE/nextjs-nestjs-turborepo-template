@@ -14,5 +14,6 @@ export const createBetterAuth = <TSchema extends Record<string, unknown>>(
         TRUSTED_ORIGINS: envService.get('TRUSTED_ORIGINS'),
         NEXT_PUBLIC_APP_URL: envService.get('NEXT_PUBLIC_APP_URL'),
         APP_URL: envService.get('APP_URL'),
+        AUTH_BASE_DOMAIN: envService.get('AUTH_BASE_DOMAIN'),
     }: envService);
 };

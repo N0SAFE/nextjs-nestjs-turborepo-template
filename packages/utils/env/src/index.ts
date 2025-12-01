@@ -40,6 +40,7 @@ export const apiEnvSchema = zod.object({
     // Authentication
     AUTH_SECRET: zod.string().min(1, 'AUTH_SECRET is required'),
     BETTER_AUTH_SECRET: zod.string().min(1, 'BETTER_AUTH_SECRET is required'),
+    AUTH_BASE_DOMAIN: zod.string().optional(),
     DEV_AUTH_KEY: zod.string().optional(),
     TRUSTED_ORIGINS: zod.string().optional(),
     
@@ -75,6 +76,7 @@ export const webEnvSchema = zod.object({
     // Authentication
     AUTH_SECRET: zod.string().min(1, 'AUTH_SECRET is required'),
     BETTER_AUTH_SECRET: zod.string().min(1, 'BETTER_AUTH_SECRET is required'),
+    AUTH_BASE_DOMAIN: zod.string().optional(),
     DEV_AUTH_KEY: zod.string().optional(),
     NEXT_PUBLIC_SHOW_AUTH_LOGS: zod.coerce.boolean().optional().default(false),
     

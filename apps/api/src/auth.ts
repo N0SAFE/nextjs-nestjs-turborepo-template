@@ -11,4 +11,5 @@ export const auth = createBetterAuth(null, {
   APP_URL: process.env.APP_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   TRUSTED_ORIGINS: process.env.TRUSTED_ORIGINS,
+  AUTH_BASE_DOMAIN: process.env.AUTH_BASE_DOMAIN,
 }).auth;
