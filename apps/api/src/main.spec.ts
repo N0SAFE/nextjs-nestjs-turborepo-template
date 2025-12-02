@@ -1,8 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { normalizeUrl, buildAllowedOrigins, isLocalhostOrigin } from './core/utils/cors.utils';
 
 describe('CORS URL Normalization', () => {
-  const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
-
   it('should remove trailing slash from URLs', () => {
     expect(normalizeUrl('http://localhost:3000/')).toBe('http://localhost:3000');
     expect(normalizeUrl('http://localhost:3003/')).toBe('http://localhost:3003');
@@ -23,7 +22,6 @@ describe('CORS URL Normalization', () => {
 describe('CORS Origin Matching Logic', () => {
   it('should match normalized origins regardless of trailing slash', () => {
     const allowedOrigins = ['http://localhost:3000', 'http://localhost:3003'];
-    const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
 
     // Simulate incoming origins with trailing slashes
     const origin1 = 'http://localhost:3000/';
@@ -34,50 +32,23 @@ describe('CORS Origin Matching Logic', () => {
   });
 
   it('should handle localhost variations in development', () => {
-    const localhostPattern = /^https?:\/\/localhost(:\d+)?$/;
-    const ipPattern = /^https?:\/\/127\.0\.0\.1(:\d+)?$/;
-
     // Test various localhost formats
-    expect(localhostPattern.test('http://localhost:3000')).toBe(true);
-    expect(localhostPattern.test('http://localhost:8055')).toBe(true);
-    expect(localhostPattern.test('https://localhost:3000')).toBe(true);
-    expect(localhostPattern.test('http://localhost')).toBe(true);
+    expect(isLocalhostOrigin('http://localhost:3000')).toBe(true);
+    expect(isLocalhostOrigin('http://localhost:8055')).toBe(true);
+    expect(isLocalhostOrigin('https://localhost:3000')).toBe(true);
+    expect(isLocalhostOrigin('http://localhost')).toBe(true);
 
     // Test IP address formats
-    expect(ipPattern.test('http://127.0.0.1:3000')).toBe(true);
-    expect(ipPattern.test('http://127.0.0.1')).toBe(true);
-    expect(ipPattern.test('https://127.0.0.1:8055')).toBe(true);
+    expect(isLocalhostOrigin('http://127.0.0.1:3000')).toBe(true);
+    expect(isLocalhostOrigin('http://127.0.0.1')).toBe(true);
+    expect(isLocalhostOrigin('https://127.0.0.1:8055')).toBe(true);
 
     // Test non-localhost domains should not match
-    expect(localhostPattern.test('http://example.com:3000')).toBe(false);
-    expect(ipPattern.test('http://192.168.1.1:3000')).toBe(false);
+    expect(isLocalhostOrigin('http://example.com:3000')).toBe(false);
+    expect(isLocalhostOrigin('http://192.168.1.1:3000')).toBe(false);
   });
 
   it('should build allowed origins from environment variables', () => {
-    const buildAllowedOrigins = (env: Record<string, string | undefined>) => {
-      const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
-      const allowedOrigins: string[] = [];
-
-      if (env.NEXT_PUBLIC_APP_URL) {
-        allowedOrigins.push(normalizeUrl(env.NEXT_PUBLIC_APP_URL));
-      }
-
-      if (env.APP_URL && env.APP_URL !== env.NEXT_PUBLIC_APP_URL) {
-        allowedOrigins.push(normalizeUrl(env.APP_URL));
-      }
-
-      if (env.TRUSTED_ORIGINS) {
-        env.TRUSTED_ORIGINS.split(',').forEach(origin => {
-          const trimmed = origin.trim();
-          if (trimmed) {
-            allowedOrigins.push(normalizeUrl(trimmed));
-          }
-        });
-      }
-
-      return allowedOrigins.length > 0 ? allowedOrigins : ['http://localhost:3000'];
-    };
-
     // Test with trailing slashes
     const env1 = {
       NEXT_PUBLIC_APP_URL: 'http://localhost:3003/',
