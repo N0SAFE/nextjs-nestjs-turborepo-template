@@ -1,4 +1,45 @@
 import { schemas } from "./config";
+import type { BetterAuthPlugin } from 'better-auth';
+
+/**
+ * Creates a common permission helper function that wraps Better Auth plugins with permission checks
+ * @returns A function that takes a plugin and permission check function and returns a wrapped plugin
+ */
+export function createCommonPermissionHelper() {
+  return function<Session>(
+    plugin: BetterAuthPlugin,
+    checkPermission: (session: Session | null | undefined) => boolean | Promise<boolean>
+  ): BetterAuthPlugin {
+    // Clone the plugin to avoid mutating the original
+    const wrappedPlugin: BetterAuthPlugin = { ...plugin };
+
+    // If plugin has endpoints, wrap each endpoint's handler with permission check
+    if (plugin.endpoints) {
+      wrappedPlugin.endpoints = Object.entries(plugin.endpoints).reduce((acc, [key, endpoint]) => {
+        acc[key] = {
+          ...endpoint,
+          handler: async (ctx: any) => {
+            // Extract session from context
+            const session = ctx.session;
+            
+            // Check permission
+            const hasPermission = await Promise.resolve(checkPermission(session));
+            
+            if (!hasPermission) {
+              throw new Error('Permission denied');
+            }
+            
+            // Call original handler if permission check passes
+            return endpoint.handler(ctx);
+          },
+        };
+        return acc;
+      }, {} as any);
+    }
+
+    return wrappedPlugin;
+  };
+}
 
 /**
  * Common permission definitions that can be reused across the application

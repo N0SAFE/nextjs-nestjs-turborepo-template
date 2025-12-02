@@ -5,6 +5,7 @@ import { generateSpec } from "./openapi";
 import { AuthService } from "./core/modules/auth/services/auth.service";
 import { isErrorResult, merge } from "openapi-merge";
 import type {Express} from 'express';
+import { buildAllowedOrigins, normalizeUrl, isLocalhostOrigin } from "./core/utils/cors.utils";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -14,10 +15,39 @@ async function bootstrap() {
 
   const authService = app.get<AuthService>(AuthService);
 
-  // Enable CORS for Next.js frontend
+  // Build list of allowed origins for CORS
+  const allowedOrigins = buildAllowedOrigins(process.env);
+
+  // Enable CORS with flexible origin matching
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Normalize the incoming origin
+      const normalizedOrigin = normalizeUrl(origin);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+      
+      // In development, be more permissive with localhost
+      if (process.env.NODE_ENV !== 'production' && isLocalhostOrigin(normalizedOrigin)) {
+        return callback(null, true);
+      }
+      
+      // Reject the origin
+      console.warn(`CORS: Rejected origin: ${origin}`);
+      console.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   app.useLogger(["log", "error", "warn", "debug", "verbose"]);
