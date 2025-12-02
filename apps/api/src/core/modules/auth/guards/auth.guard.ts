@@ -61,11 +61,13 @@ export class AuthGuard implements CanActivate {
 		const request = getRequestFromContext(context);
 		
 		const session = await this.options.auth.api.getSession({
-			headers: fromNodeHeaders(request.headers as unknown as IncomingHttpHeaders),
+			headers: fromNodeHeaders(
+				(request.headers || (request as any)?.handshake?.headers || []) as unknown as IncomingHttpHeaders
+			),
 		});
 
 		request.session = session;
-		request.user = session?.user; // useful for observability tools like Sentry
+		request.user = session?.user ?? null; // useful for observability tools like Sentry
 
 		const isPublic = this.reflector.getAllAndOverride<boolean>("PUBLIC", [
 			context.getHandler(),

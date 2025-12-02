@@ -134,7 +134,7 @@ describe('AuthGuard', () => {
 
       await expect(guard.canActivate(mockContext)).rejects.toThrow('Unauthorized');
       expect(mockRequest.session).toBeNull();
-      expect(mockRequest.user).toBeUndefined();
+      expect(mockRequest.user).toBeNull();
     });
 
     it('should set user to null when session exists but no user', async () => {
@@ -151,7 +151,7 @@ describe('AuthGuard', () => {
 
       expect(result).toBe(true);
       expect(mockRequest.session).toBe(sessionWithoutUser);
-      expect(mockRequest.user).toBeUndefined();
+      expect(mockRequest.user).toBeNull();
     });
 
     it('should handle auth session check errors', async () => {
