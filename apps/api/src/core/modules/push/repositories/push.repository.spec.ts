@@ -66,10 +66,9 @@ describe('PushRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PushRepository,
         {
-          provide: DatabaseService,
-          useValue: mockDatabaseService,
+          provide: PushRepository,
+          useFactory: () => new PushRepository(mockDatabaseService),
         },
       ],
     }).compile();
