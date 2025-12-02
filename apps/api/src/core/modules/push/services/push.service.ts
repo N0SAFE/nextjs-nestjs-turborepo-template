@@ -19,11 +19,11 @@ export interface NotificationPayload {
   badge?: string;
   image?: string;
   data?: any;
-  actions?: Array<{
+  actions?: {
     action: string;
     title: string;
     icon?: string;
-  }>;
+  }[];
   tag?: string;
   url?: string;
 }
@@ -65,10 +65,8 @@ export class PushService {
   async getUserPublicKey(userId: string): Promise<string> {
     let userKeys = await this.pushRepository.findVapidKeysByUserId(userId);
 
-    if (!userKeys) {
-      // Auto-generate keys if they don't exist
-      userKeys = await this.generateUserVapidKeys(userId);
-    }
+    // Auto-generate keys if they don't exist
+    userKeys ??= await this.generateUserVapidKeys(userId);
 
     return userKeys.publicKey;
   }
@@ -112,7 +110,7 @@ export class PushService {
   async unsubscribe(userId: string, endpoint: string): Promise<boolean> {
     const subscription = await this.pushRepository.findSubscriptionByEndpoint(endpoint);
 
-    if (!subscription || subscription.userId !== userId) {
+    if (subscription?.userId !== userId) {
       throw new NotFoundException("Subscription not found");
     }
 
@@ -158,7 +156,7 @@ export class PushService {
     const success = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    this.logger.log(`Sent notification to user ${userId}: ${success}/${subscriptions.length} successful`);
+    this.logger.log(`Sent notification to user ${userId}: ${String(success)}/${String(subscriptions.length)} successful`);
 
     return { success, failed, total: subscriptions.length };
   }
@@ -192,6 +190,10 @@ export class PushService {
 
       this.logger.debug(`Notification sent to subscription ${subscription.id}`);
     } catch (error: any) {
+      if (!(error instanceof webpush.WebPushError)) {
+        throw error;
+      }
+      
       this.logger.error(`Error sending notification to subscription ${subscription.id}: ${error.message}`);
 
       // Handle expired or invalid subscriptions
@@ -210,14 +212,14 @@ export class PushService {
   async getUserStats(userId: string): Promise<{
     totalSubscriptions: number;
     activeSubscriptions: number;
-    devices: Array<{ deviceName: string; lastUsed: Date }>;
+    devices: { deviceName: string; lastUsed: Date }[];
   }> {
     const allSubscriptions = await this.pushRepository.findAllSubscriptionsByUserId(userId);
     const activeSubscriptions = allSubscriptions.filter((s) => s.isActive);
 
     const devices = activeSubscriptions.map((s) => ({
-      deviceName: s.deviceName || "Unknown Device",
-      lastUsed: s.lastUsedAt || s.createdAt!,
+      deviceName: s.deviceName ?? "Unknown Device",
+      lastUsed: s.lastUsedAt ?? s.createdAt ?? new Date(),
     }));
 
     return {

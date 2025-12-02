@@ -2,17 +2,17 @@ import { Controller } from "@nestjs/common";
 import { Implement, implement } from "@orpc/nest";
 import { pushContract } from "@repo/api-contracts";
 import { PushService } from "../services/push.service";
+import { Session as SessionDecorator } from "../../auth/decorators/decorators";
+import type { Session } from "@repo/auth";
 
 @Controller()
 export class PushController {
   constructor(private readonly pushService: PushService) {}
 
   @Implement(pushContract.getPublicKey)
-  getPublicKey() {
-    return implement(pushContract.getPublicKey).handler(async ({ context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
+  getPublicKey(@SessionDecorator() session: Session) {
+    return implement(pushContract.getPublicKey).handler(async () => {
+      const userId = session.user.id
 
       const publicKey = await this.pushService.getUserPublicKey(userId);
 
@@ -23,12 +23,9 @@ export class PushController {
   }
 
   @Implement(pushContract.subscribe)
-  subscribe() {
-    return implement(pushContract.subscribe).handler(async ({ input, context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
-
+  subscribe(@SessionDecorator() session: Session) {
+    return implement(pushContract.subscribe).handler(async ({ input }) => {
+      const userId = session.user.id;
       const subscription = await this.pushService.subscribe(userId, {
         endpoint: input.endpoint,
         keys: input.keys,
@@ -39,18 +36,15 @@ export class PushController {
       return {
         id: subscription.id,
         deviceName: subscription.deviceName,
-        createdAt: subscription.createdAt!,
+        createdAt: subscription.createdAt ?? new Date(),
       };
     });
   }
 
   @Implement(pushContract.unsubscribe)
-  unsubscribe() {
-    return implement(pushContract.unsubscribe).handler(async ({ input, context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
-
+  unsubscribe(@SessionDecorator() session: Session) {
+    return implement(pushContract.unsubscribe).handler(async ({ input }) => {
+      const userId = session.user.id;
       const success = await this.pushService.unsubscribe(userId, input.endpoint);
 
       return {
@@ -60,12 +54,9 @@ export class PushController {
   }
 
   @Implement(pushContract.getSubscriptions)
-  getSubscriptions() {
-    return implement(pushContract.getSubscriptions).handler(async ({ context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
-
+  getSubscriptions(@SessionDecorator() session: Session) {
+    return implement(pushContract.getSubscriptions).handler(async () => {
+      const userId = session.user.id;
       const subscriptions = await this.pushService.getUserSubscriptions(userId);
 
       return {
@@ -75,7 +66,7 @@ export class PushController {
           deviceName: sub.deviceName,
           userAgent: sub.userAgent,
           isActive: sub.isActive ?? true,
-          createdAt: sub.createdAt!,
+          createdAt: sub.createdAt ?? new Date(),
           lastUsedAt: sub.lastUsedAt,
         })),
       };
@@ -83,12 +74,9 @@ export class PushController {
   }
 
   @Implement(pushContract.sendTestNotification)
-  sendTestNotification() {
-    return implement(pushContract.sendTestNotification).handler(async ({ context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
-
+  sendTestNotification(@SessionDecorator() session: Session) {
+    return implement(pushContract.sendTestNotification).handler(async () => {
+      const userId = session.user.id;
       const result = await this.pushService.sendToUser(userId, {
         title: "Test Notification",
         body: "This is a test notification from your app!",
@@ -105,12 +93,9 @@ export class PushController {
   }
 
   @Implement(pushContract.getStats)
-  getStats() {
-    return implement(pushContract.getStats).handler(async ({ context }) => {
-      // TODO: Get userId from auth context
-      // For now using hardcoded userId - integrate with Better Auth session
-      const userId = context.userId || "temp-user-id";
-
+  getStats(@SessionDecorator() session: Session) {
+    return implement(pushContract.getStats).handler(async () => {
+      const userId = session.user.id;
       const stats = await this.pushService.getUserStats(userId);
 
       return {

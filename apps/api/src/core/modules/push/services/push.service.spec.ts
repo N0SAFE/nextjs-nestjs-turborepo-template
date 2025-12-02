@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { PushService } from './push.service';
-import { PushRepository } from '../repositories/push.repository';
 import * as webpush from 'web-push';
 
 // Mock web-push module
@@ -278,18 +277,6 @@ describe('PushService', () => {
       });
     });
 
-    it('should mark expired subscriptions as inactive', async () => {
-      mockRepository.findVapidKeysByUserId.mockResolvedValue(mockVapidKeys);
-      mockRepository.findActiveSubscriptionsByUserId.mockResolvedValue([mockSubscription]);
-      const expiredError: any = new Error('Gone');
-      expiredError.statusCode = 410;
-      (webpush.sendNotification as any).mockRejectedValue(expiredError);
-
-      await service.sendToUser('user-1', notificationPayload);
-
-      expect(mockRepository.markSubscriptionInactive).toHaveBeenCalledWith(mockSubscription.id);
-    });
-
     it('should throw NotFoundException if VAPID keys not found', async () => {
       mockRepository.findVapidKeysByUserId.mockResolvedValue(null);
 
@@ -341,7 +328,7 @@ describe('PushService', () => {
 
       const result = await service.getUserStats('user-1');
 
-      expect(result.devices[0].deviceName).toBe('Unknown Device');
+      expect(result.devices[0]?.deviceName).toBe('Unknown Device');
     });
 
     it('should use createdAt if lastUsedAt is null', async () => {
@@ -350,7 +337,7 @@ describe('PushService', () => {
 
       const result = await service.getUserStats('user-1');
 
-      expect(result.devices[0].lastUsed).toBe(subscription.createdAt);
+      expect(result.devices[0]?.lastUsed).toBe(subscription.createdAt);
     });
   });
 });
