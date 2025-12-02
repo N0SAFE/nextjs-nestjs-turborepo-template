@@ -5,6 +5,7 @@ import { generateSpec } from "./openapi";
 import { AuthService } from "./core/modules/auth/services/auth.service";
 import { isErrorResult, merge } from "openapi-merge";
 import type {Express} from 'express';
+import { buildAllowedOrigins, normalizeUrl, isLocalhostOrigin } from "./core/utils/cors.utils";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -14,39 +15,8 @@ async function bootstrap() {
 
   const authService = app.get<AuthService>(AuthService);
 
-  // Normalize URL by removing trailing slash
-  const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
-
   // Build list of allowed origins for CORS
-  const allowedOrigins: string[] = [];
-  
-  // Add configured app URL (public facing URL)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (appUrl) {
-    allowedOrigins.push(normalizeUrl(appUrl));
-  }
-  
-  // Add internal app URL (Docker network URL) if different
-  const internalAppUrl = process.env.APP_URL;
-  if (internalAppUrl && internalAppUrl !== appUrl) {
-    allowedOrigins.push(normalizeUrl(internalAppUrl));
-  }
-  
-  // Add additional trusted origins
-  const trustedOrigins = process.env.TRUSTED_ORIGINS;
-  if (trustedOrigins) {
-    trustedOrigins.split(',').forEach(origin => {
-      const trimmed = origin.trim();
-      if (trimmed) {
-        allowedOrigins.push(normalizeUrl(trimmed));
-      }
-    });
-  }
-  
-  // Fallback to localhost:3000 if no origins configured
-  if (allowedOrigins.length === 0) {
-    allowedOrigins.push('http://localhost:3000');
-  }
+  const allowedOrigins = buildAllowedOrigins(process.env);
 
   // Enable CORS with flexible origin matching
   app.enableCors({
@@ -65,12 +35,8 @@ async function bootstrap() {
       }
       
       // In development, be more permissive with localhost
-      if (process.env.NODE_ENV !== 'production') {
-        const localhostPattern = /^https?:\/\/localhost(:\d+)?$/;
-        const ipPattern = /^https?:\/\/127\.0\.0\.1(:\d+)?$/;
-        if (localhostPattern.test(normalizedOrigin) || ipPattern.test(normalizedOrigin)) {
-          return callback(null, true);
-        }
+      if (process.env.NODE_ENV !== 'production' && isLocalhostOrigin(normalizedOrigin)) {
+        return callback(null, true);
       }
       
       // Reject the origin
