@@ -14,10 +14,74 @@ async function bootstrap() {
 
   const authService = app.get<AuthService>(AuthService);
 
-  // Enable CORS for Next.js frontend
+  // Normalize URL by removing trailing slash
+  const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
+
+  // Build list of allowed origins for CORS
+  const allowedOrigins: string[] = [];
+  
+  // Add configured app URL (public facing URL)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl) {
+    allowedOrigins.push(normalizeUrl(appUrl));
+  }
+  
+  // Add internal app URL (Docker network URL) if different
+  const internalAppUrl = process.env.APP_URL;
+  if (internalAppUrl && internalAppUrl !== appUrl) {
+    allowedOrigins.push(normalizeUrl(internalAppUrl));
+  }
+  
+  // Add additional trusted origins
+  const trustedOrigins = process.env.TRUSTED_ORIGINS;
+  if (trustedOrigins) {
+    trustedOrigins.split(',').forEach(origin => {
+      const trimmed = origin.trim();
+      if (trimmed) {
+        allowedOrigins.push(normalizeUrl(trimmed));
+      }
+    });
+  }
+  
+  // Fallback to localhost:3000 if no origins configured
+  if (allowedOrigins.length === 0) {
+    allowedOrigins.push('http://localhost:3000');
+  }
+
+  // Enable CORS with flexible origin matching
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Normalize the incoming origin
+      const normalizedOrigin = normalizeUrl(origin);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      }
+      
+      // In development, be more permissive with localhost
+      if (process.env.NODE_ENV !== 'production') {
+        const localhostPattern = /^https?:\/\/localhost(:\d+)?$/;
+        const ipPattern = /^https?:\/\/127\.0\.0\.1(:\d+)?$/;
+        if (localhostPattern.test(normalizedOrigin) || ipPattern.test(normalizedOrigin)) {
+          return callback(null, true);
+        }
+      }
+      
+      // Reject the origin
+      console.warn(`CORS: Rejected origin: ${origin}`);
+      console.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   app.useLogger(["log", "error", "warn", "debug", "verbose"]);
