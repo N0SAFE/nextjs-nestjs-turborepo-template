@@ -25,7 +25,8 @@
         "CORS_ORIGIN",
         "LOG_LEVEL",
         "CHOKIDAR_USEPOLLING",
-        "TRUSTED_ORIGINS"
+        "TRUSTED_ORIGINS",
+        "AUTH_BASE_DOMAIN"
     ],
     "tasks": {
         "dev": {
