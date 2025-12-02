@@ -52,6 +52,7 @@ You can still jump directly to any topic below.
 ## Guides (Do this)
 
 - Testing: ./TESTING.md
+- CORS configuration and troubleshooting: ./guides/CORS-CONFIGURATION.md
 - Production deployment: ./PRODUCTION-DEPLOYMENT.md
 - Render deployment: ./RENDER-DEPLOYMENT.md
 - Docker build strategies: ./DOCKER-BUILD-STRATEGIES.md
