@@ -67,6 +67,7 @@
     "pg": "catalog:api:nest",
     "reflect-metadata": "catalog:api:nest",
     "rxjs": "catalog:api:nest",
+    "web-push": "^3.6.7",
     "zod": "catalog:utils"
   },
   "devDependencies": {
@@ -81,6 +82,7 @@
     "@types/express": "catalog:api:nest",
     "@types/node": "catalog:build",
     "@types/pg": "^8.15.6",
+    "@types/web-push": "^3.6.4",
     "source-map-support": "catalog:api:nest",
     "ts-loader": "catalog:api:nest",
     "ts-node": "catalog:api:nest",
