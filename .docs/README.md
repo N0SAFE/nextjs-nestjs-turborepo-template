@@ -51,6 +51,7 @@ You can still jump directly to any topic below.
 
 ## Guides (Do this)
 
+- Pull Request Template: ./guides/PULL-REQUEST-TEMPLATE-GUIDE.md
 - Testing: ./TESTING.md
 - Production deployment: ./PRODUCTION-DEPLOYMENT.md
 - Render deployment: ./RENDER-DEPLOYMENT.md
