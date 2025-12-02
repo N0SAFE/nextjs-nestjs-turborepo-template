@@ -58,6 +58,7 @@ You can still jump directly to any topic below.
 - Docker build strategies: ./guides/DOCKER-BUILD-STRATEGIES.md
 - Memory optimization (Docker): ./guides/MEMORY-OPTIMIZATION.md
 - Project isolation (multiple projects on one machine): ./planning/PROJECT-ISOLATION.md
+- CORS configuration and troubleshooting: ./guides/CORS-CONFIGURATION.md
 
 ## Reference
 
