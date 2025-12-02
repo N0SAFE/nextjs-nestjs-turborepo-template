@@ -51,7 +51,14 @@ You can still jump directly to any topic below.
 
 ## Guides (Do this)
 
-- Testing: ./TESTING.md
+- Pull Request Template: ./guides/PULL-REQUEST-TEMPLATE-GUIDE.md
+- Testing: ./features/TESTING.md
+- Production deployment: ./guides/PRODUCTION-DEPLOYMENT.md
+- Render deployment: ./guides/RENDER-DEPLOYMENT.md
+- Docker build strategies: ./guides/DOCKER-BUILD-STRATEGIES.md
+- Memory optimization (Docker): ./guides/MEMORY-OPTIMIZATION.md
+- Project isolation (multiple projects on one machine): ./planning/PROJECT-ISOLATION.md
+- CORS configuration and troubleshooting: ./guides/CORS-CONFIGURATION.md
 - Production deployment: ./PRODUCTION-DEPLOYMENT.md
 - Render deployment: ./RENDER-DEPLOYMENT.md
 - Docker build strategies: ./DOCKER-BUILD-STRATEGIES.md
