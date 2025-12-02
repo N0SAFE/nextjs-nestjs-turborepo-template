@@ -24,7 +24,7 @@ Which parts of the codebase does this PR affect?
 - [ ] Web App (`apps/web`)
 - [ ] API Server (`apps/api`)
 - [ ] UI Components (`packages/ui`)
-- [ ] API Contracts (`packages/api-contracts`)
+- [ ] API Contracts (`packages/contracts`)
 - [ ] Shared Types (`packages/types`)
 - [ ] Utilities (`packages/utils`)
 - [ ] Other Package: ___________
@@ -58,7 +58,7 @@ Confirm compliance with project architecture patterns:
 - [ ] N/A - No architecture patterns affected
 
 ### API & Type Safety
-- [ ] ORPC contracts updated in `packages/api-contracts/` (if applicable)
+- [ ] ORPC contracts updated in `packages/contracts/` (if applicable)
 - [ ] Custom React Query hooks created for ORPC endpoints (if applicable)
 - [ ] Declarative routes regenerated with `bun run web -- dr:build` (if routes changed)
 - [ ] End-to-end type safety verified

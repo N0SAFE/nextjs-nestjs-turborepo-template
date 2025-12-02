@@ -26,7 +26,7 @@ This project uses an enhanced pull request template specifically designed for ou
 ### 2. Affected Areas (🎯)
 Identify which parts of the monorepo are affected:
 - **Apps**: `apps/web`, `apps/api`
-- **Packages**: `packages/ui`, `packages/api-contracts`, etc.
+- **Packages**: `packages/ui`, `packages/contracts`, etc.
 - **Infrastructure**: Docker, environment, CI/CD
 - **Documentation**: Docs directory changes
 
@@ -226,7 +226,7 @@ Before requesting review, confirm:
 1. ✅ Type of Change: New feature
 2. ✅ Affected Areas:
    - API Server (`apps/api`)
-   - API Contracts (`packages/api-contracts`)
+   - API Contracts (`packages/contracts`)
 3. ✅ Architecture & Patterns:
    - Service-Adapter Pattern (create Repository → Service → Controller)
    - ORPC Implementation Pattern (define contract)
@@ -236,7 +236,7 @@ Before requesting review, confirm:
 
 **Workflow**:
 ```bash
-# 1. Create ORPC contract in packages/api-contracts/
+# 1. Create ORPC contract in packages/contracts/
 # 2. Implement Service-Adapter pattern in apps/api/
 # 3. Create custom React Query hook in apps/web/
 # 4. Test the complete flow
