@@ -18,7 +18,6 @@ const mockAuthUser = {
 const createImplementMock = () => ({
     use: vi.fn(() => ({
         handler: vi.fn((handlerFn: (...args: unknown[]) => unknown) => {
-            __testHandler = handlerFn;
             return {
                 handler: handlerFn,
                 context: { auth: { user: mockAuthUser } },
@@ -26,7 +25,6 @@ const createImplementMock = () => ({
         }),
     })),
     handler: vi.fn((handlerFn: (...args: unknown[]) => unknown) => {
-        __testHandler = handlerFn;
         return {
             handler: handlerFn,
         };
