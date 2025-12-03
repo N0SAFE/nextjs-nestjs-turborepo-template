@@ -17,7 +17,7 @@ vi.mock('better-auth', () => ({
 
 // Mock drizzle adapter
 vi.mock('better-auth/adapters/drizzle', () => ({
-  drizzleAdapter: vi.fn((db: unknown, options: unknown) => ({
+  drizzleAdapter: vi.fn((db: unknown, options: any) => ({
     db,
     ...options,
   })),

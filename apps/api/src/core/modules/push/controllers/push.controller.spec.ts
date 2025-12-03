@@ -8,28 +8,6 @@ describe('PushController', () => {
   let controller: PushController;
   let mockService: any;
 
-  const mockContext = {
-    userId: 'user-1',
-  };
-
-  const mockVapidKeys = {
-    publicKey: 'BNhZW5J9ILjt1234567890abcdefghijklmnopqrstuvwxyz',
-  };
-
-  const mockSubscription = {
-    id: 'sub-1',
-    userId: 'user-1',
-    endpoint: 'https://fcm.googleapis.com/fcm/send/mock-endpoint',
-    p256dh: 'mock-p256dh-key',
-    auth: 'mock-auth-key',
-    deviceName: 'Chrome',
-    userAgent: 'Mozilla/5.0 Chrome',
-    isActive: true,
-    createdAt: new Date('2023-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2023-01-01T00:00:00.000Z'),
-    lastUsedAt: new Date('2023-01-01T00:00:00.000Z'),
-  };
-
   beforeEach(async () => {
     mockService = {
       getUserPublicKey: vi.fn(),

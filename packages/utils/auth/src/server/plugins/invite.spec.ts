@@ -21,7 +21,7 @@ describe('invitePlugin', () => {
     z.literal('admin'),
     z.literal('user'),
     z.literal('guest'),
-  ]);
+  ]) as any;
 
   const defaultOptions = {
     inviteDurationDays: 7,
@@ -155,7 +155,7 @@ describe('invitePlugin', () => {
         z.literal('admin'),
         z.literal('user'),
         z.literal('moderator'),
-      ]);
+      ]) as any
       const plugin = invitePlugin({
         inviteDurationDays: 7,
         roleSchema: unionSchema,
@@ -190,7 +190,7 @@ describe('invitePlugin', () => {
       const inviteSchema = plugin.schema.invite;
       
       expect(inviteSchema.fields.createdByUserId).toBeDefined();
-      expect(inviteSchema.fields.createdByUserId.references?.model).toBe('user');
+      expect(inviteSchema.fields.createdByUserId.references.model).toBe('user');
     });
 
     it('should include optional usedAt field', () => {

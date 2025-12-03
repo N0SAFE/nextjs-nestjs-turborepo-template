@@ -2,7 +2,6 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PushRepository } from './push.repository';
-import { DatabaseService } from '../../database/services/database.service';
 
 describe('PushRepository', () => {
   let repository: PushRepository;
