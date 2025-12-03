@@ -3,6 +3,17 @@ import { AuthUtils, AuthUtilsEmpty } from './auth-utils';
 import type { UserSession } from './auth-utils';
 import { ORPCError } from '@orpc/client';
 
+// Mock only validatePermission to avoid dependency on actual permission config
+vi.mock('@repo/auth/permissions', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await importOriginal<typeof import('@repo/auth/permissions')>();
+  
+  // Override only validatePermission to always return true
+  actual.PermissionChecker.validatePermission = vi.fn().mockReturnValue(true);
+  
+  return actual;
+});
+
 describe('AuthUtils', () => {
   let mockAuth: any;
   let mockSession: UserSession;
@@ -363,8 +374,9 @@ describe('AuthUtilsEmpty', () => {
     expect(() => utils.requireAllRoles('admin')).toThrow(ORPCError);
   });
 
-  it('should throw UNAUTHORIZED on requirePermissions', async () => {
-    await expect(utils.requirePermissions({ project: ['read'] })).rejects.toThrow(ORPCError);
+  it('should throw UNAUTHORIZED on requirePermissions', () => {
+    // requirePermissions throws synchronously in AuthUtilsEmpty (not returning a rejected promise)
+    expect(() => utils.requirePermissions({ project: ['read'] })).toThrow(ORPCError);
   });
 
   it('should return false on access', async () => {

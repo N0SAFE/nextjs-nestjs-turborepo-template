@@ -3,6 +3,17 @@ import { requireAuth, accessControl, publicAccess } from './middlewares';
 import { AuthUtils, AuthUtilsEmpty } from './auth-utils';
 import { ORPCError } from '@orpc/client';
 
+// Mock only validatePermission to avoid dependency on actual permission config
+vi.mock('@repo/auth/permissions', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await importOriginal<typeof import('@repo/auth/permissions')>();
+  
+  // Override only validatePermission to always return true
+  actual.PermissionChecker.validatePermission = vi.fn().mockReturnValue(true);
+  
+  return actual;
+});
+
 describe('ORPC Auth Middlewares', () => {
   let mockAuth: any;
   let mockSession: any;
@@ -46,17 +57,11 @@ describe('ORPC Auth Middlewares', () => {
   });
 
   describe('requireAuth', () => {
-    it('should return ORPC middleware builder', () => {
+    it('should return ORPC middleware function', () => {
       const middleware = requireAuth();
       
       expect(middleware).toBeDefined();
-      expect(typeof middleware).toBe('object');
-    });
-
-    it('should have middleware method', () => {
-      const builder = requireAuth();
-      
-      expect(builder).toHaveProperty('middleware');
+      expect(typeof middleware).toBe('function');
     });
   });
 

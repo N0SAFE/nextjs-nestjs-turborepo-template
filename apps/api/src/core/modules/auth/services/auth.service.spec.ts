@@ -5,6 +5,17 @@ import { AuthService } from './auth.service';
 import { MODULE_OPTIONS_TOKEN } from '../definitions/auth-module-definition';
 import type { UserSession } from '../utils/auth-utils';
 
+// Mock only validatePermission to avoid dependency on actual permission config
+vi.mock('@repo/auth/permissions', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const actual = await importOriginal<typeof import('@repo/auth/permissions')>();
+  
+  // Override only validatePermission to always return true
+  actual.PermissionChecker.validatePermission = vi.fn().mockReturnValue(true);
+  
+  return actual;
+});
+
 describe('AuthService', () => {
   let service: AuthService;
   let mockAuth: any;
