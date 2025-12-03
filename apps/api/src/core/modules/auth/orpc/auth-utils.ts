@@ -1,7 +1,7 @@
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { PermissionChecker, type Permission, type RoleName } from "@repo/auth/permissions";
 import type { Auth } from "@/auth";
 import type { AccessOptions, ORPCAuthContext, UserSession } from "./types";
+import { ORPCError } from "@orpc/client";
 
 /**
  * Auth utilities class that provides authentication and authorization helpers
@@ -27,8 +27,7 @@ export class AuthUtils implements ORPCAuthContext {
 
   requireAuth(): UserSession {
     if (!this._session) {
-      throw new UnauthorizedException({
-        code: "UNAUTHORIZED",
+      throw new ORPCError("UNAUTHORIZED", {
         message: "Authentication required",
       });
     }
@@ -40,8 +39,7 @@ export class AuthUtils implements ORPCAuthContext {
 
     const userRole = session.user.role;
     if (!userRole) {
-      throw new ForbiddenException({
-        code: "FORBIDDEN",
+      throw new ORPCError("FORBIDDEN", {
         message: "No role assigned to user",
       });
     }
@@ -52,8 +50,7 @@ export class AuthUtils implements ORPCAuthContext {
 
     if (!hasRequiredRole) {
       const userRoles = PermissionChecker.getUserRoles(userRole);
-      throw new ForbiddenException({
-        code: "FORBIDDEN",
+      throw new ORPCError("FORBIDDEN", {
         message: `Access denied. Required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
       });
     }
@@ -66,8 +63,7 @@ export class AuthUtils implements ORPCAuthContext {
 
     const userRole = session.user.role;
     if (!userRole) {
-      throw new ForbiddenException({
-        code: "FORBIDDEN",
+      throw new ORPCError("FORBIDDEN", {
         message: "No role assigned to user",
       });
     }
@@ -78,8 +74,7 @@ export class AuthUtils implements ORPCAuthContext {
 
     if (!hasAllRequiredRoles) {
       const userRoles = PermissionChecker.getUserRoles(userRole);
-      throw new ForbiddenException({
-        code: "FORBIDDEN",
+      throw new ORPCError("FORBIDDEN", {
         message: `Access denied. All required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
       });
     }
@@ -104,15 +99,14 @@ export class AuthUtils implements ORPCAuthContext {
       });
 
       if (!hasPermission.success) {
-        throw new ForbiddenException({
-          code: "FORBIDDEN",
+        throw new ORPCError("FORBIDDEN", {
           message: `Access denied. Missing required permissions: ${JSON.stringify(permissions)}`,
         });
       }
 
       return session;
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof UnauthorizedException) {
+      if (error instanceof ORPCError && (error.code === "FORBIDDEN" || error.code === "UNAUTHORIZED")) {
         throw error;
       }
 
@@ -229,26 +223,22 @@ export class AuthUtilsEmpty implements ORPCAuthContext {
   readonly session = null;
   readonly user = null;
   requireAuth(): UserSession {
-    throw new UnauthorizedException({
-      code: "UNAUTHORIZED",
+    throw new ORPCError("UNAUTHORIZED", {
       message: "Authentication required",
     });
   }
   requireRole(..._roles: RoleName[]): UserSession {
-    throw new UnauthorizedException({
-      code: "UNAUTHORIZED",
+    throw new ORPCError("UNAUTHORIZED", {
       message: "Authentication required",
     });
   }
   requireAllRoles(..._roles: RoleName[]): UserSession {
-    throw new UnauthorizedException({
-      code: "UNAUTHORIZED",
+    throw new ORPCError("UNAUTHORIZED", {
       message: "Authentication required",
     });
   }
   requirePermissions(_permissions: Permission): Promise<UserSession> {
-    throw new UnauthorizedException({
-      code: "UNAUTHORIZED",
+    throw new ORPCError("UNAUTHORIZED", {
       message: "Authentication required",
     });
   }

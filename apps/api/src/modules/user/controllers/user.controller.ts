@@ -2,6 +2,7 @@ import { Controller } from "@nestjs/common";
 import { Implement, implement } from "@orpc/nest";
 import { userContract } from "@repo/api-contracts";
 import { UserService } from "../services/user.service";
+import { requireAuth } from "@/core/modules/auth/orpc/middlewares";
 
 @Controller()
 export class UserController {
@@ -9,7 +10,7 @@ export class UserController {
 
     @Implement(userContract.list)
     list() {
-        return implement(userContract.list).handler(async ({ input }) => {
+        return implement(userContract.list).use(requireAuth()).handler(async ({ input }) => {
             const result = await this.userService.getUsers(input);
             return {
                 users: result.users.map((user) => ({
@@ -28,14 +29,14 @@ export class UserController {
 
     @Implement(userContract.findById)
     findById() {
-        return implement(userContract.findById).handler(async ({ input }) => {
+        return implement(userContract.findById).use(requireAuth()).handler(async ({ input }) => {
             return await this.userService.findUserById(input.id);
         });
     }
 
     @Implement(userContract.create)
     create() {
-        return implement(userContract.create).handler(async ({ input }) => {
+        return implement(userContract.create).use(requireAuth()).handler(async ({ input }) => {
             const user = await this.userService.createUser(input);
             if (!user) {
                 throw new Error("Failed to create user");
@@ -54,7 +55,7 @@ export class UserController {
 
     @Implement(userContract.update)
     update() {
-        return implement(userContract.update).handler(async ({ input }) => {
+        return implement(userContract.update).use(requireAuth()).handler(async ({ input }) => {
             const user = await this.userService.updateUser(input.id, input);
             if (!user) {
                 throw new Error("User not found");
@@ -73,7 +74,7 @@ export class UserController {
 
     @Implement(userContract.delete)
     delete() {
-        return implement(userContract.delete).handler(async ({ input }) => {
+        return implement(userContract.delete).use(requireAuth()).handler(async ({ input }) => {
             const user = await this.userService.deleteUser(input.id);
             if (!user) {
                 return { success: false, message: "User not found" };
@@ -84,14 +85,14 @@ export class UserController {
 
     @Implement(userContract.checkEmail)
     checkEmail() {
-        return implement(userContract.checkEmail).handler(async ({ input }) => {
+        return implement(userContract.checkEmail).use(requireAuth()).handler(async ({ input }) => {
             return await this.userService.checkUserExistsByEmail(input.email);
         });
     }
 
     @Implement(userContract.count)
     count() {
-        return implement(userContract.count).handler(async () => {
+        return implement(userContract.count).use(requireAuth()).handler(async () => {
             return await this.userService.getUserCount();
         });
     }
