@@ -34,10 +34,10 @@ export interface ORPCAuthContext {
   readonly isLoggedIn: boolean;
 
   /** User session (null if not authenticated) */
-  readonly session: UserSession | null;
+  readonly session: Auth["$Infer"]["Session"]["session"] | null;
 
   /** User object (null if not authenticated) */
-  readonly user: UserSession["user"] | null;
+  readonly user: Auth["$Infer"]["Session"]["user"] | null;
 
   /**
    * Require user to be authenticated
