@@ -79,27 +79,15 @@ export function accessControl(options: AccessOptions & { requireAuth?: boolean }
       }
     }
 
-    // Check access if any options are provided
-    if (options.roles || options.allRoles || options.permissions) {
-      const hasAccess = await auth.access({
-        roles: options.roles,
-        allRoles: options.allRoles,
-        permissions: options.permissions,
-      });
-
-      if (!hasAccess) {
-        // Let the auth.access method throw appropriate errors
-        // This is a fallback in case it returns false without throwing
-        if (options.roles) {
-          auth.requireRole(...options.roles);
-        }
-        if (options.allRoles) {
-          auth.requireAllRoles(...options.allRoles);
-        }
-        if (options.permissions) {
-          await auth.requirePermissions(options.permissions);
-        }
-      }
+    // Enforce access requirements directly using require methods
+    if (options.roles) {
+      auth.requireRole(...options.roles);
+    }
+    if (options.allRoles) {
+      auth.requireAllRoles(...options.allRoles);
+    }
+    if (options.permissions) {
+      await auth.requirePermissions(options.permissions);
     }
 
     return opts.next(opts);

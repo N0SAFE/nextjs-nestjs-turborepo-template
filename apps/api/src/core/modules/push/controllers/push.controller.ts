@@ -13,7 +13,8 @@ export class PushController {
     return implement(pushContract.getPublicKey)
       .use(requireAuth())
       .handler(async ({ context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
 
         const publicKey = await this.pushService.getUserPublicKey(userId);
 
@@ -28,7 +29,8 @@ export class PushController {
     return implement(pushContract.subscribe)
       .use(requireAuth())
       .handler(async ({ input, context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
         const subscription = await this.pushService.subscribe(userId, {
           endpoint: input.endpoint,
           keys: input.keys,
@@ -49,7 +51,8 @@ export class PushController {
     return implement(pushContract.unsubscribe)
       .use(requireAuth())
       .handler(async ({ input, context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
         const success = await this.pushService.unsubscribe(userId, input.endpoint);
 
         return {
@@ -63,7 +66,8 @@ export class PushController {
     return implement(pushContract.getSubscriptions)
       .use(requireAuth())
       .handler(async ({ context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
         const subscriptions = await this.pushService.getUserSubscriptions(userId);
 
         return {
@@ -85,7 +89,8 @@ export class PushController {
     return implement(pushContract.sendTestNotification)
       .use(requireAuth())
       .handler(async ({ context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
         const result = await this.pushService.sendToUser(userId, {
           title: "Test Notification",
           body: "This is a test notification from your app!",
@@ -106,7 +111,8 @@ export class PushController {
     return implement(pushContract.getStats)
       .use(requireAuth())
       .handler(async ({ context }) => {
-        const userId = context.auth.requireAuth().user.id;
+        // requireAuth middleware guarantees user is authenticated
+        const userId = context.auth.user!.id;
         const stats = await this.pushService.getUserStats(userId);
 
         return {
