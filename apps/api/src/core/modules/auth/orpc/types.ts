@@ -1,25 +1,11 @@
 import type { Auth } from "@/auth";
 import type { Permission, RoleName } from "@repo/auth/permissions";
 
-/**
- * User session type from Better Auth
- */
-export interface UserSession {
-  session: Auth["$Infer"]["Session"]["session"];
-  user: Auth["$Infer"]["Session"]["user"];
-}
+// Re-export types from global utils
+export type { UserSession, AccessOptions } from "../utils/auth-utils";
 
-/**
- * Access control options for programmatic auth checks
- */
-export interface AccessOptions {
-  /** Required roles - user must have ANY of these */
-  roles?: RoleName[];
-  /** Required roles - user must have ALL of these */
-  allRoles?: RoleName[];
-  /** Required permissions */
-  permissions?: Permission;
-}
+// Re-import for use in this file
+import type { UserSession, AccessOptions } from "../utils/auth-utils";
 
 /**
  * Brand symbol for authenticated context
