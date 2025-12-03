@@ -9,26 +9,30 @@ import type { AccessOptions, ORPCAuthContext, UserSession } from "./types";
  */
 export class AuthUtils implements ORPCAuthContext {
   constructor(
-    private readonly session: UserSession | null,
+    private readonly _session: UserSession | null,
     private readonly auth: Auth,
   ) {}
 
   get isLoggedIn(): boolean {
-    return this.session !== null;
+    return this._session !== null;
+  }
+
+  get session(): UserSession | null {
+    return this._session;
   }
 
   get user(): UserSession["user"] | null {
-    return this.session?.user ?? null;
+    return this._session?.user ?? null;
   }
 
   requireAuth(): UserSession {
-    if (!this.session) {
+    if (!this._session) {
       throw new UnauthorizedException({
         code: "UNAUTHORIZED",
         message: "Authentication required",
       });
     }
-    return this.session;
+    return this._session;
   }
 
   requireRole(...roles: RoleName[]): UserSession {
@@ -120,13 +124,13 @@ export class AuthUtils implements ORPCAuthContext {
   async access(options: AccessOptions): Promise<boolean> {
     try {
       // Check if user is authenticated (required for all access checks)
-      if (!this.session) {
+      if (!this._session) {
         return false;
       }
 
       // Check roles (user needs ANY of these)
       if (options.roles && options.roles.length > 0) {
-        const userRole = this.session.user.role;
+        const userRole = this._session.user.role;
         if (!userRole) {
           return false;
         }
@@ -142,7 +146,7 @@ export class AuthUtils implements ORPCAuthContext {
 
       // Check all roles (user needs ALL of these)
       if (options.allRoles && options.allRoles.length > 0) {
-        const userRole = this.session.user.role;
+        const userRole = this._session.user.role;
         if (!userRole) {
           return false;
         }
@@ -164,7 +168,7 @@ export class AuthUtils implements ORPCAuthContext {
 
         const hasPermission = await this.auth.api.userHasPermission({
           body: {
-            userId: this.session.user.id,
+            userId: this._session.user.id,
             permissions: options.permissions,
           },
         });
@@ -182,21 +186,21 @@ export class AuthUtils implements ORPCAuthContext {
   }
 
   getRoles(): RoleName[] {
-    if (!this.session?.user.role) {
+    if (!this._session?.user.role) {
       return [];
     }
-    return PermissionChecker.getUserRoles(this.session.user.role);
+    return PermissionChecker.getUserRoles(this._session.user.role);
   }
 
   hasRole(role: RoleName): boolean {
-    if (!this.session?.user.role) {
+    if (!this._session?.user.role) {
       return false;
     }
-    return PermissionChecker.hasRole(this.session.user.role, role);
+    return PermissionChecker.hasRole(this._session.user.role, role);
   }
 
   async hasPermission(permission: Permission): Promise<boolean> {
-    if (!this.session) {
+    if (!this._session) {
       return false;
     }
 
@@ -207,7 +211,7 @@ export class AuthUtils implements ORPCAuthContext {
     try {
       const result = await this.auth.api.userHasPermission({
         body: {
-          userId: this.session.user.id,
+          userId: this._session.user.id,
           permissions: permission,
         },
       });

@@ -26,20 +26,20 @@ export interface AccessOptions {
  */
 export interface ORPCAuthContext {
   /** Whether user is authenticated */
-  isLoggedIn: boolean;
+  readonly isLoggedIn: boolean;
 
   /** User session (null if not authenticated) */
-  session: UserSession | null;
+  readonly session: UserSession | null;
 
   /** User object (null if not authenticated) */
-  user: UserSession["user"] | null;
+  readonly user: UserSession["user"] | null;
 
   /**
    * Require user to be authenticated
    * @throws UnauthorizedException if not authenticated
    * @returns UserSession
    */
-  requireAuth: () => UserSession;
+  requireAuth(): UserSession;
 
   /**
    * Require user to have specific role(s)
@@ -48,7 +48,7 @@ export interface ORPCAuthContext {
    * @throws ForbiddenException if missing required roles
    * @returns UserSession
    */
-  requireRole: (...roles: RoleName[]) => UserSession;
+  requireRole(...roles: RoleName[]): UserSession;
 
   /**
    * Require user to have ALL specified roles
@@ -57,7 +57,7 @@ export interface ORPCAuthContext {
    * @throws ForbiddenException if missing required roles
    * @returns UserSession
    */
-  requireAllRoles: (...roles: RoleName[]) => UserSession;
+  requireAllRoles(...roles: RoleName[]): UserSession;
 
   /**
    * Require user to have specific permissions
@@ -66,32 +66,62 @@ export interface ORPCAuthContext {
    * @throws ForbiddenException if missing required permissions
    * @returns UserSession
    */
-  requirePermissions: (permissions: Permission) => Promise<UserSession>;
+  requirePermissions(permissions: Permission): Promise<UserSession>;
 
   /**
    * Check if user has access based on options
    * @param options - Access control options
    * @returns true if user has access, false otherwise
    */
-  access: (options: AccessOptions) => Promise<boolean>;
+  access(options: AccessOptions): Promise<boolean>;
 
   /**
    * Get user roles as array
    * @returns Array of role names
    */
-  getRoles: () => RoleName[];
+  getRoles(): RoleName[];
 
   /**
    * Check if user has specific role
    * @param role - Role to check
    * @returns true if user has role
    */
-  hasRole: (role: RoleName) => boolean;
+  hasRole(role: RoleName): boolean;
 
   /**
    * Check if user has specific permission
    * @param permission - Permission to check
    * @returns true if user has permission
    */
-  hasPermission: (permission: Permission) => Promise<boolean>;
+  hasPermission(permission: Permission): Promise<boolean>;
+}
+
+/**
+ * Authenticated auth context type (guaranteed non-null user and session)
+ */
+export type AuthenticatedContext = ORPCAuthContext & {
+  isLoggedIn: true;
+  session: UserSession;
+  user: UserSession["user"];
+};
+
+/**
+ * Type assertion helper for authenticated context
+ * Use this after requireAuth() middleware to get proper types without null assertions
+ * 
+ * @example
+ * ```ts
+ * implement(contract)
+ *   .use(requireAuth())
+ *   .handler(({ context }) => {
+ *     const auth = assertAuthenticated(context.auth);
+ *     const userId = auth.user.id; // No ! needed
+ *   })
+ * ```
+ */
+export function assertAuthenticated(auth: ORPCAuthContext): AuthenticatedContext {
+  if (!auth.isLoggedIn || !auth.session || !auth.user) {
+    throw new Error('Auth context is not authenticated');
+  }
+  return auth as AuthenticatedContext;
 }

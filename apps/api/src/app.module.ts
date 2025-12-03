@@ -70,13 +70,12 @@ declare module '@orpc/nest' {
               ]
             })
           ],
-          // The context starts with just request
-          // Auth middleware will add the auth property
-          context: { request },
+          // Initial context - auth will be added by global middleware
+          context: { request } as any,
           // Global middleware that runs on all procedures
           middlewares: [authMiddleware as any],
           eventIteratorKeepAliveInterval: 5000, // 5 seconds
-        };
+        } as any;
       },
       inject: [REQUEST],
     }),

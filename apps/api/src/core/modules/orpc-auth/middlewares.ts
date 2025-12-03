@@ -46,12 +46,17 @@ export function createAuthMiddleware(auth: Auth) {
  * Middleware factory for access control
  * Use this to require authentication, roles, or permissions on specific procedures
  * 
+ * After this middleware, use assertAuthenticated() helper to get proper types without null assertions.
+ * 
  * @example
  * ```ts
+ * import { assertAuthenticated } from '@/core/modules/orpc-auth';
+ * 
  * implement(contract)
  *   .use(accessControl({ roles: ['admin'] }))
  *   .handler(({ context }) => {
- *     // User is guaranteed to have admin role here
+ *     const auth = assertAuthenticated(context.auth);
+ *     const userId = auth.user.id; // No ! needed
  *   })
  * ```
  */
@@ -123,13 +128,17 @@ export function publicAccess() {
 /**
  * Middleware to require authentication but allow any authenticated user
  * 
+ * After this middleware, use assertAuthenticated() helper to get proper types without null assertions.
+ * 
  * @example
  * ```ts
+ * import { assertAuthenticated } from '@/core/modules/orpc-auth';
+ * 
  * implement(contract)
  *   .use(requireAuth())
  *   .handler(({ context }) => {
- *     // User is guaranteed to be authenticated
- *     const userId = context.auth.user!.id;
+ *     const auth = assertAuthenticated(context.auth);
+ *     const userId = auth.user.id; // No ! needed
  *   })
  * ```
  */
