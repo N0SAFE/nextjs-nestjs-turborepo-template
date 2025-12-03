@@ -14,9 +14,6 @@ const mockAuthUser = {
     updatedAt: new Date(),
 };
 
-// Store test handler reference for potential direct testing
-let __testHandler: ((...args: unknown[]) => unknown) | null = null;
-
 // Create chainable mock for implement().use().handler() pattern
 const createImplementMock = () => ({
     use: vi.fn(() => ({
