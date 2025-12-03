@@ -1,4 +1,4 @@
-import { oc } from "@orpc/contract";
+import { oc, eventIterator } from "@orpc/contract";
 import { z } from "zod/v4";
 import { notificationEventSchema } from "./schemas";
 
@@ -24,9 +24,4 @@ export const notificationStreamContract = oc
         .describe("Filter notifications by type"),
     })
   )
-  .output(
-    z.object({
-      __iteratorType: z.literal("event").optional(),
-      __event: notificationEventSchema,
-    })
-  );
+  .output(eventIterator(notificationEventSchema));
