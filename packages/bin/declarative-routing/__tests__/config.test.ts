@@ -74,8 +74,11 @@ describe('config', () => {
       }
 
       readFileSyncMock.mockReturnValue(JSON.stringify(invalidConfig))
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() => getConfig()).toThrow()
+      
+      consoleErrorSpy.mockRestore()
     })
 
     it('should throw error for missing required fields', () => {
@@ -85,8 +88,11 @@ describe('config', () => {
       }
 
       readFileSyncMock.mockReturnValue(JSON.stringify(invalidConfig))
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() => getConfig()).toThrow()
+      
+      consoleErrorSpy.mockRestore()
     })
 
     it('should handle qwikcity mode', () => {
@@ -174,16 +180,22 @@ describe('config', () => {
         mode: 'invalid',
         src: 'src'
       } as any
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() => writeConfig(invalidConfig)).toThrow()
+      
+      consoleErrorSpy.mockRestore()
     })
 
     it('should throw error for missing required fields', () => {
       const invalidConfig = {
         mode: 'nextjs'
       } as any
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() => writeConfig(invalidConfig)).toThrow()
+      
+      consoleErrorSpy.mockRestore()
     })
   })
 
