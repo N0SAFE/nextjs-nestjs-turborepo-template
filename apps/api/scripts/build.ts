@@ -1,10 +1,11 @@
 #!/usr/bin/env -S bun
 
-import { build } from 'bun'
+import { build, BuildConfig } from 'bun'
 import { spawn } from 'child_process'
 import { existsSync, rmSync } from 'fs'
-import path from 'path'
+import * as path from 'path'
 
+// @ts-expect-error -- Bun provides import.meta.dir
 const __dirname = import.meta.dir
 const srcDir = path.join(__dirname, '..', 'src')
 const distDir = path.join(__dirname, '..', 'dist')
@@ -39,22 +40,11 @@ async function runBuild(): Promise<void> {
     splitting: true,
     target: 'bun' as const,
     external: [
-      'reflect-metadata',
-      '@nestjs/common',
-      '@nestjs/core',
-      '@nestjs/platform-express',
-      '@nestjs/config',
-      '@orpc/nest',
-      '@orpc/server',
-      '@orpc/shared',
-      'better-auth',
-      'drizzle-orm',
-      'pg',
-      'express',
-      'rxjs',
-      'zod',
-    ],
-  }
+      "class-transformer",
+      "@nestjs/microservices",
+      "@nestjs/platform-socket.io",
+    ]
+  } as BuildConfig
 
   console.log(`🔨 Building NestJS entry points${watch ? ' (watching for changes)' : ''}...`)
 
@@ -112,4 +102,5 @@ async function main(): Promise<void> {
   }
 }
 
+// @ts-ignore
 await main()
