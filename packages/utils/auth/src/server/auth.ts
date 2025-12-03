@@ -99,6 +99,5 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
 
     const auth = betterAuth(config);
 
-    console.log(auth.api);
     return { auth: { ...auth, config } };
 };

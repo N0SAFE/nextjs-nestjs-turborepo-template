@@ -3,6 +3,50 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { HealthController } from "./health.controller";
 import { HealthService } from "../services/health.service";
 
+// Mock auth user for requireAuth middleware
+const mockAuthUser = {
+    id: "auth-user-1",
+    name: "Auth User",
+    email: "auth@example.com",
+    emailVerified: true,
+    image: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+};
+
+// Store test handler reference for potential direct testing
+let __testHandler: ((...args: unknown[]) => unknown) | null = null;
+
+// Create chainable mock for implement().use().handler() pattern
+const createImplementMock = () => ({
+    use: vi.fn(() => ({
+        handler: vi.fn((handlerFn: (...args: unknown[]) => unknown) => {
+            __testHandler = handlerFn;
+            return {
+                handler: handlerFn,
+                context: { auth: { user: mockAuthUser } },
+            };
+        }),
+    })),
+    handler: vi.fn((handlerFn: (...args: unknown[]) => unknown) => {
+        __testHandler = handlerFn;
+        return {
+            handler: handlerFn,
+        };
+    }),
+});
+
+// Mock @orpc/nest module
+vi.mock("@orpc/nest", () => ({
+    implement: vi.fn(() => createImplementMock()),
+    Implement: vi.fn(() => () => {}),
+}));
+
+// Mock requireAuth middleware to do nothing (pass through)
+vi.mock("@/core/modules/auth/orpc/middlewares", () => ({
+    requireAuth: vi.fn(() => ({})),
+}));
+
 describe("HealthController", () => {
     let controller: HealthController;
     let service: HealthService;
