@@ -22,7 +22,7 @@ import {
   experimental_SmartCoercionPlugin as SmartCoercionPlugin
 } from '@orpc/json-schema'
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { createAuthMiddleware } from "./core/modules/orpc-auth";
+import { AuthUtilsEmpty, createAuthMiddleware } from "./core/modules/orpc-auth";
 import type { ORPCAuthContext } from "./core/modules/orpc-auth";
 import { auth } from "./auth";
 
@@ -53,6 +53,8 @@ declare module '@orpc/nest' {
       useFactory: (request: Request) => {
         // Create auth middleware that will populate context.auth
         const authMiddleware = createAuthMiddleware(auth);
+        
+        const emptyAuthUtils = new AuthUtilsEmpty();
 
         return {
           interceptors: [
@@ -71,11 +73,11 @@ declare module '@orpc/nest' {
             })
           ],
           // Initial context - auth will be added by global middleware
-          context: { request } as any,
+          context: { request, auth: emptyAuthUtils },
           // Global middleware that runs on all procedures
-          middlewares: [authMiddleware as any],
+          middlewares: [authMiddleware],
           eventIteratorKeepAliveInterval: 5000, // 5 seconds
-        } as any;
+        };
       },
       inject: [REQUEST],
     }),

@@ -223,3 +223,45 @@ export class AuthUtils implements ORPCAuthContext {
     }
   }
 }
+
+export class AuthUtilsEmpty implements ORPCAuthContext {
+  readonly isLoggedIn = false;
+  readonly session = null;
+  readonly user = null;
+  requireAuth(): UserSession {
+    throw new UnauthorizedException({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
+  }
+  requireRole(..._roles: RoleName[]): UserSession {
+    throw new UnauthorizedException({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
+  }
+  requireAllRoles(..._roles: RoleName[]): UserSession {
+    throw new UnauthorizedException({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
+  }
+  requirePermissions(_permissions: Permission): Promise<UserSession> {
+    throw new UnauthorizedException({
+      code: "UNAUTHORIZED",
+      message: "Authentication required",
+    });
+  }
+  access(_options: AccessOptions): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+  getRoles(): RoleName[] {
+    return [];
+  }
+  hasRole(_role: RoleName): boolean {
+    return false;
+  }
+  hasPermission(_permission: Permission): Promise<boolean> {
+    return Promise.resolve(false);
+  }
+}

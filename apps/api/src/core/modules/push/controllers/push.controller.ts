@@ -2,7 +2,7 @@ import { Controller } from "@nestjs/common";
 import { Implement, implement } from "@orpc/nest";
 import { pushContract } from "@repo/api-contracts";
 import { PushService } from "../services/push.service";
-import { assertAuthenticated } from "../../orpc-auth";
+import { assertAuthenticated } from "../../orpc-auth/types";
 
 @Controller()
 export class PushController {
