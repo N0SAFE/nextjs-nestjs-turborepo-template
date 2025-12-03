@@ -22,6 +22,11 @@ export interface AccessOptions {
 }
 
 /**
+ * Brand symbol for authenticated context
+ */
+declare const AuthenticatedBrand: unique symbol;
+
+/**
  * Auth utilities available in ORPC context
  */
 export interface ORPCAuthContext {
@@ -94,34 +99,55 @@ export interface ORPCAuthContext {
    * @returns true if user has permission
    */
   hasPermission(permission: Permission): Promise<boolean>;
+  
+  /** Internal brand for type narrowing (not accessible at runtime) */
+  [AuthenticatedBrand]?: boolean;
 }
 
 /**
  * Authenticated auth context type (guaranteed non-null user and session)
+ * This is the type after requireAuth() middleware has been applied
  */
-export type AuthenticatedContext = ORPCAuthContext & {
-  isLoggedIn: true;
-  session: UserSession;
-  user: UserSession["user"];
-};
+export interface ORPCAuthenticatedContext extends ORPCAuthContext {
+  /** User is authenticated (always true) */
+  readonly isLoggedIn: true;
+
+  /** User session (guaranteed to be present) */
+  readonly session: UserSession;
+
+  /** User object (guaranteed to be present) */
+  readonly user: UserSession["user"];
+  
+  /** Internal brand for type narrowing */
+  [AuthenticatedBrand]: true;
+}
 
 /**
  * Type assertion helper for authenticated context
- * Use this after requireAuth() middleware to get proper types without null assertions
+ * Use this after requireAuth() middleware or when you need to manually narrow the type
  * 
  * @example
  * ```ts
+ * // With requireAuth() middleware (recommended)
  * implement(contract)
  *   .use(requireAuth())
  *   .handler(({ context }) => {
+ *     // After middleware, call assertAuthenticated to narrow types
  *     const auth = assertAuthenticated(context.auth);
  *     const userId = auth.user.id; // No ! needed
  *   })
+ * 
+ * // Without middleware (manual check)
+ * implement(contract)
+ *   .handler(({ context }) => {
+ *     const auth = assertAuthenticated(context.auth); // throws if not authenticated
+ *     const userId = auth.user.id;
+ *   })
  * ```
  */
-export function assertAuthenticated(auth: ORPCAuthContext): AuthenticatedContext {
+export function assertAuthenticated(auth: ORPCAuthContext): ORPCAuthenticatedContext {
   if (!auth.isLoggedIn || !auth.session || !auth.user) {
     throw new Error('Auth context is not authenticated');
   }
-  return auth as AuthenticatedContext;
+  return auth as ORPCAuthenticatedContext;
 }
