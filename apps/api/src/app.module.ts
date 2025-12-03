@@ -22,13 +22,17 @@ import {
   experimental_SmartCoercionPlugin as SmartCoercionPlugin
 } from '@orpc/json-schema'
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
+import { createAuthMiddleware } from "./core/modules/orpc-auth";
+import type { ORPCAuthContext } from "./core/modules/orpc-auth";
+import { auth } from "./auth";
 
 declare module '@orpc/nest' {
   /**
    * Extend oRPC global context to make it type-safe inside your handlers/middlewares
    */
   interface ORPCGlobalContext {
-    request: Request
+    request: Request;
+    auth: ORPCAuthContext;
   }
 }
 
@@ -46,25 +50,34 @@ declare module '@orpc/nest' {
     UserModule,
     PushModule,
     ORPCModule.forRootAsync({
-      useFactory: (request: Request) => ({
-        interceptors: [
-          onError((error, _ctx) => {
-            console.error(
-              "oRPC Error:",
-              error
-            );
-          })
-        ],
-        plugins: [
-          new SmartCoercionPlugin({
-            schemaConverters: [
-              new ZodToJsonSchemaConverter()
-            ]
-          })
-        ],
-        context: { request },
-        eventIteratorKeepAliveInterval: 5000, // 5 seconds
-      }),
+      useFactory: (request: Request) => {
+        // Create auth middleware that will populate context.auth
+        const authMiddleware = createAuthMiddleware(auth);
+
+        return {
+          interceptors: [
+            onError((error, _ctx) => {
+              console.error(
+                "oRPC Error:",
+                error
+              );
+            })
+          ],
+          plugins: [
+            new SmartCoercionPlugin({
+              schemaConverters: [
+                new ZodToJsonSchemaConverter()
+              ]
+            })
+          ],
+          // The context starts with just request
+          // Auth middleware will add the auth property
+          context: { request },
+          // Global middleware that runs on all procedures
+          middlewares: [authMiddleware as any],
+          eventIteratorKeepAliveInterval: 5000, // 5 seconds
+        };
+      },
       inject: [REQUEST],
     }),
   ],

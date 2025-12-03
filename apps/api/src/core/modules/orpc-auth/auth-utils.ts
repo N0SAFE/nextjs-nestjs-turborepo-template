@@ -1,0 +1,221 @@
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { PermissionChecker, type Permission, type RoleName } from "@repo/auth/permissions";
+import type { Auth } from "@/auth";
+import type { AccessOptions, ORPCAuthContext, UserSession } from "./types";
+
+/**
+ * Auth utilities class that provides authentication and authorization helpers
+ * for ORPC handlers through the context.auth object
+ */
+export class AuthUtils implements ORPCAuthContext {
+  constructor(
+    private readonly session: UserSession | null,
+    private readonly auth: Auth,
+  ) {}
+
+  get isLoggedIn(): boolean {
+    return this.session !== null;
+  }
+
+  get user(): UserSession["user"] | null {
+    return this.session?.user ?? null;
+  }
+
+  requireAuth(): UserSession {
+    if (!this.session) {
+      throw new UnauthorizedException({
+        code: "UNAUTHORIZED",
+        message: "Authentication required",
+      });
+    }
+    return this.session;
+  }
+
+  requireRole(...roles: RoleName[]): UserSession {
+    const session = this.requireAuth();
+
+    const userRole = session.user.role;
+    if (!userRole) {
+      throw new ForbiddenException({
+        code: "FORBIDDEN",
+        message: "No role assigned to user",
+      });
+    }
+
+    const hasRequiredRole = roles.some((role) =>
+      PermissionChecker.hasRole(userRole, role)
+    );
+
+    if (!hasRequiredRole) {
+      const userRoles = PermissionChecker.getUserRoles(userRole);
+      throw new ForbiddenException({
+        code: "FORBIDDEN",
+        message: `Access denied. Required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
+      });
+    }
+
+    return session;
+  }
+
+  requireAllRoles(...roles: RoleName[]): UserSession {
+    const session = this.requireAuth();
+
+    const userRole = session.user.role;
+    if (!userRole) {
+      throw new ForbiddenException({
+        code: "FORBIDDEN",
+        message: "No role assigned to user",
+      });
+    }
+
+    const hasAllRequiredRoles = roles.every((role) =>
+      PermissionChecker.hasRole(userRole, role)
+    );
+
+    if (!hasAllRequiredRoles) {
+      const userRoles = PermissionChecker.getUserRoles(userRole);
+      throw new ForbiddenException({
+        code: "FORBIDDEN",
+        message: `Access denied. All required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
+      });
+    }
+
+    return session;
+  }
+
+  async requirePermissions(permissions: Permission): Promise<UserSession> {
+    const session = this.requireAuth();
+
+    // Validate permission structure
+    if (!PermissionChecker.validatePermission(permissions)) {
+      throw new Error("Invalid permission configuration");
+    }
+
+    try {
+      const hasPermission = await this.auth.api.userHasPermission({
+        body: {
+          userId: session.user.id,
+          permissions,
+        },
+      });
+
+      if (!hasPermission.success) {
+        throw new ForbiddenException({
+          code: "FORBIDDEN",
+          message: `Access denied. Missing required permissions: ${JSON.stringify(permissions)}`,
+        });
+      }
+
+      return session;
+    } catch (error) {
+      if (error instanceof ForbiddenException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      console.error("Permission check failed:", error);
+      throw new Error("Permission validation failed");
+    }
+  }
+
+  async access(options: AccessOptions): Promise<boolean> {
+    try {
+      // Check if user is authenticated (required for all access checks)
+      if (!this.session) {
+        return false;
+      }
+
+      // Check roles (user needs ANY of these)
+      if (options.roles && options.roles.length > 0) {
+        const userRole = this.session.user.role;
+        if (!userRole) {
+          return false;
+        }
+
+        const hasAnyRole = options.roles.some((role) =>
+          PermissionChecker.hasRole(userRole, role)
+        );
+
+        if (!hasAnyRole) {
+          return false;
+        }
+      }
+
+      // Check all roles (user needs ALL of these)
+      if (options.allRoles && options.allRoles.length > 0) {
+        const userRole = this.session.user.role;
+        if (!userRole) {
+          return false;
+        }
+
+        const hasAllRoles = options.allRoles.every((role) =>
+          PermissionChecker.hasRole(userRole, role)
+        );
+
+        if (!hasAllRoles) {
+          return false;
+        }
+      }
+
+      // Check permissions
+      if (options.permissions) {
+        if (!PermissionChecker.validatePermission(options.permissions)) {
+          return false;
+        }
+
+        const hasPermission = await this.auth.api.userHasPermission({
+          body: {
+            userId: this.session.user.id,
+            permissions: options.permissions,
+          },
+        });
+
+        if (!hasPermission.success) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Access check failed:", error);
+      return false;
+    }
+  }
+
+  getRoles(): RoleName[] {
+    if (!this.session?.user.role) {
+      return [];
+    }
+    return PermissionChecker.getUserRoles(this.session.user.role);
+  }
+
+  hasRole(role: RoleName): boolean {
+    if (!this.session?.user.role) {
+      return false;
+    }
+    return PermissionChecker.hasRole(this.session.user.role, role);
+  }
+
+  async hasPermission(permission: Permission): Promise<boolean> {
+    if (!this.session) {
+      return false;
+    }
+
+    if (!PermissionChecker.validatePermission(permission)) {
+      return false;
+    }
+
+    try {
+      const result = await this.auth.api.userHasPermission({
+        body: {
+          userId: this.session.user.id,
+          permissions: permission,
+        },
+      });
+
+      return result.success;
+    } catch (error) {
+      console.error("Permission check failed:", error);
+      return false;
+    }
+  }
+}
