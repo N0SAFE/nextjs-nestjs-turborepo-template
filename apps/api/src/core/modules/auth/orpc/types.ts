@@ -113,10 +113,10 @@ export interface ORPCAuthenticatedContext extends ORPCAuthContext {
   readonly isLoggedIn: true;
 
   /** User session (guaranteed to be present) */
-  readonly session: UserSession;
+  readonly session: Auth["$Infer"]["Session"]["session"];
 
   /** User object (guaranteed to be present) */
-  readonly user: UserSession["user"];
+  readonly user: Auth["$Infer"]["Session"]["user"];
   
   /** Internal brand for type narrowing */
   [AuthenticatedBrand]: true;

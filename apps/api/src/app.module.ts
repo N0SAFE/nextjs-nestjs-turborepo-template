@@ -10,6 +10,7 @@ import { PushModule } from "./core/modules/push/push.module";
 import { onError, ORPCModule } from "@orpc/nest";
 import { DATABASE_CONNECTION } from "./core/modules/database/database-connection";
 import { AuthModule } from "./core/modules/auth/auth.module";
+import { AuthService } from "./core/modules/auth/services/auth.service";
 import { LoggerMiddleware } from "./core/middlewares/logger.middleware";
 import { createBetterAuth } from "./config/auth/auth";
 import { EnvService } from "./config/env/env.service";
@@ -22,9 +23,7 @@ import {
   experimental_SmartCoercionPlugin as SmartCoercionPlugin
 } from '@orpc/json-schema'
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { AuthUtilsEmpty, createAuthMiddleware } from "./core/modules/orpc-auth";
-import type { ORPCAuthContext } from "./core/modules/orpc-auth";
-import { auth } from "./auth";
+import type { ORPCAuthContext } from "./core/modules/auth/orpc/types";
 
 declare module '@orpc/nest' {
   /**
@@ -50,11 +49,10 @@ declare module '@orpc/nest' {
     UserModule,
     PushModule,
     ORPCModule.forRootAsync({
-      useFactory: (request: Request) => {
+      useFactory: (request: Request, authService: AuthService) => {
         // Create auth middleware that will populate context.auth
-        const authMiddleware = createAuthMiddleware(auth);
-        
-        const emptyAuthUtils = new AuthUtilsEmpty();
+        const authMiddleware = authService.createOrpcAuthMiddleware();
+        const emptyAuthUtils = authService.createEmptyAuthUtils();
 
         return {
           interceptors: [
@@ -79,7 +77,7 @@ declare module '@orpc/nest' {
           eventIteratorKeepAliveInterval: 5000, // 5 seconds
         };
       },
-      inject: [REQUEST],
+      inject: [REQUEST, AuthService],
     }),
   ],
   providers: [

@@ -47,7 +47,7 @@ export function createAuthMiddleware(auth: Auth) {
  *
  * @example
  * ```ts
- * import { assertAuthenticated } from '@/core/modules/orpc-auth';
+ * import { assertAuthenticated } from '@/core/modules/auth/orpc';
  *
  * implement(contract)
  *   .use(accessControl({ roles: ['admin'] }))
@@ -113,7 +113,7 @@ export function publicAccess() {
  *
  * @example
  * ```ts
- * import { assertAuthenticated } from '@/core/modules/orpc-auth';
+ * import { assertAuthenticated } from '@/core/modules/auth/orpc';
  *
  * implement(contract)
  *   .use(requireAuth())

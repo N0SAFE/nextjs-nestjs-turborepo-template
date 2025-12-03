@@ -17,8 +17,8 @@ export class AuthUtils implements ORPCAuthContext {
     return this._session !== null;
   }
 
-  get session(): UserSession | null {
-    return this._session;
+  get session(): Auth["$Infer"]["Session"]["session"] | null {
+    return this._session?.session ?? null;
   }
 
   get user(): UserSession["user"] | null {
