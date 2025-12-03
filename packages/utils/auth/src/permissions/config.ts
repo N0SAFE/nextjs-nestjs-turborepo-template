@@ -1,24 +1,6 @@
 import { PermissionBuilder } from "./system/builder/builder";
 import { defaultRoles } from "better-auth/plugins/admin/access";
 
-/**
- * Creates a permission configuration object
- * @param options Configuration options
- * @returns Permission configuration with checkPermission function and error message
- */
-export function createPermissionConfig<Session>(options: {
-  checkPermission: (session: Session | null | undefined) => boolean | Promise<boolean>;
-  errorMessage?: string;
-}): {
-  checkPermission: (session: Session | null | undefined) => boolean | Promise<boolean>;
-  errorMessage: string;
-} {
-  return {
-    checkPermission: options.checkPermission,
-    errorMessage: options.errorMessage ?? 'Permission denied',
-  };
-}
-
 const builder = PermissionBuilder.withDefaults(defaultRoles)
     .resources(({ actions }) => ({
         capsule: actions(['list', 'read', 'create', 'update', 'delete'] as const)

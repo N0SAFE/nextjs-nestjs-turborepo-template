@@ -60,7 +60,7 @@ export function PushNotificationSettings() {
             </p>
           </div>
           {permission === 'default' && (
-            <Button onClick={requestPermission} variant="outline">
+            <Button onClick={() => {void requestPermission()}} variant="outline">
               Request Permission
             </Button>
           )}
@@ -76,7 +76,7 @@ export function PushNotificationSettings() {
           </div>
           {isGranted && (
             <Button
-              onClick={isSubscribed ? unsubscribe : subscribe}
+              onClick={() => {void (isSubscribed ? unsubscribe() : subscribe())}}
               disabled={isLoading}
               variant={isSubscribed ? 'destructive' : 'default'}
             >
@@ -137,7 +137,7 @@ export function PushNotificationSettings() {
               </p>
             </div>
             <Button
-              onClick={sendTest}
+              onClick={() => {void sendTest()}}
               disabled={isSendingTest}
               variant="outline"
             >
@@ -163,11 +163,11 @@ export function PushNotificationSettings() {
                   key={sub.id}
                   className="text-sm p-2 rounded-lg bg-muted"
                 >
-                  <p className="font-medium">{sub.deviceName || 'Unknown Device'}</p>
+                  <p className="font-medium">{sub.deviceName ?? 'Unknown Device'}</p>
                   <p className="text-xs text-muted-foreground">
                     {sub.userAgent && sub.userAgent.length > 50
                       ? sub.userAgent.substring(0, 50) + '...'
-                      : sub.userAgent || 'No user agent'}
+                      : sub.userAgent ?? 'No user agent'}
                   </p>
                 </div>
               ))}

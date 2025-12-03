@@ -52,7 +52,7 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
     // - api-the-gossip-club.sebille.net + the-gossip-club.sebille.net
     const cookieDomain: string | undefined = isHttps && AUTH_BASE_DOMAIN ? AUTH_BASE_DOMAIN : undefined;
 
-    const auth = betterAuth({
+    const config = {
         secret: BETTER_AUTH_SECRET ?? process.env.BETTER_AUTH_SECRET ?? process.env.AUTH_SECRET,
         baseURL: BASE_URL ?? process.env.NEXT_PUBLIC_API_URL,
         trustedOrigins: origins.length > 0 ? origins : undefined,
@@ -95,8 +95,10 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
             }),
             pushNotificationsPlugin()
         ],
-    });
+    };
+
+    const auth = betterAuth(config);
 
     console.log(auth.api);
-    return { auth };
+    return { auth: { ...auth, config } };
 };

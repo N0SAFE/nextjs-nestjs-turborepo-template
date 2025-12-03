@@ -16,14 +16,16 @@ async function bootstrap() {
   const authService = app.get<AuthService>(AuthService);
 
   // Build list of allowed origins for CORS
+  // @ts-expect-error - process.env typing
   const allowedOrigins = buildAllowedOrigins(process.env);
 
   // Enable CORS with flexible origin matching
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
       if (!origin) {
-        return callback(null, true);
+        callback(null, true);
+        return;
       }
       
       // Normalize the incoming origin
@@ -31,12 +33,14 @@ async function bootstrap() {
       
       // Check if origin is in allowed list
       if (allowedOrigins.includes(normalizedOrigin)) {
-        return callback(null, true);
+        callback(null, true);
+        return;
       }
       
       // In development, be more permissive with localhost
       if (process.env.NODE_ENV !== 'production' && isLocalhostOrigin(normalizedOrigin)) {
-        return callback(null, true);
+        callback(null, true);
+        return;
       }
       
       // Reject the origin

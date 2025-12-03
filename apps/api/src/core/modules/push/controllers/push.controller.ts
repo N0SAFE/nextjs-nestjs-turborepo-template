@@ -2,7 +2,7 @@ import { Controller } from "@nestjs/common";
 import { Implement, implement } from "@orpc/nest";
 import { pushContract } from "@repo/api-contracts";
 import { PushService } from "../services/push.service";
-import { Session as SessionDecorator } from "../../auth/decorators/decorators";
+import { Session as SessionDecorator } from "@/core/modules/auth/decorators/decorators";
 import type { Session } from "@repo/auth";
 
 @Controller()
@@ -11,6 +11,7 @@ export class PushController {
 
   @Implement(pushContract.getPublicKey)
   getPublicKey(@SessionDecorator() session: Session) {
+    console.log(session)
     return implement(pushContract.getPublicKey).handler(async () => {
       const userId = session.user.id
 
