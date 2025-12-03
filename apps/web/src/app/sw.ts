@@ -50,6 +50,7 @@ const customCache = defaultCache.filter((entry) => {
       const matches = entry.matcher(testApiRequest as any);
       // If this matcher would match an API route, exclude it
       if (matches) {
+        console.log('[SW] Filtered out API route matcher (function)');
         return false;
       }
     } catch (e) {
@@ -60,6 +61,7 @@ const customCache = defaultCache.filter((entry) => {
     if (entry.matcher.test('/api/auth/session') || 
         entry.matcher.test('/api/users') ||
         entry.matcher.test('/api/nest/health')) {
+      console.log('[SW] Filtered out API route matcher (regex):', entry.matcher);
       return false;
     }
   }
@@ -67,6 +69,8 @@ const customCache = defaultCache.filter((entry) => {
   // Keep all non-API matchers (fonts, images, static assets, etc.)
   return true;
 });
+
+console.log('[SW] Custom cache initialized with', customCache.length, 'entries (filtered from', defaultCache.length, 'default entries)');
 
 // Create RuntimeCache extension with filtered caching strategies
 const runtimeCache = new RuntimeCache(customCache, {
