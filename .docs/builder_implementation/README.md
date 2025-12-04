@@ -56,14 +56,16 @@ This implementation guide is organized into the following sections:
 ### Advanced Topics
 
 - **[Dependency Resolution](./07-DEPENDENCY-RESOLUTION.md)**: How feature dependencies are managed
-- **[Code Generation](./08-CODE-GENERATION.md)**: Template engine and code generation strategies
-- **[Testing Strategy](./09-TESTING-STRATEGY.md)**: How to test the builder and plugins
-- **[Distribution](./10-DISTRIBUTION.md)**: Publishing and distributing the builder CLI
-- **[Extension Guide](./11-EXTENSION-GUIDE.md)**: How to create custom plugins
+- **[Configuration Interfaces](./08-CONFIGURATION-INTERFACES.md)**: CLI and web-based configuration methods
+- **[Code Generation](./09-CODE-GENERATION.md)**: Template engine and code generation strategies
+- **[Testing Strategy](./10-TESTING-STRATEGY.md)**: How to test the builder and plugins
+- **[Distribution](./11-DISTRIBUTION.md)**: Publishing and distributing the builder CLI
+- **[Extension Guide](./12-EXTENSION-GUIDE.md)**: How to create custom plugins
 
 ### Examples and Use Cases
 
 - **[Use Cases](./12-USE-CASES.md)**: Real-world scenarios and examples
+- **[Implementation Roadmap](./IMPLEMENTATION-ROADMAP.md)**: Development phases and timeline
 - **[Migration Guide](./13-MIGRATION-GUIDE.md)**: Migrating existing projects
 - **[Troubleshooting](./14-TROUBLESHOOTING.md)**: Common issues and solutions
 
