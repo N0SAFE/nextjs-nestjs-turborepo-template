@@ -1,8 +1,10 @@
 import type { MasterTokenManager as _MasterTokenManager } from './state'
 
 // The runtime plugin exposes these actions on the auth client.
-export interface MasterTokenActions<TClient = unknown> {
-  masterTokenSignOut: TClient extends { signOut: infer TSignOut } ? TSignOut : (...args: unknown[]) => Promise<null>
+export interface MasterTokenActions {
+  // $masterTokenSignOut is a factory function that wraps the original signOut
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $masterTokenSignOut: <TSignOut extends (...args: any[]) => Promise<any>>(signOutFn: TSignOut) => (...args: Parameters<TSignOut>) => Promise<Awaited<ReturnType<TSignOut>> | null>
   getMasterTokenEnabled: typeof import('./state').getMasterTokenEnabled
   setMasterTokenEnabled: typeof import('./state').setMasterTokenEnabled
   clearMasterToken: typeof import('./state').clearMasterToken
@@ -16,11 +18,11 @@ export interface MasterTokenActions<TClient = unknown> {
  */
 export function hasMasterTokenPlugin<TClient>(
   client: TClient
-): client is TClient & MasterTokenActions<TClient> {
+): client is TClient & MasterTokenActions {
   const candidate = client as Record<string, unknown>
   // check for a small set of keys that the plugin adds
   return (
-    'masterTokenSignOut' in candidate || typeof candidate.masterTokenSignOut !== 'undefined' ||
+    '$masterTokenSignOut' in candidate || typeof candidate.$masterTokenSignOut !== 'undefined' ||
     'getMasterTokenEnabled' in candidate || typeof candidate.getMasterTokenEnabled !== 'undefined' ||
     'setMasterTokenEnabled' in candidate || typeof candidate.setMasterTokenEnabled !== 'undefined' ||
     'clearMasterToken' in candidate || typeof candidate.clearMasterToken !== 'undefined' ||

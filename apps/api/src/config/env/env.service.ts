@@ -13,18 +13,28 @@ export class EnvService<TSchema extends Record<string, unknown> = Env> {
     @Optional() private readonly configService?: ConfigService
   ) {
     this.schema = envSchema;
-    this.logger.log(`EnvService constructor called. ConfigService available: ${String(!!this.configService)}`);
+    const isTest = process.env.NODE_ENV === 'test';
+    
+    if (!isTest) {
+      this.logger.log(`EnvService constructor called. ConfigService available: ${String(!!this.configService)}`);
+    }
     if (this.configService) {
-      this.logger.log('ConfigService is properly injected');
+      if (!isTest) {
+        this.logger.log('ConfigService is properly injected');
+      }
     } else {
-      this.logger.warn('ConfigService is NOT injected - will use process.env fallback');
+      if (!isTest) {
+        this.logger.warn('ConfigService is NOT injected - will use process.env fallback');
+      }
       // Parse environment once during construction when not using ConfigService
       // Take a snapshot of process.env at construction time (immutable)
       try {
         this.parsedEnv = this.schema.parse(process.env) as TSchema;
       } catch {
         // If validation fails, take a direct snapshot of process.env
-        this.logger.warn('Environment validation failed, using raw process.env snapshot');
+        if (!isTest) {
+          this.logger.warn('Environment validation failed, using raw process.env snapshot');
+        }
         this.parsedEnv = { ...process.env } as TSchema;
       }
     }

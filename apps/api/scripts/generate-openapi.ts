@@ -1,6 +1,3 @@
-import { OpenAPIGenerator } from '@orpc/openapi'
-import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
-import { appContract } from '@repo/api-contracts'
 import { generateSpec } from '../src/openapi';
 
 async function main() {

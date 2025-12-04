@@ -1,5 +1,6 @@
 // Non-React state and helpers for master token management
 export const MASTER_TOKEN_COOKIE_NAME = 'master-token-enabled'
+export const DEV_AUTH_KEY_COOKIE_NAME = 'dev-auth-key'
 
 export function getMasterTokenEnabled(): boolean {
     if (typeof window === 'undefined') return false
@@ -26,7 +27,17 @@ export function setMasterTokenEnabled(enabled: boolean): void {
         ? `path=/; SameSite=None; Secure` 
         : `path=/; SameSite=Lax`
 
+    // Set the master-token-enabled flag cookie
     document.cookie = `${MASTER_TOKEN_COOKIE_NAME}=${String(enabled)}; expires=${expirationDate.toUTCString()}; ${cookieAttributes}`
+
+    // Set or clear the dev-auth-key cookie that the server actually reads
+    const devAuthKey = process.env.NEXT_PUBLIC_DEV_AUTH_KEY
+    if (enabled && devAuthKey) {
+        document.cookie = `${DEV_AUTH_KEY_COOKIE_NAME}=${encodeURIComponent(devAuthKey)}; expires=${expirationDate.toUTCString()}; ${cookieAttributes}`
+    } else {
+        // Clear the dev-auth-key cookie when disabled
+        document.cookie = `${DEV_AUTH_KEY_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    }
 
     try {
         localStorage.setItem(
@@ -41,7 +52,10 @@ export function setMasterTokenEnabled(enabled: boolean): void {
 export function clearMasterToken(): void {
     if (typeof window === 'undefined') return
 
+    // Clear both cookies
     document.cookie = `${MASTER_TOKEN_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    document.cookie = `${DEV_AUTH_KEY_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    
     try {
         localStorage.setItem(
             'master-token',

@@ -17,7 +17,7 @@ vi.mock('better-auth', () => ({
 
 // Mock drizzle adapter
 vi.mock('better-auth/adapters/drizzle', () => ({
-  drizzleAdapter: vi.fn((db: unknown, options: unknown) => ({
+  drizzleAdapter: vi.fn((db: unknown, options: any) => ({
     db,
     ...options,
   })),
@@ -26,27 +26,24 @@ vi.mock('better-auth/adapters/drizzle', () => ({
 // Mock better-auth/plugins
 vi.mock('better-auth/plugins', () => ({
   openAPI: vi.fn(() => ({ id: 'openAPI' })),
+  admin: vi.fn(() => ({ id: 'admin' })),
+  organization: vi.fn(() => ({ id: 'organization' })),
 }));
 
-// Mock permissions
-vi.mock('../permissions/index', () => ({
+// Mock plugins - all server plugins are now exported from ./plugins
+vi.mock('./plugins', () => ({
   useAdmin: vi.fn(() => ({ id: 'admin' })),
   useInvite: vi.fn(() => ({ id: 'invite' })),
-}));
-
-// Mock plugins
-vi.mock('./plugins/masterTokenAuth', () => ({
   masterTokenPlugin: vi.fn(() => ({ id: 'masterToken' })),
-}));
-
-vi.mock('./plugins/loginAs', () => ({
   loginAsPlugin: vi.fn(() => ({ id: 'loginAs' })),
+  pushNotificationsPlugin: vi.fn(() => ({ id: 'pushNotifications' })),
 }));
 
 describe('betterAuthFactory', () => {
   let mockDb: object;
   let mockEnv: {
     DEV_AUTH_KEY: string | undefined;
+    DEV_AUTH_EMAIL: string | undefined;
     NODE_ENV: string;
     BETTER_AUTH_SECRET?: string;
     BASE_URL?: string;
@@ -63,6 +60,7 @@ describe('betterAuthFactory', () => {
     
     mockEnv = {
       DEV_AUTH_KEY: undefined,
+      DEV_AUTH_EMAIL: undefined,
       NODE_ENV: 'production',
       BETTER_AUTH_SECRET: 'test-better-auth-secret',
       BASE_URL: 'http://localhost:3001',
@@ -165,9 +163,10 @@ describe('betterAuthFactory', () => {
   });
 
   describe('Development Mode', () => {
-    it('should enable master token plugin in development with DEV_AUTH_KEY', () => {
+    it('should enable master token plugin in development with DEV_AUTH_KEY and DEV_AUTH_EMAIL', () => {
       mockEnv.NODE_ENV = 'development';
       mockEnv.DEV_AUTH_KEY = 'test-dev-key';
+      mockEnv.DEV_AUTH_EMAIL = 'test@example.com';
       
       const result = betterAuthFactory(mockDb, mockEnv);
 

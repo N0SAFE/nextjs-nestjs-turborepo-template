@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   createSerwist,
   RuntimeCache,
@@ -41,3 +42,56 @@ const serwist = createSerwist({
 
 // Add standard service worker event listeners
 addEventListeners(serwist);
+
+// ============================================================================
+// Push Notifications Support
+// ============================================================================
+
+/**
+ * Handle incoming push notifications
+ */
+sw.addEventListener('push', (event: any) => {
+  const data = event.data?.json() || {};
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192x192.png',
+    badge: data.badge || '/badge-72x72.png',
+    data: data.data || {},
+    actions: data.actions || [],
+    tag: data.tag,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+  };
+
+  event.waitUntil(
+    (self as any).registration.showNotification(data.title || 'Notification', options)
+  );
+});
+
+/**
+ * Handle notification clicks
+ */
+sw.addEventListener('notificationclick', (event: any) => {
+  event.notification.close();
+
+  // Get the URL to open from notification data
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    (self as any).clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList: any[]) => {
+        // Check if there's already a window open
+        for (const client of clientList) {
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Open new window
+        if ((self as any).clients.openWindow) {
+          return (self as any).clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});

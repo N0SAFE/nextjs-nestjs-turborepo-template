@@ -14,8 +14,11 @@ export const {
     $Infer,
 } = authClient
 
+// Create the masterTokenSignOut by wrapping the original signOut with the plugin's factory
+// The plugin provides $masterTokenSignOut as a factory that takes the original signOut
+// and returns a wrapped version that handles dev auth mode
 export const signOut = hasMasterTokenPlugin(authClient)
-    ? authClient.masterTokenSignOut
+    ? authClient.$masterTokenSignOut(authClient.signOut)
     : authClient.signOut
 
 // Auth pages configuration for Better Auth

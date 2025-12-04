@@ -7,9 +7,10 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  createdAt: timestamp("created_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => new Date())
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   role: text("role"),
   banned: boolean("banned").default(false),
@@ -23,9 +24,9 @@ export const session = pgTable(
     id: text("id").primaryKey(),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -53,9 +54,9 @@ export const account = pgTable(
     refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
@@ -68,9 +69,10 @@ export const verification = pgTable(
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
-      .$onUpdate(() => new Date())
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
@@ -84,15 +86,45 @@ export const invite = pgTable("invite", {
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
-  createdByUserId: text("created_by_user_id").references(() => user.id, {
-    onDelete: "set null",
-  }),
+  invitedUserId: text("invited_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userVapidKeys = pgTable("user_vapid_keys", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: "cascade" }),
+  publicKey: text("public_key").notNull(),
+  privateKey: text("private_key").notNull(),
+  subject: text("subject"),
+  createdAt: timestamp("created_at"),
+});
+
+export const pushSubscription = pgTable("push_subscription", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  deviceName: text("device_name"),
+  userAgent: text("user_agent"),
+  isActive: boolean("is_active"),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+export const userRelations = relations(user, ({ one, many }) => ({
   sessions: many(session),
   accounts: many(account),
   invites: many(invite),
+  userVapidKeys: one(userVapidKeys),
+  pushSubscriptions: many(pushSubscription),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -111,8 +143,24 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const inviteRelations = relations(invite, ({ one }) => ({
   user: one(user, {
-    fields: [invite.createdByUserId],
+    fields: [invite.invitedUserId],
     references: [user.id],
   }),
 }));
 
+export const userVapidKeysRelations = relations(userVapidKeys, ({ one }) => ({
+  user: one(user, {
+    fields: [userVapidKeys.userId],
+    references: [user.id],
+  }),
+}));
+
+export const pushSubscriptionRelations = relations(
+  pushSubscription,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [pushSubscription.userId],
+      references: [user.id],
+    }),
+  }),
+);

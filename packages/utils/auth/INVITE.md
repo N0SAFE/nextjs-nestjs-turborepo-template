@@ -23,7 +23,7 @@ The invite plugin is already included in the `@repo/auth` package.
 
 ```typescript
 import { betterAuth } from "better-auth";
-import { useAdmin, useInvite } from "@repo/auth/permissions";
+import { useAdmin, useInvite } from "@repo/auth/server/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -55,12 +55,12 @@ export const auth = betterAuth({
 
 ```typescript
 import { createAuthClient } from "better-auth/react";
-import { inviteClient } from "@repo/auth/client";
+import { useInviteClient } from "@repo/auth/client/plugins";
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   plugins: [
-    inviteClient(),
+    useInviteClient(),
     // ... other plugins
   ],
 });

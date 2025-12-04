@@ -155,7 +155,7 @@
                 "@orpc/server": "1.12.1",
                 "@orpc/shared": "1.12.1",
                 "@orpc/zod": "1.12.1",
-                "@orpc/json-schema": "^1.12.1"
+                "@orpc/json-schema": "1.12.1"
             },
             "api:nest": {
                 "@nestjs/cli": "^11.0.14",

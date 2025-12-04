@@ -70,7 +70,7 @@ export const masterTokenClient = (): BetterAuthClientPlugin =>
                         if (process.env.NODE_ENV !== 'development') return ctx
 
                         try {
-                            // eslint-disable-next-line turbo/no-undeclared-env-vars
+                             
                             const key = process.env.NEXT_PUBLIC_DEV_AUTH_KEY
                             if (!key) return ctx
 

@@ -6,6 +6,12 @@ import {
   type Permission,
   type RoleName,
   PermissionChecker,
+  AccessControl,
+  AccessDeniedError,
+  AuthenticationRequiredError,
+  type AccessControlUser,
+  type RoleCheckOptions,
+  type AccessControlResult,
 } from "@repo/auth/permissions";
 
 /**
@@ -13,31 +19,14 @@ import {
  */
 export type RequestWithSession = Request & {
   session: Session | null;
-  user?: Session['user'];
+  user?: Session["user"];
 };
 
-/**
- * Options for role checking
- */
-export interface RoleCheckOptions {
-  /**
-   * Whether to throw an error if check fails
-   * @default true
-   */
-  throwOnFail?: boolean;
-  /**
-   * Custom error message
-   */
-  errorMessage?: string;
-  /**
-   * Error code to use
-   * @default "FORBIDDEN"
-   */
-  errorCode?: string;
-}
+// Re-export types from the auth package for convenience
+export type { RoleCheckOptions, AccessControlResult, AccessControlUser };
 
 /**
- * Options for permission checking
+ * Options for permission checking (extends base options)
  */
 export interface PermissionCheckOptions extends RoleCheckOptions {
   /**
@@ -48,22 +37,35 @@ export interface PermissionCheckOptions extends RoleCheckOptions {
 }
 
 /**
- * Result type for access control checks
+ * NestJS-specific Access Control that extends the framework-agnostic AccessControl class.
+ * Provides ExecutionContext-based user extraction and Better Auth API integration.
+ * 
+ * @example
+ * ```typescript
+ * // Static usage with context
+ * const user = NestAccessControl.getUserFromContext(context);
+ * const ac = new NestAccessControl(user);
+ * ac.allowRoles(['admin', 'manager']);
+ * 
+ * // Or use the standalone functions
+ * allowRoles(context, ['admin', 'manager']);
+ * ```
  */
-export interface AccessControlResult {
-  allowed: boolean;
-  reason?: string;
-  userRoles?: RoleName[];
-}
+export class NestAccessControl extends AccessControl {
+  /**
+   * Create NestAccessControl from ExecutionContext
+   */
+  static fromContext(context: ExecutionContext): NestAccessControl {
+    const user = NestAccessControl.getUserFromContext(context);
+    return new NestAccessControl(user);
+  }
 
-/**
- * Access control utilities for flexible role and permission-based access control
- */
-export class AccessControlUtils {
   /**
    * Get user from execution context
    */
-  static getUserFromContext(context: ExecutionContext): Auth['$Infer']['Session']['user'] | undefined {
+  static getUserFromContext(
+    context: ExecutionContext
+  ): Auth["$Infer"]["Session"]["user"] | undefined {
     const request = context.switchToHttp().getRequest<RequestWithSession>();
     return request.session?.user;
   }
@@ -86,17 +88,20 @@ export class AccessControlUtils {
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated from context
    */
-  static isAuthenticated(context: ExecutionContext): boolean {
+  static isAuthenticatedFromContext(context: ExecutionContext): boolean {
     const user = this.getUserFromContext(context);
     return !!user;
   }
 
   /**
-   * Require authentication and throw if not authenticated
+   * Require authentication from context and throw APIError if not authenticated
    */
-  static requireAuth(context: ExecutionContext, errorMessage?: string): Auth['$Infer']['Session']['user'] {
+  static requireAuthFromContext(
+    context: ExecutionContext,
+    errorMessage?: string
+  ): Auth["$Infer"]["Session"]["user"] {
     const user = this.getUserFromContext(context);
     if (!user) {
       throw new APIError(401, {
@@ -109,13 +114,52 @@ export class AccessControlUtils {
 }
 
 /**
+ * Convert AccessControl errors to Better Auth APIError format.
+ * Use this to wrap AccessControl checks in NestJS handlers.
+ */
+export function convertToAPIError(error: unknown): never {
+  if (error instanceof AuthenticationRequiredError) {
+    throw new APIError(401, {
+      code: error.code,
+      message: error.message,
+    });
+  }
+  if (error instanceof AccessDeniedError) {
+    // Cast statusCode to valid HTTP status - AccessDeniedError always uses 403
+    throw new APIError(403, {
+      code: error.code,
+      message: error.message,
+    });
+  }
+  throw error;
+}
+
+/**
+ * Run an access control check and convert errors to APIError.
+ * @param check - Function that performs the access control check
+ * @returns The result of the check
+ * @throws APIError if access is denied
+ */
+export function runAccessCheck<T>(check: () => T): T {
+  try {
+    return check();
+  } catch (error) {
+    convertToAPIError(error);
+  }
+}
+
+// ============================================================================
+// STANDALONE FUNCTIONS - NestJS-specific wrappers using AccessControl from package
+// ============================================================================
+
+/**
  * Check if user has ANY of the specified roles
- * 
+ *
  * @param context - Execution context
  * @param roles - Roles to check (user needs at least one)
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = allowRoles(context, ['admin', 'manager']);
@@ -129,58 +173,18 @@ export function allowRoles(
   roles: RoleName[],
   options: RoleCheckOptions = {}
 ): AccessControlResult {
-  const { throwOnFail = true, errorMessage, errorCode = "FORBIDDEN" } = options;
-
-  const user = AccessControlUtils.getUserFromContext(context);
-  
-  if (!user) {
-    const reason = "User not authenticated";
-    if (throwOnFail) {
-      throw new APIError(401, {
-        code: "UNAUTHORIZED",
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const userRole = user.role;
-  if (!userRole) {
-    const reason = "User has no role assigned";
-    if (throwOnFail) {
-      throw new APIError(403, {
-        code: errorCode,
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const userRoles = PermissionChecker.getUserRoles(userRole);
-  const hasAnyRole = roles.some(role => PermissionChecker.hasRole(userRole, role));
-
-  if (!hasAnyRole) {
-    const reason = `User lacks required roles. Required: ${roles.join(', ')}. User has: ${userRoles.join(', ')}`;
-    if (throwOnFail) {
-      throw new APIError(403, {
-        code: errorCode,
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason, userRoles };
-  }
-
-  return { allowed: true, userRoles };
+  const user = NestAccessControl.getUserFromContext(context);
+  return runAccessCheck(() => AccessControl.allowRoles(user, roles, options));
 }
 
 /**
  * Check if user has ALL of the specified roles
- * 
+ *
  * @param context - Execution context
  * @param roles - Roles to check (user needs all of them)
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = allowAllRoles(context, ['admin', 'superuser']);
@@ -194,58 +198,18 @@ export function allowAllRoles(
   roles: RoleName[],
   options: RoleCheckOptions = {}
 ): AccessControlResult {
-  const { throwOnFail = true, errorMessage, errorCode = "FORBIDDEN" } = options;
-
-  const user = AccessControlUtils.getUserFromContext(context);
-  
-  if (!user) {
-    const reason = "User not authenticated";
-    if (throwOnFail) {
-      throw new APIError(401, {
-        code: "UNAUTHORIZED",
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const userRole = user.role;
-  if (!userRole) {
-    const reason = "User has no role assigned";
-    if (throwOnFail) {
-      throw new APIError(403, {
-        code: errorCode,
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const userRoles = PermissionChecker.getUserRoles(userRole);
-  const hasAllRoles = roles.every(role => PermissionChecker.hasRole(userRole, role));
-
-  if (!hasAllRoles) {
-    const reason = `User must have all roles. Required: ${roles.join(', ')}. User has: ${userRoles.join(', ')}`;
-    if (throwOnFail) {
-      throw new APIError(403, {
-        code: errorCode,
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason, userRoles };
-  }
-
-  return { allowed: true, userRoles };
+  const user = NestAccessControl.getUserFromContext(context);
+  return runAccessCheck(() => AccessControl.allowAllRoles(user, roles, options));
 }
 
 /**
  * Check if user DOES NOT have any of the specified roles (inverse check)
- * 
+ *
  * @param context - Execution context
  * @param roles - Roles to check against (user should not have any of these)
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = denyRoles(context, ['banned', 'suspended']);
@@ -259,53 +223,19 @@ export function denyRoles(
   roles: RoleName[],
   options: RoleCheckOptions = {}
 ): AccessControlResult {
-  const { throwOnFail = true, errorMessage, errorCode = "FORBIDDEN" } = options;
-
-  const user = AccessControlUtils.getUserFromContext(context);
-  
-  if (!user) {
-    const reason = "User not authenticated";
-    if (throwOnFail) {
-      throw new APIError(401, {
-        code: "UNAUTHORIZED",
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const userRole = user.role;
-  if (!userRole) {
-    // If user has no role, they can't have a denied role
-    return { allowed: true };
-  }
-
-  const userRoles = PermissionChecker.getUserRoles(userRole);
-  const hasDeniedRole = roles.some(role => PermissionChecker.hasRole(userRole, role));
-
-  if (hasDeniedRole) {
-    const reason = `User has forbidden roles. Forbidden: ${roles.join(', ')}. User has: ${userRoles.join(', ')}`;
-    if (throwOnFail) {
-      throw new APIError(403, {
-        code: errorCode,
-        message: errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason, userRoles };
-  }
-
-  return { allowed: true, userRoles };
+  const user = NestAccessControl.getUserFromContext(context);
+  return runAccessCheck(() => AccessControl.denyRoles(user, roles, options));
 }
 
 /**
- * Check if user has the required permissions
- * 
+ * Check if user has the required permissions using Better Auth API
+ *
  * @param context - Execution context
  * @param auth - Better Auth instance
  * @param permissions - Permissions to check
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = await allowPermissions(context, auth, {
@@ -327,11 +257,11 @@ export async function allowPermissions(
     throwOnFail = true,
     errorMessage,
     errorCode = "FORBIDDEN",
-    validateStructure = true
+    validateStructure = true,
   } = options;
 
-  const user = AccessControlUtils.getUserFromContext(context);
-  
+  const user = NestAccessControl.getUserFromContext(context);
+
   if (!user) {
     const reason = "User not authenticated";
     if (throwOnFail) {
@@ -385,13 +315,13 @@ export async function allowPermissions(
 
 /**
  * Check if user has ANY of the specified permissions (at least one resource-action pair)
- * 
+ *
  * @param context - Execution context
  * @param auth - Better Auth instance
  * @param permissions - Array of permission objects to check
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = await allowAnyPermissions(context, auth, [
@@ -411,11 +341,11 @@ export async function allowAnyPermissions(
     throwOnFail = true,
     errorMessage,
     errorCode = "FORBIDDEN",
-    validateStructure = true
+    validateStructure = true,
   } = options;
 
-  const user = AccessControlUtils.getUserFromContext(context);
-  
+  const user = NestAccessControl.getUserFromContext(context);
+
   if (!user) {
     const reason = "User not authenticated";
     if (throwOnFail) {
@@ -462,14 +392,14 @@ export async function allowAnyPermissions(
 
 /**
  * Combined check: user needs specified roles AND permissions
- * 
+ *
  * @param context - Execution context
  * @param auth - Better Auth instance
  * @param roles - Required roles (user needs at least one)
  * @param permissions - Required permissions
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = await allowRolesAndPermissions(
@@ -488,33 +418,39 @@ export async function allowRolesAndPermissions(
   permissions: Permission,
   options: PermissionCheckOptions = {}
 ): Promise<AccessControlResult> {
-  // Check roles first
-  const roleResult = allowRoles(context, roles, { ...options, throwOnFail: false });
+  // Check roles first using package AccessControl
+  const user = NestAccessControl.getUserFromContext(context);
+  const roleResult = AccessControl.allowRoles(user, roles, {
+    ...options,
+    throwOnFail: false,
+  });
+
   if (!roleResult.allowed) {
     if (options.throwOnFail !== false) {
       throw new APIError(403, {
         code: options.errorCode ?? "FORBIDDEN",
-        message: options.errorMessage ?? roleResult.reason ?? "Role check failed",
+        message:
+          options.errorMessage ?? roleResult.reason ?? "Role check failed",
       });
     }
     return roleResult;
   }
 
-  // Then check permissions
+  // Then check permissions via Better Auth API
   const permResult = await allowPermissions(context, auth, permissions, options);
   return permResult;
 }
 
 /**
  * Combined check: user needs specified roles OR permissions (flexible access)
- * 
+ *
  * @param context - Execution context
  * @param auth - Better Auth instance
  * @param roles - Allowed roles (user needs at least one)
  * @param permissions - Allowed permissions
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = await allowRolesOrPermissions(
@@ -533,24 +469,29 @@ export async function allowRolesOrPermissions(
   permissions: Permission,
   options: PermissionCheckOptions = {}
 ): Promise<AccessControlResult> {
-  // Try roles first (don't throw)
-  const roleResult = allowRoles(context, roles, { ...options, throwOnFail: false });
+  // Try roles first using package AccessControl (don't throw)
+  const user = NestAccessControl.getUserFromContext(context);
+  const roleResult = AccessControl.allowRoles(user, roles, {
+    ...options,
+    throwOnFail: false,
+  });
+
   if (roleResult.allowed) {
     return roleResult;
   }
 
-  // If roles failed, try permissions
+  // If roles failed, try permissions via Better Auth API
   const permResult = await allowPermissions(context, auth, permissions, {
     ...options,
-    throwOnFail: false
+    throwOnFail: false,
   });
-  
+
   if (permResult.allowed) {
     return permResult;
   }
 
   // Both failed
-  const reason = `User needs either roles (${roles.join(', ')}) or permissions (${JSON.stringify(permissions)})`;
+  const reason = `User needs either roles (${roles.join(", ")}) or permissions (${JSON.stringify(permissions)})`;
   if (options.throwOnFail !== false) {
     throw new APIError(403, {
       code: options.errorCode ?? "FORBIDDEN",
@@ -562,13 +503,13 @@ export async function allowRolesOrPermissions(
 
 /**
  * Check if user is the resource owner or has admin access
- * 
+ *
  * @param context - Execution context
  * @param resourceOwnerId - ID of the resource owner
- * @param adminRoles - Roles that have admin access (default: ['admin', 'superAdmin'])
+ * @param adminRoles - Roles that have admin access (default: ['admin'])
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = allowOwnerOrAdmin(context, post.authorId);
@@ -580,39 +521,23 @@ export async function allowRolesOrPermissions(
 export function allowOwnerOrAdmin(
   context: ExecutionContext,
   resourceOwnerId: string,
-  adminRoles: RoleName[] = ['admin', 'superAdmin'],
+  adminRoles: RoleName[] = ["admin"],
   options: RoleCheckOptions = {}
 ): AccessControlResult {
-  const user = AccessControlUtils.getUserFromContext(context);
-  
-  if (!user) {
-    const reason = "User not authenticated";
-    if (options.throwOnFail !== false) {
-      throw new APIError(401, {
-        code: "UNAUTHORIZED",
-        message: options.errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  // Check if user is the owner
-  if (user.id === resourceOwnerId) {
-    return { allowed: true };
-  }
-
-  // Check if user has admin role
-  return allowRoles(context, adminRoles, options);
+  const user = NestAccessControl.getUserFromContext(context);
+  return runAccessCheck(() =>
+    AccessControl.allowOwnerOrRoles(user, resourceOwnerId, adminRoles, options)
+  );
 }
 
 /**
  * Custom access control with a predicate function
- * 
+ *
  * @param context - Execution context
  * @param predicate - Function that returns true if access should be allowed
  * @param options - Check options
  * @returns AccessControlResult with allowed status and details
- * 
+ *
  * @example
  * ```typescript
  * const result = customAccess(context, (user) => {
@@ -622,34 +547,12 @@ export function allowOwnerOrAdmin(
  */
 export function customAccess(
   context: ExecutionContext,
-  predicate: (user: Auth['$Infer']['Session']['user']) => boolean,
+  predicate: (user: Auth["$Infer"]["Session"]["user"]) => boolean,
   options: RoleCheckOptions = {}
 ): AccessControlResult {
-  const user = AccessControlUtils.getUserFromContext(context);
-  
-  if (!user) {
-    const reason = "User not authenticated";
-    if (options.throwOnFail !== false) {
-      throw new APIError(401, {
-        code: "UNAUTHORIZED",
-        message: options.errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  const allowed = predicate(user);
-  
-  if (!allowed) {
-    const reason = "Custom access check failed";
-    if (options.throwOnFail !== false) {
-      throw new APIError(403, {
-        code: options.errorCode ?? "FORBIDDEN",
-        message: options.errorMessage ?? reason,
-      });
-    }
-    return { allowed: false, reason };
-  }
-
-  return { allowed: true };
+  const user = NestAccessControl.getUserFromContext(context);
+  return runAccessCheck(() =>
+    AccessControl.customAccess(user, predicate, options)
+  );
 }
+

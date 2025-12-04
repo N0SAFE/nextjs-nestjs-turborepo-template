@@ -4,6 +4,52 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserController } from '@/modules/user/controllers/user.controller';
 import { UserService } from '@/modules/user/services/user.service';
 
+// Mock user for context
+const mockAuthUser = {
+  id: 'auth-user-1',
+  name: 'Auth User',
+  email: 'auth@example.com',
+  emailVerified: true,
+  image: null,
+  createdAt: new Date('2023-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2023-01-01T00:00:00.000Z'),
+};
+
+// Create a chainable mock for implement().use().handler()
+function createImplementMock() {
+  type HandlerFn = (opts: { input: unknown; context: { auth: { user: typeof mockAuthUser } } }) => unknown;
+  let handlerFn: HandlerFn | null = null;
+  
+  const chainable = {
+    use: vi.fn().mockReturnThis(),
+    handler: vi.fn((fn: HandlerFn) => {
+      handlerFn = fn;
+      return {
+        handler: fn,
+        // Allow calling the handler with mock context
+        __testHandler: (input: unknown) => {
+          if (handlerFn) {
+            return handlerFn({ input, context: { auth: { user: mockAuthUser } } });
+          }
+        },
+      };
+    }),
+  };
+  
+  return chainable;
+}
+
+// Mock @orpc/nest
+vi.mock('@orpc/nest', () => ({
+  implement: vi.fn(() => createImplementMock()),
+  Implement: vi.fn(() => () => {}),
+}));
+
+// Mock requireAuth middleware - do nothing, just pass through
+vi.mock('@/core/modules/auth/orpc/middlewares', () => ({
+  requireAuth: vi.fn(() => ({})),
+}));
+
 describe('UserController', () => {
   let controller: UserController;
   let service: UserService;
