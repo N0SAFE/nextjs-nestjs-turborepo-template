@@ -64,14 +64,13 @@ export class AuthService<T extends { api: T["api"] } = Auth> {
 		return os.$context<{
 			request: Request;
 		}>().middleware(async (opts) => {
-			console.log("Auth Middleware: Extracting session from request");
 			// Extract session from request headers
 			const session = await auth.api.getSession({
 				headers: fromNodeHeaders(opts.context.request.headers as unknown as IncomingHttpHeaders),
 			});
 			
 			// Create auth utilities with session
-			const authUtils = new AuthUtils(session as UserSession | null, auth);
+			const authUtils = new AuthUtils(session, auth);
 
 			// Pass context with auth to next middleware/handler
 			return opts.next({
