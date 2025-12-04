@@ -1,8 +1,16 @@
 import { createAuthClient } from 'better-auth/react'
 import type { BetterAuthClientOptions, BetterAuthClientPlugin } from 'better-auth/client'
-import masterTokenClient from './plugins/masterToken'
-import { loginAsClientPlugin } from './plugins/loginAs'
-import { inviteClient } from './plugins/invite'
+import { inferAdditionalFields } from 'better-auth/client/plugins'
+import type { betterAuthFactory } from '../server/index'
+import {
+    masterTokenClient,
+    loginAsClientPlugin,
+    useInviteClient,
+    useAdminClient,
+} from './plugins'
+
+// Extract the actual auth type from the factory return type
+type AuthInstance = ReturnType<typeof betterAuthFactory>['auth']
 
 export interface CreateAuthClientFactoryOptions {
   /**
@@ -46,7 +54,9 @@ export const createAuthClientFactory = (options: CreateAuthClientFactoryOptions)
     plugins: [
       masterTokenClient(),
       loginAsClientPlugin(),
-      inviteClient(),
+      useInviteClient(),
+      useAdminClient(),
+      inferAdditionalFields<AuthInstance>(),
       ...additionalPlugins,
     ],
   } satisfies BetterAuthClientOptions

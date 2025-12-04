@@ -26,21 +26,17 @@ vi.mock('better-auth/adapters/drizzle', () => ({
 // Mock better-auth/plugins
 vi.mock('better-auth/plugins', () => ({
   openAPI: vi.fn(() => ({ id: 'openAPI' })),
+  admin: vi.fn(() => ({ id: 'admin' })),
+  organization: vi.fn(() => ({ id: 'organization' })),
 }));
 
-// Mock permissions
-vi.mock('../permissions/index', () => ({
+// Mock plugins - all server plugins are now exported from ./plugins
+vi.mock('./plugins', () => ({
   useAdmin: vi.fn(() => ({ id: 'admin' })),
   useInvite: vi.fn(() => ({ id: 'invite' })),
-}));
-
-// Mock plugins
-vi.mock('./plugins/masterTokenAuth', () => ({
   masterTokenPlugin: vi.fn(() => ({ id: 'masterToken' })),
-}));
-
-vi.mock('./plugins/loginAs', () => ({
   loginAsPlugin: vi.fn(() => ({ id: 'loginAs' })),
+  pushNotificationsPlugin: vi.fn(() => ({ id: 'pushNotifications' })),
 }));
 
 describe('betterAuthFactory', () => {

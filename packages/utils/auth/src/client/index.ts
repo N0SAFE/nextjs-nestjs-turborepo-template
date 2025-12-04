@@ -2,18 +2,5 @@
 export { createAuthClientFactory } from "./auth-client";
 export type { CreateAuthClientFactoryOptions } from "./auth-client";
 
-// Export client plugins
-export { default as masterTokenClient } from "./plugins/masterToken";
-export { loginAsClientPlugin } from "./plugins/loginAs";
-export { inviteClient } from "./plugins/invite";
-export type { InviteClientPlugin } from "./plugins/invite";
-
-// Export guards
-export * from "./plugins/guards";
-
-// Re-export plugin utilities
-export * from "./plugins/masterToken/state";
-export type { MasterTokenActions } from "./plugins/masterToken/guard";
-
-// Export components
-export { MasterTokenProvider, useMasterToken } from "./plugins/masterToken/components/provider";
+// Export all client plugins from the plugins index
+export * from "./plugins";

@@ -98,12 +98,12 @@ export class RolesConfig<TRoles extends Record<string, Record<string, readonly s
   /**
    * Add a new role
    */
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- intersection adds K to known keys for type inference
+   
   add<K extends string>(key: K, role: Record<string, readonly string[]>): RolesConfig<TRoles & Record<K, Record<string, readonly string[]>>> {
     return new RolesConfig({
       ...this._roles,
       [key]: role
-      // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- intersection adds K to known keys for type inference
+       
     } as TRoles & Record<K, Record<string, readonly string[]>>);
   }
 

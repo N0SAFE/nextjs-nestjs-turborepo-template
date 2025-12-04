@@ -23,6 +23,7 @@
         "API_PORT",
         "DEV_AUTH_KEY",
         "DEV_AUTH_EMAIL",
+        "NEXT_PUBLIC_DEV_AUTH_KEY",
         "CORS_ORIGIN",
         "LOG_LEVEL",
         "CHOKIDAR_USEPOLLING",

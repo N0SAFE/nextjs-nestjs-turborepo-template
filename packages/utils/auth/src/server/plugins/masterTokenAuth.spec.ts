@@ -10,6 +10,7 @@ describe('masterTokenPlugin', () => {
   const defaultOptions = {
     devAuthKey: 'test-master-token-key',
     enabled: true,
+    masterEmail: 'master@example.com',
   };
 
   beforeEach(() => {
@@ -38,6 +39,7 @@ describe('masterTokenPlugin', () => {
     it('should accept devAuthKey option', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'custom-key',
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -48,6 +50,7 @@ describe('masterTokenPlugin', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
         enabled: false,
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -56,11 +59,7 @@ describe('masterTokenPlugin', () => {
     it('should accept custom masterUser option', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
-        masterUser: {
-          id: 'custom-id',
-          email: 'custom@example.com',
-          name: 'Custom User',
-        },
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -69,6 +68,7 @@ describe('masterTokenPlugin', () => {
     it('should use default masterUser when not provided', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -77,6 +77,7 @@ describe('masterTokenPlugin', () => {
     it('should default enabled to true when not specified', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -165,8 +166,12 @@ describe('masterTokenPlugin', () => {
       expect(matcher?.(createMockContext('/get-session', 'wrong-token'))).toBe(false);
     });
 
-    it('should not match when masterEmail is not configured', () => {
-      const plugin = masterTokenPlugin(defaultOptions);
+    it('should not match when masterEmail is empty string', () => {
+      const plugin = masterTokenPlugin({
+        devAuthKey: 'test-master-token-key',
+        enabled: true,
+        masterEmail: '', // Empty string should not match
+      });
       const afterHooks = plugin.hooks?.after;
       const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
       const matcher = hook?.matcher;
@@ -181,6 +186,7 @@ describe('masterTokenPlugin', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
         enabled: false,
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -192,6 +198,7 @@ describe('masterTokenPlugin', () => {
     it('should handle empty devAuthKey', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: '',
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -200,9 +207,7 @@ describe('masterTokenPlugin', () => {
     it('should handle partial masterUser options', () => {
       const plugin = masterTokenPlugin({
         devAuthKey: 'test-key',
-        masterUser: {
-          id: 'only-id',
-        },
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin).toBeDefined();
@@ -214,6 +219,7 @@ describe('masterTokenPlugin', () => {
       const plugin1 = masterTokenPlugin(defaultOptions);
       const plugin2 = masterTokenPlugin({
         devAuthKey: 'different-key',
+        masterEmail: 'master@example.com',
       });
       
       expect(plugin1.id).toBe(plugin2.id);

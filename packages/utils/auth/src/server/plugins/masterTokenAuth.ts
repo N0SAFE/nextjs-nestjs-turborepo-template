@@ -2,7 +2,7 @@
 import type { BetterAuthPlugin, HookEndpointContext } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { parseCookie } from 'cookie'
-import { Session, User } from "../../types";
+import type { Session, User } from "../../types";
 
 interface MasterTokenOptions {
     /**

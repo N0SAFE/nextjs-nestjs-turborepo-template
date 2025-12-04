@@ -2,10 +2,13 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { openAPI } from "better-auth/plugins";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { masterTokenPlugin } from "./plugins/masterTokenAuth";
-import { loginAsPlugin } from "./plugins/loginAs";
-import { pushNotificationsPlugin } from "./plugins/pushNotifications";
-import { useAdmin, useInvite } from "../permissions/index";
+import {
+    masterTokenPlugin,
+    loginAsPlugin,
+    pushNotificationsPlugin,
+    useAdmin,
+    useInvite,
+} from "./plugins";
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
