@@ -101,6 +101,8 @@ describe('ORPC Auth Middlewares', () => {
     });
 
     it('should pass when user has any of the required roles', async () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const middleware = accessControl({ roles: ['manager', 'admin'] });
       const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
 

@@ -185,12 +185,12 @@ describe('invitePlugin', () => {
       expect(inviteSchema.fields.token.required).toBe(true);
     });
 
-    it('should include createdByUserId reference', () => {
+    it('should include invitedUserId reference', () => {
       const plugin = invitePlugin(defaultOptions);
       const inviteSchema = plugin.schema.invite;
       
-      expect(inviteSchema.fields.createdByUserId).toBeDefined();
-      expect(inviteSchema.fields.createdByUserId.references.model).toBe('user');
+      expect(inviteSchema.fields.invitedUserId).toBeDefined();
+      expect(inviteSchema.fields.invitedUserId.references.model).toBe('user');
     });
 
     it('should include optional usedAt field', () => {

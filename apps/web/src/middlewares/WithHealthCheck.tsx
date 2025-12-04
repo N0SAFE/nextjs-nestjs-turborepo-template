@@ -31,14 +31,12 @@ const withHealthCheck: MiddlewareFactory = (next: NextProxy) => {
                     'Checking API health via ORPC in development mode'
                 )
                 try {
-                    const startTime = Date.now()
                     const data = await orpc.health.check.call(
                         {},
                         {
                             context: { cookie: request.cookies.toString() },
                         }
                     )
-                    console.log('time taken by the health check', Date.now() - startTime)
                     debugHealthCheck('Health check response received', { data })
 
                     if (!(data.status === 'ok')) {

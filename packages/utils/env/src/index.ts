@@ -42,6 +42,7 @@ export const apiEnvSchema = zod.object({
     BETTER_AUTH_SECRET: zod.string().min(1, 'BETTER_AUTH_SECRET is required'),
     AUTH_BASE_DOMAIN: zod.string().optional(),
     DEV_AUTH_KEY: zod.string().optional(),
+    DEV_AUTH_EMAIL: zod.email().optional(), // Email of the user to impersonate when using master token
     TRUSTED_ORIGINS: zod.string().optional(),
     
     // Shared

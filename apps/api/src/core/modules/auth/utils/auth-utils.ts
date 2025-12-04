@@ -1,4 +1,4 @@
-import { PermissionChecker, type Permission, type RoleName } from "@repo/auth/permissions";
+import { PermissionChecker, type Permission, type RoleName, type ResourcePermission } from "@repo/auth/permissions";
 import type { Auth } from "@/auth";
 import { ORPCError } from "@orpc/client";
 
@@ -23,8 +23,16 @@ export interface AccessOptions {
 }
 
 /**
+ * Permission requirement type - can be:
+ * - A ResourcePermission object from Resources accessor (e.g., Resources.capsule.read)
+ */
+export type PermissionRequirement = ResourcePermission 
+
+/**
  * Global auth utilities class that provides authentication and authorization helpers
  * Can be used in both ORPC handlers (via context.auth) and regular NestJS services
+ * 
+ * Uses PermissionChecker internally for consistent permission validation.
  * 
  * @example
  * ```ts
@@ -45,13 +53,23 @@ export interface AccessOptions {
  * if (await this.authService.hasPermission(session, permission)) {
  *   // ...
  * }
+ * 
+ * // Using Resources accessor for type-safe permissions
+ * import { Resources } from "@repo/auth/permissions";
+ * if (utils.checkPermission(Resources.capsule.read)) {
+ *   // User can read capsules
+ * }
  * ```
  */
 export class AuthUtils {
+  private readonly _permissionChecker: PermissionChecker;
+
   constructor(
     private readonly _session: UserSession | null,
     private readonly auth: Auth,
-  ) {}
+  ) {
+    this._permissionChecker = new PermissionChecker(this._session?.user ?? null);
+  }
 
   get isLoggedIn(): boolean {
     return this._session !== null;
@@ -63,6 +81,13 @@ export class AuthUtils {
 
   get user(): UserSession["user"] | null {
     return this._session?.user ?? null;
+  }
+
+  /**
+   * Get the PermissionChecker instance for advanced permission operations
+   */
+  get permissionChecker(): PermissionChecker {
+    return this._permissionChecker;
   }
 
   /**
@@ -97,11 +122,11 @@ export class AuthUtils {
     }
 
     const hasRequiredRole = roles.some((role) =>
-      PermissionChecker.hasRole(userRole, role)
+      this._permissionChecker.hasRole(role)
     );
 
     if (!hasRequiredRole) {
-      const userRoles = PermissionChecker.getUserRoles(userRole);
+      const userRoles = this._permissionChecker.getRoles();
       throw new ORPCError("FORBIDDEN", {
         message: `Access denied. Required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
       });
@@ -128,11 +153,11 @@ export class AuthUtils {
     }
 
     const hasAllRequiredRoles = roles.every((role) =>
-      PermissionChecker.hasRole(userRole, role)
+      this._permissionChecker.hasRole(role)
     );
 
     if (!hasAllRequiredRoles) {
-      const userRoles = PermissionChecker.getUserRoles(userRole);
+      const userRoles = this._permissionChecker.getRoles();
       throw new ORPCError("FORBIDDEN", {
         message: `Access denied. All required roles: ${roles.join(", ")}. User roles: ${userRoles.join(", ")}`,
       });
@@ -201,7 +226,7 @@ export class AuthUtils {
         }
 
         const hasAnyRole = options.roles.some((role) =>
-          PermissionChecker.hasRole(userRole, role)
+          this._permissionChecker.hasRole(role)
         );
 
         if (!hasAnyRole) {
@@ -217,7 +242,7 @@ export class AuthUtils {
         }
 
         const hasAllRoles = options.allRoles.every((role) =>
-          PermissionChecker.hasRole(userRole, role)
+          this._permissionChecker.hasRole(role)
         );
 
         if (!hasAllRoles) {
@@ -258,7 +283,7 @@ export class AuthUtils {
     if (!this._session?.user.role) {
       return [];
     }
-    return PermissionChecker.getUserRoles(this._session.user.role);
+    return this._permissionChecker.getRoles();
   }
 
   /**
@@ -270,12 +295,61 @@ export class AuthUtils {
     if (!this._session?.user.role) {
       return false;
     }
-    return PermissionChecker.hasRole(this._session.user.role, role);
+    return this._permissionChecker.hasRole(role);
   }
 
   /**
-   * Check if user has specific permission
-   * @param permission - Permission to check
+   * Check if user has specific permission using Resources accessor.
+   * Uses the instance PermissionChecker for local role-based check.
+   * 
+   * @param permission - Permission to check (use Resources accessor)
+   * @returns true if user has permission, false otherwise
+   * 
+   * @example
+   * ```typescript
+   * import { Resources } from "@repo/auth/permissions";
+   * 
+   * if (utils.checkPermission(Resources.capsule.read)) {
+   *   // User can read capsules
+   * }
+   * ```
+   */
+  checkPermission(permission: PermissionRequirement): boolean {
+    if (!this._session) {
+      return false;
+    }
+    return this._permissionChecker.checkPermission(permission);
+  }
+
+  /**
+   * Check if user has all specified permissions using Resources accessor.
+   * @param permissions - Array of permissions to check
+   * @returns true if user has all permissions, false otherwise
+   */
+  checkAllPermissions(permissions: PermissionRequirement[]): boolean {
+    if (!this._session) {
+      return false;
+    }
+    return this._permissionChecker.checkAllPermissions(permissions);
+  }
+
+  /**
+   * Check if user has any of the specified permissions using Resources accessor.
+   * @param permissions - Array of permissions to check
+   * @returns true if user has at least one permission, false otherwise
+   */
+  checkAnyPermission(permissions: PermissionRequirement[]): boolean {
+    if (!this._session) {
+      return false;
+    }
+    return this._permissionChecker.checkAnyPermission(permissions);
+  }
+
+  /**
+   * Check if user has specific permission (via Better Auth API).
+   * This method calls Better Auth's userHasPermission API for server-side validation.
+   * 
+   * @param permission - Permission to check (Better Auth format)
    * @returns true if user has permission, false otherwise
    */
   async hasPermission(permission: Permission): Promise<boolean> {
@@ -311,6 +385,7 @@ export class AuthUtilsEmpty {
   readonly isLoggedIn = false;
   readonly session = null;
   readonly user = null;
+  readonly permissionChecker = new PermissionChecker(null);
   
   requireAuth(): UserSession {
     throw new ORPCError("UNAUTHORIZED", {
@@ -345,6 +420,18 @@ export class AuthUtilsEmpty {
   }
   
   hasRole(_role: RoleName): boolean {
+    return false;
+  }
+
+  checkPermission(_permission: PermissionRequirement): boolean {
+    return false;
+  }
+
+  checkAllPermissions(_permissions: PermissionRequirement[]): boolean {
+    return false;
+  }
+
+  checkAnyPermission(_permissions: PermissionRequirement[]): boolean {
     return false;
   }
   

@@ -2,10 +2,11 @@ import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import * as schema from '../../config/drizzle/schema';
 import { nanoid } from 'nanoid';
-import { roles } from '@repo/auth/permissions';
+import { Roles } from '@repo/auth/permissions';
 import { eq } from 'drizzle-orm';
 import { AuthService } from '@/core/modules/auth/services/auth.service';
 import { DatabaseService } from '@/core/modules/database/services/database.service';
+import { ConfigService } from '@nestjs/config';
 
 // Seed version identifier - increment this when you want to re-seed
 const SEED_VERSION = 'v1.0.0';
@@ -19,6 +20,7 @@ export class SeedCommand extends CommandRunner {
   constructor(
     private readonly databaseService: DatabaseService,
 		private readonly authService: AuthService,
+    private readonly configService: ConfigService,
   ) {
     super();
   }
@@ -41,13 +43,16 @@ export class SeedCommand extends CommandRunner {
       }
 
       console.log(`📦 Applying seed version ${SEED_VERSION}...`);
-      // Dynamically get roles from permissions
-      const roleNames = Object.keys(roles);
-      const usersPerRole = 2;
-      const seededData = { users: [] as { role: string; id: string; email: string; password: string }[], apiKeys: [] as { role: string; userId: string; key: string; abilities: string[] }[] };
 
-      for (const roleKey of roleNames) {
-        const role = roleKey; // Type assertion
+      // Create dev auth user if DEV_AUTH_KEY and DEV_AUTH_EMAIL are configured
+      await this.seedDevAuthUser();
+
+      // Dynamically get roles from permissions using type-safe Roles accessor
+      const roleNames = Roles.all();
+      const usersPerRole = 2;
+      const seededData = { users: [] as { role: string; id: string; email: string; password: string }[] };
+
+      for (const role of roleNames) {
         for (let i = 1; i <= usersPerRole; i++) {
           const email = `${role}${String(i)}@test.com`;
           const password = 'password123';
@@ -65,28 +70,11 @@ export class SeedCommand extends CommandRunner {
           });
           const user = userResult.user;
 
-          // Generate API key data (no DB insert; log for dev use)
-           
-          const apiKeyData = {
-            userId: user.id,
-            name: `${role}-key-${String(i)}`,
-            key: nanoid(32),
-            expiresAt: null,
-            abilities: role === 'superAdmin' || role === 'admin' ? ['*'] : role === 'manager' || role === 'editor' ? ['read', 'write'] : ['read'],
-          };
-
-          // Note: api_keys table not present; skipping insert. Use logged keys for auth.
-          console.warn(`API key generated for ${role} user ${String(i)} (no DB table; use logged key): ${apiKeyData.key}`);
-
           seededData.users.push({ role, id: user.id, email, password });
-          seededData.apiKeys.push({ role, userId: user.id, key: apiKeyData.key, abilities: apiKeyData.abilities });
 
           console.log(`Created ${role} user ${String(i)}: ${email} (ID: ${user.id})`);
         }
       }
-
-      // Log for MCP access (in production, use secure storage)
-      console.log('Seeded API Keys for MCP (store securely):', JSON.stringify(seededData.apiKeys, null, 2));
 
       // Record that this seed version has been applied
       await this.databaseService.db.insert(schema.seedVersion).values({
@@ -97,6 +85,61 @@ export class SeedCommand extends CommandRunner {
     } catch (error) {
       console.error("❌ Seeding failed:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Seeds a dev auth user if DEV_AUTH_KEY and DEV_AUTH_EMAIL are configured.
+   * This user can be impersonated using the master token authentication in development.
+   */
+  private async seedDevAuthUser(): Promise<void> {
+    const devAuthKey = this.configService.get<string>('DEV_AUTH_KEY');
+    const devAuthEmail = this.configService.get<string>('DEV_AUTH_EMAIL');
+
+    if (!devAuthKey || !devAuthEmail) {
+      console.log('ℹ️  DEV_AUTH_KEY or DEV_AUTH_EMAIL not configured, skipping dev auth user creation');
+      return;
+    }
+
+    console.log(`🔐 Creating dev auth user for email: ${devAuthEmail}...`);
+
+    // Check if user already exists using direct database query
+    const existingUser = await this.databaseService.db
+      .select()
+      .from(schema.user)
+      .where(eq(schema.user.email, devAuthEmail))
+      .limit(1);
+    
+    if (existingUser.length > 0 && existingUser[0]) {
+      console.log(`✅ Dev auth user already exists: ${devAuthEmail} (ID: ${existingUser[0].id})`);
+      return;
+    }
+
+    // Generate a random password (not needed for dev auth, but required by Better Auth)
+    const randomPassword = nanoid(32);
+
+    try {
+      // Use type-safe Roles accessor - throws InvalidRoleError if role doesn't exist
+      const superAdminRole = Roles.admin;
+      
+      const userResult = await this.authService.api.createUser({
+        body: {
+          name: 'Dev Auth User',
+          email: devAuthEmail,
+          password: randomPassword,
+          data: {
+            role: superAdminRole,
+            emailVerified: true,
+            image: 'https://avatars.githubusercontent.com/u/1?v=4',
+          },
+        },
+      });
+
+      console.log(`✅ Created dev auth user: ${devAuthEmail} (ID: ${userResult.user.id})`);
+      console.log(`   This user can be impersonated using DEV_AUTH_KEY in development mode`);
+    } catch (error) {
+      // If user creation fails (e.g., user already exists), log and continue
+      console.warn(`⚠️  Could not create dev auth user: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

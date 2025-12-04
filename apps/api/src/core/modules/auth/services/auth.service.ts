@@ -60,7 +60,7 @@ export class AuthService<T extends { api: T["api"] } = Auth> {
 	 */
 	createOrpcAuthMiddleware() {
 		const auth = this.options.auth as any as Auth;
-		
+
 		return os.$context<{
 			request: Request;
 		}>().middleware(async (opts) => {

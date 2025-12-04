@@ -6,6 +6,19 @@ import type { AccessOptions, ORPCAuthContext, UserSession } from "./types";
 import { os } from "@orpc/server";
 
 /**
+ * Converts headers to web standard Headers.
+ * Handles both Node.js IncomingHttpHeaders and web standard Headers.
+ */
+function toWebHeaders(headers: Headers | IncomingHttpHeaders | Record<string, string | string[] | undefined>): Headers {
+  // If already a Headers object, return it directly
+  if (headers instanceof Headers) {
+    return headers;
+  }
+  // Otherwise, convert from Node.js style headers
+  return fromNodeHeaders(headers as IncomingHttpHeaders);
+}
+
+/**
  * ORPC context with auth utilities
  */
 export interface ORPCContextWithAuth {
@@ -18,12 +31,15 @@ export interface ORPCContextWithAuth {
  * This middleware should be added globally in the ORPC module configuration
  */
 export function createAuthMiddleware(auth: Auth) {
+    console.log('Creating auth middleware');
     return os.$context<{
         request: Request;
     }>().middleware(async (opts) => {
         // Extract session from request headers
+        // ORPC provides headers as web standard Headers, not Node.js IncomingHttpHeaders
+        const headers = opts.context.request.headers;
         const session = await auth.api.getSession({
-            headers: fromNodeHeaders(opts.context.request.headers as unknown as IncomingHttpHeaders),
+            headers: toWebHeaders(headers),
         });
         
         // Create auth utilities with session

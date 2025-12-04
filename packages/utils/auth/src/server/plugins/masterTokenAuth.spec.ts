@@ -84,6 +84,13 @@ describe('masterTokenPlugin', () => {
   });
 
   describe('Hook Matcher', () => {
+    const createMockContext = (path: string, token?: string) => ({
+      path,
+      headers: new Map([
+        ['authorization', token ? `Bearer ${token}` : '']
+      ]),
+    });
+
     it('should have after hook with matcher function', () => {
       const plugin = masterTokenPlugin(defaultOptions);
       const afterHooks = plugin.hooks?.after;
@@ -93,41 +100,79 @@ describe('masterTokenPlugin', () => {
       expect(typeof afterHooks?.[0]?.matcher).toBe('function');
     });
 
-    it('should match /get-session path', () => {
-      const plugin = masterTokenPlugin(defaultOptions);
+    it('should match /get-session path with valid token', () => {
+      const plugin = masterTokenPlugin({
+        ...defaultOptions,
+        masterEmail: 'master@example.com',
+      });
       const afterHooks = plugin.hooks?.after;
-      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: { path: string }) => boolean } | undefined;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
       const matcher = hook?.matcher;
       
-      expect(matcher?.({ path: '/get-session' })).toBe(true);
+      const context = createMockContext('/get-session', 'test-master-token-key');
+      expect(matcher?.(context)).toBe(true);
     });
 
-    it('should match /session path', () => {
-      const plugin = masterTokenPlugin(defaultOptions);
+    it('should match /session path with valid token', () => {
+      const plugin = masterTokenPlugin({
+        ...defaultOptions,
+        masterEmail: 'master@example.com',
+      });
       const afterHooks = plugin.hooks?.after;
-      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: { path: string }) => boolean } | undefined;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
       const matcher = hook?.matcher;
       
-      expect(matcher?.({ path: '/session' })).toBe(true);
+      const context = createMockContext('/session', 'test-master-token-key');
+      expect(matcher?.(context)).toBe(true);
     });
 
-    it('should match paths containing /session', () => {
-      const plugin = masterTokenPlugin(defaultOptions);
+    it('should match /sign-in/email path with valid token', () => {
+      const plugin = masterTokenPlugin({
+        ...defaultOptions,
+        masterEmail: 'master@example.com',
+      });
       const afterHooks = plugin.hooks?.after;
-      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: { path: string }) => boolean } | undefined;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
       const matcher = hook?.matcher;
       
-      expect(matcher?.({ path: '/api/session/check' })).toBe(true);
+      const context = createMockContext('/sign-in/email', 'test-master-token-key');
+      expect(matcher?.(context)).toBe(true);
     });
 
     it('should not match unrelated paths', () => {
-      const plugin = masterTokenPlugin(defaultOptions);
+      const plugin = masterTokenPlugin({
+        ...defaultOptions,
+        masterEmail: 'master@example.com',
+      });
       const afterHooks = plugin.hooks?.after;
-      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: { path: string }) => boolean } | undefined;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
       const matcher = hook?.matcher;
       
-      expect(matcher?.({ path: '/users' })).toBe(false);
-      expect(matcher?.({ path: '/auth/login' })).toBe(false);
+      expect(matcher?.(createMockContext('/users', 'test-master-token-key'))).toBe(false);
+      expect(matcher?.(createMockContext('/auth/login', 'test-master-token-key'))).toBe(false);
+    });
+
+    it('should not match without valid token', () => {
+      const plugin = masterTokenPlugin({
+        ...defaultOptions,
+        masterEmail: 'master@example.com',
+      });
+      const afterHooks = plugin.hooks?.after;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
+      const matcher = hook?.matcher;
+      
+      expect(matcher?.(createMockContext('/get-session'))).toBe(false);
+      expect(matcher?.(createMockContext('/get-session', 'wrong-token'))).toBe(false);
+    });
+
+    it('should not match when masterEmail is not configured', () => {
+      const plugin = masterTokenPlugin(defaultOptions);
+      const afterHooks = plugin.hooks?.after;
+      const hook = afterHooks?.[0] as unknown as { matcher: (ctx: any) => boolean } | undefined;
+      const matcher = hook?.matcher;
+      
+      const context = createMockContext('/get-session', 'test-master-token-key');
+      expect(matcher?.(context)).toBe(false);
     });
   });
 

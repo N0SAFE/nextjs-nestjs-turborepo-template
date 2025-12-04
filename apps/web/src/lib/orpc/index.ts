@@ -5,11 +5,8 @@ import { ContractRouterClient } from '@orpc/contract'
 import { validateEnvPath } from '#/env'
 import { toAbsoluteUrl } from '@/lib/utils'
 import clientRedirect from '@/actions/redirect'
-import { hasMasterTokenPlugin } from '@repo/auth/client'
-import { parseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
-import { authClient } from '../auth'
 
 export function createORPCClientWithCookies() {
     const link = new OpenAPILink<{
@@ -50,40 +47,6 @@ export function createORPCClientWithCookies() {
                     }
 
                     headers['Content-Type'] = 'application/json'
-                }
-
-                if (
-                    process.env.NODE_ENV === 'development' &&
-                    hasMasterTokenPlugin(authClient)
-                ) {
-                    if (typeof window !== 'undefined') {
-                        const authClient = await import('../auth').then(
-                            (m) => m.authClient
-                        )
-                        if (hasMasterTokenPlugin(authClient) && authClient.MasterTokenManager.state) {
-                            const devAuthKey =
-                                process.env.NEXT_PUBLIC_DEV_AUTH_KEY
-
-                            if (devAuthKey) {
-                                headers.Authorization = `Bearer ${devAuthKey}`
-                            }
-                        }
-                    } else {
-                        if (
-                            parseCookie(
-                                Array.isArray(headers.cookie)
-                                    ? headers.cookie.join('; ')
-                                    : headers.cookie ?? ''
-                            ).get('master-token-enabled')
-                        ) {
-                            const devAuthKey =
-                                process.env.NEXT_PUBLIC_DEV_AUTH_KEY
-
-                            if (devAuthKey) {
-                                headers.Authorization = `Bearer ${devAuthKey}`
-                            }
-                        }
-                    }
                 }
 
                 return options.next({

@@ -86,9 +86,9 @@ export const invite = pgTable("invite", {
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at").notNull(),
   usedAt: timestamp("used_at"),
-  createdByUserId: text("created_by_user_id").references(() => user.id, {
-    onDelete: "set null",
-  }),
+  invitedUserId: text("invited_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
 });
 
 export const userVapidKeys = pgTable("user_vapid_keys", {
@@ -143,7 +143,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const inviteRelations = relations(invite, ({ one }) => ({
   user: one(user, {
-    fields: [invite.createdByUserId],
+    fields: [invite.invitedUserId],
     references: [user.id],
   }),
 }));

@@ -43,6 +43,13 @@
       "when": 1764677029578,
       "tag": "0005_noisy_sunset_bain",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764852681591,
+      "tag": "0006_demonic_bastion",
+      "breakpoints": true
     }
   ]
 }

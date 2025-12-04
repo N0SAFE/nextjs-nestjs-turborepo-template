@@ -60,6 +60,7 @@ interface Invite {
   expiresAt: Date;
   role: string;
   usedAt?: Date;
+  invitedUserId: string;
 };
 
 const ERROR_CODES = {
@@ -147,19 +148,46 @@ export const invitePlugin = <TRoles extends string>(
           const expiresAt = new Date(now);
           expiresAt.setDate(expiresAt.getDate() + (options.inviteDurationDays ?? 7));
 
+          // Check if user with this email already exists
+          const existingUser = await ctx.context.adapter.findOne<{ id: string }>({
+            model: "user",
+            where: [{ field: "email", value: ctx.body.email }],
+          });
+
+          let invitedUserId: string;
+
+          if (existingUser?.id !== undefined) {
+            invitedUserId = existingUser.id;
+          } else {
+            // Create user if not exists
+            const newUser = await ctx.context.internalAdapter.createUser({
+              email: ctx.body.email,
+              name: ctx.body.email.split("@")[0] ?? ctx.body.email, // Default name from email
+              emailVerified: false,
+              role: ctx.body.role,
+            });
+
+            if (!newUser.id) {
+              throw ctx.error("INTERNAL_SERVER_ERROR", {
+                message: "Failed to create invited user",
+              });
+            }
+            invitedUserId = newUser.id;
+          }
+
           await ctx.context.adapter.create({
             model: "invite",
             data: {
               token,
               email: ctx.body.email,
-              createdByUserId: user.id,
+              invitedUserId,
               createdAt: now,
               expiresAt,
-              role: ctx.body.role, // Store the role with the invite
+              role: ctx.body.role,
             },
           });
 
-          return ctx.json({ token, email: ctx.body.email, role: ctx.body.role, expiresAt: expiresAt.toISOString() }, { status: 201 });
+          return ctx.json({ token, email: ctx.body.email, role: ctx.body.role, expiresAt: expiresAt.toISOString(), invitedUserId }, { status: 201 });
         }
       ),
 
@@ -200,7 +228,7 @@ export const invitePlugin = <TRoles extends string>(
         }
       ),
       /**
-       * Validate invitation and create user account
+       * Validate invitation and set up user account (user already created at invite time)
        */
       validate: createAuthEndpoint(
         "/invite/validate",
@@ -240,29 +268,28 @@ export const invitePlugin = <TRoles extends string>(
             });
           }
 
-          // Check if user with this email already exists
-          const existingUser = await ctx.context.adapter.findOne({
+          // User was already created at invite time, update their info
+          await ctx.context.adapter.update({
             model: "user",
-            where: [{ field: "email", value: invite.email }],
+            where: [{ field: "id", value: invite.invitedUserId }],
+            update: {
+              name,
+              emailVerified: true,
+            },
           });
 
-          if (existingUser) {
+          // Check if account already exists for this user
+          const existingAccount = await ctx.context.adapter.findOne({
+            model: "account",
+            where: [
+              { field: "userId", value: invite.invitedUserId },
+              { field: "providerId", value: "credential" },
+            ],
+          });
+
+          if (existingAccount) {
             throw ctx.error("BAD_REQUEST", {
-              message: "User with this email already exists",
-            });
-          }
-
-          // Create user with email from invitation
-          const user = await ctx.context.internalAdapter.createUser({
-            email: invite.email,
-            name,
-            emailVerified: true,
-            role: invite.role,
-          });
-
-          if (!user.id) {
-            throw ctx.error("INTERNAL_SERVER_ERROR", {
-              message: "Failed to create user",
+              message: "User account already set up",
             });
           }
 
@@ -270,8 +297,8 @@ export const invitePlugin = <TRoles extends string>(
           await ctx.context.adapter.create({
             model: "account",
             data: {
-              userId: user.id,
-              accountId: user.id,
+              userId: invite.invitedUserId,
+              accountId: invite.invitedUserId,
               providerId: "credential",
               password: await ctx.context.password.hash(password),
             },
@@ -284,7 +311,7 @@ export const invitePlugin = <TRoles extends string>(
             update: { usedAt: opts.getDate() },
           });
 
-          return ctx.json({ userId: user.id }, { status: 201 });
+          return ctx.json({ userId: invite.invitedUserId }, { status: 201 });
         }
       ),
     },
@@ -298,10 +325,10 @@ export const invitePlugin = <TRoles extends string>(
           createdAt: { type: "date", defaultValue: () => new Date() },
           expiresAt: { type: "date", required: true },
           usedAt: { type: "date", required: false },
-          createdByUserId: {
+          invitedUserId: {
             type: "string",
-            required: false,
-            references: { model: "user", field: "id", onDelete: "set null" },
+            required: true,
+            references: { model: "user", field: "id", onDelete: "cascade" },
           },
         },
       },
