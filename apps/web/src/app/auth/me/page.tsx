@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Button } from "@repo/ui/components/shadcn/button";
 import {
   Card,
@@ -21,6 +22,12 @@ import {
 import { Badge } from "@repo/ui/components/shadcn/badge";
 import { Separator } from "@repo/ui/components/shadcn/separator";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@repo/ui/components/shadcn/tabs";
+import {
   Trash2,
   Shield,
   AlertCircle,
@@ -36,11 +43,20 @@ import {
   LogOut,
   Eye,
   EyeOff,
+  Bell,
+  UserCircle,
+  Mail,
+  ShieldAlert,
+  Activity,
+  Link2,
+  Timer,
+  TrendingUp,
 } from "lucide-react";
 import { authClient, useSession } from "@/lib/auth";
 import { Spinner } from "@repo/ui/components/atomics/atoms/Icon";
 import { Session } from "better-auth";
 import { PushNotificationSettings } from "@/components/push-notifications/PushNotificationSettings";
+import { usePushStats } from "@/hooks/usePushNotifications";
 
 const ProfilePage: React.FC = () => {
   const { data: session } = useSession();
@@ -56,7 +72,8 @@ const ProfilePage: React.FC = () => {
   const [showSessionTokens, setShowSessionTokens] = React.useState<
     Record<string, boolean>
   >({});
-
+  // Get push notification stats
+  const { data: pushStats } = usePushStats();
   // Global state
   const [error, setError] = React.useState<string>("");
   const [success, setSuccess] = React.useState<string>("");
@@ -229,42 +246,6 @@ const ProfilePage: React.FC = () => {
           </p>
         </div>
 
-        {/* User Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Account Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p>
-                  <strong>Name:</strong> {session.user.name}
-                </p>
-                <p>
-                  <strong>Email:</strong> {session.user.email}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="flex items-center gap-2">
-                  <strong>Email Verified:</strong>
-                  {session.user.emailVerified ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-orange-500" />
-                  )}
-                  {session.user.emailVerified ? "Yes" : "No"}
-                </p>
-                <p>
-                  <strong>User ID:</strong> {session.user.id}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Alerts */}
         {error && (
           <Alert variant="destructive">
@@ -280,125 +261,385 @@ const ProfilePage: React.FC = () => {
           </Alert>
         )}
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+        {/* Tabbed Interface */}
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <UserCircle className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Sessions
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Notifications
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            {/* User Info Card */}
+            <Card>
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Active Sessions
+                  <Shield className="h-5 w-5" />
+                  Account Information
                 </CardTitle>
                 <CardDescription>
-                  Manage your active sessions across all devices
+                  Your personal information and account details
                 </CardDescription>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={() => void handleRevokeAllOtherSessions()}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Revoke All Others
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {sessionLoading ? (
-              <div className="flex justify-center py-8">
-                <Spinner />
-              </div>
-            ) : sessions.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  No active sessions found
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {sessions.map((sessionItem, index) => (
-                  <div key={sessionItem.id}>
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          {getSessionDeviceIcon(sessionItem.userAgent)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium">
-                                {getUserAgentInfo(sessionItem.userAgent)}
-                              </h4>
-                              {isCurrentSession(sessionItem.token) && (
-                                <Badge variant="default">Current</Badge>
-                              )}
-                            </div>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                {getLocationInfo(sessionItem.ipAddress)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-3 w-3" />
-                                Created: {formatDate(sessionItem.createdAt)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-3 w-3" />
-                                Expires: {formatDate(sessionItem.expiresAt)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Key className="h-3 w-3" />
-                                <span>Token:</span>
-                                <button
-                                  onClick={() => {
-                                    toggleSessionToken(sessionItem.id);
-                                  }}
-                                  className="flex items-center gap-1 text-xs hover:text-foreground"
-                                >
-                                  {showSessionTokens[sessionItem.id] ? (
-                                    <>
-                                      <EyeOff className="h-3 w-3" />
-                                      <span className="font-mono">
-                                        {sessionItem.token.slice(0, 8)}...
-                                        {sessionItem.token.slice(-8)}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Eye className="h-3 w-3" />
-                                      <span>••••••••</span>
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {!isCurrentSession(sessionItem.token) && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              openSessionDeleteModal(sessionItem);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Primary Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Full Name</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <UserCircle className="h-4 w-4" />
+                        {session.user.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Email Address</p>
+                      <p className="font-medium flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {session.user.email}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Email Verification</p>
+                      <div className="flex items-center gap-2">
+                        {session.user.emailVerified ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <span className="text-green-700 dark:text-green-400">Verified</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-4 w-4 text-orange-500" />
+                            <span className="text-orange-700 dark:text-orange-400">Not Verified</span>
+                          </>
                         )}
                       </div>
                     </div>
-                    {index < sessions.length - 1 && (
-                      <Separator className="my-2" />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">User ID</p>
+                      <p className="font-mono text-sm bg-muted px-3 py-2 rounded">
+                        {session.user.id}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Role</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {session.user.role ?? 'user'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Account Created</p>
+                      <p className="font-medium">
+                        {formatDate(session.user.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Additional Information */}
+                <div>
+                  <h3 className="font-semibold mb-3">Additional Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {session.user.image && (
+                      <div>
+                        <p className="text-muted-foreground mb-1">Profile Image</p>
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={session.user.image}
+                            alt="Profile"
+                            width={40}
+                            height={40}
+                            className="h-10 w-10 rounded-full"
+                          />
+                          <span className="text-xs text-muted-foreground">Linked</span>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-muted-foreground mb-1">Last Updated</p>
+                      <p>{formatDate(session.user.updatedAt)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Account Statistics */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Account Activity
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Active Sessions</p>
+                      </div>
+                      <p className="text-2xl font-bold">{sessions.length}</p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Push Subscriptions</p>
+                      </div>
+                      <p className="text-2xl font-bold">{pushStats?.activeSubscriptions ?? 0}</p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Timer className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Account Age</p>
+                      </div>
+                      <p className="text-2xl font-bold">
+                        {Math.floor(
+                          (new Date().getTime() - new Date(session.user.createdAt).getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}
+                        <span className="text-sm font-normal ml-1">days</span>
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-card">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Notifications Sent</p>
+                      </div>
+                      <p className="text-2xl font-bold">{pushStats?.totalSubscriptions ?? 0}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Status */}
+                {('banned' in session.user && session.user.banned) && (
+                  <>
+                    <Separator />
+                    <Alert variant="destructive">
+                      <ShieldAlert className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Account Restricted</strong>
+                        {'banReason' in session.user && session.user.banReason && typeof session.user.banReason === 'string' && (
+                          <p className="mt-1">Reason: {session.user.banReason}</p>
+                        )}
+                        {'banExpires' in session.user && session.user.banExpires && (
+                          <p className="mt-1">
+                            Expires: {formatDate(new Date(session.user.banExpires as string | number | Date))}
+                          </p>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Security & Authentication Methods */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="h-5 w-5" />
+                  Authentication Methods
+                </CardTitle>
+                <CardDescription>
+                  Linked authentication providers and security settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Email Authentication */}
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Mail className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Email & Password</p>
+                      <p className="text-sm text-muted-foreground">{session.user.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {session.user.emailVerified ? (
+                      <Badge variant="default" className="gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Unverified
+                      </Badge>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+
+                {/* Two-Factor Authentication */}
+                <div className="flex items-center justify-between p-4 rounded-lg border border-dashed">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-muted">
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-muted-foreground">Two-Factor Authentication</p>
+                      <p className="text-sm text-muted-foreground">Not configured</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" disabled>
+                    <Key className="h-4 w-4 mr-2" />
+                    Enable
+                  </Button>
+                </div>
+
+                {/* Info Box */}
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Security Tip:</strong> Enable two-factor authentication to add an extra layer of security to your account.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sessions Tab */}
+          <TabsContent value="sessions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Active Sessions
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your active sessions across all devices
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={() => void handleRevokeAllOtherSessions()}
+                    className="flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Revoke All Others
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {sessionLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Spinner />
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      No active sessions found
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sessions.map((sessionItem, index) => (
+                      <div key={sessionItem.id}>
+                        <div className="flex items-center justify-between p-4 rounded-lg border">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              {getSessionDeviceIcon(sessionItem.userAgent)}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium">
+                                    {getUserAgentInfo(sessionItem.userAgent)}
+                                  </h4>
+                                  {isCurrentSession(sessionItem.token) && (
+                                    <Badge variant="default">Current</Badge>
+                                  )}
+                                </div>
+                                <div className="space-y-1 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="h-3 w-3" />
+                                    {getLocationInfo(sessionItem.ipAddress)}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-3 w-3" />
+                                    Created: {formatDate(sessionItem.createdAt)}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-3 w-3" />
+                                    Expires: {formatDate(sessionItem.expiresAt)}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Key className="h-3 w-3" />
+                                    <span>Token:</span>
+                                    <button
+                                      onClick={() => {
+                                        toggleSessionToken(sessionItem.id);
+                                      }}
+                                      className="flex items-center gap-1 text-xs hover:text-foreground"
+                                    >
+                                      {showSessionTokens[sessionItem.id] ? (
+                                        <>
+                                          <EyeOff className="h-3 w-3" />
+                                          <span className="font-mono">
+                                            {sessionItem.token.slice(0, 8)}...
+                                            {sessionItem.token.slice(-8)}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Eye className="h-3 w-3" />
+                                          <span>••••••••</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {!isCurrentSession(sessionItem.token) && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  openSessionDeleteModal(sessionItem);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        {index < sessions.length - 1 && (
+                          <Separator className="my-2" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6">
+            <PushNotificationSettings key={session.user.id} />
+          </TabsContent>
+        </Tabs>
       </div>
-      
-      <PushNotificationSettings />
 
       {/* Session Delete Dialog */}
       <Dialog

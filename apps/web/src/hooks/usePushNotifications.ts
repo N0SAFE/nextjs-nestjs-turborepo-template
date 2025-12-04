@@ -177,23 +177,42 @@ export function usePushNotifications() {
   const unsubscribeM = useUnsubscribePushNotifications()
   const sendTestM = useSendTestNotification()
 
-  // Check current subscription status
+  // Check current subscription status and sync with backend
   useEffect(() => {
     if (!isSupported) return
 
     const checkSubscription = async () => {
       try {
         const registration = await navigator.serviceWorker.ready
-        const subscription = await registration.pushManager.getSubscription()
-        setCurrentSubscription(subscription)
-        setIsSubscribed(!!subscription)
+        const browserSubscription = await registration.pushManager.getSubscription()
+        
+        // Get backend subscriptions for the current user
+        const backendSubscriptions = subscriptionsQuery.data?.subscriptions ?? []
+        
+        // Check if the browser subscription exists in the backend for this user
+        const isBackendSubscribed = browserSubscription
+          ? backendSubscriptions.some(
+              (sub) => sub.endpoint === browserSubscription.endpoint
+            )
+          : false
+        
+        // If browser has a subscription but backend doesn't (user switched accounts),
+        // update local state to reflect that this user is NOT subscribed
+        if (browserSubscription && !isBackendSubscribed) {
+          console.log('Browser has subscription but backend does not - user may have switched accounts')
+          setIsSubscribed(false)
+          setCurrentSubscription(null)
+        } else {
+          setCurrentSubscription(browserSubscription)
+          setIsSubscribed(isBackendSubscribed)
+        }
       } catch (error) {
         console.error('Error checking push subscription:', error)
       }
     }
 
     void checkSubscription()
-  }, [isSupported])
+  }, [isSupported, subscriptionsQuery.data])
 
   /**
    * Subscribe to push notifications
@@ -213,7 +232,12 @@ export function usePushNotifications() {
       }
 
       // Register service worker if not already registered
-      const registration = await navigator.serviceWorker.register('/sw.js')
+      // Note: Serwist service worker is already registered by SerwistProvider
+      // We just need to get the existing registration
+      const registration = await navigator.serviceWorker.getRegistration('/serwist/')
+      if (!registration) {
+        throw new Error('Serwist service worker not registered. Ensure SerwistProvider is mounted.')
+      }
       await navigator.serviceWorker.ready
 
       // Get public key
@@ -225,7 +249,7 @@ export function usePushNotifications() {
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: String(urlBase64ToUint8Array(publicKey)),
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       })
 
       // Send subscription to server
