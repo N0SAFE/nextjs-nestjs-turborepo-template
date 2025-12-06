@@ -12,3 +12,4 @@ export type AppContract = typeof appContract;
 
 // Re-export individual contracts and schemas
 export * from "./modules/index";
+export * from "./types";

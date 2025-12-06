@@ -152,7 +152,7 @@ describe('UserRepository', () => {
 
   describe('findMany', () => {
     it('should find users with pagination', async () => {
-      const input = { pagination: { limit: 10, offset: 0 } };
+      const input = { limit: 10, offset: 0 };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
 
@@ -176,23 +176,24 @@ describe('UserRepository', () => {
       const result = await repository.findMany(input);
 
       expect(result).toEqual({
-        users: [transformedUser],
+        data: [transformedUser],
         meta: {
-          pagination: {
-            total: 1,
-            limit: 10,
-            offset: 0,
-            hasMore: false,
-          },
+          total: 1,
+          limit: 10,
+          offset: 0,
+          hasMore: false,
         },
       });
     });
 
     it('should handle filtering and sorting', async () => {
       const input = {
-        pagination: { limit: 10, offset: 0 },
-        filter: { name: 'John', email: 'john' },
-        sort: { field: 'name', direction: 'asc' } as const,
+        limit: 10,
+        offset: 0,
+        name: 'John',
+        email: 'john',
+        sortBy: 'name' as const,
+        sortDirection: 'asc' as const,
       };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
@@ -221,7 +222,7 @@ describe('UserRepository', () => {
     });
 
     it('should handle default sorting when no sort provided', async () => {
-      const input = { pagination: { limit: 10, offset: 0 } };
+      const input = { limit: 10, offset: 0 };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
 
@@ -247,11 +248,12 @@ describe('UserRepository', () => {
 
     it('should throw error for unsupported sort field', async () => {
       const input = {
-        pagination: { limit: 10, offset: 0 },
-        sort: { field: 'unsupported', direction: 'asc' } as const,
+        limit: 10,
+        offset: 0,
+        sortBy: 'unsupported' as any,
+        sortDirection: 'asc' as const,
       };
 
-      // @ts-expect-error this test a unsupported field
       await expect(repository.findMany(input)).rejects.toThrow(
         'Unsupported sort field: unsupported'
       );

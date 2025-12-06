@@ -1,16 +1,20 @@
 import { Injectable } from "@nestjs/common";
 import { DatabaseService } from "../../../core/modules/database/services/database.service";
 import { user } from "@/config/drizzle/schema/auth";
-import { eq, desc, asc, like, count, and, SQL } from "drizzle-orm";
-import { userCreateInput, userUpdateInput, userListInput, userFindByIdOutput } from "@repo/api-contracts";
-import { z } from "zod";
+import { eq, desc, asc, like, count, and, SQL, gte, lte, gt, lt, ilike } from "drizzle-orm";
 import { randomUUID } from "crypto";
+import type {
+  UserCreateInput,
+  UserUpdateInput,
+  UserListInput,
+  User,
+} from "@repo/api-contracts/types";
 
-export type CreateUserInput = z.infer<typeof userCreateInput>;
-export type UpdateUserInput = z.infer<typeof userUpdateInput>;
-export type GetUsersInput = z.infer<typeof userListInput>;
-
-export type GetUserOutput = z.infer<typeof userFindByIdOutput>;
+// Re-export types for repository use
+export type CreateUserInput = UserCreateInput;
+export type UpdateUserInput = UserUpdateInput;
+export type GetUsersInput = UserListInput;
+export type GetUserOutput = User | null;
 
 @Injectable()
 export class UserRepository {
@@ -116,7 +120,7 @@ export class UserRepository {
             conditions.push(like(user.name, `%${input.name_like}%`));
         }
         if (input.name_ilike) {
-            conditions.push(like(user.name, `%${input.name_ilike}%`)); // Note: Drizzle doesn't have ilike for all DBs
+            conditions.push(ilike(user.name, `%${input.name_ilike}%`));
         }
 
         // Email filters with operators
@@ -127,7 +131,7 @@ export class UserRepository {
             conditions.push(like(user.email, `%${input.email_like}%`));
         }
         if (input.email_ilike) {
-            conditions.push(like(user.email, `%${input.email_ilike}%`)); // Note: Drizzle doesn't have ilike for all DBs
+            conditions.push(ilike(user.email, `%${input.email_ilike}%`));
         }
 
         // EmailVerified filter
@@ -137,16 +141,24 @@ export class UserRepository {
 
         // CreatedAt filters with operators
         if (input.createdAt_gt) {
-            conditions.push(desc(user.createdAt)); // Greater than comparison
+            conditions.push(gt(user.createdAt, new Date(input.createdAt_gt)));
         }
         if (input.createdAt_gte) {
-            conditions.push(desc(user.createdAt)); // Greater than or equal comparison
+            conditions.push(gte(user.createdAt, new Date(input.createdAt_gte)));
         }
         if (input.createdAt_lt) {
-            conditions.push(asc(user.createdAt)); // Less than comparison
+            conditions.push(lt(user.createdAt, new Date(input.createdAt_lt)));
         }
         if (input.createdAt_lte) {
-            conditions.push(asc(user.createdAt)); // Less than or equal comparison
+            conditions.push(lte(user.createdAt, new Date(input.createdAt_lte)));
+        }
+        if (input.createdAt_between) {
+            conditions.push(
+                and(
+                    gte(user.createdAt, new Date(input.createdAt_between.from)),
+                    lte(user.createdAt, new Date(input.createdAt_between.to))
+                )!
+            );
         }
 
         const whereCondition = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : and(...conditions)) : undefined;
