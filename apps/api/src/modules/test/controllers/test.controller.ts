@@ -5,6 +5,8 @@ import { oc } from "@orpc/contract";
 import { implement, Implement } from "@orpc/nest";
 import * as z from "zod/v4";
 import { AuthGuard } from "@/core/modules/auth/guards/auth.guard";
+import { ArcjetService } from "@/core/services/arcjet.service";
+import { rateLimitMiddleware, shieldMiddleware } from "@repo/arcjet";
 
 const testContracts = oc.prefix("/test/orpc").router({
     testNonAuthenticatedOrpc: oc.route({
@@ -23,10 +25,33 @@ const testContracts = oc.prefix("/test/orpc").router({
             ok: z.boolean(),
         })
     ),
+    testArcjetRateLimit: oc.route({
+        method: "POST",
+        path: "/arcjet/rate-limit",
+    }).input(z.object({
+        message: z.string(),
+    })).output(
+        z.object({
+            ok: z.boolean(),
+            message: z.string(),
+        })
+    ),
+    testArcjetShield: oc.route({
+        method: "POST",
+        path: "/arcjet/shield",
+    }).input(z.object({
+        data: z.string(),
+    })).output(
+        z.object({
+            ok: z.boolean(),
+            protected: z.boolean(),
+        })
+    ),
 });
 
 @Controller()
 export class TestController {
+    constructor(private readonly arcjetService: ArcjetService) {}
     @Get("test/non-authenticated")
     @ApiResponse({
         status: 200,
@@ -67,5 +92,41 @@ export class TestController {
                 ok: true,
             };
         });
+    }
+
+    /**
+     * Example: Rate limiting with Arcjet
+     * This endpoint is rate-limited to 10 requests per minute
+     */
+    @Implement(testContracts.testArcjetRateLimit)
+    testArcjetRateLimit() {
+        return implement(testContracts.testArcjetRateLimit)
+            .use(rateLimitMiddleware(this.arcjetService.getInstance(), {
+                refillRate: 10,
+                interval: '1m',
+                capacity: 100,
+            }))
+            .handler(({ input }) => {
+                return {
+                    ok: true,
+                    message: `Received: ${input.message}`,
+                };
+            });
+    }
+
+    /**
+     * Example: Shield protection with Arcjet
+     * This endpoint is protected against common attacks
+     */
+    @Implement(testContracts.testArcjetShield)
+    testArcjetShield() {
+        return implement(testContracts.testArcjetShield)
+            .use(shieldMiddleware(this.arcjetService.getInstance()))
+            .handler(({ input }) => {
+                return {
+                    ok: true,
+                    protected: true,
+                };
+            });
     }
 }
