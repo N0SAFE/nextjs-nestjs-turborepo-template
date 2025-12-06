@@ -339,6 +339,7 @@
       "dependencies": {
         "@orpc/contract": "catalog:orpc",
         "@orpc/shared": "catalog:orpc",
+        "@repo/orpc-utils": "*",
         "zod": "catalog:utils",
       },
       "devDependencies": {
@@ -519,6 +520,23 @@
       "devDependencies": {
         "@repo-configs/typescript": "*",
         "@vitest/coverage-v8": "catalog:testing",
+        "typescript": "catalog:build",
+        "vitest": "catalog:testing",
+      },
+    },
+    "packages/utils/orpc": {
+      "name": "@repo/orpc-utils",
+      "version": "1.0.0",
+      "dependencies": {
+        "@orpc/contract": "^1.12.1",
+        "zod": "catalog:utils",
+      },
+      "devDependencies": {
+        "@repo-configs/eslint": "*",
+        "@repo-configs/prettier": "*",
+        "@repo-configs/typescript": "*",
+        "@vitest/coverage-v8": "catalog:testing",
+        "eslint": "catalog:linting",
         "typescript": "catalog:build",
         "vitest": "catalog:testing",
       },
@@ -1403,6 +1421,8 @@
     "@repo/auth": ["@repo/auth@workspace:packages/utils/auth"],
 
     "@repo/env": ["@repo/env@workspace:packages/utils/env"],
+
+    "@repo/orpc-utils": ["@repo/orpc-utils@workspace:packages/utils/orpc"],
 
     "@repo/types": ["@repo/types@workspace:packages/types"],
 
