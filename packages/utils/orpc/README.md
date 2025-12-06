@@ -57,12 +57,22 @@ Pre-built CRUD operations with sensible defaults:
 - `update()` - PUT entire entity  
 - `patch()` - PATCH partial update
 - `delete()` - DELETE by ID
-- `list()` - GET with pagination & sorting
+- `list()` - GET with pagination, sorting & filtering
 - `count()` - GET total count
-- `search()` - GET with query
+- `search()` - GET with full-text search
 - `check()` - GET field existence
 - `batchCreate()` - POST multiple entities
 - `batchDelete()` - DELETE multiple by IDs
+
+### 🔍 Type-Safe Query Utilities
+
+Comprehensive query parameter handling with full type inference:
+
+- **Pagination**: Offset, page, and cursor-based pagination
+- **Sorting**: Single and multi-field sorting with nulls handling
+- **Filtering**: 15+ operators (eq, gt, like, in, between, etc.) for any field type
+- **Search**: Simple to full-text search with field selection
+- **QueryBuilder**: Combine all features with fluent API
 
 ### 🔗 Chainable Customization
 

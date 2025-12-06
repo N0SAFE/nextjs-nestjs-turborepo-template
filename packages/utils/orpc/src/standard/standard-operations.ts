@@ -1,55 +1,27 @@
 import { z } from "zod/v4";
 import { RouteBuilder } from "../builder/route-builder";
 import type { EntitySchema, PaginationOptions } from "../builder/types";
+import {
+  createPaginationSchema,
+  createPaginationMetaSchema,
+  createPaginatedResponseSchema,
+  type PaginationConfig,
+} from "../query/pagination";
+import {
+  createSortingSchema,
+  type SortingConfig,
+} from "../query/sorting";
+import {
+  createFilteringSchema,
+  type FilteringConfig,
+} from "../query/filtering";
+import {
+  createSearchSchema,
+  type SearchConfig,
+} from "../query/search";
+import { createQueryBuilder, type QueryConfig } from "../query/query-builder";
 
-/**
- * Standard pagination input schema
- */
-export function createPaginationSchema(options?: PaginationOptions) {
-  const defaultLimit = options?.defaultLimit ?? 10;
-  const maxLimit = options?.maxLimit ?? 100;
 
-  const schema: Record<string, z.ZodTypeAny> = {
-    limit: z.coerce
-      .number()
-      .int()
-      .positive()
-      .max(maxLimit)
-      .default(defaultLimit),
-  };
-
-  if (options?.includeOffset !== false) {
-    schema.offset = z.coerce.number().int().min(0).default(0);
-  }
-
-  if (options?.includeCursor) {
-    schema.cursor = z.string().optional();
-  }
-
-  return z.object(schema as z.ZodRawShape);
-}
-
-/**
- * Standard pagination output metadata schema
- */
-export function createPaginationOutputSchema() {
-  return z.object({
-    total: z.number().int().min(0),
-    limit: z.number().int().positive(),
-    offset: z.number().int().min(0),
-    hasMore: z.boolean(),
-  });
-}
-
-/**
- * Standard sorting schema
- */
-export function createSortingSchema(fields: readonly string[]) {
-  return z.object({
-    sortBy: z.enum(fields as [string, ...string[]]).optional(),
-    sortDirection: z.enum(["asc", "desc"]).default("asc"),
-  });
-}
 
 /**
  * Standard operations factory
@@ -196,41 +168,60 @@ export class StandardOperations<TEntity extends EntitySchema> {
   }
 
   /**
-   * Create a standard LIST operation with pagination
+   * Create a standard LIST operation with pagination, sorting, and filtering
    * 
    * @example
    * ```typescript
+   * // Simple list with pagination
    * standard.list(userSchema, 'user', {
    *   pagination: { defaultLimit: 20 },
    *   sorting: ['createdAt', 'name']
    * }).build();
+   * 
+   * // Advanced list with filtering
+   * standard.list(userSchema, 'user', {
+   *   pagination: { defaultLimit: 20 },
+   *   sorting: ['createdAt', 'name'],
+   *   filtering: {
+   *     fields: {
+   *       name: { schema: z.string(), operators: ['eq', 'like'] },
+   *       active: z.boolean()
+   *     }
+   *   }
+   * }).build();
    * ```
    */
   list(options?: {
-    pagination?: PaginationOptions;
+    pagination?: PaginationConfig;
     sorting?: readonly string[];
+    filtering?: FilteringConfig;
   }): RouteBuilder<any, any> {
-    const paginationSchema = createPaginationSchema(options?.pagination);
-    
-    let inputSchema: z.ZodTypeAny = paginationSchema;
-    
+    // Build query using QueryBuilder for type safety
+    const queryConfig: QueryConfig<any> = {
+      pagination: options?.pagination || { defaultLimit: 10, maxLimit: 100 },
+    };
+
     if (options?.sorting && options.sorting.length > 0) {
-      const sortingSchema = createSortingSchema(options.sorting);
-      inputSchema = paginationSchema.merge(sortingSchema);
+      queryConfig.sorting = {
+        fields: options.sorting,
+        defaultDirection: "asc",
+      };
     }
 
-    const paginationOutputSchema = createPaginationOutputSchema();
-    const outputSchema = z.object({
-      data: z.array(this.entitySchema),
-      meta: paginationOutputSchema,
-    });
+    if (options?.filtering) {
+      queryConfig.filtering = options.filtering;
+    }
+
+    const queryBuilder = createQueryBuilder(queryConfig);
+    const inputSchema = queryBuilder.buildInputSchema();
+    const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
 
     const builder = new RouteBuilder(
       {
         method: "GET",
         path: "/",
         summary: `List ${this.entityName}s`,
-        description: `Retrieve a paginated list of ${this.entityName}s`,
+        description: `Retrieve a paginated list of ${this.entityName}s with optional filtering and sorting`,
       },
       inputSchema,
       outputSchema
@@ -268,40 +259,39 @@ export class StandardOperations<TEntity extends EntitySchema> {
   }
 
   /**
-   * Create a standard SEARCH operation
+   * Create a standard SEARCH operation with full-text search and filtering
    * 
    * @example
    * ```typescript
    * standard.search(userSchema, 'user', {
-   *   searchFields: ['name', 'email']
+   *   searchFields: ['name', 'email'],
+   *   pagination: { defaultLimit: 50 }
    * }).build();
    * ```
    */
   search(options?: {
     searchFields?: readonly string[];
-    pagination?: PaginationOptions;
+    pagination?: PaginationConfig;
   }): RouteBuilder<any, any> {
-    const paginationSchema = createPaginationSchema(options?.pagination);
-    
-    const inputSchema = paginationSchema.extend({
-      query: z.string().min(1),
-      fields: options?.searchFields
-        ? z.array(z.enum(options.searchFields as [string, ...string[]])).optional()
-        : z.array(z.string()).optional(),
-    });
+    const queryConfig: QueryConfig<any> = {
+      pagination: options?.pagination || { defaultLimit: 20, maxLimit: 100 },
+      search: {
+        searchableFields: options?.searchFields,
+        minQueryLength: 1,
+        allowFieldSelection: true,
+      },
+    };
 
-    const paginationOutputSchema = createPaginationOutputSchema();
-    const outputSchema = z.object({
-      data: z.array(this.entitySchema),
-      meta: paginationOutputSchema,
-    });
+    const queryBuilder = createQueryBuilder(queryConfig);
+    const inputSchema = queryBuilder.buildInputSchema();
+    const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
 
     const builder = new RouteBuilder(
       {
         method: "GET",
         path: "/search",
         summary: `Search ${this.entityName}s`,
-        description: `Search for ${this.entityName}s by query`,
+        description: `Full-text search for ${this.entityName}s with pagination`,
       },
       inputSchema,
       outputSchema
