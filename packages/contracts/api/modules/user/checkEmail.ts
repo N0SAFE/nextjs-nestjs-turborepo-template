@@ -1,20 +1,8 @@
-import { oc } from "@orpc/contract";
-import { z } from "zod/v4";
+import { standard } from "@repo/orpc-utils";
+import { userSchema } from "@repo/api-contracts/common/user";
 
-export const userCheckEmailInput = z.object({
-  email: z.email(),
-});
+// Create standard operations builder for users
+const userOps = standard(userSchema, "user");
 
-export const userCheckEmailOutput = z.object({
-  exists: z.boolean(),
-});
-
-export const userCheckEmailContract = oc
-  .route({
-    method: "POST",
-    path: "/check-email",
-    summary: "Check if email exists",
-    description: "Check if a user with the given email already exists",
-  })
-  .input(userCheckEmailInput)
-  .output(userCheckEmailOutput);
+// Create email check contract using builder
+export const userCheckEmailContract = userOps.check("email").build();

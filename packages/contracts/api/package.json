@@ -21,6 +21,7 @@
   "dependencies": {
     "@orpc/contract": "catalog:orpc",
     "@orpc/shared": "catalog:orpc",
+    "@repo/orpc-utils": "*",
     "zod": "catalog:utils"
   },
   "peerDependencies": {
