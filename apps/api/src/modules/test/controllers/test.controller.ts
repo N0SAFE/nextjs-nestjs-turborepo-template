@@ -6,7 +6,6 @@ import { implement, Implement } from "@orpc/nest";
 import * as z from "zod/v4";
 import { AuthGuard } from "@/core/modules/auth/guards/auth.guard";
 import { ArcjetService } from "@/core/services/arcjet.service";
-import { rateLimitMiddleware, shieldMiddleware } from "@repo/arcjet";
 
 const testContracts = oc.prefix("/test/orpc").router({
     testNonAuthenticatedOrpc: oc.route({
@@ -101,7 +100,7 @@ export class TestController {
     @Implement(testContracts.testArcjetRateLimit)
     testArcjetRateLimit() {
         return implement(testContracts.testArcjetRateLimit)
-            .use(rateLimitMiddleware(this.arcjetService.getInstance(), {
+            .use(this.arcjetService.rateLimitMiddleware({
                 refillRate: 10,
                 interval: '1m',
                 capacity: 100,
@@ -121,7 +120,7 @@ export class TestController {
     @Implement(testContracts.testArcjetShield)
     testArcjetShield() {
         return implement(testContracts.testArcjetShield)
-            .use(shieldMiddleware(this.arcjetService.getInstance()))
+            .use(this.arcjetService.shieldMiddleware())
             .handler(({ input }) => {
                 return {
                     ok: true,

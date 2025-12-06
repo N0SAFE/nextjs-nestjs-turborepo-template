@@ -19,7 +19,6 @@ export class YourModule {}
 2. Inject and use in controllers:
 ```typescript
 import { ArcjetService } from '@/core/services/arcjet.service';
-import { rateLimitMiddleware, shieldMiddleware } from '@repo/arcjet';
 
 @Controller()
 export class YourController {
@@ -28,7 +27,7 @@ export class YourController {
   @Implement(contract)
   handler() {
     return implement(contract)
-      .use(rateLimitMiddleware(this.arcjetService.getInstance(), {
+      .use(this.arcjetService.rateLimitMiddleware({
         refillRate: 10,
         interval: '1m',
         capacity: 100
@@ -39,6 +38,13 @@ export class YourController {
   }
 }
 ```
+
+### Available Middleware Methods
+
+- `rateLimitMiddleware(options, middlewareOptions?)` - Token bucket rate limiting
+- `botProtectionMiddleware(options?, middlewareOptions?)` - Bot detection and blocking
+- `shieldMiddleware(options?, middlewareOptions?)` - General attack protection
+- `createMiddleware(rules, options?)` - Custom middleware with multiple rules
 
 ### Environment Variables
 
