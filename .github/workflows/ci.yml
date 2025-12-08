@@ -23,7 +23,7 @@ jobs:
             cache-hit: ${{ steps.cache-dependencies.outputs.cache-hit }}
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 💾 Cache Bun dependencies
               id: cache-dependencies
@@ -65,7 +65,7 @@ jobs:
             cache-hit: ${{ steps.cache-declarative-routes.outputs.cache-hit }}
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 💾 Cache declarative routes
               id: cache-declarative-routes
@@ -138,7 +138,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -217,7 +217,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -298,7 +298,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
