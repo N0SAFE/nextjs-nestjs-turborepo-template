@@ -1,0 +1,28 @@
+---
+id: nestjs-app-controller
+name: NestJS App Controller
+category: app
+outputPath: apps/api/src/app.controller.ts
+description: NestJS root application controller
+condition: plugins.includes('nestjs-api')
+---
+import { Controller, Get } from "@nestjs/common";
+import { AppService } from "./app.service";
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getRoot(): { status: string; message: string } {
+    return {
+      status: "ok",
+      message: "{{name}} API is running",
+    };
+  }
+
+  @Get("health")
+  getHealth(): { status: string; timestamp: string } {
+    return this.appService.getHealth();
+  }
+}

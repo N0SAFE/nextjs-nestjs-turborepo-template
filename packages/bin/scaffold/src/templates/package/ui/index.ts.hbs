@@ -1,0 +1,14 @@
+---
+id: ui-index
+name: UI Package Index
+category: package
+outputPath: packages/ui/src/index.ts
+description: UI package main entry point
+condition: plugins.includes('tailwindcss')
+---
+// Components
+export * from "./components/button";
+export * from "./components/card";
+
+// Utilities
+export * from "./utils/cn";

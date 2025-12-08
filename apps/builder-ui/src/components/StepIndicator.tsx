@@ -19,8 +19,8 @@ export function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
                   currentStep > step.id
                     ? 'bg-blue-600 text-white'
                     : currentStep === step.id
-                    ? 'bg-blue-600 text-white ring-4 ring-blue-200'
-                    : 'bg-gray-200 text-gray-600'
+                    ? 'bg-blue-600 text-white ring-4 ring-blue-500/30'
+                    : 'bg-gray-700 text-gray-400'
                 )}
               >
                 {currentStep > step.id ? <Check size={20} /> : step.id}
@@ -28,7 +28,7 @@ export function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
               <span
                 className={clsx(
                   'mt-2 text-sm font-medium',
-                  currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'
+                  currentStep >= step.id ? 'text-white' : 'text-gray-500'
                 )}
               >
                 {step.title}
@@ -37,8 +37,8 @@ export function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
             {index < steps.length - 1 && (
               <div
                 className={clsx(
-                  'h-1 flex-1 mx-4 transition-colors',
-                  currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
+                  'h-1 flex-1 mx-4 transition-colors rounded-full',
+                  currentStep > step.id ? 'bg-blue-600' : 'bg-gray-700'
                 )}
               />
             )}

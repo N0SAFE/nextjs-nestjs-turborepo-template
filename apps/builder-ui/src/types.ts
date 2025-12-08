@@ -1,11 +1,21 @@
+export type PluginCategory = 'core' | 'feature' | 'infrastructure' | 'ui' | 'integration';
+
 export interface Plugin {
   id: string;
   name: string;
   description: string;
-  category: 'core' | 'feature' | 'infrastructure' | 'ui' | 'integration';
+  category: PluginCategory;
   dependencies: string[];
   optionalDependencies?: string[];
   conflicts?: string[];
+  /** Plugin is only available in development mode */
+  devOnly?: boolean;
+  /** Tags for filtering and grouping */
+  tags?: string[];
+  /** Documentation URL */
+  docsUrl?: string;
+  /** Whether this plugin is included by default */
+  default?: boolean;
 }
 
 export interface PluginConfig {

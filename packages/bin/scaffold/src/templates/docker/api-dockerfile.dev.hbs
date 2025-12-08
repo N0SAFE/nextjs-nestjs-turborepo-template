@@ -1,0 +1,32 @@
+---
+id: docker-api-dockerfile-dev
+name: API Dockerfile (Dev)
+category: docker
+outputPath: docker/api/Dockerfile.dev
+description: Development Dockerfile for NestJS API
+condition: plugins.includes('nestjs-api')
+mode: 420
+---
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install bun
+RUN npm install -g bun
+
+# Copy package files
+COPY package.json bun.lockb* ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/ ./packages/
+
+# Install dependencies
+RUN bun install
+
+# Copy source
+COPY apps/api ./apps/api
+
+# Expose port
+EXPOSE 3001
+
+# Start in development mode
+CMD ["bun", "run", "--filter", "api", "dev"]

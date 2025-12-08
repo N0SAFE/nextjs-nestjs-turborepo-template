@@ -1,0 +1,14 @@
+---
+id: ui-cn-util
+name: UI CN Utility
+category: package
+outputPath: packages/ui/src/utils/cn.ts
+description: Classname utility function
+condition: plugins.includes('tailwindcss')
+---
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

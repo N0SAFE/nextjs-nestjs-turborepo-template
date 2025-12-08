@@ -1,0 +1,22 @@
+---
+id: nextjs-tailwind-config
+name: Next.js Tailwind Config
+category: app
+outputPath: apps/web/tailwind.config.ts
+description: Tailwind CSS configuration
+condition: plugins.includes('tailwindcss')
+---
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "../../packages/ui/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+export default config;

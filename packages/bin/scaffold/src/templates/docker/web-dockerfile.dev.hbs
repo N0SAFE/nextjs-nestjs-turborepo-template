@@ -1,0 +1,32 @@
+---
+id: docker-web-dockerfile-dev
+name: Web Dockerfile (Dev)
+category: docker
+outputPath: docker/web/Dockerfile.dev
+description: Development Dockerfile for Next.js Web App
+condition: plugins.includes('nextjs-web')
+mode: 420
+---
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install bun
+RUN npm install -g bun
+
+# Copy package files
+COPY package.json bun.lockb* ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/ ./packages/
+
+# Install dependencies
+RUN bun install
+
+# Copy source
+COPY apps/web ./apps/web
+
+# Expose port
+EXPOSE 3000
+
+# Start in development mode
+CMD ["bun", "run", "--filter", "web", "dev"]

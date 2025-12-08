@@ -1,0 +1,36 @@
+---
+id: config-eslint
+name: ESLint Config Package
+category: config
+outputPath: packages/eslint-config/package.json
+description: Shared ESLint configuration package
+---
+{
+  "name": "@{{kebabCase name}}/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./base": "./base.js",
+    "./next": "./next.js",
+    "./nest": "./nest.js"
+  },
+  "files": [
+    "*.js"
+  ],
+  "dependencies": {
+    "@eslint/js": "{{dependencyVersion '@eslint/js'}}",
+    "eslint-config-prettier": "{{dependencyVersion 'eslint-config-prettier'}}",
+    "eslint-plugin-import": "{{dependencyVersion 'eslint-plugin-import'}}",
+    "typescript-eslint": "{{dependencyVersion 'typescript-eslint'}}"
+  },
+  "devDependencies": {
+    "eslint": "{{dependencyVersion 'eslint'}}",
+    "typescript": "{{dependencyVersion 'typescript'}}"
+  },
+  "peerDependencies": {
+    "eslint": ">=9",
+    "typescript": ">=5"
+  }
+}

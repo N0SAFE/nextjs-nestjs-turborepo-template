@@ -1,0 +1,90 @@
+---
+id: root-readme
+name: README
+category: root
+outputPath: README.md
+description: Project README file
+---
+# {{name}}
+
+{{#if description}}
+{{description}}
+
+{{/if}}
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- {{capitalize (default packageManager 'bun')}} (package manager)
+{{#if docker.enabled}}
+- Docker and Docker Compose
+{{/if}}
+
+### Installation
+
+```bash
+# Install dependencies
+{{default packageManager 'bun'}} install
+```
+
+### Development
+
+```bash
+# Start development server
+{{default packageManager 'bun'}} run dev
+```
+{{#if docker.enabled}}
+
+### Docker
+
+```bash
+# Start with Docker (development)
+{{default packageManager 'bun'}} run docker:dev
+
+# Start with Docker (production)
+{{default packageManager 'bun'}} run docker:prod
+```
+{{/if}}
+
+### Build
+
+```bash
+# Build all packages
+{{default packageManager 'bun'}} run build
+```
+
+### Testing
+
+```bash
+# Run tests
+{{default packageManager 'bun'}} run test
+
+# Run tests with coverage
+{{default packageManager 'bun'}} run test:coverage
+```
+
+## Project Structure
+
+```
+{{kebabCase name}}/
+├── apps/              # Applications
+{{#if (includes plugins 'nestjs-api')}}
+│   ├── api/          # NestJS API
+{{/if}}
+{{#if (includes plugins 'nextjs-web')}}
+│   └── web/          # Next.js Web App
+{{/if}}
+├── packages/          # Shared packages
+│   ├── ui/           # Shared UI components
+│   ├── types/        # Shared TypeScript types
+│   └── config/       # Shared configurations
+{{#if docker.enabled}}
+├── docker/           # Docker configurations
+{{/if}}
+└── turbo.json        # Turborepo configuration
+```
+
+## License
+
+{{default license 'MIT'}}

@@ -1,0 +1,58 @@
+---
+id: nestjs-package-json
+name: NestJS API package.json
+category: app
+outputPath: apps/api/package.json
+description: Package.json for NestJS API application
+condition: plugins.includes('nestjs-api')
+---
+{
+  "name": "@{{kebabCase name}}/api",
+  "version": "0.0.1",
+  "private": true,
+  "description": "{{default description 'NestJS API'}}",
+  "license": "{{default license 'MIT'}}",
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"{{#if database}},
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"{{/if}}
+  },
+  "dependencies": {
+    "@nestjs/common": "{{dependencyVersion '@nestjs/common'}}",
+    "@nestjs/core": "{{dependencyVersion '@nestjs/core'}}",
+    "@nestjs/platform-express": "{{dependencyVersion '@nestjs/platform-express'}}",
+    "reflect-metadata": "{{dependencyVersion 'reflect-metadata'}}",
+    "rxjs": "{{dependencyVersion 'rxjs'}}"{{#if database}},
+    "drizzle-orm": "{{dependencyVersion 'drizzle-orm'}}",
+{{#if (eq database 'postgresql')}}
+    "pg": "{{dependencyVersion 'pg'}}"
+{{/if}}
+{{#if (eq database 'mysql')}}
+    "mysql2": "{{dependencyVersion 'mysql2'}}"
+{{/if}}
+{{/if}}
+  },
+  "devDependencies": {
+    "@nestjs/cli": "{{dependencyVersion '@nestjs/cli'}}",
+    "@nestjs/schematics": "{{dependencyVersion '@nestjs/schematics'}}",
+    "@nestjs/testing": "{{dependencyVersion '@nestjs/testing'}}",
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@types/node": "{{dependencyVersion '@types/node'}}",
+    "typescript": "{{dependencyVersion 'typescript'}}",
+    "vitest": "{{dependencyVersion 'vitest'}}"{{#if database}},
+    "drizzle-kit": "{{dependencyVersion 'drizzle-kit'}}"{{/if}}
+  }
+}

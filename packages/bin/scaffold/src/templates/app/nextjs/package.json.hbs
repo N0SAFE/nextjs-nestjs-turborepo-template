@@ -1,0 +1,41 @@
+---
+id: nextjs-package-json
+name: Next.js Web package.json
+category: app
+outputPath: apps/web/package.json
+description: Package.json for Next.js Web application
+condition: plugins.includes('nextjs-web')
+---
+{
+  "name": "@{{kebabCase name}}/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p {{default ports.web 3000}}",
+    "build": "next build",
+    "start": "next start -p {{default ports.web 3000}}",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "next": "{{dependencyVersion 'next'}}",
+    "react": "{{dependencyVersion 'react'}}",
+    "react-dom": "{{dependencyVersion 'react-dom'}}"{{#if (includes plugins 'tailwindcss')}},
+    "@repo/ui": "*"{{/if}}
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@types/node": "{{dependencyVersion '@types/node'}}",
+    "@types/react": "{{dependencyVersion '@types/react'}}",
+    "@types/react-dom": "{{dependencyVersion '@types/react-dom'}}",
+    "typescript": "{{dependencyVersion 'typescript'}}",
+    "vitest": "{{dependencyVersion 'vitest'}}"{{#if (includes plugins 'tailwindcss')}},
+    "tailwindcss": "{{dependencyVersion 'tailwindcss'}}",
+    "postcss": "{{dependencyVersion 'postcss'}}",
+    "autoprefixer": "{{dependencyVersion 'autoprefixer'}}"{{/if}}
+  }
+}

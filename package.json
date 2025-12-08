@@ -227,7 +227,7 @@
         "start:local": "turbo start",
         "test": "turbo test",
         "test:watch": "turbo test:watch",
-        "test:ui": "vitest --ui",
+        "test:ui": "vitest --ui --coverage",
         "test:coverage": "vitest run --coverage",
         "coverage:report": "mkdir -p coverage && nyc report --temp-dir coverage --report-dir coverage/report --reporter=html --reporter=text --reporter=lcov && echo \"\\n📊 Merged coverage report generated at: coverage/report/index.html\"",
         "lint": "turbo lint",

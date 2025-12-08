@@ -1,0 +1,46 @@
+---
+id: root-package-json
+name: Root package.json
+category: root
+outputPath: package.json
+description: Root package.json for the monorepo
+---
+{
+  "name": "{{kebabCase name}}",
+  "version": "0.0.1",
+  "private": true,
+  {{#if description}}
+  "description": "{{description}}",
+  {{/if}}
+  {{#if author}}
+  "author": "{{author}}",
+  {{/if}}
+  "license": "{{default license 'MIT'}}",
+  "packageManager": "{{default packageManager 'bun'}}@1.2.14",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "clean": "turbo clean && rm -rf node_modules"{{#if docker.enabled}},
+    "docker:dev": "docker compose -f docker-compose.dev.yml up",
+    "docker:dev:build": "docker compose -f docker-compose.dev.yml up --build",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up",
+    "docker:down": "docker compose down"{{/if}}
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/prettier-config": "*",
+    "@repo/typescript-config": "*",
+    "prettier": "{{dependencyVersion 'prettier'}}",
+    "turbo": "{{dependencyVersion 'turbo'}}",
+    "typescript": "{{dependencyVersion 'typescript'}}"
+  }
+}

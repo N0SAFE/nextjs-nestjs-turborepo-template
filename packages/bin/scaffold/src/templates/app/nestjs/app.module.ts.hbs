@@ -1,0 +1,25 @@
+---
+id: nestjs-app-module
+name: NestJS App Module
+category: app
+outputPath: apps/api/src/app.module.ts
+description: NestJS root application module
+condition: plugins.includes('nestjs-api')
+---
+import { Module } from "@nestjs/common";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
+{{#if database}}
+import { DatabaseModule } from "./database/database.module";
+{{/if}}
+
+@Module({
+  imports: [
+{{#if database}}
+    DatabaseModule,
+{{/if}}
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}

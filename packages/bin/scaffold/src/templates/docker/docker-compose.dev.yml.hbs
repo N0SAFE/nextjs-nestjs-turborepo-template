@@ -1,0 +1,124 @@
+---
+id: docker-compose-dev
+name: Docker Compose Development
+category: docker
+outputPath: docker-compose.dev.yml
+description: Docker Compose for development environment
+condition: docker.enabled
+---
+version: "3.8"
+
+services:
+{{#if (includes plugins 'nestjs-api')}}
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile.dev
+    ports:
+      - "{{default ports.api 3001}}:3001"
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    environment:
+      - NODE_ENV=development
+{{#if database}}
+      - DATABASE_URL={{database}}://{{default database.user 'postgres'}}:{{default database.password 'password'}}@db:5432/{{default database.name (kebabCase name)}}
+    depends_on:
+      db:
+        condition: service_healthy
+{{/if}}
+    networks:
+      - app_network
+
+{{/if}}
+{{#if (includes plugins 'nextjs-web')}}
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile.dev
+    ports:
+      - "{{default ports.web 3000}}:3000"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    environment:
+      - NODE_ENV=development
+{{#if (includes plugins 'nestjs-api')}}
+      - NEXT_PUBLIC_API_URL=http://api:3001
+    depends_on:
+      - api
+{{/if}}
+    networks:
+      - app_network
+
+{{/if}}
+{{#if (eq database 'postgresql')}}
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "{{default ports.db 5432}}:5432"
+    environment:
+      - POSTGRES_USER={{default database.user 'postgres'}}
+      - POSTGRES_PASSWORD={{default database.password 'password'}}
+      - POSTGRES_DB={{default database.name (kebabCase name)}}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{default database.user 'postgres'}}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+{{/if}}
+{{#if (eq database 'mysql')}}
+  db:
+    image: mysql:8
+    ports:
+      - "{{default ports.db 3306}}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD={{default database.password 'password'}}
+      - MYSQL_DATABASE={{default database.name (kebabCase name)}}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+{{/if}}
+{{#if redis}}
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "{{default ports.redis 6379}}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+{{/if}}
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+{{#if (or (eq database 'postgresql') (eq database 'mysql'))}}
+{{#if (eq database 'postgresql')}}
+  postgres_data:
+{{/if}}
+{{#if (eq database 'mysql')}}
+  mysql_data:
+{{/if}}
+{{/if}}
+{{#if redis}}
+  redis_data:
+{{/if}}

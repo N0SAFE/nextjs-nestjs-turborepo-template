@@ -1,0 +1,26 @@
+---
+id: nextjs-next-config
+name: Next.js Config
+category: app
+outputPath: apps/web/next.config.ts
+description: Next.js configuration file
+condition: plugins.includes('nextjs-web')
+---
+import type { NextConfig } from "next";
+
+const config: NextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ["@{{kebabCase name}}/ui"],
+{{#if (includes plugins 'nestjs-api')}}
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:{{default ports.api 3001}}"}/api/:path*`,
+      },
+    ];
+  },
+{{/if}}
+};
+
+export default config;

@@ -1,0 +1,31 @@
+---
+id: nextjs-layout
+name: Next.js Root Layout
+category: app
+outputPath: apps/web/src/app/layout.tsx
+description: Next.js root layout component
+condition: plugins.includes('nextjs-web')
+---
+import type { Metadata } from "next";
+{{#if (includes plugins 'tailwindcss')}}
+import "./globals.css";
+{{/if}}
+
+export const metadata: Metadata = {
+  title: "{{name}}",
+  description: "{{default description 'A Next.js application'}}",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+      </body>
+    </html>
+  );
+}

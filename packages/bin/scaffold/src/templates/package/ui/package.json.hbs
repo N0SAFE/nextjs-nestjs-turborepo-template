@@ -1,0 +1,37 @@
+---
+id: ui-package-json
+name: UI Package package.json
+category: package
+outputPath: packages/ui/package.json
+description: Package.json for shared UI library
+condition: plugins.includes('tailwindcss')
+---
+{
+  "name": "@{{kebabCase name}}/ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "@types/react": "{{dependencyVersion '@types/react'}}",
+    "@types/react-dom": "{{dependencyVersion '@types/react-dom'}}",
+    "typescript": "{{dependencyVersion 'typescript'}}",
+    "vitest": "{{dependencyVersion 'vitest'}}"
+  }
+}

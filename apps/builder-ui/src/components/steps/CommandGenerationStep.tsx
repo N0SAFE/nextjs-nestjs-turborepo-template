@@ -31,13 +31,13 @@ export function CommandGenerationStep({ config }: CommandGenerationStepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">🚀 Ready to Generate!</h2>
-        <p className="mt-2 text-gray-600">
+        <h2 className="text-2xl font-bold text-white">🚀 Ready to Generate!</h2>
+        <p className="mt-2 text-gray-400">
           Your configuration is complete. Here's the CLI command to create your project.
         </p>
       </div>
 
-      <div className="bg-gray-900 rounded-lg p-6 relative">
+      <div className="bg-gray-950 rounded-lg p-6 relative border border-gray-700">
         <pre className="text-green-400 text-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
           {command}
         </pre>
@@ -57,7 +57,7 @@ export function CommandGenerationStep({ config }: CommandGenerationStepProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
           onClick={handleCopy}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
         >
           {copied ? (
             <>
@@ -74,16 +74,16 @@ export function CommandGenerationStep({ config }: CommandGenerationStepProps) {
 
         <button
           onClick={handleDownloadConfig}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-medium"
         >
           <Download size={20} />
           Download Config (JSON)
         </button>
       </div>
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-        <h3 className="font-semibold text-green-900 mb-3">📝 Next Steps:</h3>
-        <ol className="space-y-2 text-green-800">
+      <div className="bg-green-900/30 border border-green-700/50 rounded-lg p-6">
+        <h3 className="font-semibold text-green-400 mb-3">📝 Next Steps:</h3>
+        <ol className="space-y-2 text-green-300">
           <li className="flex items-start">
             <span className="font-bold mr-2">1.</span>
             <span>Copy the command above</span>
@@ -107,11 +107,11 @@ export function CommandGenerationStep({ config }: CommandGenerationStepProps) {
         </ol>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2">💡 Tip:</h4>
-        <p className="text-blue-800 text-sm">
+      <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-300 mb-2">💡 Tip:</h4>
+        <p className="text-blue-200 text-sm">
           You can also download the configuration as a JSON file and use it later with{' '}
-          <code className="bg-blue-100 px-2 py-1 rounded font-mono text-xs">
+          <code className="bg-blue-800/50 px-2 py-1 rounded font-mono text-xs">
             stratum init --config stratum-config.json
           </code>
         </p>
