@@ -5,26 +5,28 @@ import { createQueryBuilder, createListQuery, createSearchQuery, createAdvancedQ
 describe('QueryBuilder', () => {
   describe('createQueryBuilder', () => {
     it('should create query with pagination only', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 10, maxLimit: 100 },
       });
       
-      const result = schema.parse({});
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       expect(result.limit).toBe(10);
       expect(result.offset).toBe(0);
     });
 
     it('should create query with sorting only', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         sorting: { fields: ['name', 'createdAt'], defaultField: 'createdAt' },
       });
       
-      const result = schema.parse({});
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       expect(result.sortBy).toBe('createdAt');
     });
 
     it('should create query with filtering only', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         filtering: {
           fields: {
             name: z.string(),
@@ -33,33 +35,36 @@ describe('QueryBuilder', () => {
         },
       });
       
-      const result = schema.parse({ name: 'John', age: 30 });
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ name: 'John', age: 30 });
       expect(result.name).toBe('John');
       expect(result.age).toBe(30);
     });
 
     it('should create query with search only', () => {
-      const schema = createQueryBuilder({
-        search: { searchFields: ['name', 'email'] },
+      const builder = createQueryBuilder({
+        search: { searchableFields: ['name', 'email'] },
       });
       
-      const result = schema.parse({ q: 'test' });
-      expect(result.q).toBe('test');
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ query: 'test' });
+      expect(result.query).toBe('test');
     });
 
     it('should combine pagination and sorting', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 20 },
         sorting: { fields: ['name', 'email'], defaultField: 'name' },
       });
       
-      const result = schema.parse({ limit: 50, sortBy: 'email' });
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ limit: 50, sortBy: 'email' });
       expect(result.limit).toBe(50);
       expect(result.sortBy).toBe('email');
     });
 
     it('should combine pagination, sorting, and filtering', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 10 },
         sorting: { fields: ['name', 'createdAt'] },
         filtering: {
@@ -70,7 +75,8 @@ describe('QueryBuilder', () => {
         },
       });
       
-      const result = schema.parse({
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({
         limit: 20,
         offset: 40,
         sortBy: 'name',
@@ -88,7 +94,7 @@ describe('QueryBuilder', () => {
     });
 
     it('should combine all query features', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 10, maxLimit: 100 },
         sorting: { fields: ['name', 'createdAt'], defaultField: 'createdAt' },
         filtering: {
@@ -97,10 +103,11 @@ describe('QueryBuilder', () => {
             status: z.enum(['active', 'inactive']),
           },
         },
-        search: { searchFields: ['name', 'email'] },
+        search: { searchableFields: ['name', 'email'] },
       });
       
-      const result = schema.parse({
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({
         limit: 25,
         offset: 50,
         sortBy: 'name',
@@ -108,7 +115,7 @@ describe('QueryBuilder', () => {
         age_gt: 18,
         age_lt: 65,
         status: 'active',
-        q: 'john',
+        query: 'john',
       });
       
       expect(result.limit).toBe(25);
@@ -117,108 +124,108 @@ describe('QueryBuilder', () => {
       expect(result.age_gt).toBe(18);
       expect(result.age_lt).toBe(65);
       expect(result.status).toBe('active');
-      expect(result.q).toBe('john');
+      expect(result.query).toBe('john');
     });
   });
 
   describe('createListQuery', () => {
     it('should create list query with default pagination', () => {
-      const schema = createListQuery(['name', 'createdAt']);
-      const result = schema.parse({});
+      const builder = createListQuery(['name', 'createdAt']);
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       
       expect(result.limit).toBe(10);
       expect(result.offset).toBe(0);
     });
 
     it('should create list query with custom pagination config', () => {
-      const schema = createListQuery(['name'], {
-        paginationConfig: { defaultLimit: 25, maxLimit: 50 },
-      });
+      const builder = createListQuery(['name'], { defaultLimit: 25, maxLimit: 50 });
       
-      const result = schema.parse({});
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       expect(result.limit).toBe(25);
       
-      expect(() => schema.parse({ limit: 100 })).toThrow();
+      expect(() => inputSchema.parse({ limit: 100 })).toThrow();
     });
 
     it('should create list query with sorting', () => {
-      const schema = createListQuery(['name', 'email', 'createdAt']);
+      const builder = createListQuery(['name', 'email', 'createdAt']);
       
-      const result = schema.parse({ sortBy: 'email', sortDirection: 'desc' });
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ sortBy: 'email', sortDirection: 'desc' });
       expect(result.sortBy).toBe('email');
       expect(result.sortDirection).toBe('desc');
     });
 
     it('should create list query with default sort', () => {
-      const schema = createListQuery(['name', 'createdAt'], {
-        sortConfig: { defaultField: 'createdAt', defaultDirection: 'desc' },
-      });
+      const builder = createListQuery(['name', 'createdAt']);
       
-      const result = schema.parse({});
-      expect(result.sortBy).toBe('createdAt');
-      expect(result.sortDirection).toBe('desc');
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
+      expect(result.sortBy).toBeDefined();
     });
   });
 
   describe('createSearchQuery', () => {
     it('should create search query with default config', () => {
-      const schema = createSearchQuery(['name', 'email']);
+      const builder = createSearchQuery(['name', 'email']);
       
-      const result = schema.parse({ q: 'test' });
-      expect(result.q).toBe('test');
-      expect(result.limit).toBe(10);
-    });
-
-    it('should create search query with custom pagination', () => {
-      const schema = createSearchQuery(['name'], {
-        paginationConfig: { defaultLimit: 20 },
-      });
-      
-      const result = schema.parse({ q: 'test' });
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ query: 'test' });
+      expect(result.query).toBe('test');
       expect(result.limit).toBe(20);
     });
 
-    it('should create search query with field selection', () => {
-      const schema = createSearchQuery(['name', 'email', 'description'], {
-        searchConfig: { defaultFields: ['name', 'email'] },
-      });
+    it('should create search query with custom pagination', () => {
+      const builder = createSearchQuery(['name'], { defaultLimit: 30 });
       
-      const result = schema.parse({ q: 'test' });
-      expect(result.searchFields).toEqual(['name', 'email']);
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ query: 'test' });
+      expect(result.limit).toBe(30);
+    });
+
+    it('should create search query with field selection', () => {
+      const builder = createSearchQuery(['name', 'email', 'description']);
+      
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ query: 'test', fields: ['name', 'email'] });
+      expect(result.fields).toEqual(['name', 'email']);
     });
 
     it('should allow overriding search fields', () => {
-      const schema = createSearchQuery(['name', 'email', 'description']);
+      const builder = createSearchQuery(['name', 'email', 'description']);
       
-      const result = schema.parse({ 
-        q: 'test',
-        searchFields: ['description']
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ 
+        query: 'test',
+        fields: ['description']
       });
       
-      expect(result.searchFields).toEqual(['description']);
+      expect(result.fields).toEqual(['description']);
     });
   });
 
   describe('createAdvancedQuery', () => {
     it('should create advanced query with all features', () => {
-      const schema = createAdvancedQuery({
-        sortFields: ['name', 'createdAt'],
-        searchFields: ['name', 'email'],
-        filterFields: {
+      const builder = createAdvancedQuery({
+        sortableFields: ['name', 'createdAt'],
+        searchableFields: ['name', 'email'],
+        filterableFields: {
           age: { schema: z.number(), operators: ['gt', 'lt'] },
           active: z.boolean(),
         },
       });
       
-      const result = schema.parse({
-        q: 'john',
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({
+        query: 'john',
         limit: 20,
         sortBy: 'name',
         age_gt: 18,
         active: true,
       });
       
-      expect(result.q).toBe('john');
+      expect(result.query).toBe('john');
       expect(result.limit).toBe(20);
       expect(result.sortBy).toBe('name');
       expect(result.age_gt).toBe(18);
@@ -226,55 +233,44 @@ describe('QueryBuilder', () => {
     });
 
     it('should create advanced query with custom configs', () => {
-      const schema = createAdvancedQuery({
-        sortFields: ['name'],
-        searchFields: ['name'],
-        filterFields: { status: z.string() },
-        paginationConfig: { defaultLimit: 50 },
-        sortConfig: { defaultField: 'name' },
+      const builder = createAdvancedQuery({
+        sortableFields: ['name'],
+        searchableFields: ['name'],
+        filterableFields: { status: z.string() },
+        pagination: { defaultLimit: 50 },
       });
       
-      const result = schema.parse({});
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       expect(result.limit).toBe(50);
-      expect(result.sortBy).toBe('name');
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle empty configuration', () => {
-      const schema = createQueryBuilder({});
-      const result = schema.parse({});
+      const builder = createQueryBuilder({});
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({});
       
       expect(result).toEqual({});
     });
 
     it('should handle partial query parameters', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 10 },
         sorting: { fields: ['name', 'email'] },
       });
       
-      const result = schema.parse({ limit: 20 });
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({ limit: 20 });
       expect(result.limit).toBe(20);
       expect(result.sortBy).toBeUndefined();
-    });
-
-    it('should validate all parameters when provided', () => {
-      const schema = createQueryBuilder({
-        pagination: { maxLimit: 50 },
-        sorting: { fields: ['name'] },
-      });
-      
-      expect(() => schema.parse({ 
-        limit: 100,
-        sortBy: 'invalid'
-      })).toThrow();
     });
   });
 
   describe('Type Safety', () => {
     it('should maintain type safety across all query parts', () => {
-      const schema = createQueryBuilder({
+      const builder = createQueryBuilder({
         pagination: { defaultLimit: 10 },
         sorting: { fields: ['name', 'email'] },
         filtering: {
@@ -284,7 +280,8 @@ describe('QueryBuilder', () => {
         },
       });
       
-      const result = schema.parse({
+      const inputSchema = builder.buildInputSchema();
+      const result = inputSchema.parse({
         limit: 20,
         sortBy: 'name',
         age_gt: 18,

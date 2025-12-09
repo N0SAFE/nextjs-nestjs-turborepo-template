@@ -116,13 +116,78 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   }
 
   /**
-   * Build the output schema with pagination metadata
+   * Build the output schema with dynamic metadata based on configuration
    */
   buildOutputSchema<T extends z.ZodTypeAny>(dataSchema: T): z.ZodObject<any> {
-    return createPaginatedResponseSchema(
-      dataSchema,
-      this.config.pagination || {}
-    );
+    const metaSchema = this.buildMetaSchema();
+    
+    return z.object({
+      data: z.array(dataSchema),
+      meta: metaSchema,
+    });
+  }
+
+  /**
+   * Build the meta schema dynamically based on what features are configured
+   */
+  buildMetaSchema(): z.ZodObject<any> {
+    const metaFields: Record<string, z.ZodTypeAny> = {};
+
+    // Add pagination metadata if pagination is configured
+    if (this.config.pagination !== undefined) {
+      const paginationConfig = this.config.pagination || {};
+      const {
+        includeOffset = true,
+        includeCursor = false,
+        includePage = false,
+      } = paginationConfig;
+
+      // Always include these pagination fields
+      metaFields.total = z.number().int().min(0).describe("Total number of items");
+      metaFields.limit = z.number().int().positive().describe("Items per page");
+      metaFields.hasMore = z.boolean().describe("Whether there are more items");
+
+      if (includeOffset) {
+        metaFields.offset = z.number().int().min(0).describe("Current offset");
+      }
+
+      if (includePage) {
+        metaFields.page = z.number().int().min(1).describe("Current page number");
+        metaFields.totalPages = z.number().int().min(0).describe("Total number of pages");
+      }
+
+      if (includeCursor) {
+        metaFields.nextCursor = z.string().nullable().describe("Cursor for next page");
+        metaFields.prevCursor = z.string().nullable().describe("Cursor for previous page");
+      }
+    }
+
+    // Add sorting metadata if sorting is configured
+    if (this.config.sorting) {
+      metaFields.sortBy = z.string().optional().describe("Field used for sorting");
+      metaFields.sortDirection = z.enum(["asc", "desc"]).optional().describe("Sort direction applied");
+    }
+
+    // Add filtering metadata if filtering is configured
+    if (this.config.filtering) {
+      metaFields.appliedFilters = z.record(z.string(), z.any()).optional().describe("Filters applied to the query");
+      metaFields.filterCount = z.number().int().min(0).optional().describe("Number of filters applied");
+    }
+
+    // Add search metadata if search is configured
+    if (this.config.search) {
+      metaFields.searchQuery = z.string().optional().describe("Search query applied");
+      metaFields.searchFields = z.array(z.string()).optional().describe("Fields searched");
+    }
+
+    // If no features are configured, return a minimal meta schema
+    if (Object.keys(metaFields).length === 0) {
+      return z.object({
+        total: z.number().int().min(0).optional(),
+      });
+    }
+
+    return z.object(metaFields as z.ZodRawShape);
   }
 
   /**
