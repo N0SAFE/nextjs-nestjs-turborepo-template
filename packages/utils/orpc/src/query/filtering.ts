@@ -36,9 +36,9 @@ export interface FieldFilterConfig {
 /**
  * Filtering configuration options
  */
-export interface FilteringConfig {
+export interface FilteringConfig<TFields extends Record<string, any> = Record<string, any>> {
   /** Available fields for filtering with their schemas */
-  fields: Record<string, FieldFilterConfig | z.ZodTypeAny>;
+  fields: TFields;
   /** Allow combining filters with AND/OR */
   allowLogicalOperators?: boolean;
   /** Allow nested filters */
@@ -67,7 +67,9 @@ export interface FilteringConfig {
  * // categoryId, inStock
  * ```
  */
-export function createFilteringSchema(config: FilteringConfig) {
+export function createFilteringSchema<TFields extends Record<string, any>>(
+  config: FilteringConfig<TFields>
+) {
   const {
     fields,
     allowLogicalOperators = false,

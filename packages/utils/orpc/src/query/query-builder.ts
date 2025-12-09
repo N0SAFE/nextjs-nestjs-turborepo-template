@@ -20,13 +20,13 @@ import {
 /**
  * Complete query parameters configuration
  */
-export interface QueryConfig<TFields extends readonly string[] = readonly string[]> {
+export interface QueryConfig<TFilterFields extends Record<string, any> = Record<string, any>> {
   /** Pagination configuration */
   pagination?: PaginationConfig;
   /** Sorting configuration */
-  sorting?: SortingConfig<TFields>;
+  sorting?: SortingConfig<readonly string[]>;
   /** Filtering configuration */
-  filtering?: FilteringConfig;
+  filtering?: FilteringConfig<TFilterFields>;
   /** Search configuration */
   search?: SearchConfig;
   /** Additional custom fields */
@@ -62,8 +62,8 @@ export interface QueryConfig<TFields extends readonly string[] = readonly string
  * const outputSchema = queryBuilder.buildOutputSchema(itemSchema);
  * ```
  */
-export class QueryBuilder<TFields extends readonly string[] = readonly string[]> {
-  constructor(private config: QueryConfig<TFields> = {}) {}
+export class QueryBuilder<TFilterFields extends Record<string, any> = Record<string, any>> {
+  constructor(private config: QueryConfig<TFilterFields> = {}) {}
 
   /**
    * Build the complete input schema with all query parameters
@@ -165,7 +165,7 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Update configuration and return new builder
    */
-  withConfig(updates: Partial<QueryConfig<TFields>>): QueryBuilder<TFields> {
+  withConfig(updates: Partial<QueryConfig<TFilterFields>>): QueryBuilder<TFilterFields> {
     return new QueryBuilder({
       ...this.config,
       ...updates,
@@ -175,7 +175,7 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Add pagination to the query
    */
-  withPagination(config: PaginationConfig): QueryBuilder<TFields> {
+  withPagination(config: PaginationConfig): QueryBuilder<TFilterFields> {
     return new QueryBuilder({
       ...this.config,
       pagination: config,
@@ -185,7 +185,7 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Add sorting to the query
    */
-  withSorting(config: SortingConfig<TFields>): QueryBuilder<TFields> {
+  withSorting(config: SortingConfig<readonly string[]>): QueryBuilder<TFilterFields> {
     return new QueryBuilder({
       ...this.config,
       sorting: config,
@@ -195,7 +195,9 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Add filtering to the query
    */
-  withFiltering(config: FilteringConfig): QueryBuilder<TFields> {
+  withFiltering<TNewFields extends Record<string, any>>(
+    config: FilteringConfig<TNewFields>
+  ): QueryBuilder<TNewFields> {
     return new QueryBuilder({
       ...this.config,
       filtering: config,
@@ -205,7 +207,7 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Add search to the query
    */
-  withSearch(config: SearchConfig): QueryBuilder<TFields> {
+  withSearch(config: SearchConfig): QueryBuilder<TFilterFields> {
     return new QueryBuilder({
       ...this.config,
       search: config,
@@ -215,7 +217,7 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
   /**
    * Add custom fields to the query
    */
-  withCustomFields(fields: Record<string, z.ZodTypeAny>): QueryBuilder<TFields> {
+  withCustomFields(fields: Record<string, z.ZodTypeAny>): QueryBuilder<TFilterFields> {
     return new QueryBuilder({
       ...this.config,
       customFields: {
@@ -229,17 +231,17 @@ export class QueryBuilder<TFields extends readonly string[] = readonly string[]>
 /**
  * Helper function to create a query builder
  */
-export function createQueryBuilder<TFields extends readonly string[]>(
-  config: QueryConfig<TFields> = {}
-): QueryBuilder<TFields> {
+export function createQueryBuilder<TFilterFields extends Record<string, any> = Record<string, any>>(
+  config: QueryConfig<TFilterFields> = {}
+): QueryBuilder<TFilterFields> {
   return new QueryBuilder(config);
 }
 
 /**
  * Helper to create a simple list query with pagination and sorting
  */
-export function createListQuery<TFields extends readonly string[]>(
-  sortableFields: TFields,
+export function createListQuery(
+  sortableFields: readonly string[],
   paginationConfig?: PaginationConfig
 ) {
   return new QueryBuilder({
@@ -271,9 +273,9 @@ export function createSearchQuery(
 /**
  * Helper to create an advanced query with all features
  */
-export function createAdvancedQuery<TFields extends readonly string[]>(config: {
-  sortableFields: TFields;
-  filterableFields: FilteringConfig["fields"];
+export function createAdvancedQuery<TFilterFields extends Record<string, any>>(config: {
+  sortableFields: readonly string[];
+  filterableFields: TFilterFields;
   searchableFields?: readonly string[];
   pagination?: PaginationConfig;
 }) {

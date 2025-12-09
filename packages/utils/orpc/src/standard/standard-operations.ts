@@ -114,7 +114,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
   /**
    * Create a standard PATCH operation (partial update)
    */
-  patch(): RouteBuilder<any, TEntity> {
+  patch(): RouteBuilder<z.ZodType<Partial<z.infer<TEntity>>>, TEntity> {
     const partialSchema = this.entitySchema.partial();
 
     const builder = new RouteBuilder(
@@ -124,11 +124,11 @@ export class StandardOperations<TEntity extends EntitySchema> {
         summary: `Partially update ${this.entityName}`,
         description: `Update specific fields of ${this.entityName}`,
       },
-      partialSchema,
+      partialSchema as any,
       this.entitySchema
     );
 
-    return builder;
+    return builder as any;
   }
 
   /**
@@ -191,13 +191,19 @@ export class StandardOperations<TEntity extends EntitySchema> {
    * }).build();
    * ```
    */
-  list(options?: {
+  list<TFilterFields extends Record<string, any> = {}>(options?: {
     pagination?: PaginationConfig;
     sorting?: readonly string[];
-    filtering?: FilteringConfig;
-  }): RouteBuilder<any, any> {
+    filtering?: FilteringConfig<TFilterFields>;
+  }): RouteBuilder<
+    z.ZodType<any>,
+    z.ZodObject<{
+      data: z.ZodArray<TEntity>;
+      meta: z.ZodType<any>;
+    }>
+  > {
     // Build query using QueryBuilder for type safety
-    const queryConfig: QueryConfig<any> = {
+    const queryConfig: QueryConfig<TFilterFields> = {
       pagination: options?.pagination || { defaultLimit: 10, maxLimit: 100 },
     };
 
@@ -272,8 +278,14 @@ export class StandardOperations<TEntity extends EntitySchema> {
   search(options?: {
     searchFields?: readonly string[];
     pagination?: PaginationConfig;
-  }): RouteBuilder<any, any> {
-    const queryConfig: QueryConfig<any> = {
+  }): RouteBuilder<
+    z.ZodType<any>,
+    z.ZodObject<{
+      data: z.ZodArray<TEntity>;
+      meta: z.ZodType<any>;
+    }>
+  > {
+    const queryConfig: QueryConfig<{}> = {
       pagination: options?.pagination || { defaultLimit: 20, maxLimit: 100 },
       search: {
         searchableFields: options?.searchFields,
@@ -312,7 +324,10 @@ export class StandardOperations<TEntity extends EntitySchema> {
   check<TField extends keyof z.infer<TEntity>>(
     fieldName: TField,
     fieldSchema?: z.ZodTypeAny
-  ): RouteBuilder<any, z.ZodObject<{ exists: z.ZodBoolean }>> {
+  ): RouteBuilder<
+    z.ZodType<{ [K in TField]: any }>,
+    z.ZodObject<{ exists: z.ZodBoolean }>
+  > {
     const schema = fieldSchema ?? this.entitySchema.shape[fieldName as string];
     
     const inputSchema = z.object({
@@ -334,13 +349,24 @@ export class StandardOperations<TEntity extends EntitySchema> {
       outputSchema
     );
 
-    return builder;
+    return builder as any;
   }
 
   /**
    * Create a batch CREATE operation
    */
-  batchCreate(options?: { maxBatchSize?: number }): RouteBuilder<any, any> {
+  batchCreate(options?: { maxBatchSize?: number }): RouteBuilder<
+    z.ZodObject<{
+      items: z.ZodArray<TEntity>;
+    }>,
+    z.ZodObject<{
+      items: z.ZodArray<TEntity>;
+      errors: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        index: z.ZodNumber;
+        error: z.ZodString;
+      }>>>;
+    }>
+  > {
     const maxSize = options?.maxBatchSize ?? 100;
     
     const inputSchema = z.object({
@@ -372,7 +398,15 @@ export class StandardOperations<TEntity extends EntitySchema> {
   /**
    * Create a batch DELETE operation
    */
-  batchDelete(options?: { maxBatchSize?: number }): RouteBuilder<any, any> {
+  batchDelete(options?: { maxBatchSize?: number }): RouteBuilder<
+    z.ZodObject<{
+      ids: z.ZodArray<z.ZodString>;
+    }>,
+    z.ZodObject<{
+      deleted: z.ZodNumber;
+      failed: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }>
+  > {
     const maxSize = options?.maxBatchSize ?? 100;
     
     const inputSchema = z.object({
