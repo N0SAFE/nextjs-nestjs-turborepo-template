@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import type { HTTPPath } from "@orpc/contract";
 import { z } from "zod/v4";
 import { SchemaBuilder } from "./schema-builder";
 import type {
@@ -34,10 +35,7 @@ export class RouteBuilder<
     input?: TInput,
     output?: TOutput
   ) {
-    this.routeMetadata = route ?? {
-      method: "GET",
-      path: "/",
-    };
+    this.routeMetadata = route ?? {};
     this.inputSchema = (input ?? z.void()) as TInput;
     this.outputSchema = (output ?? z.void()) as TOutput;
   }
@@ -70,7 +68,7 @@ export class RouteBuilder<
    * Set route path
    */
   path(path: string): RouteBuilder<TInput, TOutput> {
-    this.routeMetadata.path = path;
+    this.routeMetadata.path = path as HTTPPath;
     return this;
   }
 
@@ -166,7 +164,7 @@ export class RouteBuilder<
    */
   build() {
     const contract = oc
-      .route(this.routeMetadata as any)
+      .route(this.routeMetadata)
       .input(this.inputSchema)
       .output(this.outputSchema);
 

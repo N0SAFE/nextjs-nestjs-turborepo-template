@@ -1,21 +1,28 @@
 import type { ContractRouter, ContractProcedure } from "@orpc/contract";
+import type { HTTPMethod, HTTPPath } from "@orpc/contract";
 import type { z } from "zod/v4";
 
 /**
  * HTTP methods supported by ORPC routes
  */
-export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type HttpMethod = HTTPMethod;
 
 /**
  * Route metadata for defining ORPC route characteristics
+ * This matches the ORPC Route interface
  */
 export interface RouteMetadata {
-  method: HttpMethod;
-  path: string;
+  method?: HTTPMethod;
+  path?: HTTPPath;
+  operationId?: string;
   summary?: string;
   description?: string;
   deprecated?: boolean;
-  tags?: string[];
+  tags?: readonly string[];
+  successStatus?: number;
+  successDescription?: string;
+  inputStructure?: 'compact' | 'detailed';
+  outputStructure?: 'compact' | 'detailed';
 }
 
 /**
