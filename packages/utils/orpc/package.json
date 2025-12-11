@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "eslint": "catalog:linting",
+    "typescript-eslint": "catalog:linting",
     "@repo-configs/eslint": "*",
     "@repo-configs/prettier": "*",
     "@repo-configs/typescript": "*",

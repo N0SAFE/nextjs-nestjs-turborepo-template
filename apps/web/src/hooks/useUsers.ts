@@ -83,7 +83,7 @@ export function useCreateUser() {
         })
       })
       // Invalidate user count
-      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({}) })
       toast.success(`User "${newUser.name}" created successfully`)
     },
     onError: (error: Error) => {
@@ -96,7 +96,7 @@ export function useCreateUser() {
 export function useUpdateUser() {
   const queryClient = useQueryClient()
   
-  return useMutation(orpc.user.update.mutationOptions({
+  const updateUserMutation = useMutation(orpc.user.update.mutationOptions({
     onSuccess: (updatedUser, variables) => {
       // Invalidate user list to refresh data with proper input structure
       void queryClient.invalidateQueries({ 
@@ -119,6 +119,8 @@ export function useUpdateUser() {
       toast.error(`Failed to update user: ${error.message}`)
     },
   }))
+  
+  return updateUserMutation
 }
 
 // Hook to delete a user
@@ -139,7 +141,7 @@ export function useDeleteUser() {
         })
       })
       // Invalidate user count
-      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({}) })
       // Remove the specific user from cache
       queryClient.removeQueries({ 
         queryKey: orpc.user.findById.queryKey({ input: { id: variables.id } }) 
@@ -166,7 +168,6 @@ export function useUserCount(options?: {
   enabled?: boolean
 }) {
   return useQuery(orpc.user.count.queryOptions({
-    input: {},
     enabled: options?.enabled ?? true,
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -307,10 +308,10 @@ export function useUserAdministration(options?: {
     
     // Pagination helpers
     pagination: {
-      currentPage: Math.floor((users.data?.meta.offset ?? 0) / (users.data?.meta.limit ?? 10)) + 1,
-      totalPages: Math.ceil((users.data?.meta.total ?? 0) / (users.data?.meta.limit ?? 10)),
-      hasNextPage: users.data?.meta.hasMore ?? false,
-      hasPrevPage: (users.data?.meta.offset ?? 0) > 0,
+      currentPage: users.data ? Math.floor(users.data.meta.offset / users.data.meta.limit) + 1 : 1,
+      totalPages: users.data ? Math.ceil(users.data.meta.total / users.data.meta.limit) : 0,
+      hasNextPage: users.data ? users.data.meta.hasMore : false,
+      hasPrevPage: users.data ? users.data.meta.offset > 0 : false,
     }
   }
 }
@@ -325,7 +326,7 @@ export function useUserSelector(options?: {
   const users = useUsers()
   
   // Filter users based on options
-  const availableUsers = users.data?.users.filter(user => {
+  const availableUsers = users.data?.data.filter(user => {
     if (options?.excludeUserIds?.includes(user.id)) return false
     // Add role filtering if needed when roles are added to user schema
     return true
@@ -433,7 +434,7 @@ export async function getUser(userId: string) {
  * Direct async function for user count
  */
 export async function getUserCount() {
-  return orpc.user.count.call({})
+  return orpc.user.count.call()
 }
 
 // ============================================================================
@@ -489,7 +490,6 @@ export function prefetchUser(
 export function prefetchUserCount(queryClient: QueryClient) {
   return queryClient.prefetchQuery(
     orpc.user.count.queryOptions({
-      input: {},
       staleTime: 1000 * 60 * 2,
       gcTime: 1000 * 60 * 10,
     })

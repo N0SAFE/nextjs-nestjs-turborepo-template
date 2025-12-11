@@ -9,8 +9,8 @@ describe('SchemaBuilder', () => {
     email: z.string().email(),
     age: z.number(),
     active: z.boolean(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
   });
 
   describe('Basic Operations', () => {

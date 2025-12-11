@@ -11,7 +11,7 @@ export type HttpMethod = HTTPMethod;
  * Route metadata for defining ORPC route characteristics
  * This matches the ORPC Route interface
  */
-export interface RouteMetadata {
+export type RouteMetadata = {
   method?: HTTPMethod;
   path?: HTTPPath;
   operationId?: string;
@@ -38,10 +38,10 @@ export type InferSchemaType<T extends z.ZodTypeAny> = z.infer<T>;
 /**
  * Contract procedure builder state
  */
-export interface ContractProcedureState<
+export type ContractProcedureState<
   TInput extends z.ZodTypeAny = any,
   TOutput extends z.ZodTypeAny = any
-> {
+> = {
   route: RouteMetadata;
   input: TInput;
   output: TOutput;
@@ -57,7 +57,7 @@ export type CustomModifier<TState, TResult = TState> = (
 /**
  * Pagination options for list operations
  */
-export interface PaginationOptions {
+export type PaginationOptions = {
   defaultLimit?: number;
   maxLimit?: number;
   includeOffset?: boolean;
@@ -67,7 +67,7 @@ export interface PaginationOptions {
 /**
  * Sorting options for list operations
  */
-export interface SortingOptions {
+export type SortingOptions = {
   fields: readonly string[];
   defaultField?: string;
   defaultDirection?: "asc" | "desc";
@@ -76,7 +76,7 @@ export interface SortingOptions {
 /**
  * Filtering options for list operations
  */
-export interface FilteringOptions {
+export type FilteringOptions = {
   fields?: Record<string, z.ZodTypeAny>;
   searchFields?: readonly string[];
 }
@@ -96,7 +96,7 @@ export type StandardOperation =
 /**
  * Batch operation options
  */
-export interface BatchOptions {
+export type BatchOptions = {
   maxBatchSize?: number;
   allowPartialSuccess?: boolean;
 }
@@ -104,7 +104,7 @@ export interface BatchOptions {
 /**
  * Event iterator options for streaming
  */
-export interface EventIteratorOptions {
+export type EventIteratorOptions = {
   bufferSize?: number;
   timeoutMs?: number;
 }

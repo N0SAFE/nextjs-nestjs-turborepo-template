@@ -8,4 +8,7 @@ const userOps = standard(userSchema, "user");
 export const userFindByIdContract = userOps
   .read()
   .outputBuilder.nullable()
-  .build();
+  .build()
+  
+  type i = typeof userFindByIdContract['~orpc']["inputSchema"];
+  type o = typeof userFindByIdContract['~orpc']["outputSchema"];

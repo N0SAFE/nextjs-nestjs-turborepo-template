@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { authClient } from '@/lib/auth'
 
 /**
- * Hook to sign in with email and password
+ * Hook to sign in with email and password  
  */
 export function useSignInEmailMutation() {
   const queryClient = useQueryClient()

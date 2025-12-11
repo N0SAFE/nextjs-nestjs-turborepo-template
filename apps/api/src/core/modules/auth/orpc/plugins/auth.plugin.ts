@@ -86,10 +86,14 @@ export class AuthPlugin<TContext extends AuthPluginContext>
         const headers = request.headers;
         const webHeaders = toWebHeaders(headers);
         
+        console.log("Auth Plugin: Extracting session with headers:", Object.fromEntries(webHeaders.entries()));
+        
         const sessionData = await auth.api.getSession({
           headers: webHeaders,
           asResponse: false,
         });
+        
+        console.log("Auth Plugin: Retrieved session data:", sessionData);
         
         // Better Auth's toAuthEndpoints wraps response in { response: Response }
         // We need to extract the actual session data from the Response body
@@ -118,6 +122,8 @@ export class AuthPlugin<TContext extends AuthPluginContext>
         console.error("Auth Plugin: Error extracting session:", error);
         // Continue with null session - allow unauthenticated access
       }
+      
+      console.log("Auth Plugin: Final session object:", session);
 
       // Create auth utilities with session
       const authUtils = new AuthUtils(session, auth);

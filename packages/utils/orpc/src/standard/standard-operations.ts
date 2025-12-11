@@ -2,24 +2,25 @@ import { z } from "zod/v4";
 import { RouteBuilder } from "../builder/route-builder";
 import type { EntitySchema, PaginationOptions } from "../builder/types";
 import {
-  createPaginationSchema,
-  createPaginationMetaSchema,
-  createPaginatedResponseSchema,
-  type PaginationConfig,
+  createPaginationConfigSchema,
 } from "../query/pagination";
 import {
-  createSortingSchema,
-  type SortingConfig,
+  createSortingConfigSchema,
+  type ZodSchemaWithConfig,
+  CONFIG_SYMBOL,
 } from "../query/sorting";
 import {
-  createFilteringSchema,
-  type FilteringConfig,
+  createFilteringConfigSchema,
 } from "../query/filtering";
 import {
-  createSearchSchema,
-  type SearchConfig,
+  createSearchConfigSchema,
 } from "../query/search";
-import { createQueryBuilder, type QueryConfig } from "../query/query-builder";
+import { 
+  createQueryBuilder, 
+  type QueryConfig,
+  type ComputeInputSchema,
+  type ComputeOutputSchema,
+} from "../query/query-builder";
 
 
 
@@ -42,9 +43,9 @@ export class StandardOperations<TEntity extends EntitySchema> {
    *   .build();
    * ```
    */
-  read(): RouteBuilder<z.ZodObject<{ id: z.ZodString }>, TEntity> {
+  read(): RouteBuilder<z.ZodObject<{ id: z.ZodUUID }>, TEntity> {
     const inputSchema = z.object({
-      id: z.string().uuid(),
+      id: z.uuid(),
     });
 
     const builder = new RouteBuilder(
@@ -141,11 +142,11 @@ export class StandardOperations<TEntity extends EntitySchema> {
    * ```
    */
   delete(): RouteBuilder<
-    z.ZodObject<{ id: z.ZodString }>,
+    z.ZodObject<{ id: z.ZodUUID }>,
     z.ZodObject<{ success: z.ZodBoolean; message: z.ZodOptional<z.ZodString> }>
   > {
     const inputSchema = z.object({
-      id: z.string().uuid(),
+      id: z.uuid(),
     });
 
     const outputSchema = z.object({
@@ -170,52 +171,91 @@ export class StandardOperations<TEntity extends EntitySchema> {
   /**
    * Create a standard LIST operation with pagination, sorting, and filtering
    * 
+   * Accepts EITHER:
+   * 1. ZodSchemaWithConfig objects (new API) - Already have config embedded
+   * 2. Plain configuration objects (legacy API) - Will create config schemas
+   * 
    * @example
    * ```typescript
-   * // Simple list with pagination
+   * // New API with ZodSchemaWithConfig:
+   * const paginationConfig = createPaginationConfigSchema({ defaultLimit: 20 });
+   * const sortingConfig = createSortingConfigSchema(['createdAt', 'name'] as const);
    * standard.list(userSchema, 'user', {
-   *   pagination: { defaultLimit: 20 },
-   *   sorting: ['createdAt', 'name']
+   *   pagination: paginationConfig,
+   *   sorting: sortingConfig
    * }).build();
    * 
-   * // Advanced list with filtering
+   * // Legacy API with plain objects (still supported):
    * standard.list(userSchema, 'user', {
    *   pagination: { defaultLimit: 20 },
-   *   sorting: ['createdAt', 'name'],
-   *   filtering: {
-   *     fields: {
-   *       name: { schema: z.string(), operators: ['eq', 'like'] },
-   *       active: z.boolean()
-   *     }
-   *   }
+   *   sorting: { fields: ['createdAt', 'name'] as const }
    * }).build();
    * ```
    */
-  list<TFilterFields extends Record<string, any> = {}>(options?: {
-    pagination?: PaginationConfig;
-    sorting?: readonly string[];
-    filtering?: FilteringConfig<TFilterFields>;
-  }): RouteBuilder<
-    z.ZodType<any>,
-    z.ZodObject<{
-      data: z.ZodArray<TEntity>;
-      meta: z.ZodType<any>;
-    }>
-  > {
-    // Build query using QueryBuilder for type safety
-    const queryConfig: QueryConfig<TFilterFields> = {
-      pagination: options?.pagination || { defaultLimit: 10, maxLimit: 100 },
-    };
+  list<TConfig extends QueryConfig = QueryConfig>(queryConfig?: TConfig): RouteBuilder<
+    z.ZodType<ComputeInputSchema<TConfig>>,
+    z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
+  >;
+  list(options?: {
+    pagination?: ZodSchemaWithConfig<unknown> | { defaultLimit?: number; maxLimit?: number; includeOffset?: boolean; includeCursor?: boolean; includePage?: boolean };
+    sorting?: ZodSchemaWithConfig<unknown> | { fields: readonly string[]; defaultField?: string; defaultDirection?: "asc" | "desc" };
+    filtering?: ZodSchemaWithConfig<unknown> | { fields: Record<string, z.ZodTypeAny>; allowLogicalOperators?: boolean };
+  }): RouteBuilder<z.ZodTypeAny, z.ZodTypeAny>;
+  list(optionsOrConfig?: any) {
+    // Check if this is a pre-built QueryConfig or plain options
+    const isQueryConfig = optionsOrConfig && 
+      (optionsOrConfig.pagination?.[CONFIG_SYMBOL] !== undefined ||
+       optionsOrConfig.sorting?.[CONFIG_SYMBOL] !== undefined ||
+       optionsOrConfig.filtering?.[CONFIG_SYMBOL] !== undefined ||
+       optionsOrConfig.search?.[CONFIG_SYMBOL] !== undefined);
 
-    if (options?.sorting && options.sorting.length > 0) {
-      queryConfig.sorting = {
-        fields: options.sorting,
-        defaultDirection: "asc",
-      };
-    }
+    let queryConfig: QueryConfig;
 
-    if (options?.filtering) {
-      queryConfig.filtering = options.filtering;
+    if (isQueryConfig) {
+      // Already a QueryConfig - use directly
+      queryConfig = optionsOrConfig;
+    } else {
+      // Plain options - build QueryConfig from them
+      const options = optionsOrConfig;
+      queryConfig = {};
+
+      // Handle pagination - accept ZodSchemaWithConfig OR plain object
+      if (options?.pagination !== undefined) {
+        // Check if it's already a ZodSchemaWithConfig (has CONFIG_SYMBOL)
+        if (CONFIG_SYMBOL in options.pagination) {
+          queryConfig.pagination = options.pagination as ZodSchemaWithConfig<unknown>;
+        } else {
+          // Plain object - create config schema
+          queryConfig.pagination = createPaginationConfigSchema(options.pagination);
+        }
+      } else {
+        queryConfig.pagination = createPaginationConfigSchema({ defaultLimit: 10, maxLimit: 100 });
+      }
+
+      // Handle sorting - accept ZodSchemaWithConfig OR plain object
+      if (options?.sorting) {
+        if (CONFIG_SYMBOL in options.sorting) {
+          queryConfig.sorting = options.sorting as ZodSchemaWithConfig<unknown>;
+        } else {
+          const { fields, defaultField, defaultDirection } = options.sorting;
+          queryConfig.sorting = createSortingConfigSchema(fields, {
+            defaultField,
+            defaultDirection: defaultDirection || "asc",
+          });
+        }
+      }
+
+      // Handle filtering - accept ZodSchemaWithConfig OR plain object
+      if (options?.filtering) {
+        if (CONFIG_SYMBOL in options.filtering) {
+          queryConfig.filtering = options.filtering as ZodSchemaWithConfig<unknown>;
+        } else {
+          queryConfig.filtering = createFilteringConfigSchema(
+            options.filtering.fields,
+            { allowLogicalOperators: options.filtering.allowLogicalOperators }
+          );
+        }
+      }
     }
 
     const queryBuilder = createQueryBuilder(queryConfig);
@@ -277,22 +317,29 @@ export class StandardOperations<TEntity extends EntitySchema> {
    */
   search(options?: {
     searchFields?: readonly string[];
-    pagination?: PaginationConfig;
-  }): RouteBuilder<
-    z.ZodType<any>,
-    z.ZodObject<{
-      data: z.ZodArray<TEntity>;
-      meta: z.ZodType<any>;
-    }>
-  > {
-    const queryConfig: QueryConfig<{}> = {
-      pagination: options?.pagination || { defaultLimit: 20, maxLimit: 100 },
-      search: {
-        searchableFields: options?.searchFields,
-        minQueryLength: 1,
-        allowFieldSelection: true,
-      },
-    };
+    pagination?: ZodSchemaWithConfig<unknown> | { defaultLimit?: number; maxLimit?: number };
+  }) {
+    const queryConfig: QueryConfig = {};
+
+    // Handle pagination - support both config schema and plain object
+    if (options?.pagination) {
+      if (CONFIG_SYMBOL in options.pagination) {
+        // Already a ZodSchemaWithConfig - use directly
+        queryConfig.pagination = options.pagination as ZodSchemaWithConfig<unknown>;
+      } else {
+        // Plain object - create config schema
+        queryConfig.pagination = createPaginationConfigSchema(options.pagination);
+      }
+    } else {
+      // Default pagination
+      queryConfig.pagination = createPaginationConfigSchema({ defaultLimit: 20, maxLimit: 100 });
+    }
+
+    // Handle search - always create from plain object (no config schema variant exists yet)
+    queryConfig.search = createSearchConfigSchema(options?.searchFields, {
+      minQueryLength: 1,
+      allowFieldSelection: true,
+    });
 
     const queryBuilder = createQueryBuilder(queryConfig);
     const inputSchema = queryBuilder.buildInputSchema();
@@ -321,18 +368,23 @@ export class StandardOperations<TEntity extends EntitySchema> {
    *   .build();
    * ```
    */
-  check<TField extends keyof z.infer<TEntity>>(
+  check<
+    TField extends keyof z.infer<TEntity>,
+    TFieldValue = z.infer<TEntity>[TField]
+  >(
     fieldName: TField,
     fieldSchema?: z.ZodTypeAny
   ): RouteBuilder<
-    z.ZodType<{ [K in TField]: any }>,
+    z.ZodObject<Record<TField, z.ZodType<TFieldValue>>>,
     z.ZodObject<{ exists: z.ZodBoolean }>
   > {
     const schema = fieldSchema ?? this.entitySchema.shape[fieldName as string];
     
+    // Create a properly typed input schema
+    type InputShape = Record<TField, typeof schema>;
     const inputSchema = z.object({
       [fieldName]: schema,
-    } as any);
+    } as InputShape) as z.ZodObject<Record<TField, z.ZodType<TFieldValue>>>;
 
     const outputSchema = z.object({
       exists: z.boolean(),
@@ -349,7 +401,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
       outputSchema
     );
 
-    return builder as any;
+    return builder;
   }
 
   /**
@@ -400,7 +452,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
    */
   batchDelete(options?: { maxBatchSize?: number }): RouteBuilder<
     z.ZodObject<{
-      ids: z.ZodArray<z.ZodString>;
+      ids: z.ZodArray<z.ZodUUID>;
     }>,
     z.ZodObject<{
       deleted: z.ZodNumber;
@@ -410,7 +462,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
     const maxSize = options?.maxBatchSize ?? 100;
     
     const inputSchema = z.object({
-      ids: z.array(z.string().uuid()).max(maxSize),
+      ids: z.array(z.uuid()).max(maxSize),
     });
 
     const outputSchema = z.object({

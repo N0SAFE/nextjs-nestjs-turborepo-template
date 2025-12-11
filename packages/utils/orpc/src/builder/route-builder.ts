@@ -43,7 +43,7 @@ export class RouteBuilder<
   /**
    * Set or update route metadata
    */
-  route(metadata: RouteMetadata): RouteBuilder<TInput, TOutput> {
+  route(metadata: RouteMetadata): this {
     this.routeMetadata = { ...this.routeMetadata, ...metadata };
     return this;
   }
@@ -51,7 +51,7 @@ export class RouteBuilder<
   /**
    * Update specific route properties
    */
-  updateRoute(updates: Partial<RouteMetadata>): RouteBuilder<TInput, TOutput> {
+  updateRoute(updates: Partial<RouteMetadata>): this {
     this.routeMetadata = { ...this.routeMetadata, ...updates };
     return this;
   }
@@ -59,7 +59,7 @@ export class RouteBuilder<
   /**
    * Set HTTP method
    */
-  method(method: HttpMethod): RouteBuilder<TInput, TOutput> {
+  method(method: HttpMethod): this {
     this.routeMetadata.method = method;
     return this;
   }
@@ -67,7 +67,7 @@ export class RouteBuilder<
   /**
    * Set route path
    */
-  path(path: string): RouteBuilder<TInput, TOutput> {
+  path(path: string): this {
     this.routeMetadata.path = path as HTTPPath;
     return this;
   }
@@ -75,7 +75,7 @@ export class RouteBuilder<
   /**
    * Set route summary
    */
-  summary(summary: string): RouteBuilder<TInput, TOutput> {
+  summary(summary: string): this {
     this.routeMetadata.summary = summary;
     return this;
   }
@@ -83,7 +83,7 @@ export class RouteBuilder<
   /**
    * Set route description
    */
-  description(description: string): RouteBuilder<TInput, TOutput> {
+  description(description: string): this {
     this.routeMetadata.description = description;
     return this;
   }
@@ -91,7 +91,7 @@ export class RouteBuilder<
   /**
    * Add tags to the route
    */
-  tags(...tags: string[]): RouteBuilder<TInput, TOutput> {
+  tags(...tags: string[]): this {
     this.routeMetadata.tags = [
       ...(this.routeMetadata.tags ?? []),
       ...tags,
@@ -102,7 +102,7 @@ export class RouteBuilder<
   /**
    * Mark route as deprecated
    */
-  deprecated(deprecated: boolean = true): RouteBuilder<TInput, TOutput> {
+  deprecated(deprecated = true): this {
     this.routeMetadata.deprecated = deprecated;
     return this;
   }
@@ -163,12 +163,10 @@ export class RouteBuilder<
    * Build and return the ORPC contract
    */
   build() {
-    const contract = oc
+    return oc
       .route(this.routeMetadata)
       .input(this.inputSchema)
       .output(this.outputSchema);
-
-    return contract;
   }
 
   /**
@@ -217,13 +215,18 @@ class InputSchemaProxy<
    */
   pick<K extends keyof z.infer<TInput>>(
     keys: readonly K[]
-  ): RouteBuilder<any, TOutput> {
+  ): RouteBuilder<
+    TInput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Pick<Shape, K & keyof Shape>>
+      : z.ZodTypeAny,
+    TOutput
+  > {
     const input = this.routeBuilder.getInputSchema();
     if ("pick" in input) {
       const picked = (input as any).pick(
         Object.fromEntries(keys.map((k) => [k, true]))
       );
-      return this.routeBuilder.input(picked);
+      return this.routeBuilder.input(picked) as any;
     }
     throw new Error("Input schema does not support pick operation");
   }
@@ -233,13 +236,18 @@ class InputSchemaProxy<
    */
   omit<K extends keyof z.infer<TInput>>(
     keys: readonly K[]
-  ): RouteBuilder<any, TOutput> {
+  ): RouteBuilder<
+    TInput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Omit<Shape, K & keyof Shape>>
+      : z.ZodTypeAny,
+    TOutput
+  > {
     const input = this.routeBuilder.getInputSchema();
     if ("omit" in input) {
       const omitted = (input as any).omit(
         Object.fromEntries(keys.map((k) => [k, true]))
       );
-      return this.routeBuilder.input(omitted);
+      return this.routeBuilder.input(omitted) as any;
     }
     throw new Error("Input schema does not support omit operation");
   }
@@ -249,11 +257,16 @@ class InputSchemaProxy<
    */
   extend<TExtension extends z.ZodRawShape>(
     extension: TExtension
-  ): RouteBuilder<any, TOutput> {
+  ): RouteBuilder<
+    TInput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Shape & TExtension>
+      : z.ZodTypeAny,
+    TOutput
+  > {
     const input = this.routeBuilder.getInputSchema();
     if ("extend" in input) {
       const extended = (input as any).extend(extension);
-      return this.routeBuilder.input(extended);
+      return this.routeBuilder.input(extended) as any;
     }
     throw new Error("Input schema does not support extend operation");
   }
@@ -261,11 +274,16 @@ class InputSchemaProxy<
   /**
    * Make input schema partial
    */
-  partial(): RouteBuilder<any, TOutput> {
+  partial(): RouteBuilder<
+    TInput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<{ [K in keyof Shape]: z.ZodOptional<Shape[K]> }>
+      : z.ZodTypeAny,
+    TOutput
+  > {
     const input = this.routeBuilder.getInputSchema();
     if ("partial" in input) {
       const partial = (input as any).partial();
-      return this.routeBuilder.input(partial);
+      return this.routeBuilder.input(partial) as any;
     }
     throw new Error("Input schema does not support partial operation");
   }
@@ -295,13 +313,18 @@ class OutputSchemaProxy<
    */
   pick<K extends keyof z.infer<TOutput>>(
     keys: readonly K[]
-  ): RouteBuilder<TInput, any> {
+  ): RouteBuilder<
+    TInput,
+    TOutput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Pick<Shape, K & keyof Shape>>
+      : z.ZodTypeAny
+  > {
     const output = this.routeBuilder.getOutputSchema();
     if ("pick" in output) {
       const picked = (output as any).pick(
         Object.fromEntries(keys.map((k) => [k, true]))
       );
-      return this.routeBuilder.output(picked);
+      return this.routeBuilder.output(picked) as any;
     }
     throw new Error("Output schema does not support pick operation");
   }
@@ -311,13 +334,18 @@ class OutputSchemaProxy<
    */
   omit<K extends keyof z.infer<TOutput>>(
     keys: readonly K[]
-  ): RouteBuilder<TInput, any> {
+  ): RouteBuilder<
+    TInput,
+    TOutput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Omit<Shape, K & keyof Shape>>
+      : z.ZodTypeAny
+  > {
     const output = this.routeBuilder.getOutputSchema();
     if ("omit" in output) {
       const omitted = (output as any).omit(
         Object.fromEntries(keys.map((k) => [k, true]))
       );
-      return this.routeBuilder.output(omitted);
+      return this.routeBuilder.output(omitted) as any;
     }
     throw new Error("Output schema does not support omit operation");
   }
@@ -327,11 +355,16 @@ class OutputSchemaProxy<
    */
   extend<TExtension extends z.ZodRawShape>(
     extension: TExtension
-  ): RouteBuilder<TInput, any> {
+  ): RouteBuilder<
+    TInput,
+    TOutput extends z.ZodObject<infer Shape>
+      ? z.ZodObject<Shape & TExtension>
+      : z.ZodTypeAny
+  > {
     const output = this.routeBuilder.getOutputSchema();
     if ("extend" in output) {
       const extended = (output as any).extend(extension);
-      return this.routeBuilder.output(extended);
+      return this.routeBuilder.output(extended) as any;
     }
     throw new Error("Output schema does not support extend operation");
   }

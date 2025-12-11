@@ -9,31 +9,8 @@ import type { z } from "zod/v4";
 // Base user type
 export type User = z.infer<typeof userSchema>;
 
-// User List Input - matches the query builder output
-export type UserListInput = {
-  // Pagination
-  limit: number;
-  offset: number;
-  
-  // Sorting
-  sortBy?: "createdAt" | "name" | "email" | "updatedAt";
-  sortDirection?: "asc" | "desc";
-  
-  // Filters
-  id?: string;
-  name?: string;
-  name_like?: string;
-  name_ilike?: string;
-  email?: string;
-  email_like?: string;
-  email_ilike?: string;
-  emailVerified?: boolean;
-  createdAt_gt?: string;
-  createdAt_gte?: string;
-  createdAt_lt?: string;
-  createdAt_lte?: string;
-  createdAt_between?: { from: string; to: string };
-};
+// NOTE: UserListInput is now exported from ./modules/user/list.ts
+// It's automatically inferred from the contract builder config
 
 // User List Output
 export type UserListOutput = {

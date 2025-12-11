@@ -288,11 +288,11 @@ function createResourcesAccessor(): ResourcesAccessor & { [K in ResourceName]: R
       return actions.includes(actionName as never);
     },
     
-    validateAction(resourceName: string, actionName: string): ResourcePermission {
+    validateAction(resourceName: ResourceName, actionName: string): ResourcePermission {
       if (!Object.prototype.hasOwnProperty.call(statement, resourceName)) {
         throw new InvalidResourceError(resourceName);
       }
-      const validResource = resourceName as ResourceName;
+      const validResource = resourceName;
       const actions = statement[validResource];
       if (!actions.includes(actionName as never)) {
         throw new InvalidActionError(resourceName, actionName, actions);
@@ -410,13 +410,13 @@ export function hasPermission(user: UserWithRole, requirement: PermissionRequire
     return false;
   }
   
-  // Get the role object from Better Auth roles
-  const roleObj = roles[userRole as keyof typeof roles];
+  // Get the role object from Better Auth roles (cast is safe after hasOwnProperty check)
+  const roleObj = roles[userRole as RoleName];
   
   // Get the role's statements (permissions)
   const roleStatements = 'statements' in roleObj 
-    ? (roleObj.statements as Record<string, readonly string[]>)
-    : (roleObj as unknown as Record<string, readonly string[]>);
+    ? (roleObj as { statements: Record<string, readonly string[]> }).statements
+    : roleObj as unknown as Record<string, readonly string[]>;
   
   // Handle string action - need a resource context, default to checking all resources
   if (typeof requirement === 'string') {

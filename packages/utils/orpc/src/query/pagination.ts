@@ -1,34 +1,86 @@
 import { z } from "zod/v4";
+import { CONFIG_SYMBOL, type ZodSchemaWithConfig } from "./sorting";
 
 /**
- * Pagination configuration options
- */
-export interface PaginationConfig {
-  /** Default number of items per page */
-  defaultLimit?: number;
-  /** Maximum number of items per page */
-  maxLimit?: number;
-  /** Minimum number of items per page */
-  minLimit?: number;
-  /** Include offset-based pagination */
-  includeOffset?: boolean;
-  /** Include cursor-based pagination */
-  includeCursor?: boolean;
-  /** Include page-based pagination */
-  includePage?: boolean;
-}
-
-/**
- * Creates a type-safe pagination input schema
+ * Create a pagination config schema with attached config data
+ * This allows the schema to carry the actual config for runtime extraction
+ * 
+ * @param options - Pagination configuration options
+ * @returns Zod schema with embedded config
  * 
  * @example
  * ```typescript
- * const paginationSchema = createPaginationSchema({
+ * const config = createPaginationConfigSchema({
  *   defaultLimit: 20,
  *   maxLimit: 100,
  *   includeOffset: true,
  *   includeCursor: true
  * });
+ * ```
+ */
+export function createPaginationConfigSchema<
+  TDefaultLimit extends number | undefined = undefined,
+  TMaxLimit extends number | undefined = undefined,
+  TMinLimit extends number | undefined = undefined,
+  TIncludeOffset extends boolean | undefined = undefined,
+  TIncludeCursor extends boolean | undefined = undefined,
+  TIncludePage extends boolean | undefined = undefined
+>(options: {
+  /** Default number of items per page */
+  defaultLimit?: TDefaultLimit;
+  /** Maximum number of items per page */
+  maxLimit?: TMaxLimit;
+  /** Minimum number of items per page */
+  minLimit?: TMinLimit;
+  /** Include offset-based pagination */
+  includeOffset?: TIncludeOffset;
+  /** Include cursor-based pagination */
+  includeCursor?: TIncludeCursor;
+  /** Include page-based pagination */
+  includePage?: TIncludePage;
+} = {} as any) {
+  // Compute config with defaults - preserve literal types
+  const config = {
+    defaultLimit: (options.defaultLimit ?? 10) as TDefaultLimit extends number ? TDefaultLimit : 10,
+    maxLimit: (options.maxLimit ?? 100) as TMaxLimit extends number ? TMaxLimit : 100,
+    minLimit: (options.minLimit ?? 1) as TMinLimit extends number ? TMinLimit : 1,
+    includeOffset: (options.includeOffset ?? true) as TIncludeOffset extends boolean ? TIncludeOffset : true,
+    includeCursor: (options.includeCursor ?? false) as TIncludeCursor extends boolean ? TIncludeCursor : false,
+    includePage: (options.includePage ?? false) as TIncludePage extends boolean ? TIncludePage : false,
+  };
+
+  const schema = z.object({
+    defaultLimit: z.number().optional().default(config.defaultLimit as any),
+    maxLimit: z.number().optional().default(config.maxLimit as any),
+    minLimit: z.number().optional().default(config.minLimit as any),
+    includeOffset: z.boolean().optional().default(config.includeOffset as any),
+    includeCursor: z.boolean().optional().default(config.includeCursor as any),
+    includePage: z.boolean().optional().default(config.includePage as any),
+  });
+
+  // Attach config to schema for runtime extraction (type-safe)
+  const result = Object.assign(schema, {
+    [CONFIG_SYMBOL]: config
+  }) as ZodSchemaWithConfig<typeof config, typeof schema>;
+
+  return result;
+}
+
+/**
+ * Creates a type-safe pagination input schema from a config schema
+ * 
+ * @param configSchema - Zod schema with embedded config created by createPaginationConfigSchema
+ * @returns Zod schema for pagination input
+ * 
+ * @example
+ * ```typescript
+ * const config = createPaginationConfigSchema({
+ *   defaultLimit: 20,
+ *   maxLimit: 100,
+ *   includeOffset: true,
+ *   includeCursor: true
+ * });
+ * const paginationSchema = createPaginationSchema(config);
  * 
  * // Inferred type:
  * // {
@@ -38,17 +90,30 @@ export interface PaginationConfig {
  * // }
  * ```
  */
-export function createPaginationSchema(config: PaginationConfig = {}) {
+export function createPaginationSchema<TConfig>(
+  configSchema: ZodSchemaWithConfig<TConfig>
+) {
+  // Extract config from schema
+  const config = configSchema[CONFIG_SYMBOL] as {
+    defaultLimit: number;
+    maxLimit: number;
+    minLimit: number;
+    includeOffset: boolean;
+    includeCursor: boolean;
+    includePage: boolean;
+  };
+
   const {
-    defaultLimit = 10,
-    maxLimit = 100,
-    minLimit = 1,
-    includeOffset = true,
-    includeCursor = false,
-    includePage = false,
+    defaultLimit,
+    maxLimit,
+    minLimit,
+    includeOffset,
+    includeCursor,
+    includePage,
   } = config;
 
-  const schema: Record<string, z.ZodTypeAny> = {
+  // Build base schema with limit
+  let schema = z.object({
     limit: z.coerce
       .number()
       .int()
@@ -56,130 +121,173 @@ export function createPaginationSchema(config: PaginationConfig = {}) {
       .max(maxLimit)
       .default(defaultLimit)
       .describe(`Number of items per page (${minLimit}-${maxLimit})`),
-  };
+  });
 
+  // Extend with offset if needed
   if (includeOffset) {
-    schema.offset = z.coerce
-      .number()
-      .int()
-      .min(0)
-      .default(0)
-      .describe("Number of items to skip");
+    schema = schema.extend({
+      offset: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe("Number of items to skip"),
+    });
   }
 
+  // Extend with page if needed
   if (includePage) {
-    schema.page = z.coerce
-      .number()
-      .int()
-      .min(1)
-      .default(1)
-      .describe("Page number (1-indexed)");
+    schema = schema.extend({
+      page: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(1)
+        .describe("Page number (1-indexed)"),
+    });
   }
 
+  // Extend with cursor if needed
   if (includeCursor) {
-    schema.cursor = z
-      .string()
-      .optional()
-      .describe("Cursor for cursor-based pagination");
-    
-    schema.cursorDirection = z
-      .enum(["forward", "backward"])
-      .default("forward")
-      .optional()
-      .describe("Direction for cursor pagination");
+    schema = schema.extend({
+      cursor: z
+        .string()
+        .optional()
+        .describe("Cursor for cursor-based pagination"),
+      cursorDirection: z
+        .enum(["forward", "backward"])
+        .default("forward")
+        .optional()
+        .describe("Direction for cursor pagination"),
+    });
   }
 
-  return z.object(schema as z.ZodRawShape);
+  return schema;
 }
 
 /**
- * Creates a type-safe pagination metadata output schema
+ * Creates a type-safe pagination metadata output schema from a config schema
+ * 
+ * @param configSchema - Zod schema with embedded config created by createPaginationConfigSchema
+ * @returns Zod schema for pagination metadata output
  * 
  * @example
  * ```typescript
- * const metaSchema = createPaginationMetaSchema({
+ * const config = createPaginationConfigSchema({
  *   includeCursor: true,
  *   includePage: true
  * });
+ * const metaSchema = createPaginationMetaSchema(config);
  * 
  * // Output includes: total, limit, offset, hasMore, nextCursor, prevCursor, page, totalPages
  * ```
  */
-export function createPaginationMetaSchema(config: PaginationConfig = {}) {
-  const {
-    includeOffset = true,
-    includeCursor = false,
-    includePage = false,
-  } = config;
+export function createPaginationMetaSchema<TConfig>(
+  configSchema: ZodSchemaWithConfig<TConfig>
+) {
+  // Extract config from schema
+  const config = configSchema[CONFIG_SYMBOL] as {
+    includeOffset: boolean;
+    includeCursor: boolean;
+    includePage: boolean;
+  };
 
-  const schema: Record<string, z.ZodTypeAny> = {
+  const { includeOffset, includeCursor, includePage } = config;
+
+  // Build base meta schema
+  let schema = z.object({
     total: z.number().int().min(0).describe("Total number of items"),
     limit: z.number().int().positive().describe("Items per page"),
     hasMore: z.boolean().describe("Whether there are more items"),
-  };
+  });
 
+  // Extend with offset if needed
   if (includeOffset) {
-    schema.offset = z.number().int().min(0).describe("Current offset");
+    schema = schema.extend({
+      offset: z.number().int().min(0).describe("Current offset"),
+    });
   }
 
+  // Extend with page info if needed
   if (includePage) {
-    schema.page = z.number().int().min(1).describe("Current page number");
-    schema.totalPages = z.number().int().min(0).describe("Total number of pages");
+    schema = schema.extend({
+      page: z.number().int().min(1).describe("Current page number"),
+      totalPages: z.number().int().min(0).describe("Total number of pages"),
+    });
   }
 
+  // Extend with cursors if needed
   if (includeCursor) {
-    schema.nextCursor = z.string().nullable().describe("Cursor for next page");
-    schema.prevCursor = z.string().nullable().describe("Cursor for previous page");
+    schema = schema.extend({
+      nextCursor: z.string().nullable().describe("Cursor for next page"),
+      prevCursor: z.string().nullable().describe("Cursor for previous page"),
+    });
   }
 
-  return z.object(schema as z.ZodRawShape);
+  return schema;
 }
 
 /**
- * Helper to create complete paginated response schema
+ * Helper to create complete paginated response schema from a config schema
+ * 
+ * @param dataSchema - Zod schema for individual data items
+ * @param configSchema - Zod schema with embedded config
+ * @returns Zod schema for paginated response with data and meta
  */
-export function createPaginatedResponseSchema<T extends z.ZodTypeAny>(
-  dataSchema: T,
-  config: PaginationConfig = {}
-) {
+export function createPaginatedResponseSchema<
+  TData extends z.ZodTypeAny,
+  TConfig
+>(dataSchema: TData, configSchema: ZodSchemaWithConfig<TConfig>) {
   return z.object({
     data: z.array(dataSchema),
-    meta: createPaginationMetaSchema(config),
+    meta: createPaginationMetaSchema(configSchema),
   });
 }
 
 /**
  * Offset-based pagination schema (traditional)
  */
-export const offsetPagination = createPaginationSchema({
-  includeOffset: true,
-  includeCursor: false,
-  includePage: false,
-});
+export const offsetPagination = (() => {
+  const config = createPaginationConfigSchema({
+    includeOffset: true,
+    includeCursor: false,
+    includePage: false,
+  });
+  return createPaginationSchema(config);
+})();
 
 /**
  * Page-based pagination schema
  */
-export const pagePagination = createPaginationSchema({
-  includeOffset: false,
-  includeCursor: false,
-  includePage: true,
-});
+export const pagePagination = (() => {
+  const config = createPaginationConfigSchema({
+    includeOffset: false,
+    includeCursor: false,
+    includePage: true,
+  });
+  return createPaginationSchema(config);
+})();
 
 /**
  * Cursor-based pagination schema (for infinite scroll)
  */
-export const cursorPagination = createPaginationSchema({
-  includeOffset: false,
-  includeCursor: true,
-  includePage: false,
-});
+export const cursorPagination = (() => {
+  const config = createPaginationConfigSchema({
+    includeOffset: false,
+    includeCursor: true,
+    includePage: false,
+  });
+  return createPaginationSchema(config);
+})();
 
 /**
  * Combined pagination schema with all options
  */
-export const fullPagination = createPaginationSchema({
-  includeOffset: true,
-  includeCursor: true,
-  includePage: true,
-});
+export const fullPagination = (() => {
+  const config = createPaginationConfigSchema({
+    includeOffset: true,
+    includeCursor: true,
+    includePage: true,
+  });
+  return createPaginationSchema(config);
+})();

@@ -11,7 +11,7 @@ export class UserController {
     @Implement(userContract.list)
     list() {
         return implement(userContract.list).use(requireAuth()).handler(async ({ input }) => {
-            const result = await this.userService.getUsers(input as any);
+            const result = await this.userService.getUsers(input);
             return {
                 data: result.data.map((user) => ({
                     id: user.id,
@@ -30,14 +30,14 @@ export class UserController {
     @Implement(userContract.findById)
     findById() {
         return implement(userContract.findById).use(requireAuth()).handler(async ({ input }) => {
-            return await this.userService.findUserById((input as any).id);
+            return await this.userService.findUserById(input.id);
         });
     }
 
     @Implement(userContract.create)
     create() {
         return implement(userContract.create).use(requireAuth()).handler(async ({ input }) => {
-            const user = await this.userService.createUser(input as any);
+            const user = await this.userService.createUser(input);
             if (!user) {
                 throw new Error("Failed to create user");
             }
@@ -56,8 +56,7 @@ export class UserController {
     @Implement(userContract.update)
     update() {
         return implement(userContract.update).use(requireAuth()).handler(async ({ input }) => {
-            const typedInput = input as any;
-            const user = await this.userService.updateUser(typedInput.id, typedInput);
+            const user = await this.userService.updateUser(input.id, input);
             if (!user) {
                 throw new Error("User not found");
             }
@@ -76,7 +75,7 @@ export class UserController {
     @Implement(userContract.delete)
     delete() {
         return implement(userContract.delete).use(requireAuth()).handler(async ({ input }) => {
-            const user = await this.userService.deleteUser((input as any).id);
+            const user = await this.userService.deleteUser(input.id);
             if (!user) {
                 return { success: false, message: "User not found" };
             }
@@ -87,7 +86,7 @@ export class UserController {
     @Implement(userContract.checkEmail)
     checkEmail() {
         return implement(userContract.checkEmail).use(requireAuth()).handler(async ({ input }) => {
-            return await this.userService.checkUserExistsByEmail((input as any).email);
+            return await this.userService.checkUserExistsByEmail(input.email);
         });
     }
 

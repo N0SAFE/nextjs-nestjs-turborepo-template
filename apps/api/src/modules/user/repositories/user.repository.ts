@@ -6,9 +6,9 @@ import { randomUUID } from "crypto";
 import type {
   UserCreateInput,
   UserUpdateInput,
-  UserListInput,
   User,
 } from "@repo/api-contracts/types";
+import type { UserListInput } from "@repo/api-contracts/modules/user/list";
 
 // Re-export types for repository use
 export type CreateUserInput = UserCreateInput;
@@ -104,7 +104,7 @@ export class UserRepository {
      */
     async findMany(input: GetUsersInput) {
         // Build the where conditions with new filter structure
-        const conditions: SQL[] = [];
+        const conditions: (SQL | undefined)[] = [];
 
         // Handle new filter operators for each field
         // ID filters
@@ -157,7 +157,7 @@ export class UserRepository {
                 and(
                     gte(user.createdAt, new Date(input.createdAt_between.from)),
                     lte(user.createdAt, new Date(input.createdAt_between.to))
-                )!
+                )
             );
         }
 
@@ -185,7 +185,7 @@ export class UserRepository {
                     orderByCondition = direction(user.updatedAt);
                     break;
                 default:
-                    throw new Error(`Unsupported sort field: ${input.sortBy as string}`);
+                    throw new Error(`Unsupported sort field: ${input.sortBy}`);
             }
         }
 

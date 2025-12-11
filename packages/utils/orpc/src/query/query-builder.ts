@@ -2,80 +2,343 @@ import { z } from "zod/v4";
 import {
   createPaginationSchema,
   createPaginatedResponseSchema,
-  type PaginationConfig,
+  createPaginationConfigSchema,
 } from "./pagination";
 import {
   createSortingSchema,
-  type SortingConfig,
+  createSortingConfigSchema,
+  type ZodSchemaWithConfig,
+  CONFIG_SYMBOL,
 } from "./sorting";
 import {
   createFilteringSchema,
-  type FilteringConfig,
+  createFilteringConfigSchema,
 } from "./filtering";
 import {
   createSearchSchema,
-  type SearchConfig,
+  createSearchConfigSchema,
 } from "./search";
 
 /**
- * Complete query parameters configuration
+ * Type constraint for filter fields
+ * Can be either:
+ * - A Zod schema directly
+ * - An object with schema and operators configuration
  */
-export interface QueryConfig<TFilterFields extends Record<string, any> = Record<string, any>> {
-  /** Pagination configuration */
-  pagination?: PaginationConfig;
-  /** Sorting configuration */
-  sorting?: SortingConfig<readonly string[]>;
-  /** Filtering configuration */
-  filtering?: FilteringConfig<TFilterFields>;
-  /** Search configuration */
-  search?: SearchConfig;
+export type FilterFieldConfig = z.ZodTypeAny | { schema: z.ZodTypeAny; operators?: readonly string[] | string[] };
+
+/**
+ * Extract schema type from FilterFieldConfig
+ */
+export type ExtractSchemaFromFilterField<T> = 
+  T extends { schema: infer S } 
+    ? S extends z.ZodTypeAny ? S : never
+    : T extends z.ZodTypeAny ? T : never;
+
+/**
+ * Meta schema shape based on configuration
+ * Uses conditional types to compute exact meta structure
+ */
+export type MetaSchema = {
+  total: number;
+  limit: number;
+  hasMore: boolean;
+  offset?: number;
+  cursor?: string;
+  page?: number;
+  totalPages?: number;
+  sortBy?: string;
+  sortDirection?: "asc" | "desc";
+  appliedFilters?: Record<string, unknown>;
+  searchQuery?: string;
+}
+
+/**
+ * Helper to extract pagination config from ZodSchemaWithConfig
+ */
+type ExtractPaginationConfig<T> = T extends ZodSchemaWithConfig<infer Config> ? Config : never;
+
+/**
+ * Compute meta schema type based on QueryConfig
+ */
+export type ComputeMetaSchema<TConfig extends QueryConfig> = 
+  TConfig["pagination"] extends undefined
+    ? { total?: number }
+    : ExtractPaginationConfig<TConfig["pagination"]> extends infer PaginationConfig
+      ? {
+          total: number;
+          limit: number;
+          hasMore: boolean;
+        } & (PaginationConfig extends { includeOffset: true } ? { offset: number } : {})
+          & (PaginationConfig extends { includeCursor: true } ? { cursor: string } : {})
+          & (PaginationConfig extends { includePage: true } ? { page: number; totalPages: number } : {})
+          & (TConfig["sorting"] extends ZodSchemaWithConfig<unknown> ? { sortBy?: string; sortDirection?: "asc" | "desc" } : {})
+          & (TConfig["filtering"] extends ZodSchemaWithConfig<unknown> ? { appliedFilters?: Record<string, unknown> } : {})
+          & (TConfig["search"] extends ZodSchemaWithConfig<unknown> ? { searchQuery?: string } : {})
+      : never;
+
+/**
+ * Complete query parameters configuration - accepts only Zod schemas with embedded config
+ * All configuration is now embedded in Zod schemas using CONFIG_SYMBOL
+ */
+export type QueryConfig = {
+  /** Pagination configuration - Zod schema with embedded config */
+  pagination?: ZodSchemaWithConfig<any>;
+  /** Sorting configuration - Zod schema with embedded config */
+  sorting?: ZodSchemaWithConfig<any>;
+  /** Filtering configuration - Zod schema with embedded config */
+  filtering?: ZodSchemaWithConfig<any>;
+  /** Search configuration - Zod schema with embedded config */
+  search?: ZodSchemaWithConfig<any>;
   /** Additional custom fields */
   customFields?: Record<string, z.ZodTypeAny>;
 }
 
 /**
- * Query builder for creating comprehensive type-safe query parameter schemas
+ * Helper to create a properly typed QueryConfig that preserves specific config types
+ * Use this instead of `as const` to ensure type inference works correctly
+ */
+export function defineQueryConfig<
+  TPagination extends ZodSchemaWithConfig<any> | undefined,
+  TSorting extends ZodSchemaWithConfig<any> | undefined,
+  TFiltering extends ZodSchemaWithConfig<any> | undefined,
+  TSearch extends ZodSchemaWithConfig<any> | undefined
+>(config: {
+  pagination?: TPagination;
+  sorting?: TSorting;
+  filtering?: TFiltering;
+  search?: TSearch;
+  customFields?: Record<string, z.ZodTypeAny>;
+}): {
+  pagination: TPagination;
+  sorting: TSorting;
+  filtering: TFiltering;
+  search: TSearch;
+  customFields?: Record<string, z.ZodTypeAny>;
+} {
+  return config as any;
+}
+
+/**
+ * Type-level helper to infer the shape of pagination schema
+ */
+type InferPaginationShape<T> = T extends ZodSchemaWithConfig<infer Config>
+  ? Config extends { includeOffset: true; includePage: true; includeCursor: true }
+    ? { limit: number; offset: number; page: number; cursor?: string; cursorDirection?: "forward" | "backward" }
+    : Config extends { includeOffset: true; includePage: true }
+    ? { limit: number; offset: number; page: number }
+    : Config extends { includeOffset: true; includeCursor: true }
+    ? { limit: number; offset: number; cursor?: string; cursorDirection?: "forward" | "backward" }
+    : Config extends { includePage: true; includeCursor: true }
+    ? { limit: number; page: number; cursor?: string; cursorDirection?: "forward" | "backward" }
+    : Config extends { includeOffset: true }
+    ? { limit: number; offset: number }
+    : Config extends { includePage: true }
+    ? { limit: number; page: number }
+    : Config extends { includeCursor: true }
+    ? { limit: number; cursor?: string; cursorDirection?: "forward" | "backward" }
+    : { limit: number }
+  : {};
+
+/**
+ * Type-level helper to infer the shape of sorting schema
+ */
+type InferSortingShape<T> = T extends ZodSchemaWithConfig<infer Config>
+  ? Config extends { allowMultiple: true; allowNullsHandling: true }
+    ? { sortBy?: Array<{ field: string; direction: "asc" | "desc" }>; nullsHandling?: "first" | "last" }
+    : Config extends { allowMultiple: true }
+    ? { sortBy?: Array<{ field: string; direction: "asc" | "desc" }> }
+    : Config extends { allowNullsHandling: true }
+    ? { sortBy?: string; sortDirection?: "asc" | "desc"; nullsHandling?: "first" | "last" }
+    : { sortBy?: string; sortDirection?: "asc" | "desc" }
+  : {};
+
+/**
+ * Convert union of object types to intersection (merge all properties)
+ * Example: { a: string } | { b: number } => { a: string } & { b: number }
+ */
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+
+/**
+ * Extract Zod schema type from field config or raw Zod type
+ */
+type ExtractFieldType<T> = T extends { schema: infer S }
+  ? S extends z.ZodTypeAny
+    ? z.infer<S>
+    : unknown
+  : T extends z.ZodTypeAny
+  ? z.infer<T>
+  : unknown;
+
+/**
+ * Extract operators from field config (defaults to "eq" if not specified)
+ */
+type ExtractOperators<T> = T extends { operators: readonly (infer Op)[] }
+  ? Op
+  : T extends { operators: (infer Op)[] }
+  ? Op
+  : "eq";
+
+/**
+ * Generate field type for a single operator
+ * Maps operator name to appropriate TypeScript type signature
+ */
+type GenerateOperatorField<K extends string, TFieldType, TOp> =
+  TOp extends "eq" 
+    ? { [P in K]?: TFieldType }
+  : TOp extends "ne" | "gt" | "gte" | "lt" | "lte" | "like" | "ilike" | "regex" | "startsWith" | "endsWith" | "contains"
+    ? { [P in `${K}_${TOp}`]?: TFieldType }
+  : TOp extends "in" | "nin"
+    ? { [P in `${K}_${TOp}`]?: TFieldType[] }
+  : TOp extends "exists"
+    ? { [P in `${K}_exists`]?: boolean }
+  : TOp extends "between"
+    ? { [P in `${K}_between`]?: { from: TFieldType; to: TFieldType } }
+  : {};
+
+/**
+ * Generate all operator fields for a single field (base + all operator variants)
+ * Uses distributive conditional types to generate union, then merges with UnionToIntersection
+ */
+type GenerateAllOperatorFields<K extends string, TField> = 
+  UnionToIntersection<
+    GenerateOperatorField<K, ExtractFieldType<TField>, ExtractOperators<TField>>
+  >;
+
+/**
+ * Type-level helper to infer the complete shape of filtering schema
+ * Generates base fields + all operator-suffixed variants (name_like, email_ilike, createdAt_gt, etc.)
+ */
+type InferFilteringShape<T> = T extends ZodSchemaWithConfig<infer Config>
+  ? Config extends { fields: infer Fields }
+    ? Fields extends Record<string, unknown>
+      ? UnionToIntersection<
+          { [K in keyof Fields]: GenerateAllOperatorFields<K & string, Fields[K]> }[keyof Fields]
+        >
+      : {}
+    : {}
+  : {};
+
+/**
+ * Type-level helper to infer the shape of search schema
+ */
+type InferSearchShape<T> = T extends ZodSchemaWithConfig<unknown>
+  ? { search?: string }
+  : {};
+
+/**
+ * Compute the complete input schema shape from QueryConfig at type level
+ * This provides proper type inference for ORPC contracts
+ */
+export type ComputeInputSchema<TConfig extends QueryConfig> = 
+  InferPaginationShape<TConfig["pagination"]> &
+  InferSortingShape<TConfig["sorting"]> &
+  InferFilteringShape<TConfig["filtering"]> &
+  InferSearchShape<TConfig["search"]> &
+  (TConfig["customFields"] extends Record<string, z.ZodTypeAny>
+    ? { [K in keyof TConfig["customFields"]]: z.infer<TConfig["customFields"][K]> }
+    : {});
+
+/**
+ * Compute the complete output schema shape from QueryConfig at type level
+ * Output is always { data: TData[], meta: MetaSchema }
+ */
+export type ComputeOutputSchema<TConfig extends QueryConfig, TData> = {
+  data: TData[];
+  meta: ComputeMetaSchema<TConfig>;
+};
+
+/**
+ * Helper type for pagination meta fields
+ */
+type PaginationMetaFields = {
+  total: z.ZodNumber;
+  limit: z.ZodNumber;
+  hasMore: z.ZodBoolean;
+  offset?: z.ZodNumber;
+  page?: z.ZodNumber;
+  totalPages?: z.ZodNumber;
+  nextCursor?: z.ZodNullable<z.ZodString>;
+  prevCursor?: z.ZodNullable<z.ZodString>;
+};
+
+/**
+ * Helper type for sorting meta fields
+ */
+type SortingMetaFields = {
+  sortBy: z.ZodOptional<z.ZodString>;
+  sortDirection: z.ZodOptional<z.ZodTypeAny>;
+};
+
+/**
+ * Helper type for filtering meta fields
+ */
+type FilteringMetaFields = {
+  appliedFilters: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+  filterCount: z.ZodOptional<z.ZodNumber>;
+};
+
+/**
+ * Helper type for search meta fields
+ */
+type SearchMetaFields = {
+  searchQuery: z.ZodOptional<z.ZodString>;
+  searchFields: z.ZodOptional<z.ZodArray<z.ZodString>>;
+};
+
+
+/** * Query builder for creating comprehensive type-safe query parameter schemas
  * 
  * @example
  * ```typescript
+ * // Create config schemas using factories
+ * const paginationConfig = createPaginationConfigSchema({ 
+ *   defaultLimit: 20, maxLimit: 100 
+ * });
+ * const sortingConfig = createSortingConfigSchema(
+ *   ["createdAt", "name", "price"],
+ *   { defaultField: "createdAt", defaultDirection: "desc" }
+ * );
+ * const filteringConfig = createFilteringConfigSchema({
+ *   name: { schema: z.string(), operators: ["eq", "like", "ilike"] },
+ *   price: { schema: z.number(), operators: ["gt", "gte", "lt", "lte"] },
+ *   inStock: z.boolean()
+ * });
+ * const searchConfig = createSearchConfigSchema(
+ *   ["name", "description"],
+ *   { minQueryLength: 2 }
+ * );
+ * 
+ * // Build query with Zod schemas
  * const queryBuilder = new QueryBuilder({
- *   pagination: { defaultLimit: 20, maxLimit: 100 },
- *   sorting: {
- *     fields: ["createdAt", "name", "price"],
- *     defaultField: "createdAt",
- *     defaultDirection: "desc"
- *   },
- *   filtering: {
- *     fields: {
- *       name: { schema: z.string(), operators: ["eq", "like", "ilike"] },
- *       price: { schema: z.number(), operators: ["gt", "gte", "lt", "lte"] },
- *       inStock: z.boolean()
- *     }
- *   },
- *   search: {
- *     searchableFields: ["name", "description"],
- *     minQueryLength: 2
- *   }
+ *   pagination: paginationConfig,
+ *   sorting: sortingConfig,
+ *   filtering: filteringConfig,
+ *   search: searchConfig
  * });
  * 
  * const inputSchema = queryBuilder.buildInputSchema();
  * const outputSchema = queryBuilder.buildOutputSchema(itemSchema);
  * ```
  */
-export class QueryBuilder<TFilterFields extends Record<string, any> = Record<string, any>> {
-  constructor(private config: QueryConfig<TFilterFields> = {}) {}
+export class QueryBuilder<TConfig extends QueryConfig = QueryConfig> {
+  constructor(private config: TConfig = {} as TConfig) {}
+
+
 
   /**
    * Build the complete input schema with all query parameters
+   * Returns a properly typed schema that preserves type information for ORPC inference
+   * 
+   * The returned schema shape is computed at the type level using ComputeInputSchema<TConfig>
+   * and cast at runtime to preserve proper types through ORPC contracts.
    */
-  buildInputSchema(): z.ZodObject<any> {
+  buildInputSchema(): z.ZodType<ComputeInputSchema<TConfig>> {
     const schemas: z.ZodObject<any>[] = [];
 
     // Add pagination (disabled if explicitly set to undefined)
     if (this.config.pagination !== undefined) {
-      const paginationSchema = createPaginationSchema(
-        this.config.pagination || {}
-      );
+      const paginationSchema = createPaginationSchema(this.config.pagination);
       schemas.push(paginationSchema);
     }
 
@@ -99,102 +362,155 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
 
     // Add custom fields
     if (this.config.customFields) {
-      schemas.push(z.object(this.config.customFields as z.ZodRawShape));
+      schemas.push(z.object(this.config.customFields));
     }
 
     // Merge all schemas
     if (schemas.length === 0) {
-      return z.object({});
+      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
     }
 
-    let result: z.ZodObject<any> = schemas[0]!;
-    for (let i = 1; i < schemas.length; i++) {
-      result = result.merge(schemas[i]!);
+    const [firstSchema, ...restSchemas] = schemas;
+    if (!firstSchema) {
+      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
     }
-
-    return result;
+    
+    // Merge schemas at runtime, but preserve the type-level computed shape
+    // This allows ORPC to properly infer the input type from the contract
+    const mergedSchema = restSchemas.reduce((acc, schema) => acc.merge(schema), firstSchema);
+    return mergedSchema as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
   }
 
   /**
    * Build the output schema with dynamic metadata based on configuration
+   * Uses type casting to preserve proper meta schema types through ORPC contracts
    */
-  buildOutputSchema<T extends z.ZodTypeAny>(dataSchema: T): z.ZodObject<any> {
+  buildOutputSchema<TData extends z.ZodTypeAny>(dataSchema: TData) {
     const metaSchema = this.buildMetaSchema();
+    
+    // Cast the output schema to preserve the exact shape through ORPC
+    // Using ReturnType to capture the exact meta schema type from buildMetaSchema
+    type MetaSchemaType = ReturnType<QueryBuilder<TConfig>['buildMetaSchema']>;
+    type OutputSchema = z.ZodObject<{
+      data: z.ZodArray<TData>;
+      meta: MetaSchemaType;
+    }>;
     
     return z.object({
       data: z.array(dataSchema),
       meta: metaSchema,
-    });
+    }) as unknown as OutputSchema;
   }
 
   /**
    * Build the meta schema dynamically based on what features are configured
+   * Uses generics and type assertions to preserve exact type structure
    */
-  buildMetaSchema(): z.ZodObject<any> {
-    const metaFields: Record<string, z.ZodTypeAny> = {};
+  buildMetaSchema() {
+    // Extract config from Zod schemas using CONFIG_SYMBOL
+    const paginationConfig = this.config.pagination?.[CONFIG_SYMBOL] as {
+      includeOffset?: boolean;
+      includeCursor?: boolean;
+      includePage?: boolean;
+    } | undefined;
+    
+    const {
+      includeOffset = true,
+      includeCursor = false,
+      includePage = false,
+    } = paginationConfig || {};
 
-    // Add pagination metadata if pagination is configured
-    if (this.config.pagination !== undefined) {
-      const paginationConfig = this.config.pagination || {};
-      const {
-        includeOffset = true,
-        includeCursor = false,
-        includePage = false,
-      } = paginationConfig;
+    // Build the base shape that TypeScript can properly infer
+    const baseShape = this.config.pagination !== undefined
+      ? {
+          total: z.number().int().min(0).describe("Total number of items"),
+          limit: z.number().int().positive().describe("Items per page"),
+          hasMore: z.boolean().describe("Whether there are more items"),
+          // Always include these as optional since TypeScript can't infer conditional spreads
+          offset: includeOffset 
+            ? z.number().int().min(0).describe("Current offset")
+            : z.number().int().min(0).describe("Current offset").optional(),
+          page: includePage
+            ? z.number().int().min(1).describe("Current page number")
+            : z.number().int().min(1).describe("Current page number").optional(),
+          totalPages: includePage
+            ? z.number().int().min(0).describe("Total number of pages")
+            : z.number().int().min(0).describe("Total number of pages").optional(),
+          nextCursor: includeCursor
+            ? z.string().nullable().describe("Cursor for next page")
+            : z.string().nullable().describe("Cursor for next page").optional(),
+          prevCursor: includeCursor
+            ? z.string().nullable().describe("Cursor for previous page")
+            : z.string().nullable().describe("Cursor for previous page").optional(),
+        }
+      : {
+          total: z.number().int().min(0).optional().describe("Total number of items"),
+        };
 
-      // Always include these pagination fields
-      metaFields.total = z.number().int().min(0).describe("Total number of items");
-      metaFields.limit = z.number().int().positive().describe("Items per page");
-      metaFields.hasMore = z.boolean().describe("Whether there are more items");
+    const sortingShape = this.config.sorting
+      ? {
+          sortBy: z.string().optional().describe("Field used for sorting"),
+          sortDirection: z.enum(["asc", "desc"]).optional().describe("Sort direction applied"),
+        }
+      : {};
 
-      if (includeOffset) {
-        metaFields.offset = z.number().int().min(0).describe("Current offset");
-      }
+    const filteringShape = this.config.filtering
+      ? {
+          appliedFilters: z.record(z.string(), z.unknown()).optional().describe("Filters applied to the query"),
+          filterCount: z.number().int().min(0).optional().describe("Number of filters applied"),
+        }
+      : {};
 
-      if (includePage) {
-        metaFields.page = z.number().int().min(1).describe("Current page number");
-        metaFields.totalPages = z.number().int().min(0).describe("Total number of pages");
-      }
+    const searchShape = this.config.search
+      ? {
+          searchQuery: z.string().optional().describe("Search query applied"),
+          searchFields: z.array(z.string()).optional().describe("Fields searched"),
+        }
+      : {};
 
-      if (includeCursor) {
-        metaFields.nextCursor = z.string().nullable().describe("Cursor for next page");
-        metaFields.prevCursor = z.string().nullable().describe("Cursor for previous page");
-      }
-    }
-
-    // Add sorting metadata if sorting is configured
-    if (this.config.sorting) {
-      metaFields.sortBy = z.string().optional().describe("Field used for sorting");
-      metaFields.sortDirection = z.enum(["asc", "desc"]).optional().describe("Sort direction applied");
-    }
-
-    // Add filtering metadata if filtering is configured
-    if (this.config.filtering) {
-      metaFields.appliedFilters = z.record(z.string(), z.any()).optional().describe("Filters applied to the query");
-      metaFields.filterCount = z.number().int().min(0).optional().describe("Number of filters applied");
-    }
-
-    // Add search metadata if search is configured
-    if (this.config.search) {
-      metaFields.searchQuery = z.string().optional().describe("Search query applied");
-      metaFields.searchFields = z.array(z.string()).optional().describe("Fields searched");
-    }
-
-    // If no features are configured, return a minimal meta schema
-    if (Object.keys(metaFields).length === 0) {
-      return z.object({
-        total: z.number().int().min(0).optional(),
-      });
-    }
-
-    return z.object(metaFields as z.ZodRawShape);
+    // Merge all shapes together
+    const schema = z.object({
+      ...baseShape,
+      ...sortingShape,
+      ...filteringShape,
+      ...searchShape,
+    });
+    
+    // Type cast based on config generics to preserve exact type through ORPC
+    // This uses the TConfig generic to compute the exact meta type
+    type MetaShape = TConfig['pagination'] extends undefined
+      ? z.ZodObject<{ total: z.ZodOptional<z.ZodNumber> }>
+      : z.ZodObject<{
+          total: z.ZodNumber;
+          limit: z.ZodNumber;
+          hasMore: z.ZodBoolean;
+          offset: TConfig['pagination'] extends { includeOffset: false } ? z.ZodOptional<z.ZodNumber> : z.ZodNumber;
+          page: TConfig['pagination'] extends { includePage: false } ? z.ZodOptional<z.ZodNumber> : (TConfig['pagination'] extends { includePage: true } ? z.ZodNumber : z.ZodOptional<z.ZodNumber>);
+          totalPages: TConfig['pagination'] extends { includePage: false } ? z.ZodOptional<z.ZodNumber> : (TConfig['pagination'] extends { includePage: true } ? z.ZodNumber : z.ZodOptional<z.ZodNumber>);
+          nextCursor: TConfig['pagination'] extends { includeCursor: true } ? z.ZodNullable<z.ZodString> : z.ZodOptional<z.ZodNullable<z.ZodString>>;
+          prevCursor: TConfig['pagination'] extends { includeCursor: true } ? z.ZodNullable<z.ZodString> : z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        } & (TConfig['sorting'] extends undefined ? {} : {
+          sortBy: z.ZodOptional<z.ZodString>;
+          sortDirection: z.ZodOptional<z.ZodEnum<Readonly<Record<string, "asc" |"desc">>>>;
+        }) & (TConfig['filtering'] extends undefined ? {} : {
+          appliedFilters: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+          filterCount: z.ZodOptional<z.ZodNumber>;
+        }) & (TConfig['search'] extends undefined ? {} : {
+          searchQuery: z.ZodOptional<z.ZodString>;
+          searchFields: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        })>;
+    
+    return schema as unknown as MetaShape;
   }
 
   /**
    * Build just the pagination input schema
    */
   buildPaginationSchema() {
-    return createPaginationSchema(this.config.pagination || {});
+    if (!this.config.pagination) {
+      throw new Error("Pagination configuration not provided");
+    }
+    return createPaginationSchema(this.config.pagination);
   }
 
   /**
@@ -230,7 +546,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Update configuration and return new builder
    */
-  withConfig(updates: Partial<QueryConfig<TFilterFields>>): QueryBuilder<TFilterFields> {
+  withConfig(updates: Partial<QueryConfig>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       ...updates,
@@ -240,7 +556,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Add pagination to the query
    */
-  withPagination(config: PaginationConfig): QueryBuilder<TFilterFields> {
+  withPagination(config: ZodSchemaWithConfig<unknown>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       pagination: config,
@@ -250,7 +566,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Add sorting to the query
    */
-  withSorting(config: SortingConfig<readonly string[]>): QueryBuilder<TFilterFields> {
+  withSorting(config: ZodSchemaWithConfig<unknown>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       sorting: config,
@@ -260,9 +576,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Add filtering to the query
    */
-  withFiltering<TNewFields extends Record<string, any>>(
-    config: FilteringConfig<TNewFields>
-  ): QueryBuilder<TNewFields> {
+  withFiltering(config: ZodSchemaWithConfig<unknown>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       filtering: config,
@@ -272,7 +586,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Add search to the query
    */
-  withSearch(config: SearchConfig): QueryBuilder<TFilterFields> {
+  withSearch(config: ZodSchemaWithConfig<unknown>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       search: config,
@@ -282,7 +596,7 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
   /**
    * Add custom fields to the query
    */
-  withCustomFields(fields: Record<string, z.ZodTypeAny>): QueryBuilder<TFilterFields> {
+  withCustomFields(fields: Record<string, z.ZodTypeAny>): QueryBuilder {
     return new QueryBuilder({
       ...this.config,
       customFields: {
@@ -296,9 +610,9 @@ export class QueryBuilder<TFilterFields extends Record<string, any> = Record<str
 /**
  * Helper function to create a query builder
  */
-export function createQueryBuilder<TFilterFields extends Record<string, any> = Record<string, any>>(
-  config: QueryConfig<TFilterFields> = {}
-): QueryBuilder<TFilterFields> {
+export function createQueryBuilder(
+  config: QueryConfig = {}
+): QueryBuilder {
   return new QueryBuilder(config);
 }
 
@@ -307,14 +621,14 @@ export function createQueryBuilder<TFilterFields extends Record<string, any> = R
  */
 export function createListQuery(
   sortableFields: readonly string[],
-  paginationConfig?: PaginationConfig
+  paginationOptions?: { defaultLimit?: number; maxLimit?: number }
 ) {
+  const pagination = createPaginationConfigSchema(paginationOptions || { defaultLimit: 10, maxLimit: 100 });
+  const sorting = createSortingConfigSchema(sortableFields, { defaultDirection: "asc" });
+  
   return new QueryBuilder({
-    pagination: paginationConfig || { defaultLimit: 10, maxLimit: 100 },
-    sorting: {
-      fields: sortableFields,
-      defaultDirection: "asc",
-    },
+    pagination,
+    sorting,
   });
 }
 
@@ -323,42 +637,37 @@ export function createListQuery(
  */
 export function createSearchQuery(
   searchableFields: readonly string[],
-  paginationConfig?: PaginationConfig
+  paginationOptions?: { defaultLimit?: number; maxLimit?: number }
 ) {
+  const pagination = createPaginationConfigSchema(paginationOptions || { defaultLimit: 20, maxLimit: 100 });
+  const search = createSearchConfigSchema(searchableFields, { minQueryLength: 1, allowFieldSelection: true });
+  
   return new QueryBuilder({
-    pagination: paginationConfig || { defaultLimit: 20, maxLimit: 100 },
-    search: {
-      searchableFields,
-      minQueryLength: 1,
-      allowFieldSelection: true,
-    },
+    pagination,
+    search,
   });
 }
 
 /**
  * Helper to create an advanced query with all features
  */
-export function createAdvancedQuery<TFilterFields extends Record<string, any>>(config: {
+export function createAdvancedQuery(config: {
   sortableFields: readonly string[];
-  filterableFields: TFilterFields;
+  filterableFields: Record<string, z.ZodTypeAny>;
   searchableFields?: readonly string[];
-  pagination?: PaginationConfig;
+  pagination?: { defaultLimit?: number; maxLimit?: number };
 }) {
+  const pagination = createPaginationConfigSchema(config.pagination || { defaultLimit: 20, maxLimit: 100 });
+  const sorting = createSortingConfigSchema(config.sortableFields, { defaultDirection: "asc" });
+  const filtering = createFilteringConfigSchema(config.filterableFields);
+  const search = config.searchableFields
+    ? createSearchConfigSchema(config.searchableFields, { minQueryLength: 1, allowFieldSelection: true })
+    : undefined;
+  
   return new QueryBuilder({
-    pagination: config.pagination || { defaultLimit: 20, maxLimit: 100 },
-    sorting: {
-      fields: config.sortableFields,
-      defaultDirection: "asc",
-    },
-    filtering: {
-      fields: config.filterableFields,
-    },
-    search: config.searchableFields
-      ? {
-          searchableFields: config.searchableFields,
-          minQueryLength: 1,
-          allowFieldSelection: true,
-        }
-      : undefined,
+    pagination,
+    sorting,
+    filtering,
+    search,
   });
 }
