@@ -14,15 +14,8 @@ const ClientSideShowcase: React.FC = function ClientSideShowcase() {
     const { data: result, isFetched } = useQuery(
         orpc.user.list.queryOptions({
             input: {
-                pagination: {
-                    limit: 10,
-                    offset: 0,
-                },
-                sort: {
-                    field: 'createdAt',
-                    direction: 'desc',
-                },
-            },
+                
+            }
         })
     )
 
@@ -52,7 +45,7 @@ const ClientSideShowcase: React.FC = function ClientSideShowcase() {
                     <Loader2 className="animate-spin" />{' '}
                 </div>
             )}
-            <ListItemShowcase users={result?.users ?? []} />
+            <ListItemShowcase users={result?.data ?? []} />
         </Suspense>
     )
 }

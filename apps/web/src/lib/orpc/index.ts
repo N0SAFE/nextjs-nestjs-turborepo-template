@@ -8,6 +8,10 @@ import clientRedirect from '@/actions/redirect'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
 
+// Re-export the contract for use in hooks (needed for type discrimination)
+export { appContract }
+export type { AppContract }
+
 export function createORPCClientWithCookies() {
     const link = new OpenAPILink<{
         cookie?: string | string[]

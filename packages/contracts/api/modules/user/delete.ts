@@ -1,26 +1,8 @@
-import { oc } from '@orpc/contract';
-import z from 'zod/v4';
+import { standard } from "@repo/orpc-utils";
+import { userSchema } from "@repo/api-contracts/common/user";
 
-export const userDeleteInput = z.object({
-    id: z.uuid(),
-});
+// Create standard operations builder for users
+const userOps = standard(userSchema, "user");
 
-export const userDeleteOutput = z.discriminatedUnion("success", [
-    z.object({
-        success: z.literal(true),
-    }),
-    z.object({
-        success: z.literal(false),
-        message: z.string(),
-    }),
-]);
-
-export const userDeleteContract = oc
-  .route({
-    method: "DELETE",
-    path: "/{id}",
-    summary: "Delete a user",
-    description: "Remove a user from the system",
-  })
-  .input(userDeleteInput)
-  .output(userDeleteOutput);
+// Create delete contract using builder
+export const userDeleteContract = userOps.delete().build();

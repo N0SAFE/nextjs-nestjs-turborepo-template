@@ -7,6 +7,7 @@ import {
     loginAsClientPlugin,
     useInviteClient,
     useAdminClient,
+    useOrganizationClient,
 } from './plugins'
 
 // Extract the actual auth type from the factory return type
@@ -56,6 +57,7 @@ export const createAuthClientFactory = (options: CreateAuthClientFactoryOptions)
       loginAsClientPlugin(),
       useInviteClient(),
       useAdminClient(),
+      useOrganizationClient(),
       inferAdditionalFields<AuthInstance>(),
       ...additionalPlugins,
     ],

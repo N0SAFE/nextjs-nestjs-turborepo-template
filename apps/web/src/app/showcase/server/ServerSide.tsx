@@ -27,7 +27,7 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
         return (
             <>
                 <div>Time taken: {timeTakenMs}ms</div>
-                <ListItemShowcase users={result.users} />
+                <ListItemShowcase users={result.data} />
             </>
         )
     } catch (error) {

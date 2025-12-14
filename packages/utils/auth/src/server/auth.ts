@@ -8,6 +8,7 @@ import {
     pushNotificationsPlugin,
     useAdmin,
     useInvite,
+    useOrganization
 } from "./plugins";
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -98,6 +99,7 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
             useInvite({
                 inviteDurationDays: 7,
             }),
+            useOrganization(),
             pushNotificationsPlugin()
         ],
     };

@@ -33,6 +33,7 @@ vi.mock('better-auth/plugins', () => ({
 // Mock plugins - all server plugins are now exported from ./plugins
 vi.mock('./plugins', () => ({
   useAdmin: vi.fn(() => ({ id: 'admin' })),
+  useOrganization: vi.fn(() => ({ id: 'organization' })),
   useInvite: vi.fn(() => ({ id: 'invite' })),
   masterTokenPlugin: vi.fn(() => ({ id: 'masterToken' })),
   loginAsPlugin: vi.fn(() => ({ id: 'loginAs' })),

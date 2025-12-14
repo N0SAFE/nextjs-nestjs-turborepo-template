@@ -6,7 +6,13 @@
  */
 
 import { admin, organization } from "better-auth/plugins";
-import { ac, roles, schemas } from "../../permissions/config";
+import {
+  ac,
+  organizationAc,
+  organizationRoles,
+  roles,
+  schemas,
+} from "../../permissions/config";
 import { invitePlugin, type InvitePluginOptions } from "./invite";
 
 // ============================================================================
@@ -72,6 +78,7 @@ export type AdminPlugin = ReturnType<typeof useAdmin>;
  * - Member management
  * - Organization invitations
  * - Organization roles
+ * - Teams management (sub-groups within organizations)
  * 
  * @example
  * ```typescript
@@ -88,8 +95,13 @@ export function useOrganization(
   options: Omit<Parameters<typeof organization>[0], "ac" | "roles"> = {}
 ) {
   return organization({
-    ac,
-    roles,
+    ac: organizationAc,
+    roles: organizationRoles,
+    // Enable teams feature for sub-group management within organizations
+    teams: {
+      enabled: true,
+      allowRemovingAllTeams: true, // Allow removing all teams
+    },
     ...options,
   });
 }

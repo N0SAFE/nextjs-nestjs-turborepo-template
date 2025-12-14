@@ -1,51 +1,61 @@
-import { oc } from "@orpc/contract";
 import { z } from "zod/v4";
-import { paginatedInput, paginatedOutput } from "@repo/api-contracts/common/utils/paginate";
+import { 
+  standard,
+  createSortingConfigSchema,
+  createPaginationConfigSchema,
+  createFilteringConfigSchema,
+  defineQueryConfig,
+  type ComputeInputSchema,
+  type QueryConfig,
+} from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
-import { sortBy } from "@repo/api-contracts/common/utils/sortBy";
 
-// oh boy don't do this
-type UnionToIntersection<U> =
-  (U extends any ? (k: U) => void : never) extends ((k: infer I) => void) ? I : never
-type LastOf<T> =
-  UnionToIntersection<T extends any ? () => T : never> extends () => (infer R) ? R : never
+// Define sorting fields
+const sortingFieldsArray = ["createdAt", "name", "email", "updatedAt"] as const;
 
-// TS4.0+
-type Push<T extends any[], V> = [...T, V];
+// Create pagination config schema - carries both the Zod schema and runtime config
+const paginationConfigSchema = createPaginationConfigSchema({
+  defaultLimit: 20,
+  maxLimit: 100,
+  includeOffset: true,
+} as const);
 
-// TS4.1+
-type TuplifyUnion<T, L = LastOf<T>, N = [T] extends [never] ? true : false> =
-  true extends N ? [] : Push<TuplifyUnion<Exclude<T, L>>, L>
-
-// Define the input for the list endpoint
-export const userListInput = z.object({
-  pagination: paginatedInput,
-  sort: z.object({
-    field: z.enum(Object.keys(userSchema.shape) as [keyof typeof userSchema['shape'], ...TuplifyUnion<(keyof typeof userSchema['shape'])>]),
-    direction: z.enum(['asc', 'desc']),
-  }).optional(),
-  filter: z.object({
-    id: userSchema.shape.id,
-    email: userSchema.shape.email,
-    name: userSchema.shape.name,
-    // Add more fields as needed
-  }).partial().optional(),
+// Create sorting config schema - type-safe with available fields
+const sortingConfigSchema = createSortingConfigSchema(sortingFieldsArray, {
+  defaultField: "createdAt",
+  defaultDirection: "desc",
 });
 
-// Define the output for the list endpoint
-export const userListOutput = z.object({
-  users: z.array(userSchema),
-  meta: z.object({ pagination: paginatedOutput }),
+// Define filtering configuration with field-specific schemas and operators
+const filteringConfigSchema = createFilteringConfigSchema({
+  id: userSchema.shape.id,
+  email: {
+    schema: userSchema.shape.email,
+    operators: ["eq", "like", "ilike"] as const,
+  },
+  name: {
+    schema: userSchema.shape.name,
+    operators: ["eq", "like", "ilike"] as const,
+  },
+  emailVerified: userSchema.shape.emailVerified,
+  createdAt: {
+    schema: userSchema.shape.createdAt,
+    operators: ["gt", "gte", "lt", "lte", "between"] as const,
+  },
 });
 
-// Define the contract
-export const userListContract = oc
-  .route({
-    method: "GET",
-    path: "/",
-    summary: "Get all users",
-    description:
-      "Retrieve a paginated list of users with optional filtering and sorting",
-  })
-  .input(userListInput)
-  .output(userListOutput);
+// Export configuration schemas for reuse and validation
+export const userListConfigSchemas = defineQueryConfig({
+  pagination: paginationConfigSchema,
+  sorting: sortingConfigSchema,
+  filtering: filteringConfigSchema,
+});
+
+// Create standard operations builder for users
+const userOps = standard(userSchema, "user");
+
+// Create enhanced list contract - Zod schemas with attached configs
+export const userListContract = userOps.list(userListConfigSchemas).build();
+
+// Infer the input type directly from the config using the ComputeInputSchema type helper
+export type UserListInput = ComputeInputSchema<typeof userListConfigSchemas>;

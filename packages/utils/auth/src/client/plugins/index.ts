@@ -7,7 +7,12 @@
 
 import { adminClient, organizationClient } from "better-auth/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth/client";
-import { ac, roles } from "../../permissions/index";
+import {
+  ac,
+  organizationAc,
+  organizationRoles,
+  roles,
+} from "../../permissions/index";
 import type { invitePlugin } from "../../server/plugins/invite";
 
 // ============================================================================
@@ -90,6 +95,7 @@ export type AdminClientPlugin = ReturnType<typeof useAdminClient>;
  * - Managing organization members
  * - Managing organization invitations
  * - Checking organization permissions
+ * - Teams management (sub-groups within organizations)
  * 
  * @example
  * ```typescript
@@ -111,14 +117,24 @@ export type AdminClientPlugin = ReturnType<typeof useAdminClient>;
  *   email: 'user@example.com',
  *   role: 'member'
  * })
+ * 
+ * // Create a team
+ * await authClient.organization.createTeam({
+ *   name: 'Engineering',
+ *   organizationId: org.id
+ * })
  * ```
  */
 export function useOrganizationClient(
   options: Omit<Parameters<typeof organizationClient>[0], "ac" | "roles"> = {}
 ) {
   return organizationClient({
-    ac,
-    roles,
+    ac: organizationAc,
+    roles: organizationRoles,
+    // Enable teams feature for sub-group management within organizations
+    teams: {
+      enabled: true,
+    },
     ...options,
   });
 }
