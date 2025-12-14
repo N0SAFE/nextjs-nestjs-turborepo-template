@@ -38,7 +38,7 @@ export function createPaginationConfigSchema<
   includeCursor?: TIncludeCursor;
   /** Include page-based pagination */
   includePage?: TIncludePage;
-} = {} as any) {
+} = {}) {
   // Compute config with defaults - preserve literal types
   const config = {
     defaultLimit: (options.defaultLimit ?? 10) as TDefaultLimit extends number ? TDefaultLimit : 10,
@@ -50,12 +50,12 @@ export function createPaginationConfigSchema<
   };
 
   const schema = z.object({
-    defaultLimit: z.number().optional().default(config.defaultLimit as any),
-    maxLimit: z.number().optional().default(config.maxLimit as any),
-    minLimit: z.number().optional().default(config.minLimit as any),
-    includeOffset: z.boolean().optional().default(config.includeOffset as any),
-    includeCursor: z.boolean().optional().default(config.includeCursor as any),
-    includePage: z.boolean().optional().default(config.includePage as any),
+    defaultLimit: z.number().optional().default(config.defaultLimit),
+    maxLimit: z.number().optional().default(config.maxLimit),
+    minLimit: z.number().optional().default(config.minLimit),
+    includeOffset: z.boolean().optional().default(config.includeOffset),
+    includeCursor: z.boolean().optional().default(config.includeCursor),
+    includePage: z.boolean().optional().default(config.includePage),
   });
 
   // Attach config to schema for runtime extraction (type-safe)
@@ -65,6 +65,15 @@ export function createPaginationConfigSchema<
 
   return result;
 }
+
+/**
+ * Type helper to compute the pagination schema output type based on config
+ */
+type PaginationSchemaOutput<TConfig> = {
+  limit: number;
+} & (TConfig extends { includeOffset: true } ? { offset: number } : object)
+  & (TConfig extends { includePage: true } ? { page: number } : object)
+  & (TConfig extends { includeCursor: true } ? { cursor?: string; cursorDirection?: "forward" | "backward" } : object);
 
 /**
  * Creates a type-safe pagination input schema from a config schema
@@ -92,7 +101,7 @@ export function createPaginationConfigSchema<
  */
 export function createPaginationSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-) {
+): z.ZodType<PaginationSchemaOutput<TConfig>, PaginationSchemaOutput<TConfig>> {
   // Extract config from schema
   const config = configSchema[CONFIG_SYMBOL] as {
     defaultLimit: number;
@@ -120,7 +129,7 @@ export function createPaginationSchema<TConfig>(
       .min(minLimit)
       .max(maxLimit)
       .default(defaultLimit)
-      .describe(`Number of items per page (${minLimit}-${maxLimit})`),
+      .describe(`Number of items per page (${String(minLimit)}-${String(maxLimit)})`),
   });
 
   // Extend with offset if needed
@@ -162,8 +171,19 @@ export function createPaginationSchema<TConfig>(
     });
   }
 
-  return schema;
+  return schema as unknown as z.ZodType<PaginationSchemaOutput<TConfig>, PaginationSchemaOutput<TConfig>>;
 }
+
+/**
+ * Type helper to compute the pagination meta schema output type based on config
+ */
+type PaginationMetaSchemaOutput<TConfig> = {
+  total: number;
+  limit: number;
+  hasMore: boolean;
+} & (TConfig extends { includeOffset: true } ? { offset: number } : object)
+  & (TConfig extends { includePage: true } ? { page: number; totalPages: number } : object)
+  & (TConfig extends { includeCursor: true } ? { nextCursor: string | null; prevCursor: string | null } : object);
 
 /**
  * Creates a type-safe pagination metadata output schema from a config schema
@@ -184,7 +204,7 @@ export function createPaginationSchema<TConfig>(
  */
 export function createPaginationMetaSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-) {
+): z.ZodType<PaginationMetaSchemaOutput<TConfig>, PaginationMetaSchemaOutput<TConfig>> {
   // Extract config from schema
   const config = configSchema[CONFIG_SYMBOL] as {
     includeOffset: boolean;
@@ -224,7 +244,7 @@ export function createPaginationMetaSchema<TConfig>(
     });
   }
 
-  return schema;
+  return schema as unknown as z.ZodType<PaginationMetaSchemaOutput<TConfig>, PaginationMetaSchemaOutput<TConfig>>;
 }
 
 /**
@@ -235,7 +255,7 @@ export function createPaginationMetaSchema<TConfig>(
  * @returns Zod schema for paginated response with data and meta
  */
 export function createPaginatedResponseSchema<
-  TData extends z.ZodTypeAny,
+  TData extends z.ZodType,
   TConfig
 >(dataSchema: TData, configSchema: ZodSchemaWithConfig<TConfig>) {
   return z.object({

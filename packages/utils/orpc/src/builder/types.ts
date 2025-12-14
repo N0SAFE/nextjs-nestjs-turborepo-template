@@ -1,4 +1,3 @@
-import type { ContractRouter, ContractProcedure } from "@orpc/contract";
 import type { HTTPMethod, HTTPPath } from "@orpc/contract";
 import type { z } from "zod/v4";
 
@@ -27,20 +26,24 @@ export type RouteMetadata = {
 
 /**
  * Base entity schema type - any Zod object schema
+ * Using `any` is intentional for dynamic schema manipulation
  */
-export type EntitySchema = z.ZodObject<any>;
+ 
+export type EntitySchema = z.ZodObject;
 
 /**
  * Extract the type from a Zod schema
  */
-export type InferSchemaType<T extends z.ZodTypeAny> = z.infer<T>;
+export type InferSchemaType<T extends z.ZodType> = z.infer<T>;
 
 /**
  * Contract procedure builder state
+ * Using `any` defaults is intentional for unconstrained generic defaults
  */
+ 
 export type ContractProcedureState<
-  TInput extends z.ZodTypeAny = any,
-  TOutput extends z.ZodTypeAny = any
+  TInput extends z.ZodType = z.ZodType,
+  TOutput extends z.ZodType = z.ZodType
 > = {
   route: RouteMetadata;
   input: TInput;
@@ -77,7 +80,7 @@ export type SortingOptions = {
  * Filtering options for list operations
  */
 export type FilteringOptions = {
-  fields?: Record<string, z.ZodTypeAny>;
+  fields?: Record<string, z.ZodType>;
   searchFields?: readonly string[];
 }
 

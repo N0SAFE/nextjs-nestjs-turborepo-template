@@ -1,7 +1,10 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "@repo-configs/typescript/config/test.json",
   "compilerOptions": {
-    "noEmit": true
+    "baseUrl": ".",
+    "paths": {
+      "@": ["./src"]
+    }
   },
-  "include": ["src/**/*", "**/__tests__/**/*", "**/*.test.ts", "**/*.spec.ts"]
+  "include": ["src/**/__tests__/**/*"]
 }

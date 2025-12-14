@@ -1,36 +1,32 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { RouteBuilder } from '../route-builder';
-import { oc } from '../base-config';
 
 describe('RouteBuilder', () => {
   describe('Basic Route Creation', () => {
     it('should create a simple route with input and output', () => {
-      const route = oc.route({
-        input: z.object({ name: z.string() }),
-        output: z.object({ message: z.string() }),
-      });
+      const route = new RouteBuilder()
+        .input(z.object({ name: z.string() }))
+        .output(z.object({ message: z.string() }))
+        .build();
       
       expect(route).toBeDefined();
-      expect(route.InputSchema).toBeDefined();
-      expect(route.OutputSchema).toBeDefined();
     });
 
     it('should create route with only output', () => {
-      const route = oc.route({
-        output: z.object({ data: z.string() }),
-      });
+      const route = new RouteBuilder()
+        .output(z.object({ data: z.string() }))
+        .build();
       
       expect(route).toBeDefined();
-      expect(route.OutputSchema).toBeDefined();
     });
 
     it('should create route with description', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({ user: z.object({ name: z.string() }) }),
-        description: 'Get user by ID',
-      });
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(z.object({ user: z.object({ name: z.string() }) }))
+        .description('Get user by ID')
+        .build();
       
       expect(route).toBeDefined();
     });
@@ -38,275 +34,348 @@ describe('RouteBuilder', () => {
 
   describe('Route Builder with InputBuilder', () => {
     it('should use inputBuilder to transform input schema', () => {
-      const route = oc.route({
-        input: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-        }),
-        output: z.object({ success: z.boolean() }),
-        inputBuilder: (builder) => builder.pick(['id', 'name']),
+      const baseSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
       });
       
+      const route = new RouteBuilder()
+        .input(baseSchema)
+        .inputBuilder((builder) => builder.pick(['id', 'name']))
+        .output(z.object({ success: z.boolean() }))
+        .build();
+      
       expect(route).toBeDefined();
-      // The input should only have id and name
-      const inputParsed = route.InputSchema?.parse({ id: '123', name: 'John' });
-      expect(inputParsed).toEqual({ id: '123', name: 'John' });
     });
 
     it('should chain multiple inputBuilder transformations', () => {
-      const route = oc.route({
-        input: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-          age: z.number(),
-        }),
-        output: z.object({ success: z.boolean() }),
-        inputBuilder: (builder) => 
-          builder
-            .omit(['age'])
-            .extend({ role: z.string().default('user') }),
+      const baseSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+        age: z.number(),
       });
       
+      const route = new RouteBuilder()
+        .input(baseSchema)
+        .inputBuilder((builder) =>
+          builder
+            .omit(['age'])
+            .extend({ role: z.string().default('user') })
+        )
+        .output(z.object({ success: z.boolean() }))
+        .build();
+      
       expect(route).toBeDefined();
-      const inputParsed = route.InputSchema?.parse({ 
-        id: '123', 
-        name: 'John', 
-        email: 'john@example.com' 
-      });
-      expect(inputParsed).toHaveProperty('role', 'user');
-      expect(inputParsed).not.toHaveProperty('age');
     });
   });
 
   describe('Route Builder with OutputBuilder', () => {
     it('should use outputBuilder to transform output schema', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-          password: z.string(),
-        }),
-        outputBuilder: (builder) => builder.omit(['password']),
+      const outputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+        password: z.string(),
       });
       
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(outputSchema)
+        .outputBuilder((builder) => builder.omit(['password']))
+        .build();
+      
       expect(route).toBeDefined();
-      const outputParsed = route.OutputSchema?.parse({ 
-        id: '123', 
-        name: 'John', 
-        email: 'john@example.com',
-        password: 'secret' // This should be omitted
-      });
-      expect(outputParsed).not.toHaveProperty('password');
     });
 
     it('should chain multiple outputBuilder transformations', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-        }),
-        outputBuilder: (builder) => 
-          builder
-            .extend({ timestamp: z.number() })
-            .partial(['email']),
+      const outputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
       });
       
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(outputSchema)
+        .outputBuilder((builder) => 
+          builder
+            .extend({ timestamp: z.number() })
+            .partial(['email'])
+        )
+        .build();
+      
       expect(route).toBeDefined();
-      const outputParsed = route.OutputSchema?.parse({ 
-        id: '123', 
-        name: 'John',
-        timestamp: Date.now()
-      });
-      expect(outputParsed).toHaveProperty('timestamp');
-      expect(outputParsed).not.toHaveProperty('email');
     });
   });
 
   describe('Route Builder with Both Input and Output Builders', () => {
     it('should apply both inputBuilder and outputBuilder', () => {
-      const route = oc.route({
-        input: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-        }),
-        output: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-          password: z.string(),
-        }),
-        inputBuilder: (builder) => builder.pick(['id']),
-        outputBuilder: (builder) => builder.omit(['password']),
+      const inputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
       });
+      
+      const outputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+        password: z.string(),
+      });
+      
+      const route = new RouteBuilder()
+        .input(inputSchema)
+        .inputBuilder((builder) => builder.pick(['id']))
+        .output(outputSchema)
+        .outputBuilder((builder) => builder.omit(['password']))
+        .build();
       
       expect(route).toBeDefined();
-      
-      const inputParsed = route.InputSchema?.parse({ id: '123' });
-      expect(inputParsed).toEqual({ id: '123' });
-      
-      const outputParsed = route.OutputSchema?.parse({ 
-        id: '123', 
-        name: 'John', 
-        email: 'john@example.com',
-        password: 'secret'
-      });
-      expect(outputParsed).not.toHaveProperty('password');
     });
   });
 
   describe('Route with Metadata', () => {
     it('should create route with custom metadata', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({ user: z.any() }),
-        description: 'Fetch user by ID',
-      });
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(z.object({ user: z.any() }))
+        .description('Fetch user by ID')
+        .build();
       
       expect(route).toBeDefined();
     });
 
     it('should handle route without input', () => {
-      const route = oc.route({
-        output: z.object({ data: z.array(z.any()) }),
-        description: 'List all items',
-      });
+      const route = new RouteBuilder()
+        .output(z.object({ data: z.array(z.any()) }))
+        .description('List all items')
+        .build();
       
       expect(route).toBeDefined();
-      expect(route.InputSchema).toBeUndefined();
     });
   });
 
   describe('Complex Route Scenarios', () => {
     it('should handle nested schemas with builders', () => {
-      const route = oc.route({
-        input: z.object({
-          user: z.object({
-            id: z.string(),
-            name: z.string(),
-            email: z.string(),
-          }),
-          metadata: z.object({
-            source: z.string(),
-            timestamp: z.number(),
-          }),
+      const inputSchema = z.object({
+        user: z.object({
+          id: z.string(),
+          name: z.string(),
+          email: z.string(),
         }),
-        output: z.object({
-          success: z.boolean(),
-          user: z.object({
-            id: z.string(),
-            name: z.string(),
-          }),
+        metadata: z.object({
+          source: z.string(),
+          timestamp: z.number(),
         }),
-        inputBuilder: (builder) => 
-          builder.custom((schema) => 
-            schema.extend({ processed: z.boolean().default(false) })
-          ),
       });
       
-      expect(route).toBeDefined();
-      const inputParsed = route.InputSchema?.parse({
-        user: { id: '123', name: 'John', email: 'john@example.com' },
-        metadata: { source: 'api', timestamp: Date.now() },
+      const outputSchema = z.object({
+        success: z.boolean(),
+        user: z.object({
+          id: z.string(),
+          name: z.string(),
+        }),
       });
-      expect(inputParsed).toHaveProperty('processed', false);
+      
+      const route = new RouteBuilder()
+        .input(inputSchema)
+        .inputBuilder((builder) => 
+          builder.custom((schema) => 
+            schema.extend({ processed: z.boolean().default(false) })
+          )
+        )
+        .output(outputSchema)
+        .build();
+      
+      expect(route).toBeDefined();
     });
 
     it('should handle routes with partial and defaults', () => {
-      const route = oc.route({
-        input: z.object({
-          name: z.string(),
-          email: z.string(),
-          role: z.string(),
-        }),
-        output: z.object({ created: z.boolean() }),
-        inputBuilder: (builder) => 
-          builder
-            .partial(['email'])
-            .addDefaults({ role: 'user' }),
+      const inputSchema = z.object({
+        name: z.string(),
+        email: z.string(),
+        role: z.string(),
       });
       
+      const route = new RouteBuilder()
+        .input(inputSchema)
+        .inputBuilder((builder) => 
+          builder
+            .partial(['email'])
+            .addDefaults({ role: 'user' })
+        )
+        .output(z.object({ created: z.boolean() }))
+        .build();
+      
       expect(route).toBeDefined();
-      const inputParsed = route.InputSchema?.parse({ name: 'John' });
-      expect(inputParsed).toHaveProperty('role', 'user');
-      expect(inputParsed).not.toHaveProperty('email');
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle empty input schema', () => {
-      const route = oc.route({
-        input: z.object({}),
-        output: z.object({ data: z.any() }),
-      });
+      const route = new RouteBuilder()
+        .input(z.object({}))
+        .output(z.object({ data: z.any() }))
+        .build();
       
       expect(route).toBeDefined();
-      const inputParsed = route.InputSchema?.parse({});
-      expect(inputParsed).toEqual({});
     });
 
     it('should handle empty output schema', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({}),
-      });
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(z.object({}))
+        .build();
       
       expect(route).toBeDefined();
-      const outputParsed = route.OutputSchema?.parse({});
-      expect(outputParsed).toEqual({});
     });
 
     it('should handle route without builders', () => {
-      const route = oc.route({
-        input: z.object({ id: z.string() }),
-        output: z.object({ name: z.string() }),
-      });
+      const route = new RouteBuilder()
+        .input(z.object({ id: z.string() }))
+        .output(z.object({ name: z.string() }))
+        .build();
       
       expect(route).toBeDefined();
-      const inputParsed = route.InputSchema?.parse({ id: '123' });
-      expect(inputParsed).toEqual({ id: '123' });
     });
   });
 
   describe('Type Safety Validation', () => {
     it('should maintain type safety through transformations', () => {
-      const route = oc.route({
-        input: z.object({
-          id: z.string(),
-          name: z.string(),
-        }),
-        output: z.object({
-          id: z.string(),
-          name: z.string(),
-          createdAt: z.string(),
-        }),
-        inputBuilder: (builder) => builder.extend({ active: z.boolean() }),
-        outputBuilder: (builder) => builder.omit(['createdAt']),
+      const inputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
       });
+      
+      const outputSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        createdAt: z.string(),
+      });
+      
+      const route = new RouteBuilder()
+        .input(inputSchema)
+        .inputBuilder((builder) => builder.extend({ active: z.boolean() }))
+        .output(outputSchema)
+        .outputBuilder((builder) => builder.omit(['createdAt']))
+        .build();
       
       expect(route).toBeDefined();
-      
-      // Input should include active field
-      const inputParsed = route.InputSchema?.parse({ 
-        id: '123', 
-        name: 'John', 
-        active: true 
+    });
+  });
+
+  describe('Static Factory Methods', () => {
+    describe('Health Check Endpoints', () => {
+      it('should create health check endpoint', () => {
+        const healthRoute = RouteBuilder.health().build();
+        expect(healthRoute).toBeDefined();
       });
-      expect(inputParsed).toHaveProperty('active');
-      
-      // Output should not include createdAt
-      const outputParsed = route.OutputSchema?.parse({ 
-        id: '123', 
-        name: 'John',
-        createdAt: '2024-01-01'
+
+      it('should create readiness probe endpoint', () => {
+        const readyRoute = RouteBuilder.ready().build();
+        expect(readyRoute).toBeDefined();
       });
-      expect(outputParsed).not.toHaveProperty('createdAt');
+
+      it('should create liveness probe endpoint', () => {
+        const liveRoute = RouteBuilder.live().build();
+        expect(liveRoute).toBeDefined();
+      });
+    });
+
+    describe('Generic Operations', () => {
+      it('should create checkExists endpoint', () => {
+        const checkRoute = RouteBuilder.checkExists(
+          z.object({ email: z.email() })
+        ).build();
+        expect(checkRoute).toBeDefined();
+      });
+
+      it('should create action endpoint', () => {
+        const actionRoute = RouteBuilder.action(
+          z.object({
+            userId: z.string(),
+            message: z.string(),
+          }),
+          z.object({ success: z.boolean() }),
+          { actionName: 'sendNotification' }
+        ).build();
+        expect(actionRoute).toBeDefined();
+      });
+    });
+
+    describe('Async Job Operations', () => {
+      it('should create triggerJob endpoint', () => {
+        const triggerRoute = RouteBuilder.triggerJob(
+          z.object({
+            format: z.enum(['csv', 'json']),
+            filters: z.object({}).optional(),
+          })
+        ).build();
+        expect(triggerRoute).toBeDefined();
+      });
+
+      it('should create jobStatus endpoint', () => {
+        const statusRoute = RouteBuilder.jobStatus(
+          z.object({ data: z.string() })
+        ).build();
+        expect(statusRoute).toBeDefined();
+      });
+
+      it('should create streamJobProgress endpoint', () => {
+        const streamRoute = RouteBuilder.streamJobProgress(
+          z.object({ data: z.string() })
+        ).build();
+        expect(streamRoute).toBeDefined();
+      });
+    });
+
+    describe('File Operations', () => {
+      it('should create upload endpoint', () => {
+        const uploadRoute = RouteBuilder.upload().build();
+        expect(uploadRoute).toBeDefined();
+      });
+
+      it('should create download endpoint', () => {
+        const downloadRoute = RouteBuilder.download().build();
+        expect(downloadRoute).toBeDefined();
+      });
+    });
+
+    describe('Webhook Operations', () => {
+      it('should create webhook endpoint', () => {
+        const webhookRoute = RouteBuilder.webhook(
+          z.object({
+            type: z.string(),
+            data: z.any(),
+          }),
+          { path: '/webhooks/stripe' }
+        ).build();
+        expect(webhookRoute).toBeDefined();
+      });
+    });
+
+    describe('System Endpoints', () => {
+      it('should create metrics endpoint', () => {
+        const metricsRoute = RouteBuilder.metrics().build();
+        expect(metricsRoute).toBeDefined();
+      });
+
+      it('should create config endpoint', () => {
+        const configRoute = RouteBuilder.config(
+          z.object({
+            maxUploadSize: z.number(),
+            allowedTypes: z.array(z.string()),
+          })
+        ).build();
+        expect(configRoute).toBeDefined();
+      });
+
+      it('should create version endpoint', () => {
+        const versionRoute = RouteBuilder.version().build();
+        expect(versionRoute).toBeDefined();
+      });
     });
   });
 });

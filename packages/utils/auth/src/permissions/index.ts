@@ -114,12 +114,14 @@ export {
 } from "./common";
 
 // Export legacy common permissions (for backward compatibility)
+/* eslint-disable @typescript-eslint/no-deprecated */
 export {
     commonPermissions,
     commonSchemas,
     type CommonPermissionKeys,
     type CommonPermission,
 } from "./common";
+/* eslint-enable @typescript-eslint/no-deprecated */
 
 // Export utilities
 export * from './utils';

@@ -8,7 +8,7 @@ export const CONFIG_SYMBOL = Symbol.for("orpc:config");
 /**
  * Type for Zod schema with attached config
  */
-export type ZodSchemaWithConfig<TConfig, TSchema extends z.ZodTypeAny = z.ZodTypeAny> = TSchema & {
+export type ZodSchemaWithConfig<TConfig, TSchema extends z.ZodType = z.ZodType> = TSchema & {
   [CONFIG_SYMBOL]: TConfig;
 };
 
@@ -31,30 +31,52 @@ export function extractConfig<TConfig>(value: ZodSchemaWithConfig<TConfig>): TCo
 }
 
 /**
+ * Sorting configuration defaults type - preserves literal types for boolean options
+ */
+type SortingConfigDefaults<
+  TFields extends readonly string[],
+  TAllowMultiple extends boolean = false,
+  TAllowNullsHandling extends boolean = false
+> = {
+  defaultField?: TFields[number];
+  defaultDirection?: "asc" | "desc";
+  allowMultiple?: TAllowMultiple;
+  allowNullsHandling?: TAllowNullsHandling;
+};
+
+/**
  * Sorting configuration schema factory - creates a schema for sorting config with specific fields
  * The schema also carries the config data for runtime extraction via CONFIG_SYMBOL
  */
-export const createSortingConfigSchema = <TFields extends readonly string[]>(
+export const createSortingConfigSchema = <
+  TFields extends readonly string[],
+  TAllowMultiple extends boolean = false,
+  TAllowNullsHandling extends boolean = false
+>(
   fields: TFields,
-  defaults?: {
-    defaultField?: TFields[number];
-    defaultDirection?: "asc" | "desc";
-    allowMultiple?: boolean;
-    allowNullsHandling?: boolean;
-  }
+  defaults?: SortingConfigDefaults<TFields, TAllowMultiple, TAllowNullsHandling>
 ) => {
-  const config = {
+  type Config = {
+    fields: TFields;
+    defaultField: TFields[number] | undefined;
+    defaultDirection: "asc" | "desc";
+    allowMultiple: TAllowMultiple extends true ? true : false;
+    allowNullsHandling: TAllowNullsHandling extends true ? true : false;
+  };
+
+  const config: Config = {
     fields,
     defaultField: defaults?.defaultField,
-    defaultDirection: defaults?.defaultDirection ?? ("asc" as const),
-    allowMultiple: defaults?.allowMultiple ?? false,
-    allowNullsHandling: defaults?.allowNullsHandling ?? false,
+    defaultDirection: defaults?.defaultDirection ?? "asc",
+    allowMultiple: (defaults?.allowMultiple ?? false) as TAllowMultiple extends true ? true : false,
+    allowNullsHandling: (defaults?.allowNullsHandling ?? false) as TAllowNullsHandling extends true ? true : false,
   };
 
   const schema = z.object({
     /** Available fields for sorting */
-    fields: z.custom<TFields>().default(fields as any),
+    fields: (z.custom<TFields>().default as unknown as (fn: () => TFields) => z.ZodDefault<z.ZodType<TFields>>)(() => fields),
     /** Default field to sort by */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument -- TFields[number] is constrained but TypeScript needs explicit cast for enum default
     defaultField: z.enum(fields as unknown as [string, ...string[]]).optional().default(defaults?.defaultField as any),
     /** Default sort direction */
     defaultDirection: z.enum(["asc", "desc"]).optional().default(defaults?.defaultDirection ?? "asc"),
@@ -67,10 +89,23 @@ export const createSortingConfigSchema = <TFields extends readonly string[]>(
   // Attach the config to the schema for runtime extraction (type-safe)
   const result = Object.assign(schema, {
     [CONFIG_SYMBOL]: config
-  }) as ZodSchemaWithConfig<typeof config, typeof schema>;
+  }) as ZodSchemaWithConfig<Config, typeof schema>;
 
   return result;
 };
+
+/**
+ * Type helper for computing sorting schema output based on config
+ */
+type SortingSchemaOutput<TConfig> = 
+  TConfig extends { allowMultiple: true }
+    ? {
+        sortBy: { field: string; direction: "asc" | "desc" }[];
+      } & (TConfig extends { allowNullsHandling: true } ? { nullsHandling?: "first" | "last" } : object)
+    : {
+        sortBy: string;
+        sortDirection: "asc" | "desc";
+      } & (TConfig extends { allowNullsHandling: true } ? { nullsHandling?: "first" | "last" } : object);
 
 /**
  * Creates a type-safe sorting input schema
@@ -94,7 +129,7 @@ export const createSortingConfigSchema = <TFields extends readonly string[]>(
  */
 export function createSortingSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-) {
+): z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>> {
   const config = configSchema[CONFIG_SYMBOL] as {
     fields: readonly string[];
     defaultField?: string;
@@ -150,7 +185,7 @@ export function createSortingSchema<TConfig>(
       });
     }
 
-    return schema;
+    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>>;
   } else {
     // Single sort field
     const sortBySchema = defaultField
@@ -174,7 +209,7 @@ export function createSortingSchema<TConfig>(
       });
     }
 
-    return schema;
+    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>>;
   }
 }
 
@@ -211,6 +246,7 @@ export function createSimpleSortSchema<TFields extends readonly string[]>(
  * const schema = createMultiSortSchema(["name", "price", "createdAt"] as const);
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- TFields preserves literal type inference from const assertion
 export function createMultiSortSchema<TFields extends readonly string[]>(
   fields: TFields
 ) {

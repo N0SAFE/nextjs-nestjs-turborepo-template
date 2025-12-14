@@ -48,6 +48,7 @@
     "@repo/api-contracts": "*",
     "@repo/auth": "*",
     "@repo/env": "*",
+    "@repo/orpc-utils": "*",
     "@repo/ui": "*",
     "@serwist/turbopack": "^10.0.0-preview.14",
     "@tanstack/react-devtools": "catalog:tanstack",

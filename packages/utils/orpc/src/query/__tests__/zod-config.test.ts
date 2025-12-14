@@ -1,15 +1,20 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import { z } from 'zod/v4';
-import { createQueryBuilder, createSortingConfigSchema } from '../query-builder';
-import type { PaginationConfig, SortingConfig, FilteringConfig } from '../query-builder';
+import { 
+  createQueryBuilder, 
+  createPaginationConfigSchema,
+  createSortingConfigSchema,
+  createFilteringConfigSchema,
+  createSearchConfigSchema
+} from '../query-builder';
 
 describe('Zod-based Configuration', () => {
-  describe('QueryBuilder with Zod schemas', () => {
-    it('should accept pagination config as Zod schema', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
-        includeOffset: z.boolean().default(true),
+  describe('QueryBuilder with Zod config schemas', () => {
+    it('should accept pagination config as Zod schema with embedded config', () => {
+      const paginationConfigSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
+        includeOffset: true,
       });
 
       const queryBuilder = createQueryBuilder({
@@ -39,7 +44,7 @@ describe('Zod-based Configuration', () => {
       expect(sampleMeta.limit).toBe(20);
     });
 
-    it('should accept sorting config as Zod schema', () => {
+    it('should accept sorting config as Zod schema with embedded config', () => {
       const sortingFields = ['name', 'createdAt', 'updatedAt'] as const;
       const sortingConfigSchema = createSortingConfigSchema(sortingFields);
 
@@ -58,18 +63,10 @@ describe('Zod-based Configuration', () => {
       expect(parsedInput.sortDirection).toBe('asc');
     });
 
-    it('should accept filtering config as Zod schema', () => {
-      const filteringConfigSchema = z.object({
-        fields: z.object({
-          name: z.object({
-            schema: z.string(),
-            operators: z.array(z.enum(['eq', 'like'])),
-          }),
-          age: z.object({
-            schema: z.number(),
-            operators: z.array(z.enum(['gt', 'lt'])),
-          }),
-        }),
+    it('should accept filtering config as Zod schema with embedded config', () => {
+      const filteringConfigSchema = createFilteringConfigSchema({
+        name: { schema: z.string(), operators: ['eq', 'like'] as const },
+        age: { schema: z.number(), operators: ['gt', 'lt'] as const },
       });
 
       const queryBuilder = createQueryBuilder({
@@ -88,23 +85,18 @@ describe('Zod-based Configuration', () => {
       expect(parsedInput.age_gt).toBe(18);
     });
 
-    it('should handle complete query config with all Zod schemas', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
-        includeOffset: z.boolean().default(true),
-        includePage: z.boolean().default(true),
+    it('should handle complete query config with all Zod config schemas', () => {
+      const paginationConfigSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
+        includeOffset: true,
+        includePage: true,
       });
 
       const sortingConfigSchema = createSortingConfigSchema(['name', 'createdAt'] as const);
 
-      const filteringConfigSchema = z.object({
-        fields: z.object({
-          name: z.object({
-            schema: z.string(),
-            operators: z.array(z.enum(['eq', 'like'])),
-          }),
-        }),
+      const filteringConfigSchema = createFilteringConfigSchema({
+        name: { schema: z.string(), operators: ['eq', 'like'] as const },
       });
 
       const queryBuilder = createQueryBuilder({
@@ -155,10 +147,10 @@ describe('Zod-based Configuration', () => {
     });
 
     it('should generate proper output schema with data and meta', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
-        includeOffset: z.boolean().default(true),
+      const paginationConfigSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
+        includeOffset: true,
       });
 
       const queryBuilder = createQueryBuilder({
@@ -193,12 +185,12 @@ describe('Zod-based Configuration', () => {
     });
   });
 
-  describe('Type inference with Zod schemas', () => {
+  describe('Type inference with Zod config schemas', () => {
     it('should infer correct input types', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
-        includeOffset: z.boolean().default(true),
+      const paginationConfigSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
+        includeOffset: true,
       });
 
       const sortingConfigSchema = createSortingConfigSchema(['name', 'email'] as const);
@@ -208,10 +200,11 @@ describe('Zod-based Configuration', () => {
         sorting: sortingConfigSchema,
       });
 
-      const inputSchema = queryBuilder.buildInputSchema();
+      const _inputSchema = queryBuilder.buildInputSchema();
+      expect(_inputSchema).toBeDefined();
 
       // Type assertions
-      type InputType = z.infer<typeof inputSchema>;
+      type InputType = z.infer<typeof _inputSchema>;
       
       // Should have pagination fields
       expectTypeOf<InputType>().toHaveProperty('limit');
@@ -223,11 +216,11 @@ describe('Zod-based Configuration', () => {
     });
 
     it('should infer correct output types', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
-        includeOffset: z.boolean().default(true),
-        includePage: z.boolean().default(true),
+      const paginationConfigSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
+        includeOffset: true,
+        includePage: true,
       });
 
       const queryBuilder = createQueryBuilder({
@@ -239,73 +232,128 @@ describe('Zod-based Configuration', () => {
         name: z.string(),
       });
 
-      const outputSchema = queryBuilder.buildOutputSchema(dataSchema);
+      const _outputSchema = queryBuilder.buildOutputSchema(dataSchema);
+      expect(_outputSchema).toBeDefined();
 
-      type OutputType = z.infer<typeof outputSchema>;
+      type OutputType = z.infer<typeof _outputSchema>;
 
       // Should have data array
       expectTypeOf<OutputType>().toHaveProperty('data');
-      expectTypeOf<OutputType['data']>().toEqualTypeOf<Array<{ id: string; name: string }>>();
+      expectTypeOf<OutputType['data']>().toEqualTypeOf<{ id: string; name: string }[]>();
 
       // Should have meta with pagination fields
       expectTypeOf<OutputType>().toHaveProperty('meta');
       expectTypeOf<OutputType['meta']>().toExtend<{
         total: number;
         limit: number;
-        offset: number;
-        page: number;
-        totalPages: number;
         hasMore: boolean;
+        offset: number;
+        page?: number | undefined;
+        totalPages?: number | undefined;
+        nextCursor?: string | null | undefined;
+        prevCursor?: string | null | undefined;
       }>();
     });
   });
 
-  describe('Backward compatibility', () => {
-    it('should still accept plain config objects', () => {
-      const queryBuilder = createQueryBuilder({
-        pagination: {
-          defaultLimit: 20,
-          maxLimit: 100,
-          includeOffset: true,
-        },
-        sorting: {
-          fields: ['name', 'createdAt'],
-          defaultDirection: 'asc',
-        },
+  describe('Config schema factory functions', () => {
+    it('should create pagination config schema with defaults', () => {
+      const configSchema = createPaginationConfigSchema({
+        defaultLimit: 20,
+        maxLimit: 100,
       });
-
+      
+      expect(configSchema).toBeDefined();
+      // Config schema should be usable with QueryBuilder
+      const queryBuilder = createQueryBuilder({ pagination: configSchema });
       const inputSchema = queryBuilder.buildInputSchema();
-      expect(inputSchema).toBeDefined();
-
-      const parsedInput = inputSchema.parse({ limit: 10, offset: 0 });
-      expect(parsedInput.limit).toBe(10);
+      
+      // Should have limit field
+      const result = inputSchema.parse({});
+      expect(result).toHaveProperty('limit');
     });
 
-    it('should accept mixed Zod schemas and plain configs', () => {
-      const paginationConfigSchema = z.object({
-        defaultLimit: z.number().default(20),
-        maxLimit: z.number().default(100),
+    it('should create sorting config schema with fields', () => {
+      const configSchema = createSortingConfigSchema(['name', 'email', 'createdAt'] as const, {
+        defaultField: 'createdAt',
+        defaultDirection: 'desc',
       });
-
-      const queryBuilder = createQueryBuilder({
-        pagination: paginationConfigSchema,
-        sorting: {
-          fields: ['name', 'email'],
-          defaultDirection: 'asc',
-        },
-      });
-
+      
+      expect(configSchema).toBeDefined();
+      const queryBuilder = createQueryBuilder({ sorting: configSchema });
       const inputSchema = queryBuilder.buildInputSchema();
-      expect(inputSchema).toBeDefined();
+      
+      // Should accept valid sort fields
+      const result = inputSchema.parse({ sortBy: 'name', sortDirection: 'asc' });
+      expect(result.sortBy).toBe('name');
+      expect(result.sortDirection).toBe('asc');
+    });
 
-      const parsedInput = inputSchema.parse({
-        limit: 15,
-        sortBy: 'name',
-        sortDirection: 'desc',
+    it('should create filtering config schema with operators', () => {
+      const configSchema = createFilteringConfigSchema({
+        name: { schema: z.string(), operators: ['eq', 'like', 'ilike'] as const },
+        age: { schema: z.number(), operators: ['gt', 'gte', 'lt', 'lte'] as const },
+        active: z.boolean(),
       });
+      
+      expect(configSchema).toBeDefined();
+      const queryBuilder = createQueryBuilder({ filtering: configSchema });
+      const inputSchema = queryBuilder.buildInputSchema();
+      
+      // Should accept filter fields
+      const result = inputSchema.parse({ name: 'John', age_gt: 18 });
+      expect(result.name).toBe('John');
+      expect(result.age_gt).toBe(18);
+    });
 
-      expect(parsedInput.limit).toBe(15);
-      expect(parsedInput.sortBy).toBe('name');
+    it('should create search config schema with searchable fields', () => {
+      const configSchema = createSearchConfigSchema(['title', 'description', 'content'] as const, {
+        minQueryLength: 2,
+        maxQueryLength: 100,
+        allowFieldSelection: true,
+      });
+      
+      expect(configSchema).toBeDefined();
+      const queryBuilder = createQueryBuilder({ search: configSchema });
+      const inputSchema = queryBuilder.buildInputSchema();
+      
+      // Should accept search query
+      const result = inputSchema.parse({ query: 'test search' });
+      expect(result.query).toBe('test search');
+    });
+  });
+
+  describe('Combined config schemas', () => {
+    it('should combine multiple config schemas in one query builder', () => {
+      const paginationConfig = createPaginationConfigSchema({ defaultLimit: 10, maxLimit: 50 });
+      const sortingConfig = createSortingConfigSchema(['name', 'date'] as const);
+      const filteringConfig = createFilteringConfigSchema({
+        status: { schema: z.enum(['active', 'inactive']), operators: ['eq'] as const },
+      });
+      const searchConfig = createSearchConfigSchema(['name', 'description'] as const);
+      
+      const queryBuilder = createQueryBuilder({
+        pagination: paginationConfig,
+        sorting: sortingConfig,
+        filtering: filteringConfig,
+        search: searchConfig,
+      });
+      
+      const inputSchema = queryBuilder.buildInputSchema();
+      
+      // Should parse a complete query
+      const result = inputSchema.parse({
+        limit: 20,
+        sortBy: 'name',
+        sortDirection: 'asc',
+        status: 'active',
+        query: 'test',
+      });
+      
+      expect(result.limit).toBe(20);
+      expect(result.sortBy).toBe('name');
+      expect(result.status).toBe('active');
+      expect(result.query).toBe('test');
     });
   });
 });

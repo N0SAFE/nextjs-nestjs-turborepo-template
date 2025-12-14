@@ -9,6 +9,6 @@ const userOps = standard(userSchema, "user");
 export const userUpdateContract = userOps
   .update()
   .inputBuilder.omit(["image", "id"])
-  .inputBuilder.partial()
-  .inputBuilder.extend({ id: userSchema.shape.id })
+  .partial()
+  .extend({ id: userSchema.shape.id })
   .build();

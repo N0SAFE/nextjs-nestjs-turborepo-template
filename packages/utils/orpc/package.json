@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./builder": "./src/builder/index.ts",
     "./standard": "./src/standard/index.ts",
-    "./query": "./src/query/index.ts"
+    "./query": "./src/query/index.ts",
+    "./hooks": "./src/hooks/index.ts"
   },
   "scripts": {
     "lint": "eslint . --fix",
@@ -19,11 +20,15 @@
   },
   "dependencies": {
     "@orpc/contract": "^1.12.1",
+    "@orpc/client": "catalog:orpc",
+    "@orpc/tanstack-query": "catalog:orpc",
+    "@tanstack/react-query": "catalog:tanstack",
     "zod": "catalog:utils"
   },
   "devDependencies": {
+    "@types/react": "catalog:react",
+    "react": "catalog:react",
     "eslint": "catalog:linting",
-    "typescript-eslint": "catalog:linting",
     "@repo-configs/eslint": "*",
     "@repo-configs/prettier": "*",
     "@repo-configs/typescript": "*",

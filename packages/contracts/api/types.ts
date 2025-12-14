@@ -49,3 +49,42 @@ export type UserCheckEmailOutput = { exists: boolean };
 
 // User Count Output
 export type UserCountOutput = { count: number };
+
+// ====================
+// Test Types
+// ====================
+
+export type {
+  TestNonAuthenticatedInput,
+  TestNonAuthenticatedOutput,
+} from './modules/test/non-authenticated';
+
+export type {
+  TestAuthenticatedInput,
+  TestAuthenticatedOutput,
+} from './modules/test/authenticated';
+
+export type {
+  TestFileUploadInput,
+  TestFileUploadOutput,
+} from './modules/test/file-upload';
+
+export type {
+  TestFileDownloadInput,
+  TestFileDownloadOutput,
+} from './modules/test/file-download';
+
+export type {
+  TestStreamInputInput,
+  TestStreamInputOutput,
+} from './modules/test/stream-input';
+
+export type {
+  TestStreamOutputInput,
+  TestStreamOutputOutput,
+} from './modules/test/stream-output';
+
+export type {
+  TestStreamBidirectionalInput,
+  TestStreamBidirectionalOutput,
+} from './modules/test/stream-bidirectional';

@@ -21,28 +21,50 @@ import { CONFIG_SYMBOL, type ZodSchemaWithConfig } from "./sorting";
  * );
  * ```
  */
-export function createSearchConfigSchema(
-  searchableFields?: readonly string[],
-  options?: {
-    /** Minimum query length */
-    minQueryLength?: number;
-    /** Maximum query length */
-    maxQueryLength?: number;
-    /** Allow case-sensitive search */
-    caseSensitive?: boolean;
-    /** Allow regex search */
-    allowRegex?: boolean;
-    /** Allow field-specific search */
-    allowFieldSelection?: boolean;
-  }
+
+/**
+ * Search configuration options type - preserves literal types for boolean options
+ */
+type SearchConfigOptions<
+  TAllowFieldSelection extends boolean = false,
+  TAllowRegex extends boolean = false
+> = {
+  /** Minimum query length */
+  minQueryLength?: number;
+  /** Maximum query length */
+  maxQueryLength?: number;
+  /** Allow case-sensitive search */
+  caseSensitive?: boolean;
+  /** Allow regex search */
+  allowRegex?: TAllowRegex;
+  /** Allow field-specific search */
+  allowFieldSelection?: TAllowFieldSelection;
+};
+
+export function createSearchConfigSchema<
+  TFields extends readonly string[] | undefined = undefined,
+  TAllowFieldSelection extends boolean = false,
+  TAllowRegex extends boolean = false
+>(
+  searchableFields?: TFields,
+  options?: SearchConfigOptions<TAllowFieldSelection, TAllowRegex>
 ) {
-  const config = {
-    searchableFields: searchableFields ?? [],
+  type Config = {
+    searchableFields: TFields extends readonly string[] ? TFields : readonly string[];
+    minQueryLength: number;
+    maxQueryLength: number;
+    caseSensitive: boolean;
+    allowRegex: TAllowRegex extends true ? true : false;
+    allowFieldSelection: TAllowFieldSelection extends true ? true : false;
+  };
+
+  const config: Config = {
+    searchableFields: (searchableFields ?? []) as Config["searchableFields"],
     minQueryLength: options?.minQueryLength ?? 1,
     maxQueryLength: options?.maxQueryLength ?? 1000,
     caseSensitive: options?.caseSensitive ?? false,
-    allowRegex: options?.allowRegex ?? false,
-    allowFieldSelection: options?.allowFieldSelection ?? false,
+    allowRegex: (options?.allowRegex ?? false) as TAllowRegex extends true ? true : false,
+    allowFieldSelection: (options?.allowFieldSelection ?? false) as TAllowFieldSelection extends true ? true : false,
   };
 
   const schema = z.object({
@@ -57,7 +79,7 @@ export function createSearchConfigSchema(
   // Attach config to schema for runtime extraction (type-safe)
   const result = Object.assign(schema, {
     [CONFIG_SYMBOL]: config
-  }) as ZodSchemaWithConfig<typeof config, typeof schema>;
+  }) as ZodSchemaWithConfig<Config, typeof schema>;
 
   return result;
 }
@@ -109,15 +131,15 @@ export function createSearchSchema<TConfig>(
     allowFieldSelection,
   } = config;
 
-  const schema: Record<string, z.ZodTypeAny> = {
+  const schema: Record<string, z.ZodType> = {
     query: z
       .string()
-      .min(minQueryLength, `Query must be at least ${minQueryLength} characters`)
-      .max(maxQueryLength, `Query must be at most ${maxQueryLength} characters`)
+      .min(minQueryLength, `Query must be at least ${String(minQueryLength)} characters`)
+      .max(maxQueryLength, `Query must be at most ${String(maxQueryLength)} characters`)
       .describe("Search query string"),
   };
 
-  if (allowFieldSelection && searchableFields && searchableFields.length > 0) {
+  if (allowFieldSelection && searchableFields.length > 0) {
     schema.fields = z
       .array(z.enum(searchableFields as [string, ...string[]]))
       .optional()

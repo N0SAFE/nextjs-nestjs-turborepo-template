@@ -251,6 +251,7 @@ export type PlatformPermission<T extends PlatformPermissionKeys> = (typeof platf
 /** Get the permission bundle type for an organization role */
 export type OrganizationPermission<T extends OrganizationPermissionKeys> = (typeof organizationPermissions)[T];
 
+/* eslint-disable @typescript-eslint/no-deprecated */
 /**
  * @deprecated Use `PlatformPermissionKeys` or `OrganizationPermissionKeys` instead.
  */
@@ -260,3 +261,5 @@ export type CommonPermissionKeys = keyof typeof commonPermissions;
  * @deprecated Use `PlatformPermission` or `OrganizationPermission` instead.
  */
 export type CommonPermission<T extends CommonPermissionKeys> = (typeof commonPermissions)[T];
+
+/* eslint-enable @typescript-eslint/no-deprecated */

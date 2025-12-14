@@ -27,7 +27,7 @@ export type FilterOperator =
  */
 export type FieldFilterConfig = {
   /** Zod schema for the field value */
-  schema: z.ZodTypeAny;
+  schema: z.ZodType;
   /** Allowed operators for this field */
   operators?: readonly FilterOperator[] | FilterOperator[];
   /** Description for documentation */
@@ -57,7 +57,7 @@ export type FieldFilterConfig = {
  * ```
  */
 export function createFilteringConfigSchema<
-  TFields extends Record<string, z.ZodTypeAny | FieldFilterConfig>
+  TFields extends Record<string, z.ZodType | FieldFilterConfig>
 >(
   fields: TFields,
   options?: {
@@ -119,7 +119,7 @@ export function createFilteringSchema<TConfig>(
 ) {
   // Extract config from schema
   const config = configSchema[CONFIG_SYMBOL] as {
-    fields: Record<string, z.ZodTypeAny | FieldFilterConfig>;
+    fields: Record<string, z.ZodType | FieldFilterConfig>;
     allowLogicalOperators: boolean;
     allowNested: boolean;
     prefix: string;
@@ -137,10 +137,11 @@ export function createFilteringSchema<TConfig>(
 
   // Generate filter schemas for each field
   for (const [fieldName, fieldConfig] of Object.entries(fields)) {
-    const isConfigObject = fieldConfig && typeof fieldConfig === "object" && "schema" in fieldConfig;
-    const fieldSchema = isConfigObject ? fieldConfig.schema : fieldConfig;
-    const operators = isConfigObject ? fieldConfig.operators : ["eq"];
-    const description = isConfigObject ? fieldConfig.description : undefined;
+    const isConfigObject = typeof fieldConfig === "object" && "schema" in fieldConfig;
+    // Cast to z.ZodTypeAny to satisfy TypeScript since we've verified the type above
+    const fieldSchema = (isConfigObject ? (fieldConfig).schema : fieldConfig);
+    const operators = isConfigObject ? (fieldConfig).operators : ["eq"];
+    const description = isConfigObject ? (fieldConfig).description : undefined;
 
     const prefixedName = prefix ? `${prefix}_${fieldName}` : fieldName;
 
@@ -149,8 +150,8 @@ export function createFilteringSchema<TConfig>(
       schema = schema.extend({
         [prefixedName]: fieldSchema
           .optional()
-          .describe(description || `Filter by ${fieldName}`),
-      } as any);
+          .describe(description ?? `Filter by ${fieldName}`),
+      });
     }
 
     // Add operator-specific filters
@@ -177,7 +178,7 @@ export function createFilteringSchema<TConfig>(
               [opFieldName]: fieldSchema
                 .optional()
                 .describe(`Filter ${fieldName} (${op})`),
-            } as any);
+            });
             break;
 
           case "in":
@@ -187,7 +188,7 @@ export function createFilteringSchema<TConfig>(
                 .array(fieldSchema)
                 .optional()
                 .describe(`Filter ${fieldName} (${op})`),
-            } as any);
+            });
             break;
 
           case "exists":
@@ -196,7 +197,7 @@ export function createFilteringSchema<TConfig>(
                 .boolean()
                 .optional()
                 .describe(`Check if ${fieldName} exists`),
-            } as any);
+            });
             break;
 
           case "between":
@@ -205,7 +206,7 @@ export function createFilteringSchema<TConfig>(
                 .tuple([fieldSchema, fieldSchema])
                 .optional()
                 .describe(`Filter ${fieldName} between two values`),
-            } as any);
+            });
             break;
         }
       }
@@ -223,7 +224,7 @@ export function createFilteringSchema<TConfig>(
         .array(z.record(z.string(), z.any()))
         .optional()
         .describe("Combine filters with OR"),
-    } as any);
+    });
   }
 
   return schema;
@@ -233,9 +234,9 @@ export function createFilteringSchema<TConfig>(
  * Creates a simple equality-only filter schema
  */
 export function createSimpleFilterSchema(
-  fields: Record<string, z.ZodTypeAny>
+  fields: Record<string, z.ZodType>
 ) {
-  const schema: Record<string, z.ZodTypeAny> = {};
+  const schema: Record<string, z.ZodType> = {};
 
   for (const [fieldName, fieldSchema] of Object.entries(fields)) {
     schema[fieldName] = fieldSchema.optional();
@@ -255,7 +256,7 @@ export function createStringFilterSchema(fieldName: string) {
     [`${fieldName}_startsWith`]: z.string().optional(),
     [`${fieldName}_endsWith`]: z.string().optional(),
     [`${fieldName}_in`]: z.array(z.string()).optional(),
-  } as Record<string, z.ZodTypeAny>);
+  } as Record<string, z.ZodType>);
 }
 
 /**
@@ -270,7 +271,7 @@ export function createNumberFilterSchema(fieldName: string) {
     [`${fieldName}_lte`]: z.number().optional().describe("Less than or equal"),
     [`${fieldName}_between`]: z.tuple([z.number(), z.number()]).optional(),
     [`${fieldName}_in`]: z.array(z.number()).optional(),
-  } as Record<string, z.ZodTypeAny>);
+  } as Record<string, z.ZodType>);
 }
 
 /**
@@ -278,13 +279,13 @@ export function createNumberFilterSchema(fieldName: string) {
  */
 export function createDateFilterSchema(fieldName: string) {
   return z.object({
-    [fieldName]: z.string().datetime().optional(),
-    [`${fieldName}_gt`]: z.string().datetime().optional().describe("After"),
-    [`${fieldName}_gte`]: z.string().datetime().optional().describe("On or after"),
-    [`${fieldName}_lt`]: z.string().datetime().optional().describe("Before"),
-    [`${fieldName}_lte`]: z.string().datetime().optional().describe("On or before"),
-    [`${fieldName}_between`]: z.tuple([z.string().datetime(), z.string().datetime()]).optional(),
-  } as Record<string, z.ZodTypeAny>);
+    [fieldName]: z.iso.datetime().optional(),
+    [`${fieldName}_gt`]: z.iso.datetime().optional().describe("After"),
+    [`${fieldName}_gte`]: z.iso.datetime().optional().describe("On or after"),
+    [`${fieldName}_lt`]: z.iso.datetime().optional().describe("Before"),
+    [`${fieldName}_lte`]: z.iso.datetime().optional().describe("On or before"),
+    [`${fieldName}_between`]: z.tuple([z.iso.datetime(), z.iso.datetime()]).optional(),
+  } as Record<string, z.ZodType>);
 }
 
 /**
@@ -299,6 +300,7 @@ export function createBooleanFilterSchema(fieldName: string) {
 /**
  * Creates filters for enum fields (returns ZodObject)
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T preserves literal tuple type for enum values
 export function createEnumFilterSchema<T extends readonly [string, ...string[]]>(
   fieldName: string,
   values: T
@@ -307,7 +309,7 @@ export function createEnumFilterSchema<T extends readonly [string, ...string[]]>
     [fieldName]: z.enum(values).optional(),
     [`${fieldName}_in`]: z.array(z.enum(values)).optional(),
     [`${fieldName}_nin`]: z.array(z.enum(values)).optional(),
-  } as Record<string, z.ZodTypeAny>);
+  } as Record<string, z.ZodType>);
 }
 
 /**
@@ -345,11 +347,12 @@ export function createBooleanFilter() {
  * // { value: z.enum(...).optional(), value_in: z.array(...).optional(), value_nin: z.array(...).optional() }
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T preserves literal tuple type for enum values
 export function createEnumFilter<T extends readonly [string, ...string[]]>(
   values: T,
   operators: readonly FilterOperator[] = ['eq'] as const
 ) {
-  const filter: Record<string, z.ZodTypeAny> = {};
+  const filter: Record<string, z.ZodType> = {};
   
   // Add base equality filter
   if (operators.includes('eq')) {
@@ -384,7 +387,7 @@ export function createEnumFilter<T extends readonly [string, ...string[]]>(
 export function createStringFilter(
   operators: readonly FilterOperator[] = ['eq'] as const
 ) {
-  const filter: Record<string, z.ZodTypeAny> = {};
+  const filter: Record<string, z.ZodType> = {};
   
   // Add base equality filter
   if (operators.includes('eq')) {
@@ -441,7 +444,7 @@ export function createStringFilter(
 export function createNumberFilter(
   operators: readonly FilterOperator[] = ['eq'] as const
 ) {
-  const filter: Record<string, z.ZodTypeAny> = {};
+  const filter: Record<string, z.ZodType> = {};
   
   // Add base equality filter
   if (operators.includes('eq')) {
@@ -495,37 +498,37 @@ export function createNumberFilter(
 export function createDateFilter(
   operators: readonly FilterOperator[] = ['eq'] as const
 ) {
-  const filter: Record<string, z.ZodTypeAny> = {};
+  const filter: Record<string, z.ZodType> = {};
   
   // Add base equality filter
   if (operators.includes('eq')) {
-    filter.value = z.string().datetime().optional();
+    filter.value = z.iso.datetime().optional();
   }
   
   // Add comparison operators
   if (operators.includes('ne')) {
-    filter.value_ne = z.string().datetime().optional();
+    filter.value_ne = z.iso.datetime().optional();
   }
   if (operators.includes('gt')) {
-    filter.value_gt = z.string().datetime().optional();
+    filter.value_gt = z.iso.datetime().optional();
   }
   if (operators.includes('gte')) {
-    filter.value_gte = z.string().datetime().optional();
+    filter.value_gte = z.iso.datetime().optional();
   }
   if (operators.includes('lt')) {
-    filter.value_lt = z.string().datetime().optional();
+    filter.value_lt = z.iso.datetime().optional();
   }
   if (operators.includes('lte')) {
-    filter.value_lte = z.string().datetime().optional();
+    filter.value_lte = z.iso.datetime().optional();
   }
   if (operators.includes('in')) {
-    filter.value_in = z.array(z.string().datetime()).optional();
+    filter.value_in = z.array(z.iso.datetime()).optional();
   }
   if (operators.includes('nin')) {
-    filter.value_nin = z.array(z.string().datetime()).optional();
+    filter.value_nin = z.array(z.iso.datetime()).optional();
   }
   if (operators.includes('between')) {
-    filter.value_between = z.tuple([z.string().datetime(), z.string().datetime()]).optional();
+    filter.value_between = z.tuple([z.iso.datetime(), z.iso.datetime()]).optional();
   }
   if (operators.includes('exists')) {
     filter.value_exists = z.boolean().optional();

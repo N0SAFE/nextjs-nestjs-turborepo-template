@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery, type QueryClie
 import { orpc } from '@/lib/orpc'
 import { toast } from 'sonner'
 import type { z } from 'zod'
+import type { UserUpdateInput } from '@repo/api-contracts'
 import type { userSchema } from '@repo/api-contracts/common/user'
 
 // Infer types from the contract schemas
@@ -97,7 +98,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient()
   
   const updateUserMutation = useMutation(orpc.user.update.mutationOptions({
-    onSuccess: (updatedUser, variables) => {
+    onSuccess: (updatedUser: User, variables: UserUpdateInput) => {
       // Invalidate user list to refresh data with proper input structure
       void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
@@ -326,13 +327,13 @@ export function useUserSelector(options?: {
   const users = useUsers()
   
   // Filter users based on options
-  const availableUsers = users.data?.data.filter(user => {
+  const availableUsers = users.data?.data.filter((user: User) => {
     if (options?.excludeUserIds?.includes(user.id)) return false
     // Add role filtering if needed when roles are added to user schema
     return true
   }) ?? []
   
-  const selectedUsers = availableUsers.filter(user => 
+  const selectedUsers = availableUsers.filter((user: User) => 
     selectedUserIds.includes(user.id)
   )
   
@@ -352,7 +353,7 @@ export function useUserSelector(options?: {
   
   const selectAll = () => {
     if (options?.multiple) {
-      setSelectedUserIds(availableUsers.map(user => user.id))
+      setSelectedUserIds(availableUsers.map((user: User) => user.id))
     }
   }
   
