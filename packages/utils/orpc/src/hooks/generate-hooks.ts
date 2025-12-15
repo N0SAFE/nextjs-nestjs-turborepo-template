@@ -61,6 +61,7 @@ import {
   hasRouteMethodMeta,
   getRouteMethod,
 } from '../builder/mount-method';
+import { isContractProcedure } from '../utils/type-helpers';
 
 /**
  * Extract the HTTP method from RouteBuilder contract metadata.
@@ -298,6 +299,11 @@ export function detectOperationType(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _procedureName?: string
 ): OperationType {
+  // First check if this is a valid contract procedure or builder
+  if (!isContractProcedure(procedure)) {
+    return 'unsupported';
+  }
+  
   // CRITICAL: Check for RouteBuilder metadata first
   // Only RouteBuilder-created contracts should generate hooks
   if (!hasRouteMethodMeta(procedure)) {

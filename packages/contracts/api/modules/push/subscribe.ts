@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 const subscriptionKeysSchema = z.object({
@@ -19,7 +20,7 @@ export const subscribeOutputSchema = z.object({
   createdAt: z.date(),
 });
 
-export const subscribeContract = oc
+export const subscribeContract = withRouteMethod("POST", oc)
   .input(subscribeInputSchema)
   .output(subscribeOutputSchema)
   .route({

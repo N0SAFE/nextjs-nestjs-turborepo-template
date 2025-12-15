@@ -75,16 +75,6 @@ export type {
 } from './modules/test/file-download';
 
 export type {
-  TestStreamInputInput,
-  TestStreamInputOutput,
-} from './modules/test/stream-input';
-
-export type {
   TestStreamOutputInput,
   TestStreamOutputOutput,
 } from './modules/test/stream-output';
-
-export type {
-  TestStreamBidirectionalInput,
-  TestStreamBidirectionalOutput,
-} from './modules/test/stream-bidirectional';

@@ -1,11 +1,12 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod/v4";
 
 /**
  * Test contract for file download
- * This contract demonstrates how to return files as output using z.file()
+ * This contract demonstrates how to return files using z.file()
  */
-export const testFileDownloadContract = oc
+export const testFileDownloadContract = withRouteMethod("GET", oc)
   .route({
     method: "GET",
     path: "/file-download",

@@ -8,7 +8,7 @@ import type {
   HttpMethod,
   ContractProcedureState,
 } from "./types";
-import { createRouteMethodMeta } from "./mount-method";
+import { withRouteMethod } from "./mount-method";
 
 /**
  * Schema wrapper function type - transforms a schema into another schema type
@@ -380,7 +380,7 @@ export class RouteBuilder<
       this._outputWrapper ? this._outputWrapper(this.outputSchema) : this.outputSchema
     ) as ApplyWrapper<TOutput, TOutputWrapper>;
 
-    // Inject route method metadata into the contract.
+    // Inject route method metadata into the contract using withRouteMethod.
     // This enables the hook generator to:
     // 1. Identify this contract as RouteBuilder-created (not hand-made)
     // 2. Determine if it should generate query or mutation hooks
@@ -388,8 +388,7 @@ export class RouteBuilder<
     // IMPORTANT: Use this._method (TMethod generic) instead of this.routeMetadata.method
     // to preserve the specific method literal type (e.g., "GET", "POST") rather than
     // the union type HTTPMethod. This is essential for type-level discrimination.
-    return oc
-      .$meta(createRouteMethodMeta(this._method))
+    return withRouteMethod(this._method, oc)
       .route(this.routeMetadata)
       .input(finalInput)
       .output(finalOutput);

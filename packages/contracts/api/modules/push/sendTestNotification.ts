@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 export const sendTestNotificationOutputSchema = z.object({
@@ -7,7 +8,7 @@ export const sendTestNotificationOutputSchema = z.object({
   total: z.number(),
 });
 
-export const sendTestNotificationContract = oc
+export const sendTestNotificationContract = withRouteMethod("POST", oc)
   .output(sendTestNotificationOutputSchema)
   .route({
     method: "POST",

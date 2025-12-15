@@ -1,11 +1,12 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod/v4";
 
 /**
  * Test contract for file upload
  * This contract demonstrates how to accept file uploads using z.file()
  */
-export const testFileUploadContract = oc
+export const testFileUploadContract = withRouteMethod("POST", oc)
   .route({
     method: "POST",
     path: "/file-upload",

@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 export const unsubscribeInputSchema = z.object({
@@ -9,7 +10,7 @@ export const unsubscribeOutputSchema = z.object({
   success: z.boolean(),
 });
 
-export const unsubscribeContract = oc
+export const unsubscribeContract = withRouteMethod("POST", oc)
   .input(unsubscribeInputSchema)
   .output(unsubscribeOutputSchema)
   .route({

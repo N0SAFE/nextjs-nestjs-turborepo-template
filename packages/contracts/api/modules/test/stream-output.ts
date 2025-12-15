@@ -1,4 +1,5 @@
 import { oc, eventIterator } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod/v4";
 
 /**
@@ -6,7 +7,7 @@ import { z } from "zod/v4";
  * This contract demonstrates streaming data from server to client
  * This is the most common streaming pattern in oRPC
  */
-export const testStreamOutputContract = oc
+export const testStreamOutputContract = withRouteMethod("GET", oc)
   .route({
     method: "GET",
     path: "/stream-output",

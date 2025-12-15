@@ -1,11 +1,12 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod/v4";
 
 /**
  * Test contract for non-authenticated ORPC endpoint
  * This contract demonstrates a simple GET request without authentication
  */
-export const testNonAuthenticatedContract = oc
+export const testNonAuthenticatedContract = withRouteMethod("GET", oc)
   .route({
     method: "GET",
     path: "/non-authenticated",

@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod/v4";
 
 // Define the input for the check endpoint
@@ -12,12 +13,12 @@ export const healthCheckOutput = z.object({
 });
 
 // Define the contract
-export const healthCheckContract = oc
+export const healthCheckContract = withRouteMethod("GET", oc)
   .route({
     method: "GET",
     path: "/",
-    summary: "Health check",
-    description: "Check the health of the service",
+    summary: "Health check endpoint",
+    description: "Returns a simple health status",
   })
   .input(healthCheckInput)
   .output(healthCheckOutput);

@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 export const deviceSchema = z.object({
@@ -12,7 +13,7 @@ export const getStatsOutputSchema = z.object({
   devices: z.array(deviceSchema),
 });
 
-export const getStatsContract = oc
+export const getStatsContract = withRouteMethod("GET", oc)
   .output(getStatsOutputSchema)
   .route({
     method: "GET",

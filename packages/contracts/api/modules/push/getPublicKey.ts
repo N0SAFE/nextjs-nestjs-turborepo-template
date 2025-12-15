@@ -1,11 +1,12 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 export const getPublicKeyOutputSchema = z.object({
   publicKey: z.string(),
 });
 
-export const getPublicKeyContract = oc
+export const getPublicKeyContract = withRouteMethod("GET", oc)
   .output(getPublicKeyOutputSchema)
   .route({
     method: "GET",
