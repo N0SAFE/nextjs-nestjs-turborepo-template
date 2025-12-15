@@ -3,34 +3,37 @@
   "version": "1.0.0",
   "private": true,
   "description": "Shared Vitest configuration for the monorepo",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "require": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./base": {
-      "import": "./src/base.ts",
-      "require": "./src/base.ts"
+      "types": "./dist/base.d.ts",
+      "import": "./dist/base.js"
     },
     "./react": {
-      "import": "./src/react.ts",
-      "require": "./src/react.ts"
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
     },
     "./node": {
-      "import": "./src/node.ts",
-      "require": "./src/node.ts"
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
     },
     "./nextjs": {
-      "import": "./src/nextjs.ts",
-      "require": "./src/nextjs.ts"
+      "types": "./dist/nextjs.d.ts",
+      "import": "./dist/nextjs.js"
     }
   },
   "files": [
+    "dist",
     "src"
   ],
   "scripts": {
+    "build": "tsc",
+    "compile": "tsc",
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
     "test": "echo 'vitest-config package ready'"

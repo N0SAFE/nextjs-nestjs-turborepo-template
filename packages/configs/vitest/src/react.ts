@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { createBaseConfig } from './base.ts'
+import { createBaseConfig } from './base.js'
 
 /**
  * React-specific Vitest configuration
