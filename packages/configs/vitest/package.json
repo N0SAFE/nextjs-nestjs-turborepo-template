@@ -28,7 +28,7 @@
     }
   },
   "files": [
-    "dist"
+    "src"
   ],
   "scripts": {
     "clean": "rimraf dist",
