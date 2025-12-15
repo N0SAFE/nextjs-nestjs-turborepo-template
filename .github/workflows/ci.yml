@@ -331,7 +331,7 @@ jobs:
                       declarative-routes-${{ runner.os }}-
 
             - name: 🧪 Run tests for all packages
-              run: bun 
+              run: bun x turbo run test --affected --concurrency=75%
 
     # Job 5: Deployment Ready Check
     deployment-ready:
