@@ -295,7 +295,7 @@
         "dotenv-cli": "catalog:dev",
         "nyc": "^17.1.0",
         "rimraf": "catalog:build",
-        "turbo": "2.6.1",
+        "turbo": "2.6.3",
         "vite": "catalog:build",
         "vitest": "catalog:testing"
     },
