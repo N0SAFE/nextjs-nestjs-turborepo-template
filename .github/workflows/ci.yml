@@ -23,7 +23,7 @@ jobs:
             cache-hit: ${{ steps.cache-dependencies.outputs.cache-hit }}
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 💾 Cache Bun dependencies
               id: cache-dependencies
@@ -65,7 +65,7 @@ jobs:
             cache-hit: ${{ steps.cache-declarative-routes.outputs.cache-hit }}
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: 💾 Cache declarative routes
               id: cache-declarative-routes
@@ -142,7 +142,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0  # Fetch all history for all branches and tags
 
@@ -232,7 +232,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0  # Fetch all history for all branches and tags
 
@@ -324,7 +324,7 @@ jobs:
 
         steps:
             - name: 📚 Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0  # Fetch all history for all branches and tags
 
