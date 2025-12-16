@@ -1,5 +1,6 @@
 import type { Auth } from "@/auth";
 import type { Permission, RoleName } from "@repo/auth/permissions";
+import type { AdminPluginUtils, OrganizationPluginUtils } from "../plugin-utils";
 
 // Re-export types from global utils
 export type { UserSession, AccessOptions } from "../utils/auth-utils";
@@ -85,6 +86,18 @@ export interface ORPCAuthContext {
    * @returns true if user has permission
    */
   hasPermission(permission: Permission): Promise<boolean>;
+
+  /**
+   * Admin plugin utilities with auto-injected headers
+   * Provides platform-level user management operations
+   */
+  readonly admin: AdminPluginUtils;
+
+  /**
+   * Organization plugin utilities with auto-injected headers
+   * Provides organization-level operations
+   */
+  readonly org: OrganizationPluginUtils;
   
   /** Internal brand for type narrowing (not accessible at runtime) */
   [AuthenticatedBrand]?: boolean;
@@ -103,6 +116,18 @@ export interface ORPCAuthenticatedContext extends ORPCAuthContext {
 
   /** User object (guaranteed to be present) */
   readonly user: Auth["$Infer"]["Session"]["user"];
+
+  /**
+   * Admin plugin utilities with auto-injected headers
+   * Provides platform-level user management operations
+   */
+  readonly admin: AdminPluginUtils;
+
+  /**
+   * Organization plugin utilities with auto-injected headers
+   * Provides organization-level operations
+   */
+  readonly org: OrganizationPluginUtils;
   
   /** Internal brand for type narrowing */
   [AuthenticatedBrand]: true;

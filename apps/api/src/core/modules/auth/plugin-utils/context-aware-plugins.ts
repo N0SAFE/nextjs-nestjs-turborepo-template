@@ -279,7 +279,7 @@ export class OrganizationPluginUtils {
       if (!session || !session.user) return false;
       
       // Try to get member record
-      const result = await this.auth.api.organization.getMember({
+      const result = await this.auth.api.getMember({
         headers: this.headers,
         query: {
           organizationId,
@@ -315,7 +315,7 @@ export class OrganizationPluginUtils {
     userId: string;
     metadata?: Record<string, unknown>;
   }) {
-    return await this.auth.api.organization.create({
+    return await this.auth.api.createOrganization({
       headers: this.headers,
       body: data,
     });
@@ -344,7 +344,7 @@ export class OrganizationPluginUtils {
       metadata?: Record<string, unknown>;
     }
   ) {
-    return await this.auth.api.organization.update({
+    return await this.auth.api.updateOrganization({
       headers: this.headers,
       body: { organizationId, ...data },
     });
@@ -361,7 +361,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async deleteOrganization(organizationId: string) {
-    return await this.auth.api.organization.delete({
+    return await this.auth.api.deleteOrganization({
       headers: this.headers,
       body: { organizationId },
     });
@@ -379,7 +379,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async getOrganization(organizationId: string) {
-    return await this.auth.api.organization.get({
+    return await this.auth.api.getOrganization({
       headers: this.headers,
       query: { organizationId },
     });
@@ -396,7 +396,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async listOrganizations() {
-    return await this.auth.api.organization.list({
+    return await this.auth.api.listOrganizations({
       headers: this.headers,
     });
   }
@@ -421,7 +421,7 @@ export class OrganizationPluginUtils {
     userId: string;
     role: string;
   }) {
-    return await this.auth.api.organization.addMember({
+    return await this.auth.api.addMember({
       headers: this.headers,
       body: data,
     });
@@ -444,7 +444,7 @@ export class OrganizationPluginUtils {
     organizationId: string;
     userId: string;
   }) {
-    return await this.auth.api.organization.removeMember({
+    return await this.auth.api.removeMember({
       headers: this.headers,
       body: data,
     });
@@ -470,7 +470,7 @@ export class OrganizationPluginUtils {
     userId: string;
     role: string;
   }) {
-    return await this.auth.api.organization.updateMemberRole({
+    return await this.auth.api.updateMemberRole({
       headers: this.headers,
       body: data,
     });
@@ -488,7 +488,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async listMembers(organizationId: string) {
-    return await this.auth.api.organization.listMembers({
+    return await this.auth.api.listMembers({
       headers: this.headers,
       query: { organizationId },
     });
@@ -512,7 +512,7 @@ export class OrganizationPluginUtils {
     organizationId: string;
     userId: string;
   }) {
-    return await this.auth.api.organization.getMember({
+    return await this.auth.api.getMember({
       headers: this.headers,
       query: data,
     });
@@ -538,7 +538,7 @@ export class OrganizationPluginUtils {
     email: string;
     role: string;
   }) {
-    return await this.auth.api.organization.inviteMember({
+    return await this.auth.api.inviteMember({
       headers: this.headers,
       body: data,
     });
@@ -556,7 +556,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async acceptInvitation(invitationId: string) {
-    return await this.auth.api.organization.acceptInvitation({
+    return await this.auth.api.acceptInvitation({
       headers: this.headers,
       body: { invitationId },
     });
@@ -573,7 +573,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async rejectInvitation(invitationId: string) {
-    return await this.auth.api.organization.rejectInvitation({
+    return await this.auth.api.rejectInvitation({
       headers: this.headers,
       body: { invitationId },
     });
@@ -590,7 +590,7 @@ export class OrganizationPluginUtils {
    * ```
    */
   async listInvitations() {
-    return await this.auth.api.organization.listInvitations({
+    return await this.auth.api.listInvitations({
       headers: this.headers,
     });
   }

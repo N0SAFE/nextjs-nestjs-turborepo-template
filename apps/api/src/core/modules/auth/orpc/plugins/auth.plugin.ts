@@ -80,12 +80,12 @@ export class AuthPlugin<TContext extends AuthPluginContext>
 
       // Extract session from request headers
       let session: UserSession | null = null;
+      
+      // Get headers from the ORPC request object
+      const headers = request.headers;
+      const webHeaders = toWebHeaders(headers);
 
       try {
-        // Get headers from the ORPC request object
-        const headers = request.headers;
-        const webHeaders = toWebHeaders(headers);
-        
         console.log("Auth Plugin: Extracting session with headers:", Object.fromEntries(webHeaders.entries()));
         
         const sessionData = await auth.api.getSession({

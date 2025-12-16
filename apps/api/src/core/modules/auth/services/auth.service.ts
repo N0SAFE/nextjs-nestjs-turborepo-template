@@ -102,7 +102,7 @@ export class AuthService<T extends { api: T["api"] } = Auth> {
 	 * ```
 	 */
 	createEmptyAuthUtils() {
-		return new AuthUtilsEmpty();
+		return new AuthUtilsEmpty(this._auth);
 	}
 
 	// ============================================================================

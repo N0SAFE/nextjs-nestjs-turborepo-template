@@ -433,6 +433,24 @@ export class AuthUtilsEmpty {
   readonly user = null;
   readonly permissionChecker = new PermissionChecker(null);
   
+  // Dummy admin and org utilities (will throw errors if used)
+  private readonly _dummyAdmin: AdminPluginUtils;
+  private readonly _dummyOrg: OrganizationPluginUtils;
+
+  constructor(auth: Auth) {
+    // Create dummy utilities that will throw errors if used without authentication
+    this._dummyAdmin = new AdminPluginUtils(auth, new Headers());
+    this._dummyOrg = new OrganizationPluginUtils(auth, new Headers());
+  }
+
+  get admin(): AdminPluginUtils {
+    return this._dummyAdmin;
+  }
+
+  get org(): OrganizationPluginUtils {
+    return this._dummyOrg;
+  }
+  
   requireAuth(): UserSession {
     throw new ORPCError("UNAUTHORIZED", {
       message: "Authentication required",
