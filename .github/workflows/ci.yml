@@ -149,7 +149,15 @@ jobs:
             - name: 🔍 Fetch base branch for comparison
               run: |
                   BASE_BRANCH="${{ github.base_ref || 'main' }}"
-                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+                  
+                  # Only fetch if we're not already on the base branch
+                  if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+                    echo "Fetching ${BASE_BRANCH} for comparison (current: ${CURRENT_BRANCH})"
+                    git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  else
+                    echo "Already on ${BASE_BRANCH}, skipping fetch"
+                  fi
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -239,7 +247,15 @@ jobs:
             - name: 🔍 Fetch base branch for comparison
               run: |
                   BASE_BRANCH="${{ github.base_ref || 'main' }}"
-                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+                  
+                  # Only fetch if we're not already on the base branch
+                  if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+                    echo "Fetching ${BASE_BRANCH} for comparison (current: ${CURRENT_BRANCH})"
+                    git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  else
+                    echo "Already on ${BASE_BRANCH}, skipping fetch"
+                  fi
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -331,7 +347,15 @@ jobs:
             - name: 🔍 Fetch base branch for comparison
               run: |
                   BASE_BRANCH="${{ github.base_ref || 'main' }}"
-                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+                  
+                  # Only fetch if we're not already on the base branch
+                  if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+                    echo "Fetching ${BASE_BRANCH} for comparison (current: ${CURRENT_BRANCH})"
+                    git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
+                  else
+                    echo "Already on ${BASE_BRANCH}, skipping fetch"
+                  fi
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
