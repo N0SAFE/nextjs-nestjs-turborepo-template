@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 import type { HTTPMethod } from "@orpc/contract";
-import { AnyContractBuilder, AnyContractProcedureOrBuilder, getProcedureMeta, withMeta } from "../utils/type-helpers";
+import type { AnyContractBuilder, AnyContractProcedureOrBuilder } from "../utils/type-helpers";
+import { getProcedureMeta, withMeta } from "../utils/type-helpers";
 
 /**
  * @fileoverview Mount method helper for ORPC contracts
