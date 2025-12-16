@@ -1,6 +1,6 @@
 import type { Auth } from "@/auth";
 import type { Permission, RoleName } from "@repo/auth/permissions";
-import type { AdminPluginUtils, OrganizationPluginUtils } from "../plugin-utils";
+import type { AdminPluginWrapper, OrganizationPluginWrapper } from "../plugin-utils/plugin-wrapper-factory";
 
 // Re-export types from global utils
 export type { UserSession, AccessOptions } from "../utils/auth-utils";
@@ -97,7 +97,7 @@ export interface ORPCAuthContext {
    * Organization plugin utilities with auto-injected headers
    * Provides organization-level operations
    */
-  readonly org: OrganizationPluginUtils;
+  readonly org: OrganizationPluginWrapper;
   
   /** Internal brand for type narrowing (not accessible at runtime) */
   [AuthenticatedBrand]?: boolean;
@@ -121,13 +121,13 @@ export interface ORPCAuthenticatedContext extends ORPCAuthContext {
    * Admin plugin utilities with auto-injected headers
    * Provides platform-level user management operations
    */
-  readonly admin: AdminPluginUtils;
+  readonly admin: AdminPluginWrapper;
 
   /**
    * Organization plugin utilities with auto-injected headers
    * Provides organization-level operations
    */
-  readonly org: OrganizationPluginUtils;
+  readonly org: OrganizationPluginWrapper;
   
   /** Internal brand for type narrowing */
   [AuthenticatedBrand]: true;
