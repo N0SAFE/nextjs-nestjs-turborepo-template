@@ -27,7 +27,7 @@ jobs:
 
             - name: 💾 Cache Bun dependencies
               id: cache-dependencies
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.bun
@@ -69,7 +69,7 @@ jobs:
 
             - name: 💾 Cache declarative routes
               id: cache-declarative-routes
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       apps/web/src/routes/index.ts
@@ -88,7 +88,7 @@ jobs:
 
             - name: 💾 Restore Bun dependencies cache
               if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.bun
@@ -165,7 +165,7 @@ jobs:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 💾 Restore Bun dependencies cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.bun
@@ -178,7 +178,7 @@ jobs:
                       bun-deps-${{ runner.os }}-
 
             - name: � Restore declarative routes cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       apps/web/src/routes/index.ts
@@ -263,7 +263,7 @@ jobs:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 💾 Restore Bun dependencies cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.bun
@@ -276,7 +276,7 @@ jobs:
                       bun-deps-${{ runner.os }}-
 
             - name: 💾 Restore declarative routes cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       apps/web/src/routes/index.ts
@@ -363,7 +363,7 @@ jobs:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 💾 Restore Bun dependencies cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       ~/.bun
@@ -376,7 +376,7 @@ jobs:
                       bun-deps-${{ runner.os }}-
 
             - name: 💾 Restore declarative routes cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       apps/web/src/routes/index.ts
