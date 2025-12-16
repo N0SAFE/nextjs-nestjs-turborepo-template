@@ -1,6 +1,7 @@
 import { PermissionChecker, type Permission, type RoleName, type ResourcePermission } from "@repo/auth/permissions";
 import type { Auth } from "@/auth";
 import { ORPCError } from "@orpc/client";
+import { AdminPluginUtils, OrganizationPluginUtils } from "../plugin-utils";
 
 /**
  * User session type from Better Auth
@@ -63,13 +64,20 @@ export type PermissionRequirement = ResourcePermission
  */
 export class AuthUtils {
   private readonly _permissionChecker: PermissionChecker;
+  private readonly _adminUtils: AdminPluginUtils;
+  private readonly _orgUtils: OrganizationPluginUtils;
 
   constructor(
     private readonly _session: UserSession | null,
     private readonly auth: Auth,
+    private readonly headers?: Headers
   ) {
     console.log(_session)
     this._permissionChecker = new PermissionChecker(this._session?.user ?? null);
+    
+    // Initialize plugin utilities with headers
+    this._adminUtils = new AdminPluginUtils(auth, headers ?? new Headers());
+    this._orgUtils = new OrganizationPluginUtils(auth, headers ?? new Headers());
   }
 
   get isLoggedIn(): boolean {
@@ -89,6 +97,43 @@ export class AuthUtils {
    */
   get permissionChecker(): PermissionChecker {
     return this._permissionChecker;
+  }
+
+  /**
+   * Access admin plugin utilities with auto-injected headers
+   * 
+   * @example
+   * ```typescript
+   * // In ORPC handler
+   * const auth = assertAuthenticated(context.auth);
+   * const user = await auth.admin.createUser({
+   *   email: 'user@example.com',
+   *   password: 'secure123',
+   *   name: 'John Doe',
+   *   role: 'user'
+   * });
+   * ```
+   */
+  get admin(): AdminPluginUtils {
+    return this._adminUtils;
+  }
+
+  /**
+   * Access organization plugin utilities with auto-injected headers
+   * 
+   * @example
+   * ```typescript
+   * // In ORPC handler
+   * const auth = assertAuthenticated(context.auth);
+   * const org = await auth.org.createOrganization({
+   *   name: 'Acme Corp',
+   *   slug: 'acme-corp',
+   *   userId: auth.user.id
+   * });
+   * ```
+   */
+  get org(): OrganizationPluginUtils {
+    return this._orgUtils;
   }
 
   /**

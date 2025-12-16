@@ -38,12 +38,13 @@ export function createAuthMiddleware(auth: Auth) {
         // Extract session from request headers
         // ORPC provides headers as web standard Headers, not Node.js IncomingHttpHeaders
         const headers = opts.context.request.headers;
+        const webHeaders = toWebHeaders(headers);
         const session = await auth.api.getSession({
-            headers: toWebHeaders(headers),
+            headers: webHeaders,
         });
         
-        // Create auth utilities with session
-        const authUtils = new AuthUtils(session as UserSession | null, auth);
+        // Create auth utilities with session AND headers for plugin utilities
+        const authUtils = new AuthUtils(session as UserSession | null, auth, webHeaders);
 
         // Pass context with auth to next middleware/handler
         return opts.next({
