@@ -11,11 +11,13 @@ This document describes the comprehensive utilities system for Better Auth plugi
 ## Table of Contents
 
 1. [Access Control Registration](#access-control-registration)
-2. [Plugin-Based Decorator Generation](#plugin-based-decorator-generation)
-3. [Plugin-Based Middleware Generation](#plugin-based-middleware-generation)
-4. [Context-Aware Plugin Utilities](#context-aware-plugin-utilities)
-5. [Usage Examples](#usage-examples)
-6. [API Reference](#api-reference)
+2. [Plugin Factory System](#plugin-factory-system)
+3. [Plugin-Based Decorator Generation](#plugin-based-decorator-generation)
+4. [Plugin-Based Middleware Generation](#plugin-based-middleware-generation)
+5. [Context-Aware Plugin Utilities](#context-aware-plugin-utilities)
+6. [Usage Examples](#usage-examples)
+7. [Migration Guide](#migration-guide)
+8. [API Reference](#api-reference)
 
 ---
 
@@ -115,6 +117,139 @@ export const organizationRoles = {
   },
 };
 ```
+
+---
+
+## Plugin Factory System
+
+**NEW (2025-12-16)**: The plugin factory system provides a standardized way to generate type-safe decorators and middlewares for any Better Auth plugin.
+
+### Why Use Plugin Factories?
+
+The factory approach offers several advantages:
+
+1. **Type Safety**: Full TypeScript inference from Better Auth configuration
+2. **Extensibility**: Easy to add support for new plugins
+3. **Consistency**: Same patterns across all plugins
+4. **Scope-Based Access**: Uses plugin-specific `hasAccess()` methods instead of generic permission checks
+5. **Less Boilerplate**: Automatic generation reduces manual code
+
+### Core Concepts
+
+#### Scope-Based Access Control
+
+Instead of checking permissions via `userHasPermission()` API, each plugin provides its own scope with an `hasAccess()` method:
+
+```typescript
+// Platform-level admin access
+const hasAdminAccess = await context.auth.admin.hasAccess();
+
+// Organization-level access
+const hasOrgAccess = await context.auth.org.hasAccess(organizationId);
+```
+
+This approach:
+- **Delegates** access logic to the plugin itself
+- **Simplifies** controller/handler code
+- **Improves** type safety with plugin-specific types
+- **Enables** custom access logic per plugin
+
+#### Factory Functions
+
+Two main factory functions generate decorators and middlewares:
+
+```typescript
+import { 
+  createPluginDecorators, 
+  createPluginMiddlewares 
+} from '@/core/modules/auth/plugin-utils';
+
+// Define plugin metadata
+const pluginMetadata = {
+  name: 'myPlugin',           // Plugin display name
+  type: 'my_plugin',          // Plugin type identifier
+  scopeAccessor: 'myPlugin',  // Property in auth context
+};
+
+// Generate decorators for NestJS
+const decorators = createPluginDecorators(pluginMetadata);
+
+// Generate middlewares for ORPC
+const middlewares = createPluginMiddlewares(pluginMetadata);
+```
+
+### Pre-configured Plugin Factories
+
+The system includes pre-configured factories for built-in plugins:
+
+#### Admin Plugin
+
+```typescript
+import { 
+  adminDecorators, 
+  adminMiddlewares 
+} from '@/core/modules/auth/plugin-utils';
+
+// NestJS: Require admin access
+@UseGuards(PluginAccessGuard)
+@adminDecorators.RequireAccess()
+@Get('/admin/users')
+async listUsers() { ... }
+
+// ORPC: Require admin access
+implement(contract)
+  .use(adminMiddlewares.requireAccess())
+  .handler(({ context }) => { ... })
+```
+
+#### Organization Plugin
+
+```typescript
+import { 
+  organizationDecorators, 
+  organizationMiddlewares 
+} from '@/core/modules/auth/plugin-utils';
+
+// ORPC: Require organization access
+implement(contract)
+  .use(organizationMiddlewares.requireResourceAccess(
+    (input: any) => input.organizationId
+  ))
+  .handler(({ context, input }) => {
+    // Access to organization already verified
+    const auth = assertAuthenticated(context.auth);
+    await auth.org.addMember(input);
+  })
+```
+
+### Migration from Old Approach
+
+**Old**: Permission-based decorators (deprecated)
+```typescript
+// ❌ Deprecated approach
+@RequirePermissions({ user: ['create', 'delete'] })
+@Post('/users')
+createUser() { ... }
+```
+
+**New**: Scope-based access (recommended)
+```typescript
+// ✅ New approach
+@UseGuards(PluginAccessGuard)
+@adminDecorators.RequireAccess()
+@Post('/users')
+async createUser() {
+  // Access checked via auth.admin.hasAccess()
+}
+```
+
+**Benefits of migration:**
+- Simpler code (no permission objects to maintain)
+- Better type safety (inferred from Better Auth config)
+- More flexible (custom logic per plugin)
+- Consistent pattern across all operations
+
+**See**: [Plugin Factory Migration Guide](../guides/PLUGIN-FACTORY-MIGRATION.md) for detailed migration steps.
 
 ---
 

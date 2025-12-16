@@ -5,3 +5,4 @@
  */
 
 export * from './context-aware-plugins';
+export * from './plugin-factory';
