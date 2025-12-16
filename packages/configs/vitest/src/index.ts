@@ -1,4 +1,4 @@
-export { createBaseConfig, defaultConfig, default } from './base.ts'
-export { createNextJsConfig } from './nextjs.ts'
-export { createReactConfig } from './react.ts'
-export { createNodeConfig } from './node.ts'
+export { createBaseConfig, defaultConfig, default } from './base.js'
+export { createNextJsConfig } from './nextjs.js'
+export { createReactConfig } from './react.js'
+export { createNodeConfig } from './node.js'

@@ -1,21 +1,14 @@
-import { oc } from "@orpc/contract";
+import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
-import z from "zod/v4";
 
-export const userFindByIdInput = z.object({
-  id: z.uuid(),
-});
+// Create standard operations builder for users
+const userOps = standard(userSchema, "user");
 
-export const userFindByIdOutput = userSchema;
-
-export const userFindByIdContract = oc
-  .route({
-    method: "GET",
-    path: "/{id}",
-    summary: "Get user by ID",
-    description: "Retrieve a specific user by their ID",
-  })
-  .input(
-    userFindByIdInput
-  )
-  .output(userSchema.nullable());
+// Create read contract using builder
+export const userFindByIdContract = userOps
+  .read()
+  .outputBuilder.nullable()
+  .build()
+  
+  type i = typeof userFindByIdContract['~orpc']["inputSchema"];
+  type o = typeof userFindByIdContract['~orpc']["outputSchema"];

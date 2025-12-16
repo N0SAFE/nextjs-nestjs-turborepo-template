@@ -2,8 +2,14 @@ import { createParamDecorator, SetMetadata } from "@nestjs/common";
 import type { CustomDecorator, ExecutionContext } from "@nestjs/common";
 import type { createAuthMiddleware } from "better-auth/api";
 import { AFTER_HOOK_KEY, BEFORE_HOOK_KEY, HOOK_KEY } from "../types/symbols";
-import type { Permission, RoleName, Resource, CommonPermissionKeys } from "@repo/auth/permissions";
-import { PermissionChecker, commonPermissions } from "@repo/auth/permissions";
+import type {
+    OrganizationPermissionKeys,
+    Permission,
+    PlatformPermissionKeys,
+    Resource,
+    RoleName,
+} from "@repo/auth/permissions";
+import { organizationPermissions, PermissionChecker, platformPermissions } from "@repo/auth/permissions";
 import type { Session as BetterAuthSession } from "better-auth";
 import type { UserWithRole } from "better-auth/plugins";
 import { getRequestFromContext } from "../utils/context";
@@ -143,8 +149,14 @@ export const RequirePermissions = <T extends Resource>(permissions: Permission<T
  * }
  * ```
  */
-export const RequireCommonPermission = (permissionKey: CommonPermissionKeys): CustomDecorator => {
-    return SetMetadata("REQUIRED_PERMISSIONS", commonPermissions[permissionKey]);
+type CommonPermissionKey = PlatformPermissionKeys | OrganizationPermissionKeys;
+
+export const RequireCommonPermission = (permissionKey: CommonPermissionKey): CustomDecorator => {
+	const permissions = Object.prototype.hasOwnProperty.call(platformPermissions, permissionKey)
+		? platformPermissions[permissionKey as PlatformPermissionKeys]
+		: organizationPermissions[permissionKey as OrganizationPermissionKeys];
+
+	return SetMetadata("REQUIRED_PERMISSIONS", permissions);
 };
 
 /**

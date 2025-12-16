@@ -689,7 +689,7 @@ const ConfiguredAuth = () => {
                                         300
                                     )
                                 }}
-                                    users={usersData?.users ?? []}
+                                    users={usersData?.data ?? []}
                                     loading={usersLoading}
                                     selectedUserId={session?.user?.id}
                                     selectedUserName={session?.user?.name ?? session?.user?.email}

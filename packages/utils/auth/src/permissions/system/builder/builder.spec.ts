@@ -292,6 +292,284 @@ describe('PermissionBuilder', () => {
         user: ['read', 'update'],
       });
     });
+
+    it('should cache statements config instance', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read']);
+
+      const config1 = builder.getStatementsConfig();
+      const config2 = builder.getStatementsConfig();
+      
+      expect(config1).toBe(config2);
+    });
+
+    it('should cache roles config instance', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read'])
+        .role('admin')
+        .allPermissions();
+
+      const config1 = builder.getRolesConfig();
+      const config2 = builder.getRolesConfig();
+      
+      expect(config1).toBe(config2);
+    });
+
+    it('should cache access control instance', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read']);
+
+      const ac1 = builder.getAc();
+      const ac2 = builder.getAc();
+      
+      expect(ac1).toBe(ac2);
+    });
+  });
+
+  describe('getRoleNames Method', () => {
+    it('should return empty array when no roles defined', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read']);
+
+      expect(builder.getRoleNames()).toEqual([]);
+    });
+
+    it('should return role names from single role', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read'])
+        .role('admin')
+        .allPermissions();
+
+      expect(builder.getRoleNames()).toEqual(['admin']);
+    });
+
+    it('should return all role names from multiple roles', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['create', 'read', 'update', 'delete'])
+        .role('admin')
+        .allPermissions()
+        .role('editor')
+        .permissions({ project: ['read', 'update'] })
+        .role('viewer')
+        .permissions({ project: ['read'] });
+
+      const roleNames = builder.getRoleNames();
+      expect(roleNames).toHaveLength(3);
+      expect(roleNames).toContain('admin');
+      expect(roleNames).toContain('editor');
+      expect(roleNames).toContain('viewer');
+    });
+
+    it('should return role names from bulk roles definition', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['read', 'write'] as const),
+        }))
+        .roles(({ permissions }) => ({
+          superAdmin: permissions({ project: ['read', 'write'] }),
+          admin: permissions({ project: ['read', 'write'] }),
+          user: permissions({ project: ['read'] }),
+        }));
+
+      const roleNames = builder.getRoleNames();
+      expect(roleNames).toHaveLength(3);
+      expect(roleNames).toContain('superAdmin');
+      expect(roleNames).toContain('admin');
+      expect(roleNames).toContain('user');
+    });
+
+    it('should return combined role names from mixed definition styles', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['create', 'read'])
+        .role('owner')
+        .allPermissions()
+        .roles(({ permissions }) => ({
+          admin: permissions({ project: ['create', 'read'] }),
+          member: permissions({ project: ['read'] }),
+        }));
+
+      const roleNames = builder.getRoleNames();
+      expect(roleNames).toHaveLength(3);
+      expect(roleNames).toContain('owner');
+      expect(roleNames).toContain('admin');
+      expect(roleNames).toContain('member');
+    });
+
+    it('should work with withDefaults builder', () => {
+      const defaults = {
+        basicRole: { statements: { user: ['read'] as const } },
+      };
+
+      const builder = PermissionBuilder.withDefaults(defaults)
+        .role('admin')
+        .allPermissions()
+        .role('user')
+        .permissions({ user: ['read'] });
+
+      const roleNames = builder.getRoleNames();
+      // withDefaults includes the defaults as implicit roles
+      expect(roleNames).toHaveLength(3);
+      expect(roleNames).toContain('basicRole');
+      expect(roleNames).toContain('admin');
+      expect(roleNames).toContain('user');
+    });
+  });
+
+  describe('getStatementNames Method', () => {
+    it('should return empty array when no resources defined', () => {
+      const builder = new PermissionBuilder();
+      expect(builder.getStatementNames()).toEqual([]);
+    });
+
+    it('should return resource name from single resource', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read']);
+
+      expect(builder.getStatementNames()).toEqual(['project']);
+    });
+
+    it('should return all resource names from multiple resources', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['create', 'read'])
+        .resource('user')
+        .actions(['read', 'update'])
+        .resource('organization')
+        .actions(['read']);
+
+      const statementNames = builder.getStatementNames();
+      expect(statementNames).toHaveLength(3);
+      expect(statementNames).toContain('project');
+      expect(statementNames).toContain('user');
+      expect(statementNames).toContain('organization');
+    });
+
+    it('should return resource names from bulk resources definition', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['read', 'write'] as const),
+          task: actions(['create', 'read', 'update', 'delete'] as const),
+          comment: actions(['read', 'create'] as const),
+        }));
+
+      const statementNames = builder.getStatementNames();
+      expect(statementNames).toHaveLength(3);
+      expect(statementNames).toContain('project');
+      expect(statementNames).toContain('task');
+      expect(statementNames).toContain('comment');
+    });
+
+    it('should return combined resource names from mixed definition styles', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read'])
+        .resources(({ actions }) => ({
+          user: actions(['read', 'update'] as const),
+          settings: actions(['read'] as const),
+        }))
+        .resource('billing')
+        .actions(['read', 'update']);
+
+      const statementNames = builder.getStatementNames();
+      expect(statementNames).toHaveLength(4);
+      expect(statementNames).toContain('project');
+      expect(statementNames).toContain('user');
+      expect(statementNames).toContain('settings');
+      expect(statementNames).toContain('billing');
+    });
+
+    it('should work with withDefaults builder', () => {
+      const defaults = {
+        role1: { statements: { user: ['read'] as const } },
+        role2: { statements: { session: ['read', 'create'] as const } },
+      };
+
+      const builder = PermissionBuilder.withDefaults(defaults)
+        .resource('project')
+        .actions(['read']);
+
+      const statementNames = builder.getStatementNames();
+      expect(statementNames).toHaveLength(3);
+      expect(statementNames).toContain('user');
+      expect(statementNames).toContain('session');
+      expect(statementNames).toContain('project');
+    });
+
+    it('should handle resource overwriting correctly', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read'])
+        .resource('project')
+        .actions(['create', 'read', 'update']);
+
+      // Should still only have one resource
+      expect(builder.getStatementNames()).toEqual(['project']);
+    });
+  });
+
+  describe('getRoleNames and getStatementNames Integration', () => {
+    it('should provide complete builder introspection', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['create', 'read', 'update', 'delete'] as const),
+          user: actions(['read', 'update'] as const),
+          billing: actions(['read'] as const),
+        }))
+        .role('superAdmin')
+        .allPermissions()
+        .roles(({ permissions }) => ({
+          admin: permissions({
+            project: ['create', 'read', 'update', 'delete'],
+            user: ['read', 'update'],
+          }),
+          user: permissions({
+            project: ['read'],
+            user: ['read'],
+          }),
+        }));
+
+      // Introspect the builder
+      const roleNames = builder.getRoleNames();
+      const statementNames = builder.getStatementNames();
+
+      expect(roleNames).toHaveLength(3);
+      expect(statementNames).toHaveLength(3);
+
+      // Can use these for dynamic operations
+      expect(roleNames.includes('superAdmin')).toBe(true);
+      expect(statementNames.includes('billing')).toBe(true);
+    });
+
+    it('should work consistently before and after build', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['read', 'write'] as const),
+        }))
+        .role('admin')
+        .allPermissions();
+
+      // Before build
+      const roleNamesBefore = builder.getRoleNames();
+      const statementNamesBefore = builder.getStatementNames();
+
+      // Build
+      builder.build();
+
+      // After build
+      const roleNamesAfter = builder.getRoleNames();
+      const statementNamesAfter = builder.getStatementNames();
+
+      expect(roleNamesBefore).toEqual(roleNamesAfter);
+      expect(statementNamesBefore).toEqual(statementNamesAfter);
+    });
   });
 
   describe('createPermission Method', () => {
@@ -720,6 +998,292 @@ describe('PermissionBuilder', () => {
       expect(statement.user).toEqual(['create', 'read', 'update', 'delete']);
       expect(statement.session).toEqual(['create', 'read', 'delete']);
       expect(statement.project).toEqual(['create', 'read', 'update', 'delete']);
+    });
+  });
+
+  describe('Schemas Build Output', () => {
+    it('should generate role schemas with correct structure', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['create', 'read', 'update', 'delete'])
+        .role('admin')
+        .allPermissions()
+        .role('viewer')
+        .permissions({ project: ['read'] });
+
+      const result = builder.build();
+
+      expect(result.schemas).toBeDefined();
+      expect(result.schemas.roleNames).toBeDefined();
+      expect(result.schemas.resourceNames).toBeDefined();
+      expect(result.schemas.allActions).toBeDefined();
+    });
+
+    it('should generate statement schemas with correct structure', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['create', 'read'] as const),
+          task: actions(['read', 'update'] as const),
+        }));
+
+      const result = builder.build();
+
+      expect(result.schemas).toBeDefined();
+      expect(result.schemas.resourceNames).toBeDefined();
+      expect(result.schemas.allActions).toBeDefined();
+      expect(result.schemas.permission).toBeDefined();
+    });
+
+    it('should create valid zod schemas that can parse values', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read', 'write'])
+        .role('admin')
+        .allPermissions()
+        .role('user')
+        .permissions({ project: ['read'] });
+
+      const result = builder.build();
+
+      // Role schema should parse valid role names
+      const adminParsed = result.schemas.roleNames.safeParse('admin');
+      const userParsed = result.schemas.roleNames.safeParse('user');
+      expect(adminParsed.success).toBe(true);
+      expect(userParsed.success).toBe(true);
+
+      // Invalid role should fail
+      const invalidParsed = result.schemas.roleNames.safeParse('invalid_role');
+      expect(invalidParsed.success).toBe(false);
+    });
+
+    it('should create valid statement schemas that can parse values', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['create', 'read'] as const),
+          user: actions(['read'] as const),
+        }));
+
+      const result = builder.build();
+
+      // Statement schema should parse valid statement names
+      const projectParsed = result.schemas.resourceNames.safeParse('project');
+      const userParsed = result.schemas.resourceNames.safeParse('user');
+      expect(projectParsed.success).toBe(true);
+      expect(userParsed.success).toBe(true);
+
+      // Invalid statement should fail
+      const invalidParsed = result.schemas.resourceNames.safeParse('invalid_resource');
+      expect(invalidParsed.success).toBe(false);
+    });
+
+    it('should generate action schemas that parse actions correctly', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read', 'write'])
+        .role('admin')
+        .allPermissions()
+        .role('editor')
+        .permissions({ project: ['read', 'write'] });
+
+      const result = builder.build();
+
+      // All actions schema should parse valid actions
+      const readParsed = result.schemas.allActions.safeParse('read');
+      const writeParsed = result.schemas.allActions.safeParse('write');
+      expect(readParsed.success).toBe(true);
+      expect(writeParsed.success).toBe(true);
+
+      // Invalid action should fail
+      const invalidParsed = result.schemas.allActions.safeParse('invalid_action');
+      expect(invalidParsed.success).toBe(false);
+    });
+
+    it('should generate permission schema for resource-action pairs', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['create', 'read'] as const),
+          task: actions(['read', 'update'] as const),
+        }));
+
+      const result = builder.build();
+
+      // Permission schema should parse valid permission objects
+      const validPermission = result.schemas.permission.safeParse({
+        project: ['create', 'read'],
+        task: ['read'],
+      });
+      expect(validPermission.success).toBe(true);
+
+      // Partial permissions should also work
+      const partialPermission = result.schemas.permission.safeParse({
+        project: ['read'],
+      });
+      expect(partialPermission.success).toBe(true);
+    });
+
+    it('should generate actionsByResource schemas', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['create', 'read', 'update'] as const),
+          user: actions(['read', 'delete'] as const),
+        }));
+
+      const result = builder.build();
+
+      expect(result.schemas.actionsByResource).toBeDefined();
+      expect(result.schemas.actionsByResource.project).toBeDefined();
+      expect(result.schemas.actionsByResource.user).toBeDefined();
+
+      // Test that resource-specific action schema works
+      const createParsed = result.schemas.actionsByResource.project.safeParse('create');
+      expect(createParsed.success).toBe(true);
+      
+      // 'delete' should fail for project since it's not in project's actions
+      const deleteParsedForProject = result.schemas.actionsByResource.project.safeParse('delete');
+      expect(deleteParsedForProject.success).toBe(false);
+
+      // 'delete' should pass for user
+      const deleteParsedForUser = result.schemas.actionsByResource.user.safeParse('delete');
+      expect(deleteParsedForUser.success).toBe(true);
+    });
+  });
+
+  describe('Builder State Consistency', () => {
+    it('should maintain consistent state through multiple operations', () => {
+      const builder = new PermissionBuilder()
+        .resource('a')
+        .actions(['read'])
+        .resource('b')
+        .actions(['write'])
+        .resource('c')
+        .actions(['execute']);
+
+      // Check all resources are tracked
+      const statements = builder.getStatementNames();
+      expect(statements).toHaveLength(3);
+      expect(new Set(statements)).toEqual(new Set(['a', 'b', 'c']));
+    });
+
+    it('should preserve role permissions after multiple role additions', () => {
+      const builder = new PermissionBuilder()
+        .resource('resource')
+        .actions(['create', 'read', 'update', 'delete'])
+        .role('role1')
+        .permissions({ resource: ['read'] })
+        .role('role2')
+        .permissions({ resource: ['read', 'update'] })
+        .role('role3')
+        .permissions({ resource: ['read', 'update', 'delete'] });
+
+      const roles = builder.getRoles();
+      
+      expect(roles.role1.statements.resource).toEqual(['read']);
+      expect(roles.role2.statements.resource).toEqual(['read', 'update']);
+      expect(roles.role3.statements.resource).toEqual(['read', 'update', 'delete']);
+    });
+
+    it('should handle config caching correctly after mutations', () => {
+      const builder = new PermissionBuilder();
+
+      // Get statements config before adding any resources
+      const emptyStatementsConfig = builder.getStatementsConfig();
+      expect(emptyStatementsConfig.keys()).toEqual([]);
+
+      // Add resources and get config again (should use cached version)
+      builder.resource('project').actions(['read']);
+      
+      // The cached config won't have the new resources
+      // because it was created before the mutation
+      // This tests the caching behavior explicitly
+      const stillCachedConfig = builder.getStatementsConfig();
+      expect(stillCachedConfig).toBe(emptyStatementsConfig);
+    });
+
+    it('should sync roles and statements config key methods with getter methods', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          project: actions(['read'] as const),
+          user: actions(['update'] as const),
+        }))
+        .roles(({ permissions }) => ({
+          admin: permissions({ project: ['read'], user: ['update'] }),
+          viewer: permissions({ project: ['read'] }),
+        }));
+
+      // Getter methods
+      const roleNames = builder.getRoleNames();
+      const statementNames = builder.getStatementNames();
+
+      // Config methods
+      const rolesConfigKeys = builder.getRolesConfig().keys();
+      const statementsConfigKeys = builder.getStatementsConfig().keys();
+
+      // They should match
+      expect(new Set(roleNames)).toEqual(new Set(rolesConfigKeys));
+      expect(new Set(statementNames)).toEqual(new Set(statementsConfigKeys));
+    });
+  });
+
+  describe('Build Output Completeness', () => {
+    it('should include all expected properties in build result', () => {
+      const builder = new PermissionBuilder()
+        .resource('project')
+        .actions(['read', 'write'])
+        .role('admin')
+        .allPermissions();
+
+      const result = builder.build();
+
+      // All expected properties should exist
+      expect(result).toHaveProperty('statement');
+      expect(result).toHaveProperty('roles');
+      expect(result).toHaveProperty('ac');
+      expect(result).toHaveProperty('schemas');
+      expect(result).toHaveProperty('statementsConfig');
+      expect(result).toHaveProperty('rolesConfig');
+
+      // Schemas should have all sub-properties
+      expect(result.schemas).toHaveProperty('roleNames');
+      expect(result.schemas).toHaveProperty('resourceNames');
+      expect(result.schemas).toHaveProperty('allActions');
+      expect(result.schemas).toHaveProperty('actionsByResource');
+      expect(result.schemas).toHaveProperty('permission');
+      expect(result.schemas).toHaveProperty('rolePermissions');
+      expect(result.schemas).toHaveProperty('resourceAction');
+    });
+
+    it('should build correctly with complex nested permissions', () => {
+      const builder = new PermissionBuilder()
+        .resources(({ actions }) => ({
+          'organization:project': actions(['create', 'read', 'update', 'delete'] as const),
+          'organization:member': actions(['invite', 'remove', 'update'] as const),
+          'organization:settings': actions(['read', 'update'] as const),
+        }))
+        .roles(({ permissions }) => ({
+          orgAdmin: permissions({
+            'organization:project': ['create', 'read', 'update', 'delete'],
+            'organization:member': ['invite', 'remove', 'update'],
+            'organization:settings': ['read', 'update'],
+          }),
+          orgMember: permissions({
+            'organization:project': ['read'],
+            'organization:member': ['invite'],
+            'organization:settings': ['read'],
+          }),
+        }));
+
+      const result = builder.build();
+
+      expect(builder.getRoleNames()).toEqual(['orgAdmin', 'orgMember']);
+      expect(builder.getStatementNames()).toEqual([
+        'organization:project',
+        'organization:member',
+        'organization:settings',
+      ]);
+
+      // Verify schemas work with namespaced resources
+      const parsed = result.schemas.resourceNames.safeParse('organization:project');
+      expect(parsed.success).toBe(true);
     });
   });
 });

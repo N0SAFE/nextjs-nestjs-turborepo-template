@@ -124,10 +124,10 @@ describe('UserService', () => {
 
   describe('getUsers', () => {
     it('should return paginated users', async () => {
-      const input = { pagination: { limit: 10, offset: 0 } };
+      const input = { limit: 10, offset: 0 };
       const mockResponse = {
-        users: [mockUser],
-        meta: { pagination: { total: 1, limit: 10, offset: 0, hasMore: false } },
+        data: [mockUser],
+        meta: { total: 1, limit: 10, offset: 0, hasMore: false },
       };
       mockRepository.findMany.mockResolvedValue(mockResponse);
 

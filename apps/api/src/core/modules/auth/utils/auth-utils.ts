@@ -68,6 +68,7 @@ export class AuthUtils {
     private readonly _session: UserSession | null,
     private readonly auth: Auth,
   ) {
+    console.log(_session)
     this._permissionChecker = new PermissionChecker(this._session?.user ?? null);
   }
 

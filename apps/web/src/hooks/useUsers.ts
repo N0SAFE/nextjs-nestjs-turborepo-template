@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery, type QueryClie
 import { orpc } from '@/lib/orpc'
 import { toast } from 'sonner'
 import type { z } from 'zod'
+import type { UserUpdateInput } from '@repo/api-contracts'
 import type { userSchema } from '@repo/api-contracts/common/user'
 
 // Infer types from the contract schemas
@@ -35,15 +36,14 @@ export function useUsers(options?: {
   enabled?: boolean
 }) {
   const params = {
-    pagination: {
-      page: options?.pagination?.page ?? 1,
-      pageSize: options?.pagination?.pageSize ?? 20,
-    },
-    sort: {
-      field: options?.sort?.field ?? 'name',
-      direction: options?.sort?.direction ?? 'asc',
-    },
-    filter: options?.filter,
+    limit: options?.pagination?.pageSize ?? 20,
+    offset: ((options?.pagination?.page ?? 1) - 1) * (options?.pagination?.pageSize ?? 20),
+    sortBy: options?.sort?.field ?? 'name',
+    sortDirection: options?.sort?.direction ?? 'asc',
+    // Add filters if provided
+    ...(options?.filter?.id && { id: options.filter.id }),
+    ...(options?.filter?.name && { name: options.filter.name }),
+    ...(options?.filter?.email && { email: options.filter.email }),
   }
 
   return useQuery(orpc.user.list.queryOptions({
@@ -76,13 +76,15 @@ export function useCreateUser() {
       void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
-            pagination: { limit: 10, offset: 0 },
-            sort: { field: 'createdAt', direction: 'desc' }
+            limit: 10,
+            offset: 0,
+            sortBy: 'createdAt',
+            sortDirection: 'desc'
           }
         })
       })
       // Invalidate user count
-      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({}) })
       toast.success(`User "${newUser.name}" created successfully`)
     },
     onError: (error: Error) => {
@@ -95,14 +97,16 @@ export function useCreateUser() {
 export function useUpdateUser() {
   const queryClient = useQueryClient()
   
-  return useMutation(orpc.user.update.mutationOptions({
-    onSuccess: (updatedUser, variables) => {
+  const updateUserMutation = useMutation(orpc.user.update.mutationOptions({
+    onSuccess: (updatedUser: User, variables: UserUpdateInput) => {
       // Invalidate user list to refresh data with proper input structure
       void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
-            pagination: { limit: 10, offset: 0 },
-            sort: { field: 'createdAt', direction: 'desc' }
+            limit: 10,
+            offset: 0,
+            sortBy: 'createdAt',
+            sortDirection: 'desc'
           }
         })
       })
@@ -116,6 +120,8 @@ export function useUpdateUser() {
       toast.error(`Failed to update user: ${error.message}`)
     },
   }))
+  
+  return updateUserMutation
 }
 
 // Hook to delete a user
@@ -128,13 +134,15 @@ export function useDeleteUser() {
       void queryClient.invalidateQueries({ 
         queryKey: orpc.user.list.queryKey({ 
           input: {
-            pagination: { limit: 10, offset: 0 },
-            sort: { field: 'createdAt', direction: 'desc' }
+            limit: 10,
+            offset: 0,
+            sortBy: 'createdAt',
+            sortDirection: 'desc'
           }
         })
       })
       // Invalidate user count
-      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({ input: {} }) })
+      void queryClient.invalidateQueries({ queryKey: orpc.user.count.queryKey({}) })
       // Remove the specific user from cache
       queryClient.removeQueries({ 
         queryKey: orpc.user.findById.queryKey({ input: { id: variables.id } }) 
@@ -161,7 +169,6 @@ export function useUserCount(options?: {
   enabled?: boolean
 }) {
   return useQuery(orpc.user.count.queryOptions({
-    input: {},
     enabled: options?.enabled ?? true,
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
@@ -267,7 +274,7 @@ export function useUserAdministration(options?: {
 
   return {
     // Data
-    users: users.data?.users ?? [],
+    users: users.data?.data ?? [],
     totalUsers: userCount.data?.count ?? 0,
     meta: users.data?.meta,
     
@@ -302,10 +309,10 @@ export function useUserAdministration(options?: {
     
     // Pagination helpers
     pagination: {
-      currentPage: Math.floor((users.data?.meta.pagination.offset ?? 0) / (users.data?.meta.pagination.limit ?? 10)) + 1,
-      totalPages: Math.ceil((users.data?.meta.pagination.total ?? 0) / (users.data?.meta.pagination.limit ?? 10)),
-      hasNextPage: users.data?.meta.pagination.hasMore ?? false,
-      hasPrevPage: (users.data?.meta.pagination.offset ?? 0) > 0,
+      currentPage: users.data ? Math.floor(users.data.meta.offset / users.data.meta.limit) + 1 : 1,
+      totalPages: users.data ? Math.ceil(users.data.meta.total / users.data.meta.limit) : 0,
+      hasNextPage: users.data ? users.data.meta.hasMore : false,
+      hasPrevPage: users.data ? users.data.meta.offset > 0 : false,
     }
   }
 }
@@ -320,13 +327,13 @@ export function useUserSelector(options?: {
   const users = useUsers()
   
   // Filter users based on options
-  const availableUsers = users.data?.users.filter(user => {
+  const availableUsers = users.data?.data.filter((user: User) => {
     if (options?.excludeUserIds?.includes(user.id)) return false
     // Add role filtering if needed when roles are added to user schema
     return true
   }) ?? []
   
-  const selectedUsers = availableUsers.filter(user => 
+  const selectedUsers = availableUsers.filter((user: User) => 
     selectedUserIds.includes(user.id)
   )
   
@@ -346,7 +353,7 @@ export function useUserSelector(options?: {
   
   const selectAll = () => {
     if (options?.multiple) {
-      setSelectedUserIds(availableUsers.map(user => user.id))
+      setSelectedUserIds(availableUsers.map((user: User) => user.id))
     }
   }
   
@@ -405,16 +412,15 @@ export async function getUsers(params: {
   sort?: { field?: string; direction?: 'asc' | 'desc' }
   filter?: Record<string, unknown>
 } = {}) {
+  const pageSize = params.pagination?.pageSize ?? 20;
+  const page = params.pagination?.page ?? 1;
+  
   return orpc.user.list.call({
-    pagination: {
-      limit: params.pagination?.page ?? 1,
-      offset: params.pagination?.pageSize ?? 20,
-    },
-    sort: {
-      field: (params.sort?.field ?? 'name') as keyof User,
-      direction: params.sort?.direction ?? 'asc',
-    },
-    filter: params.filter,
+    limit: pageSize,
+    offset: (page - 1) * pageSize,
+    sortBy: (params.sort?.field ?? 'name') as keyof User,
+    sortDirection: params.sort?.direction ?? 'asc',
+    ...params.filter,
   })
 }
 
@@ -429,7 +435,7 @@ export async function getUser(userId: string) {
  * Direct async function for user count
  */
 export async function getUserCount() {
-  return orpc.user.count.call({})
+  return orpc.user.count.call()
 }
 
 // ============================================================================
@@ -446,17 +452,16 @@ export function prefetchUsers(
     sort?: { field?: keyof User; direction?: 'asc' | 'desc' }
   }
 ) {
+  const pageSize = params?.pagination?.pageSize ?? 20;
+  const page = params?.pagination?.page ?? 1;
+  
   return queryClient.prefetchQuery(
     orpc.user.list.queryOptions({
       input: {
-        pagination: {
-          page: params?.pagination?.page ?? 1,
-          pageSize: params?.pagination?.pageSize ?? 20,
-        },
-        sort: {
-          field: (params?.sort?.field ?? 'name'),
-          direction: params?.sort?.direction ?? 'asc' as const,
-        },
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        sortBy: (params?.sort?.field ?? 'name'),
+        sortDirection: params?.sort?.direction ?? 'asc' as const,
       },
       staleTime: 1000 * 60,
       gcTime: 1000 * 60 * 5,
@@ -486,7 +491,6 @@ export function prefetchUser(
 export function prefetchUserCount(queryClient: QueryClient) {
   return queryClient.prefetchQuery(
     orpc.user.count.queryOptions({
-      input: {},
       staleTime: 1000 * 60 * 2,
       gcTime: 1000 * 60 * 10,
     })
@@ -507,20 +511,22 @@ export function useUsersInfinite(options?: {
 }) {
   return useInfiniteQuery(
     orpc.user.list.infiniteOptions({
-      input: (context: { pageParam?: number }) => ({
-        pagination: {
-          page: context.pageParam ?? 1,
-          pageSize: options?.pageSize ?? 20,
-        },
-        sort: {
-          field: (options?.sort?.field ?? 'name'),
-          direction: options?.sort?.direction ?? 'asc' as const,
-        },
-        filter: options?.filter,
-      }),
+      input: (context: { pageParam?: number }) => {
+        const pageSize = options?.pageSize ?? 20;
+        const page = context.pageParam ?? 1;
+        return {
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+          sortBy: (options?.sort?.field ?? 'name'),
+          sortDirection: options?.sort?.direction ?? 'asc' as const,
+          ...(options?.filter?.id && { id: options.filter.id }),
+          ...(options?.filter?.name && { name: options.filter.name }),
+          ...(options?.filter?.email && { email: options.filter.email }),
+        };
+      },
       getNextPageParam: (lastPage: Record<string, unknown> | undefined, _: unknown, lastPageParam: number) => {
         // Determine if there are more pages
-        if (!(lastPage && typeof lastPage === 'object' && 'meta' in lastPage && typeof lastPage.meta === 'object' && lastPage.meta && 'pagination' in lastPage.meta && typeof lastPage.meta.pagination === 'object' && lastPage.meta.pagination && 'hasMore' in lastPage.meta.pagination && lastPage.meta.pagination.hasMore)) {
+        if (!(lastPage && typeof lastPage === 'object' && 'meta' in lastPage && typeof lastPage.meta === 'object' && lastPage.meta && 'hasMore' in lastPage.meta && lastPage.meta.hasMore)) {
           return undefined
         }
         return lastPageParam + 1
@@ -572,8 +578,10 @@ export function invalidateUserListCache(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ 
     queryKey: orpc.user.list.queryKey({ 
       input: {
-        pagination: { limit: 10, offset: 0 },
-        sort: { field: 'createdAt', direction: 'desc' }
+        limit: 10,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortDirection: 'desc'
       }
     }) 
   })

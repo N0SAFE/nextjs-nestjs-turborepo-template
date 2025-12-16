@@ -8,7 +8,7 @@ on:
         branches: ["**"]
 
 env:
-    BUN_VERSION: "1.2.14"
+    BUN_VERSION: "1.3.3"
     NODE_VERSION: "22"
     TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
@@ -34,7 +34,7 @@ jobs:
                       node_modules
                       apps/*/node_modules
                       packages/*/node_modules
-                      bun.lockb
+                      bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
@@ -95,7 +95,7 @@ jobs:
                       node_modules
                       apps/*/node_modules
                       packages/*/node_modules
-                      bun.lockb
+                      bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
@@ -118,6 +118,10 @@ jobs:
         timeout-minutes: 8
         needs: [setup, generate-declarative-routes]
         env:
+            # Turborepo configuration for --affected flag
+            # Use PR target branch for pull requests, main for pushes
+            TURBO_SCM_BASE: origin/${{ github.base_ref || 'main' }}
+            
             # Essential environment variables for linting/type checking
             API_URL: http://localhost:8055/
             API_PORT: 8055
@@ -139,6 +143,13 @@ jobs:
         steps:
             - name: 📚 Checkout repository
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0  # Fetch all history for all branches and tags
+
+            - name: 🔍 Fetch base branch for comparison
+              run: |
+                  BASE_BRANCH="${{ github.base_ref || 'main' }}"
+                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -153,7 +164,7 @@ jobs:
                       node_modules
                       apps/*/node_modules
                       packages/*/node_modules
-                      bun.lockb
+                      bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
@@ -180,6 +191,10 @@ jobs:
         timeout-minutes: 12
         needs: [generate-declarative-routes]
         env:
+            # Turborepo configuration for --affected flag
+            # Use PR target branch for pull requests, main for pushes
+            TURBO_SCM_BASE: origin/${{ github.base_ref || 'main' }}
+            
             # API Configuration
             API_URL: http://localhost:8055/
             API_PORT: 8055
@@ -218,6 +233,13 @@ jobs:
         steps:
             - name: 📚 Checkout repository
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0  # Fetch all history for all branches and tags
+
+            - name: 🔍 Fetch base branch for comparison
+              run: |
+                  BASE_BRANCH="${{ github.base_ref || 'main' }}"
+                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -232,7 +254,7 @@ jobs:
                       node_modules
                       apps/*/node_modules
                       packages/*/node_modules
-                      bun.lockb
+                      bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
@@ -261,6 +283,10 @@ jobs:
         timeout-minutes: 12
         needs: [generate-declarative-routes]
         env:
+            # Turborepo configuration for --affected flag
+            # Use PR target branch for pull requests, main for pushes
+            TURBO_SCM_BASE: origin/${{ github.base_ref || 'main' }}
+            
             # API Configuration
             API_URL: http://localhost:8055/
             API_PORT: 8055
@@ -299,6 +325,13 @@ jobs:
         steps:
             - name: 📚 Checkout repository
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0  # Fetch all history for all branches and tags
+
+            - name: 🔍 Fetch base branch for comparison
+              run: |
+                  BASE_BRANCH="${{ github.base_ref || 'main' }}"
+                  git fetch origin "${BASE_BRANCH}:${BASE_BRANCH}"
 
             - name: 🐰 Setup Bun
               uses: oven-sh/setup-bun@v2
@@ -313,7 +346,7 @@ jobs:
                       node_modules
                       apps/*/node_modules
                       packages/*/node_modules
-                      bun.lockb
+                      bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
                       bun-deps-${{ runner.os }}-
@@ -331,7 +364,7 @@ jobs:
                       declarative-routes-${{ runner.os }}-
 
             - name: 🧪 Run tests for all packages
-              run: bun 
+              run: bun x turbo run test --affected --concurrency=75%
 
     # Job 5: Deployment Ready Check
     deployment-ready:

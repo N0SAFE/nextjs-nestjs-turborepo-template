@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import { createBaseConfig } from './base.ts'
+import { createBaseConfig } from './base.js'
 
 /**
  * Node.js-specific Vitest configuration

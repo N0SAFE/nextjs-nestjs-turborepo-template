@@ -69,6 +69,8 @@ export class AuthService<T extends { api: T["api"] } = Auth> {
 				headers: fromNodeHeaders(opts.context.request.headers as unknown as IncomingHttpHeaders),
 			});
 			
+			console.log(session)
+			
 			// Create auth utilities with session
 			const authUtils = new AuthUtils(session, auth);
 

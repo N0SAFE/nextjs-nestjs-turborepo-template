@@ -1,20 +1,14 @@
-import { oc } from "@orpc/contract";
+import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
-export const userUpdateInput = userSchema.partial().omit({
-  image: true,
-}).extend({
-  id: userSchema.shape.id,
-})
+// Create standard operations builder for users
+const userOps = standard(userSchema, "user");
 
-export const userUpdateOutput = userSchema;
-
-export const userUpdateContract = oc
-  .route({
-    method: "PUT",
-    path: "/{id}",
-    summary: "Update an existing user",
-    description: "Update an existing user in the system",
-  })
-  .input(userUpdateInput)
-  .output(userUpdateOutput);
+// Create update contract using builder
+// Omit both image and id, make remaining fields optional, then add required id back
+export const userUpdateContract = userOps
+  .update()
+  .inputBuilder.omit(["image", "id"])
+  .partial()
+  .extend({ id: userSchema.shape.id })
+  .build();

@@ -1,9 +1,36 @@
-import type { Role, Statements } from "better-auth/plugins/access";
+import type { Role } from "better-auth/plugins/access";
 import { createAccessControl } from "better-auth/plugins/access";
 import { BaseConfig } from "./shared/base-config";
 import { StatementsConfig } from "./statements/statements-config";
 import { RolesConfig } from "./roles/roles-config";
 import { createSchemas } from "./schemas";
+
+/**
+ * Helper type to check if a type is exactly Record<string, never> (empty record)
+ * Record<string, never> has keyof as `string` and value type as `never`
+ */
+type IsEmptyRecord<T> = string extends keyof T 
+  ? T[string] extends never 
+    ? true 
+    : false 
+  : false;
+
+/**
+ * Merge two record types, removing empty Record<string, never> from the result.
+ * This ensures clean type signatures without polluting generic intersections.
+ * 
+ * - If T is exactly Record<string, never> (empty), return just U
+ * - Otherwise return T & U
+ */
+type MergeRecords<T, U> = IsEmptyRecord<T> extends true ? U : T & U;
+
+/**
+ * Required permissions type - converts optional properties to required
+ * This ensures the resulting type satisfies Record<string, readonly string[]>
+ */
+type RequiredPermissions<T> = {
+  [K in keyof T]-?: NonNullable<T[K]>;
+};
 
 /**
  * Extract all statement types from TDefaultRoles and merge them
@@ -91,12 +118,12 @@ export class ResourceBuilder<
   actions<const TActions extends readonly string[]>(
     actions: TActions
   ): PermissionBuilder<
-    TStatement & Record<TResource, TActions>,
+    MergeRecords<TStatement, Record<TResource, TActions>>,
     TRoles
   > {
     this.builder._statement[this.resourceName] = actions;
     return this.builder as unknown as PermissionBuilder<
-      TStatement & Record<TResource, TActions>,
+      MergeRecords<TStatement, Record<TResource, TActions>>,
       TRoles
     >;
   }
@@ -127,12 +154,12 @@ export class RoleBuilder<
     }
   >(
     permissions: TPermissions
-  ): PermissionBuilder<TStatement, TRoles & Record<typeof this.roleName, TPermissions>> {
+  ): PermissionBuilder<TStatement, MergeRecords<TRoles, Record<typeof this.roleName, RequiredPermissions<TPermissions>>>> {
     // @ts-expect-error - Type manipulation for builder pattern
     this.builder._roles[this.roleName] = this.ac.newRole(permissions);
     return this.builder as unknown as PermissionBuilder<
       TStatement,
-      TRoles & Record<typeof this.roleName, TPermissions>
+      MergeRecords<TRoles, Record<typeof this.roleName, RequiredPermissions<TPermissions>>>
     >;
   }
 
@@ -140,12 +167,12 @@ export class RoleBuilder<
    * Give this role all permissions from the statement
    * @returns The parent PermissionBuilder for method chaining
    */
-  allPermissions(): PermissionBuilder<TStatement, TRoles & Record<typeof this.roleName, TStatement>> {
+  allPermissions(): PermissionBuilder<TStatement, MergeRecords<TRoles, Record<typeof this.roleName, TStatement>>> {
     // @ts-expect-error - Type manipulation for builder pattern
     this.builder._roles[this.roleName] = this.ac.newRole(this.builder._statement);
     return this.builder as unknown as PermissionBuilder<
       TStatement,
-      TRoles & Record<typeof this.roleName, TStatement>
+      MergeRecords<TRoles, Record<typeof this.roleName, TStatement>>
     >;
   }
 }
@@ -157,13 +184,13 @@ export class RoleBuilder<
  * with full type safety and autocomplete support.
  */
 export class PermissionBuilder<
-  TStatement extends Record<string, readonly string[]>,
-  TRoles extends Record<string, Record<string, readonly string[]>>
+  TStatement extends Record<string, readonly string[]> = Record<string, never>,
+  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>
 > extends BaseConfig<{
   statementsConfig: StatementsConfig<TStatement>;
   rolesConfig: RolesConfig<TRoles>;
    
-  statement: TStatement & Statements;
+  statement: TStatement;
   ac: ReturnType<typeof createAccessControl<TStatement>>;
   roles: RolesAsRoleObjects<TRoles>;
 }> {
@@ -239,7 +266,7 @@ export class PermissionBuilder<
         actions: TActions
       ) => TActions;
     }) => TResources
-  ): PermissionBuilder<TStatement & TResources, TRoles> {
+  ): PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles> {
     // Create helpers object with identity actions function
     const helpers = {
       actions: <const TActions extends readonly string[]>(
@@ -255,7 +282,7 @@ export class PermissionBuilder<
       new ResourceBuilder(this, resourceName).actions(actions);
     }
     
-    return this as unknown as PermissionBuilder<TStatement & TResources, TRoles>;
+    return this as unknown as PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles>;
   }
 
   /**
@@ -286,7 +313,7 @@ export class PermissionBuilder<
         }
       >(permissions: TPermissions) => TPermissions;
     }) => TNewRoles
-  ): PermissionBuilder<TStatement, TRoles & TNewRoles> {
+  ): PermissionBuilder<TStatement, MergeRecords<TRoles, TNewRoles>> {
     // Create helpers object with statement and identity permissions function
     const helpers = {
       statement: this._statement as TStatement,
@@ -308,7 +335,7 @@ export class PermissionBuilder<
       new RoleBuilder(this, roleName, this._ac).permissions(perms);
     }
     
-    return this as unknown as PermissionBuilder<TStatement, TRoles & TNewRoles>;
+    return this as unknown as PermissionBuilder<TStatement, MergeRecords<TRoles, TNewRoles>>;
   }
 
   /**
@@ -365,6 +392,22 @@ export class PermissionBuilder<
    */
   getRoles(): RolesAsRoleObjects<TRoles> {
     return this._roles as RolesAsRoleObjects<TRoles>;
+  }
+
+  /**
+   * Get all role names (keys) from the builder
+   * Useful for deriving role lists from the builder configuration
+   */
+  getRoleNames(): (keyof TRoles)[] {
+    return Object.keys(this._roles) as (keyof TRoles)[];
+  }
+
+  /**
+   * Get all statement names (resource keys) from the builder
+   * Useful for deriving resource lists from the builder configuration
+   */
+  getStatementNames(): (keyof TStatement)[] {
+    return Object.keys(this._statement) as (keyof TStatement)[];
   }
 
   /**

@@ -133,16 +133,17 @@ export class AuthModule
 		}
 
 		const handler = toNodeHandler(this.options.auth);
-        this.adapter.httpAdapter
-            .getInstance<{
-                use: (path: string, handler: (req: Request, res: Response) => void | Promise<void>) => void;
-            }>()
-            // little hack to ignore any global prefix
-            // for now i'll just not support a global prefix
-            .use(`${basePath}/*path`, async (req: Request, res: Response) => {
-                await handler(req, res);
-            });
-		this.logger.log(`AuthModule initialized BetterAuth on '${basePath}/*'`);
+        const http = this.adapter.httpAdapter.getInstance<{
+			use: (path: string, handler: (req: Request, res: Response) => void | Promise<void>) => void;
+		}>();
+
+		// Mount Better Auth on the base path; Express will match both the base path and any subpaths.
+		// The previous `${basePath}/*path` literal was not a valid wildcard, so requests never reached the handler.
+		http.use(basePath, async (req: Request, res: Response) => {
+			await handler(req, res);
+		});
+
+		this.logger.log(`AuthModule initialized BetterAuth on '${basePath}'`);
 	}
     
     private setupHooks(providerMethod: (...args: unknown[]) => unknown, providerClass: new (...args: unknown[]) => unknown) {

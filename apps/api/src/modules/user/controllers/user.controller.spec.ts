@@ -66,7 +66,7 @@ describe('UserController', () => {
     banned: false,
     banReason: null,
     banExpires: null,
-  } satisfies Awaited<ReturnType<typeof service.getUsers>>['users'][number]
+  } satisfies Awaited<ReturnType<typeof service.getUsers>>['data'][number]
 
   beforeEach(async () => {
     const mockUserService = {
@@ -155,14 +155,14 @@ describe('UserController', () => {
 
     it('should be able to call service methods directly', async () => {
       const mockResponse = {
-        users: [mockUser],
-        meta: { pagination: { total: 1, limit: 10, offset: 0, hasMore: false } },
+        data: [mockUser],
+        meta: { total: 1, limit: 10, offset: 0, hasMore: false },
       };
       vi.mocked(service.getUsers).mockResolvedValue(mockResponse);
 
-      const result = await service.getUsers({ pagination: { limit: 10, offset: 0 } });
+      const result = await service.getUsers({ limit: 10, offset: 0 });
       expect(result).toEqual(mockResponse);
-      expect(service.getUsers).toHaveBeenCalledWith({ pagination: { limit: 10, offset: 0 } });
+      expect(service.getUsers).toHaveBeenCalledWith({ limit: 10, offset: 0 });
     });
   });
 });

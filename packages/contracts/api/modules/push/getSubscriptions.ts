@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { withRouteMethod } from "@repo/orpc-utils/builder";
 import { z } from "zod";
 
 export const subscriptionSchema = z.object({
@@ -15,7 +16,7 @@ export const getSubscriptionsOutputSchema = z.object({
   subscriptions: z.array(subscriptionSchema),
 });
 
-export const getSubscriptionsContract = oc
+export const getSubscriptionsContract = withRouteMethod("GET", oc)
   .output(getSubscriptionsOutputSchema)
   .route({
     method: "GET",

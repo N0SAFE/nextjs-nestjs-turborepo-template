@@ -20,6 +20,28 @@ vi.mock("@repo/auth/permissions", () => ({
     PermissionChecker: {
         getUserRoles: vi.fn(),
     },
+    platformPermissions: {
+        superAdmin: {
+            system: ["view", "configure"],
+        },
+        admin: {
+            system: ["view"],
+        },
+        user: {
+            user: ["read", "update"],
+        },
+    },
+    organizationPermissions: {
+        owner: {
+            project: ["create", "update", "delete"],
+        },
+        admin: {
+            project: ["create", "update"],
+        },
+        member: {
+            project: ["read"],
+        },
+    },
     commonPermissions: {
         projectFullAccess: {
             project: ["create", "read", "update", "delete", "share"],
@@ -299,7 +321,7 @@ describe("Auth Decorators", () => {
 
         describe("RequireCommonPermission", () => {
             it("should create common permission requirement decorator", () => {
-                const decorator = RequireCommonPermission("capsuleFullAccess");
+                const decorator = RequireCommonPermission("superAdmin");
 
                 expect(decorator).toBeDefined();
                 expect(typeof decorator).toBe("function");
@@ -307,7 +329,7 @@ describe("Auth Decorators", () => {
 
             it("should apply to methods", () => {
                 class TestController {
-                    @RequireCommonPermission("capsuleReadOnly")
+                    @RequireCommonPermission("owner")
                     manageUsers() {}
                 }
 

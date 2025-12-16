@@ -1,0 +1,39 @@
+{
+  "name": "@repo/orpc-utils",
+  "version": "1.0.0",
+  "description": "ORPC builder utilities for standardized contract creation",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./builder": "./src/builder/index.ts",
+    "./standard": "./src/standard/index.ts",
+    "./query": "./src/query/index.ts",
+    "./hooks": "./src/hooks/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@orpc/contract": "^1.12.1",
+    "@orpc/client": "catalog:orpc",
+    "@orpc/tanstack-query": "catalog:orpc",
+    "@tanstack/react-query": "catalog:tanstack",
+    "zod": "catalog:utils"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:react",
+    "react": "catalog:react",
+    "eslint": "catalog:linting",
+    "@repo-configs/eslint": "*",
+    "@repo-configs/prettier": "*",
+    "@repo-configs/typescript": "*",
+    "typescript": "catalog:build",
+    "vitest": "catalog:testing",
+    "@vitest/coverage-v8": "catalog:testing"
+  }
+}

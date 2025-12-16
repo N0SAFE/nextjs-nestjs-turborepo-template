@@ -1,0 +1,10 @@
+{
+  "extends": "@repo-configs/typescript/config/test.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@": ["./src"]
+    }
+  },
+  "include": ["src/**/__tests__/**/*"]
+}

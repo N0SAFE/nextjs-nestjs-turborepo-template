@@ -13,7 +13,7 @@ export class UserController {
         return implement(userContract.list).use(requireAuth()).handler(async ({ input }) => {
             const result = await this.userService.getUsers(input);
             return {
-                users: result.users.map((user) => ({
+                data: result.data.map((user) => ({
                     id: user.id,
                     name: user.name,
                     email: user.email,
@@ -79,7 +79,7 @@ export class UserController {
             if (!user) {
                 return { success: false, message: "User not found" };
             }
-            return { success: true };
+            return { success: true, message: undefined };
         });
     }
 
