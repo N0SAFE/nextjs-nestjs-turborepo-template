@@ -84,12 +84,20 @@ export class PluginAccessGuard implements CanActivate {
 
     // Get headers from request for AuthUtils
     const headers = new Headers();
-    const reqHeaders = request.headers as Record<string, string | string[] | undefined>;
-    if (reqHeaders['authorization']) {
-      headers.set('authorization', Array.isArray(reqHeaders['authorization']) ? reqHeaders['authorization'][0] : reqHeaders['authorization'] as string);
+    const reqHeaders = request.headers as unknown as Record<string, string | string[] | undefined>;
+    const authHeader = reqHeaders['authorization'];
+    if (authHeader) {
+      const authValue = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+      if (authValue) {
+        headers.set('authorization', authValue);
+      }
     }
-    if (reqHeaders['cookie']) {
-      headers.set('cookie', Array.isArray(reqHeaders['cookie']) ? reqHeaders['cookie'][0] : reqHeaders['cookie'] as string);
+    const cookieHeader = reqHeaders['cookie'];
+    if (cookieHeader) {
+      const cookieValue = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+      if (cookieValue) {
+        headers.set('cookie', cookieValue);
+      }
     }
 
     // Create AuthUtils with session and headers

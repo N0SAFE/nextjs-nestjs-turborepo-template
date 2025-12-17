@@ -172,8 +172,8 @@ export class AdminPluginWrapper implements PluginWrapper {
   ) {
     return await this.options.auth.api.updateUser({
       headers: this.options.headers,
+      query: { userId },
       body: {
-        userId,
         name: data.name,
         email: data.email,
       },
@@ -199,7 +199,7 @@ export class AdminPluginWrapper implements PluginWrapper {
   async deleteUser(userId: string) {
     return await this.options.auth.api.deleteUser({
       headers: this.options.headers,
-      body: { userId },
+      query: { userId },
     });
   }
 
