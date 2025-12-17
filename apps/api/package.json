@@ -68,7 +68,8 @@
     "reflect-metadata": "catalog:api:nest",
     "rxjs": "catalog:api:nest",
     "web-push": "^3.6.7",
-    "zod": "catalog:utils"
+    "zod": "catalog:utils",
+    "@repo/arcjet": "*"
   },
   "devDependencies": {
     "@nestjs/cli": "catalog:api:nest",
