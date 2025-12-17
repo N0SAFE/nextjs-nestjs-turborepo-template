@@ -115,38 +115,68 @@ export const RequireRole = (...roles: RoleName[]): CustomDecorator => SetMetadat
 export const RequireAllRoles = (...roles: RoleName[]): CustomDecorator => SetMetadata("REQUIRED_ALL_ROLES", roles);
 
 /**
+ * @deprecated Use plugin-based scope access methods instead (e.g., auth.admin.hasAccess(), auth.org.hasAccess())
+ * 
  * Specifies the exact permissions required to access a route or controller.
  * Provides fine-grained access control based on resource-action permissions.
+ *
+ * **Migration Guide:**
+ * - For admin operations: Use `@adminDecorators.RequireAccess()` with `PluginAccessGuard`
+ * - For organization operations: Use scope checks in handler (e.g., `auth.org.hasAccess(orgId)`)
+ * - For ORPC: Use `adminMiddlewares.requireAccess()` or `organizationMiddlewares.requireResourceAccess()`
  *
  * @param permissions - Permission object specifying required resource-action combinations
  *
  * @example
  * ```typescript
+ * // OLD WAY (deprecated)
  * @RequirePermissions({
  *   project: ['create', 'update'],
  *   user: ['list']
  * })
  * @Post('/projects')
- * createProject() {
- *   // Only users with project:create, project:update AND user:list permissions can access this
+ * createProject() { ... }
+ * 
+ * // NEW WAY (recommended)
+ * import { adminDecorators } from '@/core/modules/auth/plugin-utils';
+ * 
+ * @UseGuards(PluginAccessGuard)
+ * @adminDecorators.RequireAccess()
+ * @Post('/projects')
+ * async createProject(@Session() session) {
+ *   // Access check is done by guard via auth.admin.hasAccess()
  * }
  * ```
  */
 export const RequirePermissions = <T extends Resource>(permissions: Permission<T>): CustomDecorator => SetMetadata("REQUIRED_PERMISSIONS", permissions);
 
 /**
+ * @deprecated Use plugin-based scope access methods instead
+ * 
  * Helper decorator for common permission patterns.
  * Uses predefined permission sets from commonPermissions.
+ *
+ * **Migration Guide:**
+ * - Replace with plugin-specific decorators and scope checks
+ * - Use `auth.admin.hasAccess()` for platform-level checks
+ * - Use `auth.org.hasAccess(orgId)` for organization-level checks
  *
  * @param permissionKey - Key from commonPermissions object
  *
  * @example
  * ```typescript
+ * // OLD WAY (deprecated)
  * @RequireCommonPermission('projectFullAccess')
  * @Put('/projects/:id')
- * updateProject() {
- *   // Uses the predefined projectFullAccess permission set
- * }
+ * updateProject() { ... }
+ * 
+ * // NEW WAY (recommended)
+ * import { adminDecorators } from '@/core/modules/auth/plugin-utils';
+ * 
+ * @UseGuards(PluginAccessGuard)
+ * @adminDecorators.RequireAccess()
+ * @Put('/projects/:id')
+ * async updateProject() { ... }
  * ```
  */
 type CommonPermissionKey = PlatformPermissionKeys | OrganizationPermissionKeys;

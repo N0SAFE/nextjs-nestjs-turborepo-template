@@ -23,7 +23,8 @@ This project uses **Better Auth** for authentication and authorization with a co
 7. [Error Handling](#error-handling)
 8. [Usage Examples](#usage-examples)
 9. [AuthService API Methods](#authservice-api-methods)
-10. [Audit & Recommendations](#audit--recommendations)
+10. [Plugin Utilities (New)](#plugin-utilities)
+11. [Audit & Recommendations](#audit--recommendations)
 
 ---
 
@@ -1220,6 +1221,172 @@ export class ApiKeyService {
   }
 }
 ```
+
+---
+
+## Plugin Utilities
+
+**New Feature (2025-12-16)**: Context-aware Better Auth plugin utilities with automatic header injection.
+
+### Overview
+
+The project now includes powerful utility classes that wrap Better Auth plugin methods with automatic header injection from the ORPC context. This eliminates repetitive header passing and reduces code by up to 60%.
+
+### Available Utilities
+
+#### Admin Plugin Utilities
+
+Access via `context.auth.admin.*` in ORPC handlers:
+
+```typescript
+import { assertAuthenticated } from '@/core/modules/auth/orpc/types';
+
+export const handler = async ({ context, input }) => {
+  const auth = assertAuthenticated(context.auth);
+  
+  // ✅ Check admin access (no manual headers)
+  const hasAccess = await auth.admin.hasAccess();
+  
+  // ✅ Create user (headers auto-injected)
+  const user = await auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    name: input.name,
+    role: 'user'
+  });
+  
+  return user;
+};
+```
+
+**Available Methods:**
+- `hasAccess()` - Check if user is an admin
+- `createUser()` - Create new users
+- `updateUser()` - Update user information
+- `setRole()` - Assign user roles
+- `deleteUser()` - Delete users
+- `banUser()` / `unbanUser()` - Ban management
+- `listUsers()` - List all users with pagination
+
+#### Organization Plugin Utilities
+
+Access via `context.auth.org.*` in ORPC handlers:
+
+```typescript
+export const handler = async ({ context, input }) => {
+  const auth = assertAuthenticated(context.auth);
+  
+  // ✅ Check organization access (no manual headers)
+  const hasAccess = await auth.org.hasAccess(input.organizationId);
+  
+  // ✅ Add member (headers auto-injected)
+  const member = await auth.org.addMember({
+    organizationId: input.organizationId,
+    userId: input.userId,
+    role: 'member'
+  });
+  
+  return member;
+};
+```
+
+**Available Methods:**
+- `hasAccess()` - Check if user can access organization
+- `createOrganization()` - Create organizations
+- `updateOrganization()` / `deleteOrganization()` - Manage organizations
+- `getOrganization()` / `listOrganizations()` - Fetch organization data
+- `addMember()` / `removeMember()` - Member management
+- `updateMemberRole()` - Role management within organizations
+- `listMembers()` / `getMember()` - Member queries
+- `inviteMember()` - Send organization invitations
+- `acceptInvitation()` / `rejectInvitation()` - Handle invitations
+
+### Benefits
+
+**Before (Manual Header Passing):**
+```typescript
+const result = await auth.api.organization.addMember({
+  headers: {
+    authorization: context.request.headers.get('authorization') ?? '',
+    cookie: context.request.headers.get('cookie') ?? '',
+  },
+  body: {
+    organizationId: input.organizationId,
+    userId: input.userId,
+    role: input.role
+  }
+});
+```
+
+**After (Auto-Injected Headers):**
+```typescript
+const result = await auth.org.addMember({
+  organizationId: input.organizationId,
+  userId: input.userId,
+  role: input.role
+});
+```
+
+**Improvements:**
+- 60% less code
+- No header extraction boilerplate
+- Type-safe parameter structure
+- Cleaner, more readable code
+- Consistent API across all plugin methods
+- Easier to test and maintain
+
+### Usage in NestJS Services
+
+Plugin utilities also work in NestJS services when you construct `AuthUtils` with headers:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { AuthService } from '@/core/modules/auth/services/auth.service';
+import { AuthUtils } from '@/core/modules/auth/utils/auth-utils';
+
+@Injectable()
+export class UserManagementService {
+  constructor(private readonly authService: AuthService) {}
+  
+  async createUserWithOrganization(
+    session: UserSession,
+    headers: Headers,
+    data: CreateUserData
+  ) {
+    // Create AuthUtils with session and headers
+    const authUtils = new AuthUtils(session, this.authService.instance, headers);
+    
+    // Use plugin utilities
+    const user = await authUtils.admin.createUser({
+      email: data.email,
+      password: data.password,
+      name: data.name,
+      role: 'user',
+    });
+    
+    const org = await authUtils.org.createOrganization({
+      name: data.orgName,
+      slug: data.orgName.toLowerCase().replace(/\s+/g, '-'),
+      userId: user.id,
+    });
+    
+    return { user, organization: org };
+  }
+}
+```
+
+### Complete Documentation
+
+For comprehensive documentation, examples, and API reference:
+
+**📚 [Better Auth Plugin Utilities Documentation](../features/BETTER-AUTH-PLUGIN-UTILITIES.md)**
+
+This includes:
+- Detailed API reference for all methods
+- Complete usage examples for ORPC and NestJS
+- Migration guide from manual header passing
+- Testing strategies
+- Troubleshooting guide
 
 ---
 

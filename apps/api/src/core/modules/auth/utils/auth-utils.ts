@@ -1,6 +1,7 @@
 import { PermissionChecker, type Permission, type RoleName, type ResourcePermission } from "@repo/auth/permissions";
 import type { Auth } from "@/auth";
 import { ORPCError } from "@orpc/client";
+import { pluginWrapperRegistry, type AdminPluginWrapper, type OrganizationPluginWrapper } from "../plugin-utils/plugin-wrapper-factory";
 
 /**
  * User session type from Better Auth
@@ -63,13 +64,21 @@ export type PermissionRequirement = ResourcePermission
  */
 export class AuthUtils {
   private readonly _permissionChecker: PermissionChecker;
+  private readonly _adminUtils: AdminPluginWrapper;
+  private readonly _orgUtils: OrganizationPluginWrapper;
 
   constructor(
     private readonly _session: UserSession | null,
     private readonly auth: Auth,
+    private readonly headers?: Headers
   ) {
     console.log(_session)
     this._permissionChecker = new PermissionChecker(this._session?.user ?? null);
+    
+    // Create plugin wrappers using the factory registry
+    const wrapperOptions = { auth, headers: headers ?? new Headers() };
+    this._adminUtils = pluginWrapperRegistry.create<AdminPluginWrapper>('admin', wrapperOptions);
+    this._orgUtils = pluginWrapperRegistry.create<OrganizationPluginWrapper>('organization', wrapperOptions);
   }
 
   get isLoggedIn(): boolean {
@@ -89,6 +98,43 @@ export class AuthUtils {
    */
   get permissionChecker(): PermissionChecker {
     return this._permissionChecker;
+  }
+
+  /**
+   * Access admin plugin utilities with auto-injected headers
+   * 
+   * @example
+   * ```typescript
+   * // In ORPC handler
+   * const auth = assertAuthenticated(context.auth);
+   * const user = await auth.admin.createUser({
+   *   email: 'user@example.com',
+   *   password: 'secure123',
+   *   name: 'John Doe',
+   *   role: 'user'
+   * });
+   * ```
+   */
+  get admin(): AdminPluginWrapper {
+    return this._adminUtils;
+  }
+
+  /**
+   * Access organization plugin utilities with auto-injected headers
+   * 
+   * @example
+   * ```typescript
+   * // In ORPC handler
+   * const auth = assertAuthenticated(context.auth);
+   * const org = await auth.org.createOrganization({
+   *   name: 'Acme Corp',
+   *   slug: 'acme-corp',
+   *   userId: auth.user.id
+   * });
+   * ```
+   */
+  get org(): OrganizationPluginWrapper {
+    return this._orgUtils;
   }
 
   /**
@@ -387,6 +433,25 @@ export class AuthUtilsEmpty {
   readonly session = null;
   readonly user = null;
   readonly permissionChecker = new PermissionChecker(null);
+  
+  // Dummy admin and org utilities (will throw errors if used)
+  private readonly _dummyAdmin: AdminPluginWrapper;
+  private readonly _dummyOrg: OrganizationPluginWrapper;
+
+  constructor(auth: Auth) {
+    // Create dummy utilities using factory that will throw errors if used without authentication
+    const wrapperOptions = { auth, headers: new Headers() };
+    this._dummyAdmin = pluginWrapperRegistry.create<AdminPluginWrapper>('admin', wrapperOptions);
+    this._dummyOrg = pluginWrapperRegistry.create<OrganizationPluginWrapper>('organization', wrapperOptions);
+  }
+
+  get admin(): AdminPluginWrapper {
+    return this._dummyAdmin;
+  }
+
+  get org(): OrganizationPluginWrapper {
+    return this._dummyOrg;
+  }
   
   requireAuth(): UserSession {
     throw new ORPCError("UNAUTHORIZED", {
