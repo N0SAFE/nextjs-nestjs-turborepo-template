@@ -10,7 +10,7 @@
  * - auth.org.hasAccess(organizationId)
  */
 
-import { Injectable, CanActivate, type ExecutionContext } from "@nestjs/common";
+import { Injectable, type CanActivate, type ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { AuthService } from "../services/auth.service";
 import { AuthUtils } from "../utils/auth-utils";
@@ -84,11 +84,12 @@ export class PluginAccessGuard implements CanActivate {
 
     // Get headers from request for AuthUtils
     const headers = new Headers();
-    if (request.headers.authorization) {
-      headers.set('authorization', request.headers.authorization as string);
+    const reqHeaders = request.headers as Record<string, string | string[] | undefined>;
+    if (reqHeaders['authorization']) {
+      headers.set('authorization', Array.isArray(reqHeaders['authorization']) ? reqHeaders['authorization'][0] : reqHeaders['authorization'] as string);
     }
-    if (request.headers.cookie) {
-      headers.set('cookie', request.headers.cookie as string);
+    if (reqHeaders['cookie']) {
+      headers.set('cookie', Array.isArray(reqHeaders['cookie']) ? reqHeaders['cookie'][0] : reqHeaders['cookie'] as string);
     }
 
     // Create AuthUtils with session and headers

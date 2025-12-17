@@ -37,6 +37,8 @@ describe('ORPC Auth Types', () => {
       getRoles: () => [],
       hasRole: () => true,
       hasPermission: () => Promise.resolve(true),
+      admin: {} as any,
+      org: {} as any,
     };
 
     mockUnauthenticatedContext = {
@@ -48,6 +50,8 @@ describe('ORPC Auth Types', () => {
       requireAllRoles: () => ({ session: {} as any, user: {} as any }),
       requirePermissions: () => Promise.resolve({ session: {} as any, user: {} as any }),
       access: () => Promise.resolve(false),
+      admin: {} as any,
+      org: {} as any,
       getRoles: () => [],
       hasRole: () => false,
       hasPermission: () => Promise.resolve(false),

@@ -91,7 +91,7 @@ export interface ORPCAuthContext {
    * Admin plugin utilities with auto-injected headers
    * Provides platform-level user management operations
    */
-  readonly admin: AdminPluginUtils;
+  readonly admin: AdminPluginWrapper;
 
   /**
    * Organization plugin utilities with auto-injected headers

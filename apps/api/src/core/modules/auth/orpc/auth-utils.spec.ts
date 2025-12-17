@@ -71,8 +71,10 @@ describe('ORPC AuthUtils', () => {
   });
 
   describe('AuthUtilsEmpty', () => {
+    const mockAuth = { api: {} } as any;
+    
     it('should implement ORPCAuthContext interface', () => {
-      const utils = new AuthUtilsEmpty();
+      const utils = new AuthUtilsEmpty(mockAuth);
 
       // Check that all required methods and properties exist
       expect(utils).toHaveProperty('isLoggedIn');
@@ -89,7 +91,7 @@ describe('ORPC AuthUtils', () => {
     });
 
     it('should extend GlobalAuthUtilsEmpty', () => {
-      const utils = new AuthUtilsEmpty();
+      const utils = new AuthUtilsEmpty(mockAuth);
 
       // Should have same behavior as GlobalAuthUtilsEmpty
       expect(utils.isLoggedIn).toBe(false);
@@ -98,7 +100,7 @@ describe('ORPC AuthUtils', () => {
     });
 
     it('should work as ORPCAuthContext type', () => {
-      const utils: ORPCAuthContext = new AuthUtilsEmpty();
+      const utils: ORPCAuthContext = new AuthUtilsEmpty(mockAuth);
 
       expect(utils.isLoggedIn).toBe(false);
       expect(utils.user).toBeNull();

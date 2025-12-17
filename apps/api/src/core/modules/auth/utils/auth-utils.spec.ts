@@ -348,9 +348,15 @@ describe('AuthUtils', () => {
 
 describe('AuthUtilsEmpty', () => {
   let utils: AuthUtilsEmpty;
+  let mockAuth: any;
 
   beforeEach(() => {
-    utils = new AuthUtilsEmpty();
+    mockAuth = {
+      api: {
+        getSession: vi.fn(),
+      },
+    };
+    utils = new AuthUtilsEmpty(mockAuth);
   });
 
   it('should have isLoggedIn as false', () => {

@@ -54,7 +54,7 @@ export class AdminPluginUtils {
         headers: this.headers,
       });
       
-      if (!session || !session.user) return false;
+      if (!session?.user) return false;
       
       // Check if user has admin role
       const user = session.user as { role?: string };
@@ -276,7 +276,7 @@ export class OrganizationPluginUtils {
         headers: this.headers,
       });
       
-      if (!session || !session.user) return false;
+      if (!session?.user) return false;
       
       // Try to get member record
       const result = await this.auth.api.getMember({

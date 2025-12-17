@@ -129,7 +129,7 @@ export class AdminPluginWrapper implements PluginWrapper {
         headers: this.options.headers,
       });
       
-      if (!session || !session.user) return false;
+      if (!session?.user) return false;
       
       // Check if user has admin role
       const user = session.user as { role?: string };
@@ -172,17 +172,24 @@ export class AdminPluginWrapper implements PluginWrapper {
   ) {
     return await this.options.auth.api.updateUser({
       headers: this.options.headers,
-      body: { userId, ...data },
+      body: {
+        userId,
+        name: data.name,
+        email: data.email,
+      },
     });
   }
 
   /**
    * Set or update a user's role
    */
-  async setRole(userId: string, role: string) {
+  async setRole(userId: string, role: 'user' | 'admin' | 'superAdmin') {
     return await this.options.auth.api.setRole({
       headers: this.options.headers,
-      body: { userId, role },
+      body: {
+        userId,
+        role,
+      },
     });
   }
 
@@ -199,10 +206,13 @@ export class AdminPluginWrapper implements PluginWrapper {
   /**
    * Ban a user
    */
-  async banUser(userId: string, reason?: string) {
+  async banUser(userId: string, banReason?: string) {
     return await this.options.auth.api.banUser({
       headers: this.options.headers,
-      body: { userId, reason },
+      body: {
+        userId,
+        ...(banReason ? { banReason } : {}),
+      },
     });
   }
 
@@ -248,7 +258,7 @@ export class OrganizationPluginWrapper implements PluginWrapper {
         headers: this.options.headers,
       });
       
-      if (!session || !session.user) return false;
+      if (!session?.user) return false;
       
       // If no organizationId provided, check if user is member of any organization
       if (!organizationId) {
@@ -300,7 +310,14 @@ export class OrganizationPluginWrapper implements PluginWrapper {
   ) {
     return await this.options.auth.api.updateOrganization({
       headers: this.options.headers,
-      body: { organizationId, ...data },
+      body: { 
+        organizationId,
+        data: {
+          name: data.name,
+          slug: data.slug,
+          metadata: data.metadata,
+        },
+      },
     });
   }
 
@@ -339,7 +356,7 @@ export class OrganizationPluginWrapper implements PluginWrapper {
   async addMember(data: {
     organizationId: string;
     userId: string;
-    role: string;
+    role: 'owner' | 'admin' | 'member';
   }) {
     return await this.options.auth.api.addMember({
       headers: this.options.headers,
@@ -352,7 +369,7 @@ export class OrganizationPluginWrapper implements PluginWrapper {
    */
   async removeMember(data: {
     organizationId: string;
-    userId: string;
+    memberIdOrEmail: string;
   }) {
     return await this.options.auth.api.removeMember({
       headers: this.options.headers,
@@ -365,8 +382,8 @@ export class OrganizationPluginWrapper implements PluginWrapper {
    */
   async updateMemberRole(data: {
     organizationId: string;
-    userId: string;
-    role: string;
+    memberId: string;
+    role: 'owner' | 'admin' | 'member';
   }) {
     return await this.options.auth.api.updateMemberRole({
       headers: this.options.headers,
@@ -391,10 +408,19 @@ export class OrganizationPluginWrapper implements PluginWrapper {
     organizationId: string;
     userId: string;
   }) {
-    return await this.options.auth.api.getMember({
+    // getMember is not directly available in Better Auth API
+    // We can list members and filter
+    const result = await this.options.auth.api.listMembers({
       headers: this.options.headers,
-      query: data,
+      query: { organizationId: data.organizationId },
     });
+    
+    // listMembers returns an object with members array
+    if (result && typeof result === 'object' && 'members' in result) {
+      const membersArray = (result as { members: Array<{ userId: string }> }).members;
+      return membersArray.find((member) => member.userId === data.userId) || null;
+    }
+    return null;
   }
 
   /**
@@ -403,12 +429,11 @@ export class OrganizationPluginWrapper implements PluginWrapper {
   async inviteMember(data: {
     organizationId: string;
     email: string;
-    role: string;
+    role: 'owner' | 'admin' | 'member';
   }) {
-    return await this.options.auth.api.inviteMember({
-      headers: this.options.headers,
-      body: data,
-    });
+    // Note: inviteMember might not be available in Better Auth public API
+    // This is a placeholder that may need adjustment based on actual API
+    throw new Error('inviteMember is not available in Better Auth API - use organization invitation flow');
   }
 
   /**

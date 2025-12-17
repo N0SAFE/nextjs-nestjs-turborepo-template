@@ -196,7 +196,7 @@ describe('ORPC Auth Middlewares', () => {
     it('should throw UNAUTHORIZED when not authenticated', async () => {
       const unauthContext = {
         ...mockContext,
-        auth: new AuthUtilsEmpty(),
+        auth: new AuthUtilsEmpty(mockAuth),
       };
       const middleware = accessControl({ roles: ['admin'] });
 
@@ -227,7 +227,7 @@ describe('ORPC Auth Middlewares', () => {
     it('should always pass for unauthenticated users', async () => {
       const unauthContext = {
         ...mockContext,
-        auth: new AuthUtilsEmpty(),
+        auth: new AuthUtilsEmpty(mockAuth),
       };
       const middleware = publicAccess();
       const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
