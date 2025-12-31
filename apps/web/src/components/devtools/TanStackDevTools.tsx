@@ -1091,6 +1091,368 @@ const ApiUrlPlugin: TanStackDevtoolsReactPlugin = {
     render: () => <ApiUrlPluginComponent />,
 }
 
+// Email Plugin Component
+const EmailPluginComponent = () => {
+    const [emailForm, setEmailForm] = useState({
+        to: '',
+        userName: '',
+        type: 'welcome' as 'welcome' | 'verification' | 'password-reset' | 'notification' | 'test',
+        verificationUrl: '',
+        resetUrl: '',
+        title: '',
+        message: '',
+        actionUrl: '',
+        actionText: '',
+    })
+    const [loading, setLoading] = useState(false)
+    const [result, setResult] = useState<{ success: boolean; error?: string; id?: string } | null>(null)
+
+    const sendEmail = async () => {
+        setLoading(true)
+        setResult(null)
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? ''
+            let endpoint = ''
+            let body: Record<string, unknown> = {}
+
+            switch (emailForm.type) {
+                case 'welcome':
+                    endpoint = '/email/welcome'
+                    body = {
+                        to: emailForm.to,
+                        userName: emailForm.userName,
+                        verificationUrl: emailForm.verificationUrl || undefined,
+                    }
+                    break
+                case 'verification':
+                    endpoint = '/email/verification'
+                    body = {
+                        to: emailForm.to,
+                        userName: emailForm.userName,
+                        verificationUrl: emailForm.verificationUrl,
+                    }
+                    break
+                case 'password-reset':
+                    endpoint = '/email/password-reset'
+                    body = {
+                        to: emailForm.to,
+                        userName: emailForm.userName,
+                        resetUrl: emailForm.resetUrl,
+                    }
+                    break
+                case 'notification':
+                    endpoint = '/email/notification'
+                    body = {
+                        to: emailForm.to,
+                        userName: emailForm.userName,
+                        title: emailForm.title,
+                        message: emailForm.message,
+                        actionUrl: emailForm.actionUrl || undefined,
+                        actionText: emailForm.actionText || undefined,
+                    }
+                    break
+                case 'test':
+                    endpoint = '/email/test'
+                    body = {
+                        to: emailForm.to,
+                    }
+                    break
+            }
+
+            const resp = await fetch(apiUrl + endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ''}`,
+                },
+                body: JSON.stringify(body),
+            })
+
+            const data = await resp.json() as { id: string; success: boolean; error?: string }
+            setResult(data)
+        } catch (err) {
+            console.error('Email send error:', err)
+            setResult({
+                success: false,
+                error: err instanceof Error ? err.message : 'Unknown error',
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const previewEmailUrl = 'http://localhost:3002'
+
+    return (
+        <div className="space-y-4 p-4">
+            {/* Email Preview Server */}
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                        <span className="text-blue-600 dark:text-blue-400">📧</span>
+                        <div>
+                            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                Email Template Preview
+                            </h4>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                                Preview email templates at <code className="font-mono">{previewEmailUrl}</code>
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => window.open(previewEmailUrl, '_blank')}
+                        className="text-xs"
+                    >
+                        Open Preview
+                    </Button>
+                </div>
+            </div>
+
+            {/* Email Type Selector */}
+            <div className="rounded-lg border p-4">
+                <h3 className="mb-2 text-lg font-semibold">Send Email</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium">Email Type</label>
+                        <select
+                            className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                            value={emailForm.type}
+                            onChange={(e) =>
+                                setEmailForm({
+                                    ...emailForm,
+                                    type: e.target.value as typeof emailForm.type,
+                                })
+                            }
+                        >
+                            <option value="test">Test Email</option>
+                            <option value="welcome">Welcome Email</option>
+                            <option value="verification">Email Verification</option>
+                            <option value="password-reset">Password Reset</option>
+                            <option value="notification">Notification</option>
+                        </select>
+                    </div>
+
+                    {/* Common Fields */}
+                    <div>
+                        <label className="mb-1 block text-sm font-medium">Recipient Email *</label>
+                        <input
+                            type="email"
+                            className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                            value={emailForm.to}
+                            onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+                            placeholder="user@example.com"
+                            required
+                        />
+                    </div>
+
+                    {emailForm.type !== 'test' && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">User Name *</label>
+                            <input
+                                type="text"
+                                className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                value={emailForm.userName}
+                                onChange={(e) =>
+                                    setEmailForm({ ...emailForm, userName: e.target.value })
+                                }
+                                placeholder="John Doe"
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {/* Type-specific fields */}
+                    {emailForm.type === 'welcome' && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">
+                                Verification URL (optional)
+                            </label>
+                            <input
+                                type="url"
+                                className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                value={emailForm.verificationUrl}
+                                onChange={(e) =>
+                                    setEmailForm({ ...emailForm, verificationUrl: e.target.value })
+                                }
+                                placeholder="https://example.com/verify?token=abc123"
+                            />
+                        </div>
+                    )}
+
+                    {emailForm.type === 'verification' && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">
+                                Verification URL *
+                            </label>
+                            <input
+                                type="url"
+                                className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                value={emailForm.verificationUrl}
+                                onChange={(e) =>
+                                    setEmailForm({ ...emailForm, verificationUrl: e.target.value })
+                                }
+                                placeholder="https://example.com/verify?token=abc123"
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {emailForm.type === 'password-reset' && (
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">Reset URL *</label>
+                            <input
+                                type="url"
+                                className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                value={emailForm.resetUrl}
+                                onChange={(e) =>
+                                    setEmailForm({ ...emailForm, resetUrl: e.target.value })
+                                }
+                                placeholder="https://example.com/reset?token=abc123"
+                                required
+                            />
+                        </div>
+                    )}
+
+                    {emailForm.type === 'notification' && (
+                        <>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Title *</label>
+                                <input
+                                    type="text"
+                                    className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                    value={emailForm.title}
+                                    onChange={(e) =>
+                                        setEmailForm({ ...emailForm, title: e.target.value })
+                                    }
+                                    placeholder="Important Update"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">Message *</label>
+                                <textarea
+                                    className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                    value={emailForm.message}
+                                    onChange={(e) =>
+                                        setEmailForm({ ...emailForm, message: e.target.value })
+                                    }
+                                    placeholder="Your notification message..."
+                                    rows={4}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Action URL (optional)
+                                </label>
+                                <input
+                                    type="url"
+                                    className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                    value={emailForm.actionUrl}
+                                    onChange={(e) =>
+                                        setEmailForm({ ...emailForm, actionUrl: e.target.value })
+                                    }
+                                    placeholder="https://example.com/action"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-1 block text-sm font-medium">
+                                    Action Text (optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full rounded border bg-white p-2 dark:bg-gray-800"
+                                    value={emailForm.actionText}
+                                    onChange={(e) =>
+                                        setEmailForm({ ...emailForm, actionText: e.target.value })
+                                    }
+                                    placeholder="View Details"
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    <Button
+                        onClick={() => void sendEmail()}
+                        disabled={loading || !emailForm.to}
+                        className="w-full"
+                    >
+                        {loading ? 'Sending...' : 'Send Email'}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Result Display */}
+            {result && (
+                <div
+                    className={`rounded-lg border p-4 ${
+                        result.success
+                            ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                            : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                    }`}
+                >
+                    <h4
+                        className={`mb-2 text-sm font-medium ${
+                            result.success
+                                ? 'text-green-800 dark:text-green-200'
+                                : 'text-red-800 dark:text-red-200'
+                        }`}
+                    >
+                        {result.success ? '✅ Email Sent Successfully' : '❌ Email Send Failed'}
+                    </h4>
+                    {result.id && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                            Email ID: <code className="font-mono">{result.id}</code>
+                        </p>
+                    )}
+                    {result.error && (
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                            Error: {result.error}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* Email Configuration Info */}
+            <div className="rounded-lg border p-4">
+                <h3 className="mb-2 text-lg font-semibold">Email Configuration</h3>
+                <div className="space-y-2 text-sm">
+                    <div>
+                        <span className="font-medium">Resend API Key:</span>
+                        <span className="ml-2">
+                            {process.env.RESEND_API_KEY ? '✅ Configured' : '❌ Not configured'}
+                        </span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Email From:</span>
+                        <span className="ml-2 font-mono text-xs">
+                            {process.env.EMAIL_FROM || 'noreply@example.com'}
+                        </span>
+                    </div>
+                    <div>
+                        <span className="font-medium">Mode:</span>
+                        <span className="ml-2">
+                            {process.env.RESEND_API_KEY
+                                ? '📧 Live (Resend)'
+                                : '🔨 Development (Mocked)'}
+                        </span>
+                    </div>
+                    <p className="pt-2 text-xs text-gray-500">
+                        💡 Tip: Run <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">bun run @repo/emails -- dev</code> to preview templates
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const EmailPlugin: TanStackDevtoolsReactPlugin = {
+    id: 'email',
+    name: '📧 Email',
+    render: () => <EmailPluginComponent />,
+}
+
 // Define all plugins
 const plugins: TanStackDevtoolsReactPlugin[] = [
     ReactQueryPlugin,
@@ -1098,6 +1460,7 @@ const plugins: TanStackDevtoolsReactPlugin[] = [
     BundlesPlugin,
     CLIPlugin,
     AuthPlugin,
+    EmailPlugin,
     DrizzleStudioPlugin,
     ApiUrlPlugin,
 ]

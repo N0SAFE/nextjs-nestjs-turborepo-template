@@ -145,6 +145,12 @@
                 "bcrypt": "^6.0.0",
                 "@types/bcrypt": "^6.0.0"
             },
+            "email": {
+                "resend": "^4.0.1",
+                "@react-email/components": "^0.0.31",
+                "@react-email/render": "^1.0.1",
+                "react-email": "^3.0.3"
+            },
             "orpc": {
                 "@orpc/openapi-client": "1.12.1",
                 "@orpc/client": "1.12.1",
@@ -273,6 +279,7 @@
         "@repo/ui": "dotenv -e .env -- bun --bun --cwd=./packages/ui/base run --",
         "@repo/types": "dotenv -e .env -- bun --bun --cwd=./packages/types run --",
         "@repo/auth": "dotenv -e .env -- bun --bun --cwd=./packages/auth run --",
+        "@repo/emails": "dotenv -e .env -- bun --bun --cwd=./packages/emails run --",
         "@repo-configs/typescript": "dotenv -e .env -- bun --bun --cwd=./packages/configs/typescript run --",
         "@repo-configs/tailwind": "dotenv -e .env -- bun --bun --cwd=./packages/configs/tailwind run --",
         "@repo-configs/eslint": "dotenv -e .env -- bun --bun --cwd=./packages/configs/eslint run --",

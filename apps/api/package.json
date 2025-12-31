@@ -49,6 +49,7 @@
     "@orpc/zod": "catalog:orpc",
     "@repo/api-contracts": "*",
     "@repo/auth": "*",
+    "@repo/emails": "*",
     "@repo/env": "*",
     "@scalar/nestjs-api-reference": "catalog:api:nest",
     "@thallesp/nestjs-better-auth": "catalog:auth",
@@ -66,6 +67,7 @@
     "openapi-merge": "catalog:api:nest",
     "pg": "catalog:api:nest",
     "reflect-metadata": "catalog:api:nest",
+    "resend": "catalog:email",
     "rxjs": "catalog:api:nest",
     "web-push": "^3.6.7",
     "zod": "catalog:utils"
@@ -82,6 +84,7 @@
     "@types/express": "catalog:api:nest",
     "@types/node": "catalog:build",
     "@types/pg": "^8.15.6",
+    "@types/react": "catalog:react",
     "@types/web-push": "^3.6.4",
     "source-map-support": "catalog:api:nest",
     "ts-loader": "catalog:api:nest",

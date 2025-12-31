@@ -6,6 +6,7 @@ import {
 import { DatabaseModule } from "./core/modules/database/database.module";
 import { HealthModule } from "./modules/health/health.module";
 import { UserModule } from "./modules/user/user.module";
+import { EmailModule } from "./modules/email/email.module";
 import { PushModule } from "./core/modules/push/push.module";
 import { ORPCModule } from "@orpc/nest";
 import { DATABASE_CONNECTION } from "./core/modules/database/database-connection";
@@ -49,6 +50,7 @@ declare module '@orpc/nest' {
     }),
     HealthModule,
     UserModule,
+    EmailModule,
     PushModule,
     TestModule,
     ORPCModule.forRootAsync({
