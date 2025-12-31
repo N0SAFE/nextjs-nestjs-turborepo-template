@@ -82,6 +82,7 @@
         "@types/express": "catalog:api:nest",
         "@types/node": "catalog:build",
         "@types/pg": "^8.15.6",
+        "@types/react": "catalog:react",
         "@types/web-push": "^3.6.4",
         "source-map-support": "catalog:api:nest",
         "ts-loader": "catalog:api:nest",
