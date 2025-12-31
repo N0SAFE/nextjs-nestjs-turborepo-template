@@ -1,0 +1,39 @@
+{
+  "name": "@repo/emails",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Email templates with React Email and Resend",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "react-email dev --dir emails --port 3002",
+    "export": "react-email export --dir emails --outDir ./out",
+    "clean": "rimraf dist out .turbo",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "prettify": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "dependencies": {
+    "@react-email/components": "catalog:email",
+    "@react-email/render": "catalog:email",
+    "react": "catalog:react",
+    "react-dom": "catalog:react"
+  },
+  "devDependencies": {
+    "@repo-configs/eslint": "*",
+    "@repo-configs/prettier": "*",
+    "@repo-configs/typescript": "*",
+    "@types/react": "catalog:react",
+    "@types/react-dom": "catalog:react",
+    "react-email": "catalog:email",
+    "rimraf": "catalog:build",
+    "typescript": "catalog:build"
+  }
+}
