@@ -10,13 +10,16 @@ import { nextjsRegexpPageOnly, nextNoApi } from "./utils/static";
 import { matcherHandler } from "./utils/utils";
 import { validateEnvSafe } from "#/env";
 import { toAbsoluteUrl } from "@/lib/utils";
-import { Authsignin } from "@/routes/index";
+import { AuthSignin } from "@/routes/index";
 import { createDebug } from "@/lib/debug";
 import { getCookieCache, getSessionCookie } from "better-auth/cookies";
 import type { Session } from "@repo/auth";
 
 const debugAuth = createDebug("middleware/auth");
 const debugAuthError = createDebug("middleware/auth/error");
+
+// Helper to get readable timestamp HH:MM:SS.mmm
+const ts = () => new Date().toISOString().substring(11, 23);
 
 const env = validateEnvSafe(process.env).data;
 
@@ -32,6 +35,8 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
     throw new Error("env is not valid");
   }
   return async (request: NextRequest, _next: NextFetchEvent) => {
+    console.log(`[${ts()}] 🔐 AUTH-MW: START - ${request.nextUrl.pathname}`);
+
     debugAuth(`Checking authentication for ${request.nextUrl.pathname}`, {
       path: request.nextUrl.pathname,
     });
@@ -42,19 +47,22 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
         : false;
 
     if (masterTokenEnabled) {
+      console.log(`[${ts()}] 🔐 AUTH-MW: Master token enabled, skipping auth`);
       return next(request, _next);
     }
 
     // Get session using Better Auth directly
     let sessionCookie: string | null = null;
     let sessionError: unknown = null;
-    const startTime = Date.now();
 
     try {
       debugAuth("Getting session using Better Auth");
+      console.log(`[${ts()}] 🔐 AUTH-MW: Getting session cookie...`);
 
       sessionCookie = getSessionCookie(request);
+      console.log(`[${ts()}] 🔐 AUTH-MW: Got session cookie: ${sessionCookie ? 'yes' : 'no'}`);
 
+      console.log(`[${ts()}] 🔐 AUTH-MW: Calling getCookieCache...`);
       const s = await getCookieCache<
         Session & {
           updatedAt: number;
@@ -65,19 +73,18 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
         // In Docker without HTTPS termination, use non-secure cookies
         isSecure: env.NEXT_PUBLIC_API_URL?.startsWith("https://") ?? false,
       });
+      console.log(`[${ts()}] 🔐 AUTH-MW: getCookieCache done, hasSession: ${String(!!s)}`);
 
       debugAuth("Session processed:", {
         hasSession: !!sessionCookie,
         hasCachedSession: !!s,
       });
     } catch (error) {
-      console.error("Error getting session from Better Auth:", error);
+      console.error(`[${ts()}] 🔐 AUTH-MW: Error getting session:`, error);
       sessionError = error;
-      const duration = Date.now() - startTime;
       debugAuthError("Error getting session from Better Auth:", {
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined,
-        duration: `${String(duration)}ms`,
         errorType:
           error instanceof Error ? error.constructor.name : typeof error,
       });
@@ -85,11 +92,7 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
 
     const isAuth = !!sessionCookie;
 
-    console.log({
-      isAuth,
-      sessionError,
-      sessionCookie,
-    });
+    console.log(`[${ts()}] 🔐 AUTH-MW: isAuth=${String(isAuth)}, hasError=${String(!!sessionError)}`);
 
     debugAuth(
       `Session result - isAuth: ${String(isAuth)}, hasError: ${String(!!sessionError)}`,
@@ -101,81 +104,28 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
     );
 
     if (isAuth) {
-      // // Check if user is trying to access /admin routes
-      // const isAdminRoute = adminRegexpAndChildren.test(pathname)
-
-      // if (isAdminRoute) {
-      //     // For admin routes, we need to verify the user has admin role
-      //     // Since middleware can't easily access session data, we'll check via API
-      //     try {
-      //         const apiUrl = env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
-      //         const sessionResponse = await fetch(`${apiUrl}/api/auth/get-session`, {
-      //             headers: {
-      //                 'cookie': request.headers.get('cookie') || '',
-      //             },
-      //         })
-
-      //         if (sessionResponse.ok) {
-      //             const sessionData = await sessionResponse.json() as { user?: { role?: string } }
-      //             const userRole = sessionData?.user?.role
-
-      //             debugAuth('User role check for admin route:', {
-      //                 pathname,
-      //                 userRole,
-      //                 isAdmin: userRole === 'admin' || userRole?.includes('admin')
-      //             })
-
-      //             // Only admin role can access /admin routes
-      //             if (userRole !== 'admin' && !userRole?.includes('admin')) {
-      //                 debugAuth(`Blocking non-admin user from ${pathname}`)
-      //                 return NextResponse.redirect(toAbsoluteUrl('/home'))
-      //             }
-      //         } else {
-      //             // If we can't verify role, redirect to home for safety
-      //             debugAuthError('Failed to verify user role for admin route')
-      //             return NextResponse.redirect(toAbsoluteUrl('/home'))
-      //         }
-      //     } catch (error) {
-      //         debugAuthError('Error checking user role:', error)
-      //         // If there's an error checking role, redirect to home for safety
-      //         return NextResponse.redirect(toAbsoluteUrl('/home'))
-      //     }
-      // }
-
       const matcher = matcherHandler(request.nextUrl.pathname, [
         {
           and: ["/me/customer"],
         },
         () => {
-          // in this route we can check if the user is authenticated with the customer role
-          // if (session?.user?.role === 'customer') {
-          //     return next(request, _next)
-          // }
-          // return NextResponse.redirect(
-          //     process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, '') +
-          //         '/auth/login' +
-          //         '?' +
-          //         encodeURIComponent(
-          //             'callbackUrl=' +
-          //                 request.nextUrl.pathname +
-          //                 (request.nextUrl.search ?? '')
-          //         )
-          // )
+          // No-op function
         },
       ]);
       if (matcher.hit) {
         return matcher.data; // return the Response associated
       }
+      console.log(`[${ts()}] 🔐 AUTH-MW: END - authenticated, calling next()`);
       return next(request, _next); // call the next middleware because the route is good
     } else {
       // User is not authenticated, redirect to login for protected routes
       debugAuth(
         `Redirecting unauthenticated user from ${request.nextUrl.pathname} to signin`,
       );
-      console.log("redirecting from WithAuth middleware");
+      console.log(`[${ts()}] 🔐 AUTH-MW: END - redirecting to signin`);
       return NextResponse.redirect(
         toAbsoluteUrl(
-          Authsignin(
+          AuthSignin(
             {},
             {
               callbackUrl:

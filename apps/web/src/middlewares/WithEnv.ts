@@ -4,7 +4,7 @@ import { envIsValid, validateEnvSafe } from '#/env'
 import { nextjsRegexpPageOnly, nextNoApi, noPublic } from './utils/static'
 import { matcherHandler } from './utils/utils'
 import { toAbsoluteUrl } from '@/lib/utils'
-import { Middlewareerrorenv } from '@/routes'
+import { InternalMiddlewareErrorEnv } from '@/routes'
 import { createDebug } from '@/lib/debug'
 
 const debugEnv = createDebug('middleware/env')
@@ -44,7 +44,7 @@ const withEnv: MiddlewareFactory = (next: NextProxy) => {
                     }
                     if (process.env.NODE_ENV === 'development') {
                         const errorUrl = toAbsoluteUrl(
-                            Middlewareerrorenv({}, {
+                            InternalMiddlewareErrorEnv({}, {
                                 from: request.url
                             })
                         )

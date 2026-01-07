@@ -51,6 +51,53 @@ function mergeInputSchemas(base: z.ZodType, query: z.ZodType): z.ZodType {
 
 type AnyWrapper<TSchema extends z.ZodType> = IdentityWrapper | SchemaWrapper<TSchema, AnySchema>;
 
+/**
+ * Default pagination config when no options are provided
+ * This matches the defaults in createPaginationConfigSchema: { defaultLimit: 10, maxLimit: 100, includeOffset: true }
+ */
+type DefaultPaginationConfig = {
+  defaultLimit: 10;
+  maxLimit: 100;
+  minLimit: 1;
+  includeOffset: true;
+  includeCursor: false;
+  includePage: false;
+};
+
+/**
+ * Default QueryConfig used when list() is called without arguments
+ * Only pagination is enabled by default with offset-based pagination
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _DefaultListQueryConfig = {
+  pagination: ZodSchemaWithConfig<DefaultPaginationConfig>;
+  sorting: undefined;
+  filtering: undefined;
+  search: undefined;
+};
+
+/**
+ * Default input schema type for list() when called without options
+ * Matches ComputeInputSchema<DefaultListQueryConfig>
+ */
+type DefaultListInputSchema = {
+  limit: number;
+  offset: number;
+};
+
+/**
+ * Default output schema type for list() when called without options
+ */
+type DefaultListOutputSchema<TData> = {
+  data: TData[];
+  meta: {
+    total: number;
+    limit: number;
+    hasMore: boolean;
+    offset: number;
+  };
+};
+
 type StandardListPlainOptions = {
   pagination?:
     | ZodSchemaWithConfig<unknown>
@@ -228,7 +275,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
     z.ZodType<MergeRouteInput<z.input<TBaseInput>, ComputeInputSchema<TConfig>>>,
     z.ZodType<ComputeOutputSchema<TConfig, z.output<TItemSchema>>>
   >;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+   
   static listFromSchemas<TBaseInput extends z.ZodType, TItemSchema extends z.ZodType>(
     route: RouteMetadata,
     baseInputSchema: TBaseInput,
@@ -492,13 +539,19 @@ export class StandardOperations<TEntity extends EntitySchema> {
     pagination?: ZodSchemaWithConfig<unknown> | { defaultLimit?: number; maxLimit?: number; includeOffset?: boolean; includeCursor?: boolean; includePage?: boolean };
     sorting?: ZodSchemaWithConfig<unknown> | { fields: readonly string[]; defaultField?: string; defaultDirection?: "asc" | "desc" };
     filtering?: ZodSchemaWithConfig<unknown> | { fields: Record<string, z.ZodType>; allowLogicalOperators?: boolean };
-  }): RouteBuilder<z.ZodType, z.ZodType>;
+  }): RouteBuilder<
+    z.ZodType<DefaultListInputSchema>,
+    z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
+  >;
   list<TConfig extends QueryConfig = QueryConfig>(optionsOrConfig?: TConfig | StandardListPlainOptions):
     | RouteBuilder<
         z.ZodType<ComputeInputSchema<TConfig>>,
         z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
       >
-    | RouteBuilder<z.ZodType, z.ZodType> {
+    | RouteBuilder<
+        z.ZodType<DefaultListInputSchema>,
+        z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
+      > {
     // Cast to a partial QueryConfig shape for type-safe access
     const input = optionsOrConfig;
 
@@ -589,7 +642,10 @@ export class StandardOperations<TEntity extends EntitySchema> {
       outputSchema
     );
 
-    return builder as unknown as RouteBuilder<z.ZodType, z.ZodType>;
+    return builder as unknown as RouteBuilder<
+      z.ZodType<DefaultListInputSchema>,
+      z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
+    >;
   }
 
   /**

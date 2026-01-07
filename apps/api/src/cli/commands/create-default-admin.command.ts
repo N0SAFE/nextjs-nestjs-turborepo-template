@@ -1,12 +1,13 @@
 import { Command, CommandRunner } from 'nest-commander';
-import { Injectable } from '@nestjs/common';
-import { AuthService } from '@/core/modules/auth/services/auth.service';
+import { Injectable, Inject } from '@nestjs/common';
+import { AuthCoreService } from '@/core/modules/auth/services/auth-core.service';
 import { DatabaseService } from '@/core/modules/database/services/database.service';
 import { EnvService } from '@/config/env/env.service';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../config/drizzle/schema';
 import { apiEnvSchema } from '@repo/env';
 import zod from 'zod/v4';
+import { DATABASE_SERVICE, AUTH_CORE_SERVICE, ENV_SERVICE } from '../tokens';
 
 // Extend the API schema with command-specific environment variables
 const createDefaultAdminEnvSchema = apiEnvSchema.safeExtend({
@@ -16,18 +17,18 @@ const createDefaultAdminEnvSchema = apiEnvSchema.safeExtend({
 
 type CreateDefaultAdminEnv = zod.infer<typeof createDefaultAdminEnvSchema>;
 
-@Injectable()
 @Command({
   name: 'create-default-admin',
   description: 'Create a default admin user if it does not exist',
 })
+@Injectable()
 export class CreateDefaultAdminCommand extends CommandRunner {
   private readonly commandEnvService: EnvService<CreateDefaultAdminEnv>;
   
   constructor(
-    private readonly databaseService: DatabaseService,
-    private readonly authService: AuthService,
-    private readonly envService: EnvService,
+    @Inject(DATABASE_SERVICE) private readonly databaseService: DatabaseService,
+    @Inject(AUTH_CORE_SERVICE) private readonly authCoreService: AuthCoreService,
+    @Inject(ENV_SERVICE) private readonly envService: EnvService,
   ) {
     super();
     this.commandEnvService = this.envService.use(createDefaultAdminEnvSchema);
@@ -54,19 +55,22 @@ export class CreateDefaultAdminCommand extends CommandRunner {
 
       console.log(`👤 Creating default admin user: ${email}`);
 
-      // Create the admin user
-      const result = await this.authService.api.createUser({
-        body: {
+      // Create the admin user via Admin plugin
+      // Note: In CLI context, we use getRegistry().create() with empty headers
+      // since there's no HTTP request context
+      const result = await this.authCoreService
+        .getRegistry()
+        .create('admin', new Headers())
+        .createUser({
           name: 'Admin',
-          email: email,
-          password: password,
+          email,
+          password,
           data: {
             role: 'admin',
             emailVerified: true,
             image: 'https://avatars.githubusercontent.com/u/1?v=4',
           },
-        },
-      });
+        });
 
       if (result.user.id) {
         console.log(`✅ Created default admin user successfully`);

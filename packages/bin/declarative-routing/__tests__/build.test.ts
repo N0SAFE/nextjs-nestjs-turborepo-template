@@ -138,11 +138,11 @@ describe('build command', () => {
       callback(null, [
         {
           type: 'create',
-          path: 'src/app/users/page.info.ts'
+          path: 'src/app/users/route.info.ts'
         }
       ] as any)
 
-      expect(processFileMock).toHaveBeenCalledWith('users/page.info.ts')
+      expect(processFileMock).toHaveBeenCalledWith('users/route.info.ts')
     })
 
     it('should handle update events for route files', async () => {
@@ -190,11 +190,11 @@ describe('build command', () => {
       callback(null, [
         {
           type: 'delete',
-          path: 'src/app/users/page.info.ts'
+          path: 'src/app/users/route.info.ts'
         }
       ] as any)
 
-      expect(fileRemovedMock).toHaveBeenCalledWith('users/page.info.ts')
+      expect(fileRemovedMock).toHaveBeenCalledWith('users/route.info.ts')
     })
 
     it('should ignore non-route files', async () => {
@@ -270,13 +270,13 @@ describe('build command', () => {
       callback(null, [
         {
           type: 'create',
-          path: 'C:\\project\\src\\app\\users\\page.info.ts'
+          path: 'C:\\project\\src\\app\\users\\route.info.ts'
         }
       ] as any)
 
       // Should convert Windows path to posix-style
       expect(processFileMock).toHaveBeenCalledWith(
-        expect.stringMatching(/users[\/\\]page\.info\.ts$/)
+        expect.stringMatching(/users[\/\\]route\.info\.ts$/)
       )
     })
 

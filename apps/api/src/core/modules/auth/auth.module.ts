@@ -22,6 +22,7 @@ import {
 	type OPTIONS_TYPE,
 } from "./definitions/auth-module-definition";
 import { AuthService } from "./services/auth.service";
+import { AuthCoreService } from "./services/auth-core.service";
 import { SkipBodyParsingMiddleware } from "./middlewares/middlewares";
 import { AFTER_HOOK_KEY, BEFORE_HOOK_KEY, HOOK_KEY } from "./types/symbols";
 import { AuthGuard } from "./guards/auth.guard";
@@ -41,8 +42,8 @@ const HOOKS = [
  */
 @Module({
 	imports: [DiscoveryModule],
-	providers: [AuthService],
-	exports: [AuthService],
+	providers: [AuthCoreService, AuthService],
+	exports: [AuthCoreService, AuthService],
 })
 export class AuthModule
 	extends ConfigurableModuleClass

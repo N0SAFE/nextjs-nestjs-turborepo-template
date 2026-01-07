@@ -117,9 +117,13 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
 # Copy turbo cache directories
 COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
+# Build declarative-routing CLI first (required by web's generate task)
+RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+  bun turbo run build --filter=@repo-bin/declarative-routing
+
 # Generate routes (build happens at runtime for this dockerfile)
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run generate --filter=web... --remote-only
+  bun turbo run generate --filter=web...
 
 # ===================================
 # Stage 6: Runner - Production runtime (builds at container start)

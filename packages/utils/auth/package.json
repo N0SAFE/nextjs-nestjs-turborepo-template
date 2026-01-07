@@ -8,7 +8,15 @@
     ".": "./src/index.ts",
     "./server": "./src/server/index.ts",
     "./client": "./src/client/index.ts",
-    "./permissions": "./src/permissions/index.ts"
+    "./permissions": "./src/permissions/index.ts",
+    "./permissions/plugins": "./src/permissions/plugins/index.ts",
+    "./react": "./src/react/index.ts",
+    "./react/session": {
+      "react-server": "./src/react/session/server.ts",
+      "default": "./src/react/session/client.ts"
+    },
+    "./react/session/client": "./src/react/session/client.ts",
+    "./react/session/server": "./src/react/session/server.ts"
   },
   "scripts": {
     "lint": "eslint . --fix",
@@ -36,6 +44,7 @@
     "@vitest/coverage-v8": "catalog:testing"
   },
   "peerDependencies": {
-    "drizzle-orm": "catalog:database"
+    "drizzle-orm": "catalog:database",
+    "@tanstack/react-query": "catalog:tanstack"
   }
 }

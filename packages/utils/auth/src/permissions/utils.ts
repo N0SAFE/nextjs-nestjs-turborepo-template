@@ -1,8 +1,14 @@
 import type { Resource, Permission } from "./system/types";
-import { permissionConfig, schemas, ROLE_NAMES, RESOURCE_NAMES, type RoleName, type ResourceName, type ActionsForResource } from "./config";
+import { platformPermissionConfig, platformSchemas, PLATFORM_ROLES, PLATFORM_RESOURCES, type PlatformRole, type PlatformResource, type PlatformActionsForResource } from "./config";
 
-const statement = permissionConfig.statement;
-const roles = permissionConfig.roles;
+const statement = platformPermissionConfig.statement;
+const roles = platformPermissionConfig.roles;
+const schemas = platformSchemas;
+const ROLE_NAMES = PLATFORM_ROLES;
+const RESOURCE_NAMES = PLATFORM_RESOURCES;
+type RoleName = PlatformRole;
+type ResourceName = PlatformResource;
+type ActionsForResource<R extends ResourceName> = PlatformActionsForResource<R>;
 
 /**
  * Error thrown when an invalid role name is accessed

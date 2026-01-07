@@ -246,7 +246,7 @@ export function createSimpleSortSchema<TFields extends readonly string[]>(
  * const schema = createMultiSortSchema(["name", "price", "createdAt"] as const);
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- TFields preserves literal type inference from const assertion
+ 
 export function createMultiSortSchema<TFields extends readonly string[]>(
   fields: TFields
 ) {

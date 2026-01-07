@@ -22,13 +22,14 @@
         "NEXT_PUBLIC_API_URL",
         "API_PORT",
         "DEV_AUTH_KEY",
-        "DEV_AUTH_EMAIL",
         "NEXT_PUBLIC_DEV_AUTH_KEY",
         "CORS_ORIGIN",
         "LOG_LEVEL",
         "CHOKIDAR_USEPOLLING",
         "TRUSTED_ORIGINS",
-        "AUTH_BASE_DOMAIN"
+        "AUTH_BASE_DOMAIN",
+        "DEFAULT_ADMIN_EMAIL",
+        "DEFAULT_ADMIN_PASSWORD"
     ],
     "tasks": {
         "dev": {
@@ -99,6 +100,10 @@
         },
         "clean": {
             "cache": false
+        },
+        "doc#type-check": {
+            "dependsOn": ["doc#compile"],
+            "inputs": ["**/*.ts", "**/*.tsx", "package.json", "tsconfig.json"]
         },
         "type-check": {
             "inputs": ["**/*.ts", "**/*.tsx", "package.json", "tsconfig.json"]

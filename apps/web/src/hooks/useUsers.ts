@@ -1,5 +1,29 @@
 'use client'
 
+/**
+ * @deprecated This file contains manually-written hooks that are being phased out.
+ * 
+ * Please use the contract-generated hooks from `@/hooks/useUser.orpc-hooks.ts` instead:
+ * 
+ * Migration guide:
+ * - `useUsers()` → Use `userHooks.list.useQuery()` or `useUserList()` from orpc-hooks
+ * - `useUser(id)` → Use `userHooks.findById.useQuery({ id })` or user composite hooks
+ * - `useCreateUser()` → Use `userHooks.create.useMutation()` or `useUserManagement().create`
+ * - `useUpdateUser()` → Use `userHooks.update.useMutation()` or `useUserManagement().update`
+ * - `useDeleteUser()` → Use `userHooks.delete.useMutation()` or `useUserManagement().delete`
+ * 
+ * Benefits of contract-generated hooks:
+ * - Automatically synchronized with API contracts
+ * - Type-safe by design
+ * - Standardized patterns across all entities
+ * - Less code to maintain
+ * - Built-in invalidation strategies
+ * 
+ * This file will be removed in a future version.
+ * 
+ * @see {@link ./useUser.orpc-hooks.ts} for the preferred pattern
+ */
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery, type QueryClient } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'

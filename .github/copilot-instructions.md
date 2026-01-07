@@ -382,6 +382,7 @@ For detailed information on specific topics, reference these documentation files
 - **Daily Development**: [`.docs/guides/DEVELOPMENT-WORKFLOW.md`](../.docs/guides/DEVELOPMENT-WORKFLOW.md) - Day-to-day development tasks and best practices
 - **API Contracts**: [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md) - ORPC type-safe API development and usage patterns
 - **API Client Hooks**: [`.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`](../.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md) - Creating hooks for ORPC consumption in components
+- **Declarative Routing Pattern**: [`.docs/core-concepts/12-DECLARATIVE-ROUTING-PATTERN.md`](../.docs/core-concepts/12-DECLARATIVE-ROUTING-PATTERN.md) - Type-safe navigation and params/search handling
 - **Declarative Routing**: [`apps/web/src/routes/README.md`](../apps/web/src/routes/README.md) - Type-safe routing system usage and examples
 
 ### 🐳 **Docker & Deployment**

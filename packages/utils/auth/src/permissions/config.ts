@@ -175,6 +175,9 @@ const platformBuilder = new PermissionBuilder()
         }),
     }));
 
+// Export the builder for type inference in generic plugins
+export { platformBuilder };
+
 // Build and export platform permissions
 export const platformPermissionConfig = platformBuilder.build();
 export const { 
@@ -426,6 +429,9 @@ const organizationBuilder = new PermissionBuilder()
         }),
     }));
 
+// Export the builder for type inference in generic plugins
+export { organizationBuilder };
+
 // Build and export organization permissions
 export const organizationPermissionConfig = organizationBuilder.build();
 export const { 
@@ -436,14 +442,7 @@ export const {
     rolesConfig: organizationRolesConfig,
 } = organizationPermissionConfig;
 
-// ============================================================================
-// LEGACY EXPORTS (for backward compatibility)
-// ============================================================================
-// These exports maintain backward compatibility with existing code
-// that uses the old single permission system
 
-export const permissionConfig = platformPermissionConfig;
-export const { statement, ac, roles, schemas } = platformPermissionConfig;
 
 // ============================================================================
 // PLATFORM ROLE EXPORTS
@@ -487,9 +486,7 @@ export const platformRoleConfig: Record<
     },
 };
 
-// Legacy exports
-export const ROLE_NAMES = PLATFORM_ROLES;
-export type RoleName = PlatformRole;
+
 
 // ============================================================================
 // ORGANIZATION ROLE EXPORTS
@@ -552,9 +549,7 @@ export const PLATFORM_RESOURCES = platformBuilder.getStatementNames();
 export type OrganizationResource = keyof typeof organizationStatement;
 export const ORGANIZATION_RESOURCES = organizationBuilder.getStatementNames();
 
-// Legacy exports
-export const RESOURCE_NAMES = PLATFORM_RESOURCES;
-export type ResourceName = PlatformResource;
+
 
 /**
  * Type representing all valid actions for a specific platform resource
@@ -566,8 +561,7 @@ export type PlatformActionsForResource<R extends PlatformResource> = typeof plat
  */
 export type OrganizationActionsForResource<R extends OrganizationResource> = typeof organizationStatement[R][number];
 
-// Legacy export
-export type ActionsForResource<R extends ResourceName> = PlatformActionsForResource<R>;
+
 
 // ============================================================================
 // PERMISSION CHECK HELPERS

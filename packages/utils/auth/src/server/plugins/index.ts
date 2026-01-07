@@ -7,11 +7,11 @@
 
 import { admin, organization } from "better-auth/plugins";
 import {
-  ac,
+  platformAc,
   organizationAc,
   organizationRoles,
-  roles,
-  schemas,
+  platformRoles,
+  platformSchemas,
 } from "../../permissions/config";
 import { invitePlugin, type InvitePluginOptions } from "./invite";
 
@@ -55,8 +55,8 @@ export function useAdmin(
   options: Omit<Parameters<typeof admin>[0], "ac" | "roles"> = {}
 ) {
   return admin({
-    ac,
-    roles,
+    ac: platformAc,
+    roles: platformRoles,
     ...options,
   });
 }
@@ -112,8 +112,8 @@ export type OrganizationPlugin = ReturnType<typeof useOrganization>;
 // Invite Plugin
 // ============================================================================
 
-// Infer the actual role names type from the schemas
-type ConfiguredRoleNames = typeof schemas.roleNames extends { _output: infer T } ? T extends string ? T : string : string;
+// Infer the actual role names type from the platformSchemas
+type ConfiguredRoleNames = typeof platformSchemas.roleNames extends { _output: infer T } ? T extends string ? T : string : string;
 
 /**
  * Type-safe helper to configure the invite plugin with your role system
@@ -139,9 +139,9 @@ export function useInvite(
   return invitePlugin({
     inviteDurationDays: 7,
     ...options,
-    // Type assertion is safe here - schemas.roleNames will always be compatible
+    // Type assertion is safe here - platformSchemas.roleNames will always be compatible
     // with the RoleSchemaType that invitePlugin expects
-    roleSchema: schemas.roleNames,
+    roleSchema: platformSchemas.roleNames,
   } as InvitePluginOptions<ConfiguredRoleNames>);
 }
 

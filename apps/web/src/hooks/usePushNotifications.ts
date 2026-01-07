@@ -232,11 +232,11 @@ export function usePushNotifications() {
       }
 
       // Register service worker if not already registered
-      // Note: Serwist service worker is already registered by SerwistProvider
+      // Note: Service worker is already registered by ServiceWorkerRegister component
       // We just need to get the existing registration
-      const registration = await navigator.serviceWorker.getRegistration('/serwist/')
+      const registration = await navigator.serviceWorker.getRegistration('/')
       if (!registration) {
-        throw new Error('Serwist service worker not registered. Ensure SerwistProvider is mounted.')
+        throw new Error('Service worker not registered. Ensure ServiceWorkerRegister is mounted.')
       }
       await navigator.serviceWorker.ready
 

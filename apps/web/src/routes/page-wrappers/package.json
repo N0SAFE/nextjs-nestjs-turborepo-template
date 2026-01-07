@@ -1,0 +1,11 @@
+{
+  "name": "@internal/page-wrappers",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "react-server": "./server.tsx",
+      "default": "./client.tsx"
+    }
+  }
+}

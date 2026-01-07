@@ -1,36 +1,35 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthService } from './auth.service';
-import { MODULE_OPTIONS_TOKEN } from '../definitions/auth-module-definition';
+import type { AuthCoreService } from './auth-core.service';
 import type { UserSession } from '../utils/auth-utils';
 
-// Mock only validatePermission to avoid dependency on actual permission config
-vi.mock('@repo/auth/permissions', async (importOriginal) => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await importOriginal<typeof import('@repo/auth/permissions')>();
-  
-  // Override only validatePermission to always return true
-  actual.PermissionChecker.validatePermission = vi.fn().mockReturnValue(true);
-  
-  return actual;
-});
+// Mock the plugin-wrapper-factory module
+vi.mock('../plugin-utils/plugin-wrapper-factory', () => ({
+  createPluginRegistry: vi.fn(() => ({
+    getAll: vi.fn(() => ({
+      admin: { listUsers: vi.fn(), createUser: vi.fn() },
+      organization: { createOrganization: vi.fn() },
+    })),
+  })),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
   let mockAuth: any;
   let mockSession: UserSession;
+  let mockAuthCoreService: any;
+  let mockRequest: any;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockAuth = {
       api: {
         signUp: vi.fn(),
         signIn: vi.fn(),
         signOut: vi.fn(),
         getSession: vi.fn(),
-        userHasPermission: vi.fn(),
       },
       handler: vi.fn(),
+      generateOpenAPISchema: vi.fn(() => Promise.resolve({ openapi: '3.0.0', info: {} })),
     };
 
     mockSession = {
@@ -57,22 +56,41 @@ describe('AuthService', () => {
       },
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        {
-          provide: MODULE_OPTIONS_TOKEN,
-          useValue: {
-            auth: mockAuth,
-            disableTrustedOriginsCors: false,
-            disableBodyParser: false,
-            disableGlobalAuthGuard: false,
-          },
-        },
-      ],
-    }).compile();
+    // Mock AuthCoreService methods and getters
+    mockAuthCoreService = {
+      // Synchronous getters (directly return values, not Promises)
+      get api() { return mockAuth.api; },
+      get instance() { return mockAuth; },
+      // Async methods
+      getAuthInstance: vi.fn(() => Promise.resolve(mockAuth)),
+      getPluginRegistry: vi.fn(),
+      getRegistry: vi.fn(),
+      plugin: vi.fn(),
+      getAuthUtils: vi.fn(),
+      getAuthOrpcMiddleware: vi.fn(),
+      getSession: vi.fn(() => Promise.resolve(mockSession)),
+      generateAuthOpenAPISchema: vi.fn(() => Promise.resolve({ openapi: '3.0.0', info: {} })),
+      // Methods delegated from AuthService
+      createOrpcAuthMiddleware: vi.fn(() => ({ use: vi.fn() })),
+      createEmptyAuthUtils: vi.fn(() => ({ isLoggedIn: false, session: null, user: null })),
+      requireAuth: vi.fn((session: any) => {
+        if (!session) {
+          throw new Error('Authentication required');
+        }
+        return session;
+      }),
+    };
 
-    service = module.get<AuthService>(AuthService);
+    // Mock Request object
+    mockRequest = {
+      headers: new Headers({ 'user-agent': 'test-agent' }),
+    };
+
+    // Direct instantiation - bypass NestJS DI for REQUEST-scoped service
+    service = new AuthService(
+      mockAuthCoreService as AuthCoreService,
+      mockRequest
+    );
   });
 
   it('should be defined', () => {
@@ -84,10 +102,6 @@ describe('AuthService', () => {
       const api = service.api;
       
       expect(api).toBe(mockAuth.api);
-      expect(api).toHaveProperty('signUp');
-      expect(api).toHaveProperty('signIn');
-      expect(api).toHaveProperty('signOut');
-      expect(api).toHaveProperty('getSession');
     });
   });
 
@@ -96,8 +110,6 @@ describe('AuthService', () => {
       const instance = service.instance;
       
       expect(instance).toBe(mockAuth);
-      expect(instance).toHaveProperty('api');
-      expect(instance).toHaveProperty('handler');
     });
   });
 
@@ -105,174 +117,35 @@ describe('AuthService', () => {
     it('should create ORPC auth middleware', () => {
       const middleware = service.createOrpcAuthMiddleware();
       
-      expect(middleware).toBeDefined();
-      expect(typeof middleware).toBe('function');
+      expect(mockAuthCoreService.createOrpcAuthMiddleware).toHaveBeenCalled();
+      expect(middleware).toHaveProperty('use');
     });
   });
 
   describe('createEmptyAuthUtils', () => {
     it('should create empty auth utils', () => {
-      const emptyUtils = service.createEmptyAuthUtils();
+      const result = service.createEmptyAuthUtils();
       
-      expect(emptyUtils).toBeDefined();
-      expect(emptyUtils.isLoggedIn).toBe(false);
-      expect(emptyUtils.session).toBeNull();
-      expect(emptyUtils.user).toBeNull();
+      expect(mockAuthCoreService.createEmptyAuthUtils).toHaveBeenCalled();
+      expect(result).toEqual({
+        isLoggedIn: false,
+        session: null,
+        user: null,
+      });
     });
   });
 
-  describe('Auth utility methods', () => {
-    describe('hasAccess', () => {
-      it('should return true when user has access', async () => {
-        const result = await service.hasAccess(mockSession, { roles: ['admin'] });
-        
-        expect(result).toBe(true);
-      });
-
-      it('should return false when user lacks access', async () => {
-        const sessionWithUserRole = {
-          ...mockSession,
-          user: { ...mockSession.user, role: 'user' },
-        };
-        
-        const result = await service.hasAccess(sessionWithUserRole, { roles: ['admin'] });
-        
-        expect(result).toBe(false);
-      });
-
-      it('should return false when session is null', async () => {
-        const result = await service.hasAccess(null, { roles: ['admin'] });
-        
-        expect(result).toBe(false);
-      });
+  describe('requireAuth', () => {
+    it('should return session when authenticated', () => {
+      const result = service.requireAuth(mockSession);
+      
+      expect(mockAuthCoreService.requireAuth).toHaveBeenCalledWith(mockSession);
+      expect(result).toBe(mockSession);
     });
 
-    describe('hasRole', () => {
-      it('should return true when user has role', () => {
-        const result = service.hasRole(mockSession, 'admin');
-        
-        expect(result).toBe(true);
-      });
-
-      it('should return false when user lacks role', () => {
-        const sessionWithUserRole = {
-          ...mockSession,
-          user: { ...mockSession.user, role: 'user' },
-        };
-        
-        const result = service.hasRole(sessionWithUserRole, 'admin');
-        
-        expect(result).toBe(false);
-      });
-
-      it('should return false when session is null', () => {
-        const result = service.hasRole(null, 'admin');
-        
-        expect(result).toBe(false);
-      });
-    });
-
-    describe('hasPermission', () => {
-      it('should return true when user has permission', async () => {
-        mockAuth.api.userHasPermission.mockResolvedValue({ success: true });
-        
-        const result = await service.hasPermission(mockSession, { project: ['read'] });
-        
-        expect(result).toBe(true);
-      });
-
-      it('should return false when user lacks permission', async () => {
-        mockAuth.api.userHasPermission.mockResolvedValue({ success: false });
-        
-        const result = await service.hasPermission(mockSession, { project: ['delete'] });
-        
-        expect(result).toBe(false);
-      });
-
-      it('should return false when session is null', async () => {
-        const result = await service.hasPermission(null, { project: ['read'] });
-        
-        expect(result).toBe(false);
-      });
-    });
-
-    describe('getRoles', () => {
-      it('should return array of roles', () => {
-        const roles = service.getRoles(mockSession);
-        
-        expect(Array.isArray(roles)).toBe(true);
-        expect(roles).toContain('admin');
-      });
-
-      it('should return empty array when session is null', () => {
-        const roles = service.getRoles(null);
-        
-        expect(roles).toEqual([]);
-      });
-    });
-
-    describe('requireAuth', () => {
-      it('should return session when authenticated', () => {
-        const result = service.requireAuth(mockSession);
-        
-        expect(result).toBe(mockSession);
-      });
-
-      it('should throw when session is null', () => {
-        expect(() => service.requireAuth(null)).toThrow();
-      });
-    });
-
-    describe('requireRole', () => {
-      it('should return session when user has role', () => {
-        const result = service.requireRole(mockSession, 'admin');
-        
-        expect(result).toBe(mockSession);
-      });
-
-      it('should throw when user lacks role', () => {
-        const sessionWithUserRole = {
-          ...mockSession,
-          user: { ...mockSession.user, role: 'user' },
-        };
-        
-        expect(() => service.requireRole(sessionWithUserRole, 'admin')).toThrow();
-      });
-    });
-
-    describe('requireAllRoles', () => {
-      it('should return session when user has all roles', () => {
-        const result = service.requireAllRoles(mockSession, 'admin');
-        
-        expect(result).toBe(mockSession);
-      });
-
-      it('should throw when user lacks one role', () => {
-        const sessionWithUserRole = {
-          ...mockSession,
-          user: { ...mockSession.user, role: 'user' },
-        };
-        
-        expect(() => service.requireAllRoles(sessionWithUserRole, 'user', 'admin')).toThrow();
-      });
-    });
-
-    describe('requirePermissions', () => {
-      it('should return session when user has permissions', async () => {
-        mockAuth.api.userHasPermission.mockResolvedValue({ success: true });
-        
-        const result = await service.requirePermissions(mockSession, { project: ['read'] });
-        
-        expect(result).toBe(mockSession);
-      });
-
-      it('should throw when user lacks permissions', async () => {
-        mockAuth.api.userHasPermission.mockResolvedValue({ success: false });
-        
-        await expect(
-          service.requirePermissions(mockSession, { project: ['delete'] })
-        ).rejects.toThrow();
-      });
+    it('should throw when session is null', () => {
+      expect(() => service.requireAuth(null)).toThrow('Authentication required');
+      expect(mockAuthCoreService.requireAuth).toHaveBeenCalledWith(null);
     });
   });
 });

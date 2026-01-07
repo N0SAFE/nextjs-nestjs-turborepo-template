@@ -12,9 +12,12 @@
         "paths": {
             "@/*": ["./src/*"],
             "#/*": ["./*"],
-            "@api/*": ["../api/src/*"],
+            "@api/*": ["../api/src/*"]
         },
-        "target": "ES2017"
+        "target": "ES2017",
+        // Enable react-server condition for TypeScript to understand conditional exports
+        // This matches how Next.js bundler resolves imports in RSC context
+        "customConditions": ["react-server"]
     },
     "include": [
         "tailwind.config.mts",

@@ -61,7 +61,7 @@ describe('invitePlugin', () => {
     it('should have schema definition', () => {
       const plugin = invitePlugin(defaultOptions);
       expect(plugin.schema).toBeDefined();
-      expect(plugin.schema.invite).toBeDefined();
+      expect(plugin.schema.platformInvite).toBeDefined();
     });
 
     it('should have ERROR_CODES exported', () => {
@@ -168,7 +168,7 @@ describe('invitePlugin', () => {
   describe('Schema Structure', () => {
     it('should define invite schema with required fields', () => {
       const plugin = invitePlugin(defaultOptions);
-      const inviteSchema = plugin.schema.invite;
+      const inviteSchema = plugin.schema.platformInvite;
       
       expect(inviteSchema.fields).toBeDefined();
       expect(inviteSchema.fields.token).toBeDefined();
@@ -179,7 +179,7 @@ describe('invitePlugin', () => {
 
     it('should mark token as unique and required', () => {
       const plugin = invitePlugin(defaultOptions);
-      const inviteSchema = plugin.schema.invite;
+      const inviteSchema = plugin.schema.platformInvite;
       
       expect(inviteSchema.fields.token.unique).toBe(true);
       expect(inviteSchema.fields.token.required).toBe(true);
@@ -187,7 +187,7 @@ describe('invitePlugin', () => {
 
     it('should include invitedUserId reference', () => {
       const plugin = invitePlugin(defaultOptions);
-      const inviteSchema = plugin.schema.invite;
+      const inviteSchema = plugin.schema.platformInvite;
       
       expect(inviteSchema.fields.invitedUserId).toBeDefined();
       expect(inviteSchema.fields.invitedUserId.references.model).toBe('user');
@@ -195,7 +195,7 @@ describe('invitePlugin', () => {
 
     it('should include optional usedAt field', () => {
       const plugin = invitePlugin(defaultOptions);
-      const inviteSchema = plugin.schema.invite;
+      const inviteSchema = plugin.schema.platformInvite;
       
       expect(inviteSchema.fields.usedAt).toBeDefined();
       expect(inviteSchema.fields.usedAt.required).toBe(false);

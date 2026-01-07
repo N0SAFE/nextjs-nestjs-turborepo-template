@@ -1,7 +1,22 @@
 import type { Auth } from "@/auth";
 import { ConfigurableModuleBuilder } from "@nestjs/common";
+import type { 
+	ApiMethodsWithAdminPlugin, 
+	ApiMethodsWithOrganizationPlugin 
+} from "@repo/auth/permissions/plugins";
+import type { 
+	platformBuilder,
+	organizationBuilder 
+} from "@repo/auth/permissions";
 
-export interface AuthModuleOptions<A = Auth> {
+/**
+ * Auth configuration must have both admin and organization plugins
+ */
+export type AuthWithPlugins = 
+	ApiMethodsWithAdminPlugin<typeof platformBuilder> & 
+	ApiMethodsWithOrganizationPlugin<typeof organizationBuilder>;
+
+export interface AuthModuleOptions<A extends AuthWithPlugins = Auth> {
 	auth: A;
 	disableTrustedOriginsCors?: boolean;
 	disableBodyParser?: boolean;

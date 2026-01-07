@@ -5,7 +5,7 @@ export type Auth = ReturnType<typeof createBetterAuth>["auth"];
 // Export an auth instance using the factory with config object directly
 export const auth = createBetterAuth(null, {
   DEV_AUTH_KEY: process.env.DEV_AUTH_KEY,
-  DEV_AUTH_EMAIL: process.env.DEV_AUTH_EMAIL,
+  DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL,
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? process.env.AUTH_SECRET,
   BASE_URL: process.env.NEXT_PUBLIC_API_URL,

@@ -13,20 +13,20 @@ import {
 } from '@repo/ui/components/shadcn/dropdown-menu'
 import {
     Home,
-    Authsignin,
-    AuthMe,
-    Appshowcase,
-    AppshowcaseClient,
-    AppshowcaseServer,
+    AuthSignin,
+    AuthDashboard,
+    Showcase,
+    ShowcaseClient,
+    ShowcaseServer,
 } from '@/routes'
 import { useSession } from '@/lib/auth'
 import {
-    User,
     Home as HomeIcon,
     Database,
     Server,
     Monitor,
     ChevronDown,
+    LayoutDashboard,
 } from 'lucide-react'
 import SignOutButton from '../signout/signoutButton'
 import { validateEnvPath } from '#/env'
@@ -34,9 +34,18 @@ import { validateEnvPath } from '#/env'
 const MainNavigation: React.FC = () => {
     const pathname = usePathname()
     const docsUrl = validateEnvPath(process.env.NEXT_PUBLIC_DOC_URL, 'NEXT_PUBLIC_DOC_URL')
+    
+    // Session is pre-hydrated by SessionHydrationProvider in the layout.
+    // Since there's no Suspense boundary, the server waits for session fetch
+    // before sending HTML, so useSession reads from already-populated cache.
+    // isPending should be false immediately.
     const { data: session, isPending } = useSession()
 
     const isActive = (path: string) => pathname === path
+    const isActivePath = (path: string) => pathname.startsWith(path)
+
+    // Note: MainNavigation is now only rendered in (app) route group
+    // Dashboard has its own layout with DashboardSidebar
 
     return (
         <nav className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
@@ -62,6 +71,20 @@ const MainNavigation: React.FC = () => {
                         </Button>
                     </Home.Link>
 
+                    {/* Dashboard link - visible only when authenticated */}
+                    {session?.user && (
+                        <AuthDashboard.Link>
+                            <Button
+                                variant={isActivePath('/dashboard') ? 'default' : 'ghost'}
+                                size="sm"
+                                className="flex items-center space-x-2"
+                            >
+                                <LayoutDashboard className="h-4 w-4" />
+                                <span>Dashboard</span>
+                            </Button>
+                        </AuthDashboard.Link>
+                    )}
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -82,7 +105,7 @@ const MainNavigation: React.FC = () => {
                             <DropdownMenuLabel>Data Examples</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
-                                <Appshowcase.Link className="flex w-full items-center space-x-2">
+                                <Showcase.Link className="flex w-full items-center space-x-2">
                                     <Database className="h-4 w-4" />
                                     <div>
                                         <div className="font-medium">
@@ -92,10 +115,10 @@ const MainNavigation: React.FC = () => {
                                             All examples
                                         </div>
                                     </div>
-                                </Appshowcase.Link>
+                                </Showcase.Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <AppshowcaseClient.Link className="flex w-full items-center space-x-2">
+                                <ShowcaseClient.Link className="flex w-full items-center space-x-2">
                                     <Monitor className="h-4 w-4" />
                                     <div>
                                         <div className="font-medium">
@@ -105,10 +128,10 @@ const MainNavigation: React.FC = () => {
                                             React Query examples
                                         </div>
                                     </div>
-                                </AppshowcaseClient.Link>
+                                </ShowcaseClient.Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <AppshowcaseServer.Link className="flex w-full items-center space-x-2">
+                                <ShowcaseServer.Link className="flex w-full items-center space-x-2">
                                     <Server className="h-4 w-4" />
                                     <div>
                                         <div className="font-medium">
@@ -118,7 +141,7 @@ const MainNavigation: React.FC = () => {
                                             SSR examples
                                         </div>
                                     </div>
-                                </AppshowcaseServer.Link>
+                                </ShowcaseServer.Link>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -141,24 +164,14 @@ const MainNavigation: React.FC = () => {
                         <div className="bg-muted h-8 w-8 animate-pulse rounded-md" />
                     ) : session?.user ? (
                         <div className="flex items-center space-x-2">
-                            <AuthMe.Link>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center space-x-2"
-                                >
-                                    <User className="h-4 w-4" />
-                                    <span>Profile</span>
-                                </Button>
-                            </AuthMe.Link>
                             <SignOutButton />
                         </div>
                     ) : (
-                        <Authsignin.Link>
+                        <AuthSignin.Link>
                             <Button variant="default" size="sm">
                                 Sign In
                             </Button>
-                        </Authsignin.Link>
+                        </AuthSignin.Link>
                     )}
                 </div>
             </div>

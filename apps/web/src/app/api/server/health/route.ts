@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { orpc } from '@/lib/orpc'
+import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
 
 export async function GET() {
     try {
@@ -28,6 +29,7 @@ export async function GET() {
                 apiHealth.status = 'error'
             }
         } catch (error: unknown) {
+            unstable_rethrow(error)
             if (error instanceof Error) {
                 apiHealth.details = `Error fetching API health: ${error.message}`
             }
@@ -45,6 +47,7 @@ export async function GET() {
             status: isHealthy ? 200 : 503,
         })
     } catch (error: unknown) {
+        unstable_rethrow(error)
         return NextResponse.json(
             {
                 status: 'error',

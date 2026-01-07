@@ -43,7 +43,9 @@ export const masterTokenClient = (): BetterAuthClientPlugin =>
                             )
                         }
                     }
-                    return null
+                    
+                    // In production or on server side, always call the original signOut
+                    return signOutFn(...args) as Promise<Awaited<ReturnType<TSignOut>>>
                 }
             }
 

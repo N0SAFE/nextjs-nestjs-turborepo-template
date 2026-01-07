@@ -2,7 +2,7 @@
 
 import { build, BuildConfig } from 'bun'
 import { spawn } from 'child_process'
-import { existsSync, rmSync } from 'fs'
+import { existsSync, rmSync, mkdirSync, cpSync } from 'fs'
 import * as path from 'path'
 
 // @ts-expect-error -- Bun provides import.meta.dir
@@ -24,21 +24,51 @@ function cleanup() {
 }
 
 /**
+ * Copy migrations folder to dist for production use
+ */
+function copyMigrations(): void {
+  const migrationsSource = path.join(srcDir, 'config', 'drizzle', 'migrations')
+  const migrationsDest = path.join(distDir, 'migrations')
+
+  if (!existsSync(migrationsSource)) {
+    console.warn('⚠️ Migrations folder not found at', migrationsSource)
+    return
+  }
+
+  // Ensure dist directory exists
+  if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true })
+  }
+
+  // Copy migrations folder recursively
+  cpSync(migrationsSource, migrationsDest, { recursive: true })
+  console.log('📁 Copied migrations to', migrationsDest)
+}
+
+/**
  * Run Bun build for NestJS application
- * Builds only main.ts and cli.ts entry points with splitting and minification
+ * Builds main.ts and cli.ts entry points with splitting and minification
+ * Builds create-default-admin.ts separately as a standalone bundle
  */
 async function runBuild(): Promise<void> {
-  const entrypoints = [
+  const scriptsDir = path.join(__dirname)
+  
+  // Main entrypoints with code splitting
+  const mainEntrypoints = [
     path.join(srcDir, 'main.ts'),
     path.join(srcDir, 'cli.ts'),
   ]
 
-  const config = {
-    entrypoints,
+  const mainConfig = {
+    entrypoints: mainEntrypoints,
     outdir: distDir,
     minify: true,
     splitting: true,
     target: 'bun' as const,
+    naming: {
+      entry: '[dir]/[name].[ext]',
+      chunk: 'chunk-[hash].[ext]',
+    },
     external: [
       "class-transformer",
       "@nestjs/microservices",
@@ -48,10 +78,33 @@ async function runBuild(): Promise<void> {
 
   console.log(`🔨 Building NestJS entry points${watch ? ' (watching for changes)' : ''}...`)
 
-  const result = await build(config)
+  const mainResult = await build(mainConfig)
 
-  if (!result.success) {
-    console.error('❌ Build failed')
+  if (!mainResult.success) {
+    console.error('❌ Main build failed')
+    process.exit(1)
+  }
+
+  // Build create-default-admin.ts as standalone (no splitting to avoid hash conflicts)
+  console.log('🔨 Building create-default-admin script...')
+  
+  const adminConfig = {
+    entrypoints: [path.join(scriptsDir, 'create-default-admin.ts')],
+    outdir: distDir,
+    minify: true,
+    splitting: false, // No splitting for standalone script
+    target: 'bun' as const,
+    external: [
+      "class-transformer",
+      "@nestjs/microservices",
+      "@nestjs/platform-socket.io",
+    ]
+  } as BuildConfig
+
+  const adminResult = await build(adminConfig)
+
+  if (!adminResult.success) {
+    console.error('❌ Admin script build failed')
     process.exit(1)
   }
 
@@ -94,6 +147,9 @@ async function main(): Promise<void> {
 
     // Run both build and db:generate concurrently
     await Promise.all([runBuild(), runDbGenerate()])
+
+    // Copy migrations folder to dist for production use
+    copyMigrations()
 
     console.log('\n✅ Build completed successfully!')
   } catch (error) {

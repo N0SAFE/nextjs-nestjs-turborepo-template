@@ -44,6 +44,7 @@ services:
       
       # Database
       - DATABASE_URL=${DATABASE_URL}
+      - MIGRATIONS_FOLDER=./dist/migrations
       
       # API Configuration
       - API_PORT=${API_PORT}

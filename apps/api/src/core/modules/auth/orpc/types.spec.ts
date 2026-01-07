@@ -30,13 +30,8 @@ describe('ORPC Auth Types', () => {
         banned: false,
       },
       requireAuth: () => ({ session: {} as any, user: {} as any }),
-      requireRole: () => ({ session: {} as any, user: {} as any }),
-      requireAllRoles: () => ({ session: {} as any, user: {} as any }),
-      requirePermissions: () => Promise.resolve({ session: {} as any, user: {} as any }),
-      access: () => Promise.resolve(true),
-      getRoles: () => [],
-      hasRole: () => true,
-      hasPermission: () => Promise.resolve(true),
+      admin: {} as any,
+      org: {} as any,
     };
 
     mockUnauthenticatedContext = {
@@ -44,13 +39,8 @@ describe('ORPC Auth Types', () => {
       session: null,
       user: null,
       requireAuth: () => ({ session: {} as any, user: {} as any }),
-      requireRole: () => ({ session: {} as any, user: {} as any }),
-      requireAllRoles: () => ({ session: {} as any, user: {} as any }),
-      requirePermissions: () => Promise.resolve({ session: {} as any, user: {} as any }),
-      access: () => Promise.resolve(false),
-      getRoles: () => [],
-      hasRole: () => false,
-      hasPermission: () => Promise.resolve(false),
+      admin: {} as any,
+      org: {} as any,
     };
   });
 

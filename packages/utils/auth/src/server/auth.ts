@@ -11,13 +11,14 @@ import {
     useOrganization
 } from "./plugins";
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+ 
 export const betterAuthFactory = <TSchema extends Record<string, unknown> = Record<string, never>>(
     database: unknown,
     env: {
         DEV_AUTH_KEY: string | undefined;
-        DEV_AUTH_EMAIL: string | undefined;
+        DEFAULT_ADMIN_EMAIL: string | undefined;
         NODE_ENV: string;
+        ENABLE_MASTER_TOKEN?: boolean;
         BETTER_AUTH_SECRET?: string;
         BASE_URL?: string;
         APP_URL?: string;
@@ -28,7 +29,7 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
 ) => {
     const dbInstance = database as NodePgDatabase<TSchema>;
 
-    const { DEV_AUTH_KEY, DEV_AUTH_EMAIL, NODE_ENV, BETTER_AUTH_SECRET, BASE_URL, APP_URL, NEXT_PUBLIC_APP_URL, TRUSTED_ORIGINS, AUTH_BASE_DOMAIN } = env;
+    const { DEV_AUTH_KEY, DEFAULT_ADMIN_EMAIL, ENABLE_MASTER_TOKEN, BETTER_AUTH_SECRET, BASE_URL, APP_URL, NEXT_PUBLIC_APP_URL, TRUSTED_ORIGINS, AUTH_BASE_DOMAIN } = env;
 
     // Build trusted origins: both public and private web app URLs + additional origins
     const origins: string[] = [];
@@ -88,11 +89,11 @@ export const betterAuthFactory = <TSchema extends Record<string, unknown> = Reco
             useAdmin(),
             masterTokenPlugin({
                 devAuthKey: DEV_AUTH_KEY ?? "",
-                enabled: NODE_ENV === "development" && !!DEV_AUTH_KEY && !!DEV_AUTH_EMAIL,
-                masterEmail: DEV_AUTH_EMAIL ?? "",
+                enabled: ENABLE_MASTER_TOKEN ?? (!!DEV_AUTH_KEY && !!DEFAULT_ADMIN_EMAIL),
+                masterEmail: DEFAULT_ADMIN_EMAIL ?? "",
             }),
             loginAsPlugin({
-                enabled: NODE_ENV === "development" && !!DEV_AUTH_KEY,
+                enabled: !!DEV_AUTH_KEY,
                 devAuthKey: DEV_AUTH_KEY ?? "",
             }),
             openAPI(),

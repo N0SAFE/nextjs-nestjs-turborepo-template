@@ -133,11 +133,14 @@ RUN apk add --no-cache curl wget bash && \
 RUN --mount=type=bind,from=builder,source=/app,target=/mnt/builder \
     # Copy root workspace files
     cp /mnt/builder/package.json /mnt/builder/turbo.json /app/ && \
-    # Copy built API app (dist + package.json + scripts for entrypoint)
+    # Copy built API app (dist + package.json + scripts + drizzle migrations for entrypoint)
     mkdir -p /app/apps/api && \
     cp -r /mnt/builder/apps/api/dist /app/apps/api/ && \
     cp /mnt/builder/apps/api/package.json /app/apps/api/ && \
     cp -r /mnt/builder/apps/api/scripts /app/apps/api/ && \
+    # Copy drizzle migrations to the path expected by CLI (./src/config/drizzle/migrations)
+    mkdir -p /app/apps/api/src/config && \
+    cp -r /mnt/builder/apps/api/src/config/drizzle /app/apps/api/src/config/drizzle && \
     # Copy root node_modules using tar to preserve symlinks
     cd /mnt/builder && tar cf - node_modules | tar xf - -C /app && \
     # Copy api node_modules if exists

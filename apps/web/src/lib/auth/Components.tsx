@@ -1,7 +1,7 @@
 'use client'
 
 import { PropsWithChildren } from 'react'
-import { Authsignin } from '@/routes/index'
+import { AuthSignin } from '@/routes/index'
 import { Button } from '@repo/ui/components/shadcn/button'
 import { signOut, useSession, $Infer } from './index'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -31,7 +31,7 @@ export function IsSignedOut({
 }
 
 export function LoginLink(
-    props: Omit<React.ComponentProps<typeof Authsignin.Link>, 'search'>
+    props: Omit<React.ComponentProps<typeof AuthSignin.Link>, 'search'>
 ) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -40,7 +40,7 @@ export function LoginLink(
 
     // Cast the entire Link component to work around type generation issues
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-    const LinkComponent = Authsignin.Link as any
+    const LinkComponent = AuthSignin.Link as any
 
      
     return (

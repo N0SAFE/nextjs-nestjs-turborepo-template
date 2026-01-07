@@ -34,6 +34,37 @@ function asZodObject(schema: z.ZodType): z.ZodObject<z.ZodRawShape> | null {
   return null;
 }
 
+/**
+ * Helper type to convert inferred type to ZodRawShape
+ * Used for type-level schema manipulation when actual ZodObject shape is not available
+ */
+type InferredToZodRawShape<T> = T extends Record<string, unknown>
+  ? { [K in keyof T]: z.ZodType<T[K]> }
+  : z.ZodRawShape;
+
+/**
+ * Extended type for InputSchemaProxy operations that handles both:
+ * 1. Direct z.ZodObject<Shape> - extracts Shape from generic
+ * 2. z.ZodType<T> wrapper - extracts T and converts to ZodRawShape
+ * 
+ * This allows .extend() to work correctly even when the input type is
+ * a generic z.ZodType<{...}> wrapper (common from QueryBuilder results)
+ */
+type ExtendInputSchema<TInput extends z.ZodType, TExtension extends z.ZodRawShape> =
+  TInput extends z.ZodObject<infer Shape>
+    ? z.ZodObject<Shape & TExtension>
+    : z.ZodObject<InferredToZodRawShape<z.infer<TInput>> & TExtension>;
+
+type PickInputSchema<TInput extends z.ZodType, K extends keyof z.infer<TInput>> =
+  TInput extends z.ZodObject<infer Shape>
+    ? z.ZodObject<Pick<Shape, K & keyof Shape>>
+    : z.ZodObject<Pick<InferredToZodRawShape<z.infer<TInput>>, K & keyof InferredToZodRawShape<z.infer<TInput>>>>;
+
+type OmitInputSchema<TInput extends z.ZodType, K extends keyof z.infer<TInput>> =
+  TInput extends z.ZodObject<infer Shape>
+    ? z.ZodObject<Omit<Shape, K & keyof Shape>>
+    : z.ZodObject<Omit<InferredToZodRawShape<z.infer<TInput>>, K & keyof InferredToZodRawShape<z.infer<TInput>>>>;
+
 
 /**
  * Compute the final schema type after applying a wrapper
@@ -917,9 +948,7 @@ class InputSchemaProxy<
   pick<K extends keyof z.infer<TInput>>(
     keys: readonly K[]
   ): InputSchemaProxy<
-    TInput extends z.ZodObject<infer Shape>
-      ? z.ZodObject<Pick<Shape, K & keyof Shape>>
-      : z.ZodType,
+    PickInputSchema<TInput, K>,
     TOutput,
     IdentityWrapper,
     TOutputWrapper,
@@ -934,9 +963,7 @@ class InputSchemaProxy<
       const newBuilder = this._routeBuilder.input(picked);
       // Type assertion needed due to complex conditional type inference
       return new InputSchemaProxy(newBuilder) as unknown as InputSchemaProxy<
-        TInput extends z.ZodObject<infer Shape>
-          ? z.ZodObject<Pick<Shape, K & keyof Shape>>
-          : z.ZodType,
+        PickInputSchema<TInput, K>,
         TOutput,
         IdentityWrapper,
         TOutputWrapper,
@@ -952,9 +979,7 @@ class InputSchemaProxy<
   omit<K extends keyof z.infer<TInput>>(
     keys: readonly K[]
   ): InputSchemaProxy<
-    TInput extends z.ZodObject<infer Shape>
-      ? z.ZodObject<Omit<Shape, K & keyof Shape>>
-      : z.ZodType,
+    OmitInputSchema<TInput, K>,
     TOutput,
     IdentityWrapper,
     TOutputWrapper,
@@ -968,9 +993,7 @@ class InputSchemaProxy<
       );
       const newBuilder = this._routeBuilder.input(omitted);
       return new InputSchemaProxy(newBuilder) as unknown as InputSchemaProxy<
-        TInput extends z.ZodObject<infer Shape>
-          ? z.ZodObject<Omit<Shape, K & keyof Shape>>
-          : z.ZodType,
+        OmitInputSchema<TInput, K>,
         TOutput,
         IdentityWrapper,
         TOutputWrapper,
@@ -986,9 +1009,7 @@ class InputSchemaProxy<
   extend<TExtension extends z.ZodRawShape>(
     extension: TExtension
   ): InputSchemaProxy<
-    TInput extends z.ZodObject<infer Shape>
-      ? z.ZodObject<Shape & TExtension>
-      : z.ZodType,
+    ExtendInputSchema<TInput, TExtension>,
     TOutput,
     IdentityWrapper,
     TOutputWrapper,
@@ -1000,9 +1021,7 @@ class InputSchemaProxy<
       const extended = zodObj.extend(extension);
       const newBuilder = this._routeBuilder.input(extended);
       return new InputSchemaProxy(newBuilder) as unknown as InputSchemaProxy<
-        TInput extends z.ZodObject<infer Shape>
-          ? z.ZodObject<Shape & TExtension>
-          : z.ZodType,
+        ExtendInputSchema<TInput, TExtension>,
         TOutput,
         IdentityWrapper,
         TOutputWrapper,
