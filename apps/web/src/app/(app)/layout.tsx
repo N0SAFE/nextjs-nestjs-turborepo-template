@@ -3,10 +3,6 @@ import MainNavigation from '@/components/navigation/MainNavigation'
 import { SessionHydrationProvider } from '@/utils/providers/SessionHydrationProvider'
 import Loader from '@repo/ui/components/atomics/atoms/Loader'
 
-// Performance timing helper
-const startTimer = () => performance.now()
-const elapsed = (start: number) => (performance.now() - start).toFixed(2)
-
 /**
  * App Route Group Layout
  * 
@@ -27,12 +23,7 @@ export default function AppLayout({
 }: {
     children: React.ReactNode
 }): JSX.Element {
-    const layoutStart = startTimer()
-    console.log(`📱 AppLayout: START`)
-    console.log(`📱 AppLayout: Rendering SessionHydrationProvider + MainNavigation... (setup took ${elapsed(layoutStart)}ms)`)
-    
-    const jsxStart = startTimer()
-    const jsx = (
+    return (
         <>
             <SessionHydrationProvider>
                 <MainNavigation />
@@ -50,8 +41,4 @@ export default function AppLayout({
             </Suspense>
         </>
     )
-    
-    console.log(`📱 AppLayout: JSX created in ${elapsed(jsxStart)}ms`)
-    console.log(`📱 AppLayout: END - Total: ${elapsed(layoutStart)}ms`)
-    return jsx
 }

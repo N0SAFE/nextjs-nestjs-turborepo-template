@@ -7,6 +7,7 @@ import {
 	type RequestHeaders,
 } from "./auth-core.service";
 import type { PluginRegistry } from "../plugin-utils/plugin-wrapper-factory";
+import type { AuthWithPlugins } from "../definitions/auth-module-definition";
 
 // ============================================================================
 // AuthService Class (REQUEST-SCOPED - Wrapper for HTTP Context)
@@ -42,7 +43,7 @@ import type { PluginRegistry } from "../plugin-utils/plugin-wrapper-factory";
  * ```
  */
 @Injectable({ scope: Scope.REQUEST })
-export class AuthService<T extends { api: T["api"] } = Auth> {
+export class AuthService<T extends AuthWithPlugins = Auth> {
 
 	constructor(
 		private readonly core: AuthCoreService<T>,

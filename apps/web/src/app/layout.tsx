@@ -17,10 +17,6 @@ import { validateEnvSafe } from '#/env'
 import { DynamicTanstackDevTools } from '@/components/devtools/DynamicTanstackDevTools'
 import { PerformanceToggle } from '@/components/dev'
 
-// Performance timing helper
-const startTimer = () => performance.now()
-const elapsed = (start: number) => (performance.now() - start).toFixed(2)
-
 const fontSans = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
@@ -46,16 +42,12 @@ export default function RootLayout({
 }: {
     children: React.ReactNode
 }): JSX.Element {
-    const layoutStart = startTimer()
-    console.log(`🏠 RootLayout: START`)
     // Use safe validation to avoid build-time errors during prerendering
     // Environment variables may not be available during static generation
     const envResult = validateEnvSafe(process.env)
     const env = envResult.success ? envResult.data : null
-    console.log(`🏠 RootLayout: Env validated in ${elapsed(layoutStart)}ms, rendering HTML...`)
 
-    const jsxStart = startTimer()
-    const jsx = (
+    return (
         <html lang="en">
             <head>
                 <link rel="manifest" href="/site.webmanifest" />
@@ -104,8 +96,4 @@ export default function RootLayout({
             </body>
         </html>
     )
-    
-    console.log(`🏠 RootLayout: JSX created in ${elapsed(jsxStart)}ms`)
-    console.log(`🏠 RootLayout: END - Total: ${elapsed(layoutStart)}ms`)
-    return jsx
 }

@@ -31,10 +31,6 @@ import { PageTimingLogger } from '@/lib/timing'
 
 import type { JSX } from 'react'
 
-// Performance timing helper
-const startTimer = () => performance.now()
-const elapsed = (start: number) => (performance.now() - start).toFixed(2)
-
 function FeatureCard({
     icon: Icon,
     title,
@@ -71,10 +67,7 @@ function FeatureCard({
 }
 
 export default function Page(): JSX.Element {
-    const pageStart = startTimer()
-    console.log(`🏡 HomePage: START`)
-    console.log(`🏡 HomePage: Rendering JSX... (setup took ${elapsed(pageStart)}ms)`)
-    const jsx = (
+    return (
         <div className="container mx-auto mt-8 space-y-12 px-4 py-12 md:py-16 lg:py-20">
             {/* Hero Section */}
             <section className="space-y-6 text-center">
@@ -254,7 +247,4 @@ export default function Page(): JSX.Element {
             <PageTimingLogger pageName="Home" />
         </div>
     )
-    
-    console.log(`🏡 HomePage: JSX created in ${elapsed(pageStart)}ms`)
-    return jsx
 }

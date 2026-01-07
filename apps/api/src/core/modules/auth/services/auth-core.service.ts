@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { Auth } from "@/auth";
 import {
 	type AuthModuleOptions,
+	type AuthWithPlugins,
 	MODULE_OPTIONS_TOKEN,
 } from "../definitions/auth-module-definition";
 import type { IncomingHttpHeaders } from "http";
@@ -12,9 +13,9 @@ import type { UserSession } from "../utils/auth-utils";
 import {
 	createPluginRegistry,
 	createPluginMiddlewares,
+	type PluginRegistry,
 	type PlatformBuilder,
 	type OrganizationBuilder,
-	type PluginRegistry,
 } from "../plugin-utils/plugin-wrapper-factory";
 import {
 	createOrpcMiddlewareProxy,
@@ -28,8 +29,7 @@ import {
 import type {
 	InferStatementFromBuilder,
 	InferRoleNamesFromBuilder,
-	ApiMethodsWithAdminPlugin,
-	ApiMethodsWithOrganizationPlugin,
+
 } from "@repo/auth/permissions/plugins";
 
 // ============================================================================
@@ -92,17 +92,6 @@ type OrgPermissions = StrictOrgPermissions | PermissionObject;
 
 /** Role name type for organization context (string union: 'owner' | 'admin' | 'member') */
 type OrgRoles = InferRoleNamesFromBuilder<OrganizationBuilder>;
-
-// ============================================================================
-// Auth Type Constraint
-// ============================================================================
-
-/**
- * Full auth type constraint with both admin and organization plugins
- */
-type FullAuthConstraint = 
-	ApiMethodsWithAdminPlugin<PlatformBuilder> & 
-	ApiMethodsWithOrganizationPlugin<OrganizationBuilder>;
 
 // ============================================================================
 // ORPC Middleware Builder (Using Typed Wrappers)
@@ -329,7 +318,7 @@ class ChecksBuilder {
  * }
  */
 const registryCache = new WeakMap<
-	Record<string, unknown>,
+	object,
 	{
 		registry: ReturnType<typeof createPluginRegistry>;
 		middlewares: ReturnType<typeof createPluginMiddlewares>;
@@ -371,7 +360,7 @@ const registryCache = new WeakMap<
  * ```
  */
 @Injectable()
-export class AuthCoreService<T extends { api: T["api"] } = Auth> {
+export class AuthCoreService<T extends AuthWithPlugins = Auth> {
 	// Builder instances (lazy-initialized, shared across application)
 	private _middleware: OrpcMiddlewareBuilder | null = null;
 	private _checks: ChecksBuilder | null = null;
@@ -452,15 +441,19 @@ export class AuthCoreService<T extends { api: T["api"] } = Auth> {
 	 * 
 	 * Built once per auth configuration and reused across all instances.
 	 * This avoids expensive registry creation on every call.
+	 * 
+	 * Type assertion rationale: T extends AuthWithPlugins, so this is safe.
+	 * The assertion is required due to TypeScript variance restrictions.
 	 */
-	getRegistry(): ReturnType<typeof createPluginRegistry> {
-		const authConfig = this.options.auth as unknown as Record<string, unknown>;
+	getRegistry(): ReturnType<typeof createPluginRegistry<AuthWithPlugins>> {
+		const authConfig = this.options.auth;
 		let cached = registryCache.get(authConfig);
 		
 		if (!cached) {
-			const registry = createPluginRegistry(authConfig as unknown as FullAuthConstraint);
+			// Safe cast: T extends AuthWithPlugins, guaranteed by class constraint
+			const registry = createPluginRegistry(authConfig as AuthWithPlugins);
 			const middlewares = createPluginMiddlewares(
-				authConfig as unknown as FullAuthConstraint,
+				authConfig as AuthWithPlugins,
 				registry
 			);
 			cached = { registry, middlewares };
@@ -475,15 +468,19 @@ export class AuthCoreService<T extends { api: T["api"] } = Auth> {
 	 * 
 	 * Built once per auth configuration and reused across all instances.
 	 * Depends on the registry, so they're built together.
+	 * 
+	 * Type assertion rationale: T extends AuthWithPlugins, so this is safe.
+	 * The assertion is required due to TypeScript variance restrictions.
 	 */
-	getMiddlewares(): ReturnType<typeof createPluginMiddlewares> {
-		const authConfig = this.options.auth as unknown as Record<string, unknown>;
+	getMiddlewares(): ReturnType<typeof createPluginMiddlewares<AuthWithPlugins>> {
+		const authConfig = this.options.auth;
 		let cached = registryCache.get(authConfig);
 		
 		if (!cached) {
-			const registry = createPluginRegistry(authConfig as unknown as FullAuthConstraint);
+			// Safe cast: T extends AuthWithPlugins, guaranteed by class constraint
+			const registry = createPluginRegistry(authConfig as AuthWithPlugins);
 			const middlewares = createPluginMiddlewares(
-				authConfig as unknown as FullAuthConstraint,
+				authConfig as AuthWithPlugins,
 				registry
 			);
 			cached = { registry, middlewares };
@@ -574,7 +571,7 @@ export class AuthCoreService<T extends { api: T["api"] } = Auth> {
 		}>().middleware(async (opts) => {
 			// Extract session from request headers
 			const session = await auth.api.getSession({
-				headers: normalizeHeaders(opts.context.request.headers as unknown as IncomingHttpHeaders),
+				headers: normalizeHeaders(opts.context.request.headers as RequestHeaders),
 			});
 			
 			// Create auth utilities with session
