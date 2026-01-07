@@ -1,481 +1,224 @@
 /**
- * Plugin Wrapper Factory for Better Auth
+ * Plugin Wrapper Factory for Better Auth - NestJS Integration
  * 
- * This module provides a factory class system that creates type-safe wrapper classes
- * for Better Auth plugins. Each plugin gets its own wrapper class with methods that
- * automatically inject headers and provide convenient access to plugin functionality.
+ * This module sets up the typed plugin registry using the generic permission plugins
+ * from @repo/auth. It provides type-safe wrappers for admin and organization plugins
+ * with automatic header injection and optional session caching.
  * 
  * Architecture:
- * - Factory class receives Auth instance
- * - Factory creates plugin-specific wrapper classes
- * - Wrapper classes encapsulate all plugin methods with automatic header injection
- * - Full type inference from Better Auth configuration
+ * - Uses PluginWrapperRegistry from @repo/auth for plugin management
+ * - Registers AdminPermissionsPlugin and OrganizationsPermissionsPlugin
+ * - Auth is provided once when creating the registry
+ * - Session can be passed to avoid redundant getSession() calls
+ * - Exports typed aliases and factory function for use throughout the app
  */
 
-import type { Auth } from "@/auth";
+import {
+  PluginWrapperRegistry,
+  AdminPermissionsPlugin,
+  OrganizationsPermissionsPlugin,
+  // Import builders for type inference
+  platformBuilder,
+  organizationBuilder,
+  type InferSessionFromAuth,
+  type ApiMethodsWithAdminPlugin,
+  type ApiMethodsWithOrganizationPlugin,
+} from "@repo/auth/permissions";
+import { AdminMiddlewareDefinition } from "./middleware/admin.middleware-definition";
+import { OrganizationMiddlewareDefinition } from "./middleware/organization.middleware-definition";
+
+// ============================================================================
+// Type Exports for Plugin Wrappers
+// ============================================================================
+
+// ============================================================================
+// Permission Builder Types - Used for type constraints
+// ============================================================================
+
+/** Platform permission builder type */
+export type PlatformBuilder = typeof platformBuilder;
+
+/** Organization permission builder type */
+export type OrganizationBuilder = typeof organizationBuilder;
 
 /**
- * Base interface for plugin wrapper classes
- * All plugin wrappers should implement this interface
+ * Typed AdminPermissionsPlugin configured with our platform permissions
+ * Use this type when you need to annotate admin plugin parameters or returns
  */
-export interface PluginWrapper {
-  /**
-   * Check if the current user has access to this plugin
-   * Each plugin implements its own access logic
-   */
-  hasAccess(...args: any[]): Promise<boolean>;
-}
+export type AdminPluginWrapper<TAuth extends ApiMethodsWithAdminPlugin<PlatformBuilder> = ApiMethodsWithAdminPlugin<PlatformBuilder>> = AdminPermissionsPlugin<
+  PlatformBuilder,
+  TAuth
+>;
 
 /**
- * Options for creating a plugin wrapper
+ * Typed OrganizationsPermissionsPlugin configured with our organization permissions
+ * Use this type when you need to annotate organization plugin parameters or returns
  */
-export interface PluginWrapperOptions {
-  /** Auth instance from Better Auth */
-  auth: Auth;
-  /** Headers to inject into API calls */
-  headers: Headers;
-}
+export type OrganizationPluginWrapper<TAuth extends ApiMethodsWithOrganizationPlugin<OrganizationBuilder> = ApiMethodsWithOrganizationPlugin<OrganizationBuilder>> = OrganizationsPermissionsPlugin<
+  OrganizationBuilder,
+  TAuth
+>;
 
 /**
- * Factory function type for creating plugin wrappers
- * Takes options and returns a plugin wrapper instance
+ * Plugin registry interface - the record of all available plugins
+ * Returned by getAll() method
  */
-export type PluginWrapperFactory<T extends PluginWrapper> = (
-  options: PluginWrapperOptions
-) => T;
-
-/**
- * Registry of plugin wrapper factories
- * Maps plugin names to their factory functions
- */
-export class PluginWrapperRegistry {
-  private factories = new Map<string, PluginWrapperFactory<any>>();
-
-  /**
-   * Register a plugin wrapper factory
-   * 
-   * @param pluginName - Name of the plugin (e.g., 'admin', 'organization')
-   * @param factory - Factory function that creates the wrapper
-   * 
-   * @example
-   * ```typescript
-   * registry.register('admin', (options) => new AdminPluginWrapper(options));
-   * ```
-   */
-  register<T extends PluginWrapper>(
-    pluginName: string,
-    factory: PluginWrapperFactory<T>
-  ): void {
-    this.factories.set(pluginName, factory);
-  }
-
-  /**
-   * Create a plugin wrapper instance
-   * 
-   * @param pluginName - Name of the plugin
-   * @param options - Options for creating the wrapper
-   * @returns Plugin wrapper instance
-   * 
-   * @example
-   * ```typescript
-   * const adminWrapper = registry.create('admin', { auth, headers });
-   * ```
-   */
-  create<T extends PluginWrapper>(
-    pluginName: string,
-    options: PluginWrapperOptions
-  ): T {
-    const factory = this.factories.get(pluginName);
-    if (!factory) {
-      throw new Error(`Plugin wrapper factory not found for: ${pluginName}`);
-    }
-    return factory(options);
-  }
-
-  /**
-   * Check if a plugin wrapper is registered
-   */
-  has(pluginName: string): boolean {
-    return this.factories.has(pluginName);
-  }
-
-  /**
-   * Get all registered plugin names
-   */
-  getPluginNames(): string[] {
-    return Array.from(this.factories.keys());
-  }
-}
-
-/**
- * Global plugin wrapper registry
- * Used to register and create plugin wrappers
- */
-export const pluginWrapperRegistry = new PluginWrapperRegistry();
-
-/**
- * Admin Plugin Wrapper
- * Wraps Better Auth admin plugin methods with automatic header injection
- */
-export class AdminPluginWrapper implements PluginWrapper {
-  constructor(private readonly options: PluginWrapperOptions) {}
-
-  /**
-   * Check if the current user has admin access
-   */
-  async hasAccess(): Promise<boolean> {
-    try {
-      const session = await this.options.auth.api.getSession({
-        headers: this.options.headers,
-      });
-      
-      if (!session?.user) return false;
-      
-      // Check if user has admin role
-      const user = session.user as { role?: string };
-      return user.role === 'admin' || user.role === 'superAdmin';
-    } catch (error) {
-      console.error('AdminPluginWrapper.hasAccess error:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Create a new user (admin-only operation)
-   */
-  async createUser(data: {
-    email: string;
-    password: string;
-    name: string;
-    role?: string;
-  }) {
-    return await this.options.auth.api.createUser({
-      headers: this.options.headers,
-      body: {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        data: {
-          role: data.role ?? 'user',
-          emailVerified: false,
-        },
-      },
-    });
-  }
-
-  /**
-   * Update an existing user
-   */
-  async updateUser(
-    userId: string,
-    data: { name?: string; email?: string }
-  ) {
-    return await this.options.auth.api.updateUser({
-      headers: this.options.headers,
-      query: { userId },
-      body: {
-        name: data.name,
-        email: data.email,
-      },
-    });
-  }
-
-  /**
-   * Set or update a user's role
-   */
-  async setRole(userId: string, role: 'user' | 'admin' | 'superAdmin') {
-    return await this.options.auth.api.setRole({
-      headers: this.options.headers,
-      body: {
-        userId,
-        role,
-      },
-    });
-  }
-
-  /**
-   * Delete a user
-   */
-  async deleteUser(userId: string) {
-    return await this.options.auth.api.deleteUser({
-      headers: this.options.headers,
-      query: { userId },
-    });
-  }
-
-  /**
-   * Ban a user
-   */
-  async banUser(userId: string, banReason?: string) {
-    return await this.options.auth.api.banUser({
-      headers: this.options.headers,
-      body: {
-        userId,
-        ...(banReason ? { banReason } : {}),
-      },
-    });
-  }
-
-  /**
-   * Unban a previously banned user
-   */
-  async unbanUser(userId: string) {
-    return await this.options.auth.api.unbanUser({
-      headers: this.options.headers,
-      body: { userId },
-    });
-  }
-
-  /**
-   * List all users
-   */
-  async listUsers(options?: {
-    limit?: number;
-    offset?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) {
-    return await this.options.auth.api.listUsers({
-      headers: this.options.headers,
-      query: options ?? {},
-    });
-  }
-}
-
-/**
- * Organization Plugin Wrapper
- * Wraps Better Auth organization plugin methods with automatic header injection
- */
-export class OrganizationPluginWrapper implements PluginWrapper {
-  constructor(private readonly options: PluginWrapperOptions) {}
-
-  /**
-   * Check if the current user has access to a specific organization
-   */
-  async hasAccess(organizationId?: string): Promise<boolean> {
-    try {
-      const session = await this.options.auth.api.getSession({
-        headers: this.options.headers,
-      });
-      
-      if (!session?.user) return false;
-      
-      // If no organizationId provided, check if user is member of any organization
-      if (!organizationId) {
-        // This is a simplified check - in practice might want to list organizations
-        return true;
-      }
-      
-      // Try to get member record for specific organization
-      const result = await this.options.auth.api.getMember({
-        headers: this.options.headers,
-        query: {
-          organizationId,
-          userId: session.user.id,
-        },
-      });
-      
-      return !!result;
-    } catch (error) {
-      console.error('OrganizationPluginWrapper.hasAccess error:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Create a new organization
-   */
-  async createOrganization(data: {
-    name: string;
-    slug: string;
-    userId: string;
-    metadata?: Record<string, unknown>;
-  }) {
-    return await this.options.auth.api.createOrganization({
-      headers: this.options.headers,
-      body: data,
-    });
-  }
-
-  /**
-   * Update an existing organization
-   */
-  async updateOrganization(
-    organizationId: string,
-    data: {
-      name?: string;
-      slug?: string;
-      metadata?: Record<string, unknown>;
-    }
-  ) {
-    return await this.options.auth.api.updateOrganization({
-      headers: this.options.headers,
-      body: { 
-        organizationId,
-        data: {
-          name: data.name,
-          slug: data.slug,
-          metadata: data.metadata,
-        },
-      },
-    });
-  }
-
-  /**
-   * Delete an organization
-   */
-  async deleteOrganization(organizationId: string) {
-    return await this.options.auth.api.deleteOrganization({
-      headers: this.options.headers,
-      body: { organizationId },
-    });
-  }
-
-  /**
-   * Get organization details by ID
-   */
-  async getOrganization(organizationId: string) {
-    return await this.options.auth.api.getFullOrganization({
-      headers: this.options.headers,
-      query: { organizationId },
-    });
-  }
-
-  /**
-   * List all organizations for the current user
-   */
-  async listOrganizations() {
-    return await this.options.auth.api.listOrganizations({
-      headers: this.options.headers,
-    });
-  }
-
-  /**
-   * Add a member to an organization
-   */
-  async addMember(data: {
-    organizationId: string;
-    userId: string;
-    role: 'owner' | 'admin' | 'member';
-  }) {
-    return await this.options.auth.api.addMember({
-      headers: this.options.headers,
-      body: data,
-    });
-  }
-
-  /**
-   * Remove a member from an organization
-   */
-  async removeMember(data: {
-    organizationId: string;
-    memberIdOrEmail: string;
-  }) {
-    return await this.options.auth.api.removeMember({
-      headers: this.options.headers,
-      body: data,
-    });
-  }
-
-  /**
-   * Update a member's role within an organization
-   */
-  async updateMemberRole(data: {
-    organizationId: string;
-    memberId: string;
-    role: 'owner' | 'admin' | 'member';
-  }) {
-    return await this.options.auth.api.updateMemberRole({
-      headers: this.options.headers,
-      body: data,
-    });
-  }
-
-  /**
-   * List all members of an organization
-   */
-  async listMembers(organizationId: string) {
-    return await this.options.auth.api.listMembers({
-      headers: this.options.headers,
-      query: { organizationId },
-    });
-  }
-
-  /**
-   * Get a specific member by organization and user ID
-   */
-  async getMember(data: {
-    organizationId: string;
-    userId: string;
-  }) {
-    // getMember is not directly available in Better Auth API
-    // We can list members and filter
-    const result = await this.options.auth.api.listMembers({
-      headers: this.options.headers,
-      query: { organizationId: data.organizationId },
-    });
-    
-    // listMembers returns an object with members array
-    if (result && typeof result === 'object' && 'members' in result) {
-      const membersArray = (result as { members: Array<{ userId: string }> }).members;
-      return membersArray.find((member) => member.userId === data.userId) || null;
-    }
-    return null;
-  }
-
-  /**
-   * Invite a user to join an organization
-   */
-  async inviteMember(data: {
-    organizationId: string;
-    email: string;
-    role: 'owner' | 'admin' | 'member';
-  }) {
-    // Note: inviteMember might not be available in Better Auth public API
-    // This is a placeholder that may need adjustment based on actual API
-    throw new Error('inviteMember is not available in Better Auth API - use organization invitation flow');
-  }
-
-  /**
-   * Accept an organization invitation
-   */
-  async acceptInvitation(invitationId: string) {
-    return await this.options.auth.api.acceptInvitation({
-      headers: this.options.headers,
-      body: { invitationId },
-    });
-  }
-
-  /**
-   * Reject an organization invitation
-   */
-  async rejectInvitation(invitationId: string) {
-    return await this.options.auth.api.rejectInvitation({
-      headers: this.options.headers,
-      body: { invitationId },
-    });
-  }
-
-  /**
-   * List pending invitations for the current user
-   */
-  async listInvitations() {
-    return await this.options.auth.api.listInvitations({
-      headers: this.options.headers,
-    });
-  }
+export interface PluginRegistry {
+  admin: AdminPluginWrapper;
+  organization: OrganizationPluginWrapper;
 }
 
 // ============================================================================
-// Register Default Plugin Wrappers
+// Registry Factory
 // ============================================================================
 
-// Register admin plugin wrapper
-pluginWrapperRegistry.register('admin', (options) => new AdminPluginWrapper(options));
+/**
+ * Create a typed plugin wrapper registry for a given auth instance
+ * 
+ * This factory provides type-safe creation of plugin wrappers with:
+ * - Auth bound at registry creation (supports multiple auth instances)
+ * - Automatic header injection per-request
+ * - Full type inference from Better Auth and permission builders
+ * 
+ * @param auth - Better Auth instance to bind to this registry
+ * @returns Typed plugin wrapper registry
+ * 
+ * @example
+ * ```typescript
+ * // Create registry bound to auth instance
+ * const registry = createPluginRegistry(auth);
+ * 
+ * // Get all plugins at once (typed as PluginRegistry)
+ * const plugins = registry.getAll(headers);
+ * await plugins.admin.createUser({ ... });
+ * await plugins.organization.createOrganization({ ... });
+ * 
+ * // Or get single plugin
+ * const admin = registry.create('admin', headers);
+ * await admin.setRole(userId, 'admin');
+ * ```
+ */
+export function createPluginRegistry<TAuth extends ApiMethodsWithAdminPlugin<PlatformBuilder> & ApiMethodsWithOrganizationPlugin<OrganizationBuilder>>(auth: TAuth) {
+  return new PluginWrapperRegistry<TAuth>(auth)
+    .register(
+      'admin',
+      createAdminWrapper
+    )
+    .register(
+      'organization',
+      createOrganizationWrapper
+    );
+}
 
-// Register organization plugin wrapper
-pluginWrapperRegistry.register('organization', (options) => new OrganizationPluginWrapper(options));
+/**
+ * Type of our configured registry
+ * Useful for type annotations
+ */
+export type AppPluginRegistry = ReturnType<typeof createPluginRegistry>;
 
-// Export type aliases for convenience
-export type AdminPlugin = AdminPluginWrapper;
-export type OrganizationPlugin = OrganizationPluginWrapper;
+export type InferPluginsFromRegistry<TPluginRegistry extends PluginWrapperRegistry<any, any>> = ReturnType<TPluginRegistry['getAll']>
+
+// ============================================================================
+// Factory Helper Functions
+// ============================================================================
+
+/**
+ * Create an AdminPluginWrapper instance directly
+ * Convenience function for when you don't need the full registry
+ * 
+ * @param auth - Better Auth instance
+ * @param headers - Request headers for API calls
+ * @param session - Optional cached session to avoid redundant getSession() calls
+ * @returns Typed AdminPluginWrapper
+ * 
+ * @example
+ * ```typescript
+ * const adminPlugin = createAdminWrapper(auth, context.headers, session);
+ * await adminPlugin.createUser({ ... });
+ * ```
+ */
+export function createAdminWrapper<TAuth extends ApiMethodsWithAdminPlugin<PlatformBuilder>>(
+  auth: TAuth,
+  headers: Headers,
+  session?: InferSessionFromAuth<TAuth> | null
+) {
+  return new AdminPermissionsPlugin({
+    auth,
+    headers,
+    permissionBuilder: platformBuilder,
+    session: session ?? undefined,
+  });
+}
+
+/**
+ * Create an OrganizationPluginWrapper instance directly
+ * Convenience function for when you don't need the full registry
+ * 
+ * @param auth - Better Auth instance
+ * @param headers - Request headers for API calls
+ * @param session - Optional cached session to avoid redundant getSession() calls
+ * @returns Typed OrganizationPluginWrapper
+ * 
+ * @example
+ * ```typescript
+ * const orgPlugin = createOrganizationWrapper(auth, context.headers, session);
+ * await orgPlugin.createOrganization({ ... });
+ * ```
+ */
+export function createOrganizationWrapper<TAuth extends ApiMethodsWithOrganizationPlugin<OrganizationBuilder>>(
+  auth: TAuth,
+  headers: Headers,
+  session?: InferSessionFromAuth<TAuth> | null
+) {
+  return new OrganizationsPermissionsPlugin({
+    auth,
+    headers,
+    permissionBuilder: organizationBuilder,
+    session: session ?? undefined,
+  });
+}
+
+/**
+ * Creates middleware definitions with lazy plugin instantiation.
+ * 
+ * The plugin is NOT created upfront. Instead, a factory function is provided
+ * to the middleware definitions that creates the plugin when checks execute,
+ * using the runtime context (headers AND session) available at that time.
+ * 
+ * @param auth - The Better Auth instance
+ * @param registry - The plugin registry for creating plugin instances
+ * @returns Middleware definitions for admin and organization plugins
+ * 
+ * @example
+ * ```typescript
+ * const registry = createPluginRegistry(auth);
+ * const middlewares = createPluginMiddlewares(auth, registry);
+ * 
+ * // Use in ORPC
+ * const check = middlewares.admin.hasPermission({ user: ['read'] });
+ * const orpcMiddleware = createOrpcMiddleware(check);
+ * 
+ * // Use in NestJS
+ * const nestGuard = createNestGuard(check);
+ * ```
+ */
+export function createPluginMiddlewares<
+  TAuth extends ApiMethodsWithAdminPlugin<PlatformBuilder> & ApiMethodsWithOrganizationPlugin<OrganizationBuilder>
+>(auth: TAuth, registry: ReturnType<typeof createPluginRegistry<TAuth>>) {
+  return {
+    admin: new AdminMiddlewareDefinition<typeof platformBuilder, TAuth>(
+      (context) => registry.create(
+        'admin',
+        context.headers,
+        context.session
+      )
+    ),
+    organization: new OrganizationMiddlewareDefinition<typeof organizationBuilder, TAuth>(
+      (context) => registry.create(
+        'organization',
+        context.headers,
+        context.session
+      )
+    ),
+  };
+}

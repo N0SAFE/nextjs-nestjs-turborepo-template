@@ -13,6 +13,10 @@ async function bootstrap() {
             process.exit(1);
         },
     });
+    
+    // Explicitly exit after command completes
+    // Without this, NestJS keeps connections (DB pool, etc.) open and the process hangs
+    process.exit(0);
 }
 
 await bootstrap();

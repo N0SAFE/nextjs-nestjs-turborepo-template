@@ -44,7 +44,7 @@ describe('betterAuthFactory', () => {
   let mockDb: object;
   let mockEnv: {
     DEV_AUTH_KEY: string | undefined;
-    DEV_AUTH_EMAIL: string | undefined;
+    DEFAULT_ADMIN_EMAIL: string | undefined;
     NODE_ENV: string;
     BETTER_AUTH_SECRET?: string;
     BASE_URL?: string;
@@ -61,7 +61,7 @@ describe('betterAuthFactory', () => {
     
     mockEnv = {
       DEV_AUTH_KEY: undefined,
-      DEV_AUTH_EMAIL: undefined,
+      DEFAULT_ADMIN_EMAIL: undefined,
       NODE_ENV: 'production',
       BETTER_AUTH_SECRET: 'test-better-auth-secret',
       BASE_URL: 'http://localhost:3001',
@@ -164,10 +164,10 @@ describe('betterAuthFactory', () => {
   });
 
   describe('Development Mode', () => {
-    it('should enable master token plugin in development with DEV_AUTH_KEY and DEV_AUTH_EMAIL', () => {
+    it('should enable master token plugin in development with DEV_AUTH_KEY and DEFAULT_ADMIN_EMAIL', () => {
       mockEnv.NODE_ENV = 'development';
       mockEnv.DEV_AUTH_KEY = 'test-dev-key';
-      mockEnv.DEV_AUTH_EMAIL = 'test@example.com';
+      mockEnv.DEFAULT_ADMIN_EMAIL = 'test@example.com';
       
       const result = betterAuthFactory(mockDb, mockEnv);
 

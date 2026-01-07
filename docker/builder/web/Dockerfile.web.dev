@@ -125,10 +125,10 @@ RUN --mount=type=cache,target=/root/.bun \
     bun x turbo run build --filter=web... --filter=!web && \
     echo "✅ Build complete. Checking declarative-routing binary..." && \
     ls -la packages/bin/declarative-routing/dist/ || echo "⚠️  declarative-routing dist/ not found!" && \
-    echo "📦 Verifying bun can find declarative-routing binary..." && \
-    cd apps/web && bun x declarative-routing --version || echo "⚠️  declarative-routing binary not executable!" && \
-    echo "🛣️  Generating declarative routes for web app..." && \
-    bun x declarative-routing build && \
+    echo "📦 Verifying local declarative-routing binary..." && \
+    cd apps/web && bun /app/packages/bin/declarative-routing/dist/index.js --version || echo "⚠️  declarative-routing binary not executable!" && \
+    echo "🛣️  Generating declarative routes for web app (using LOCAL forked package)..." && \
+    bun /app/packages/bin/declarative-routing/dist/index.js build && \
     echo "✅ Routes generated. Verifying routes/index.ts exists..." && \
     ls -la src/routes/index.ts && cd /app || (echo "⚠️  routes/index.ts not found!" && cd /app)
 

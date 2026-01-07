@@ -1240,27 +1240,28 @@ Access via `context.auth.admin.*` in ORPC handlers:
 
 ```typescript
 import { assertAuthenticated } from '@/core/modules/auth/orpc/types';
+import { adminMiddlewares, requireAuth } from '@/core/modules/auth/plugin-utils';
 
-export const handler = async ({ context, input }) => {
-  const auth = assertAuthenticated(context.auth);
-  
-  // ✅ Check admin access (no manual headers)
-  const hasAccess = await auth.admin.hasAccess();
-  
-  // ✅ Create user (headers auto-injected)
-  const user = await auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    name: input.name,
-    role: 'user'
+// Use middleware for role-based access control
+implement(contract)
+  .use(requireAuth())
+  .use(adminMiddlewares.requireRole(['admin']))
+  .handler(async ({ context, input }) => {
+    const auth = assertAuthenticated(context.auth);
+    
+    // ✅ Create user (headers auto-injected)
+    const user = await auth.admin.createUser({
+      email: input.email,
+      password: input.password,
+      name: input.name,
+      role: 'user'
+    });
+    
+    return user;
   });
-  
-  return user;
-};
 ```
 
 **Available Methods:**
-- `hasAccess()` - Check if user is an admin
 - `createUser()` - Create new users
 - `updateUser()` - Update user information
 - `setRole()` - Assign user roles
@@ -1270,28 +1271,30 @@ export const handler = async ({ context, input }) => {
 
 #### Organization Plugin Utilities
 
-Access via `context.auth.org.*` in ORPC handlers:
+Access via `context.auth.org.*` in ORPC handlers with role-based middleware:
 
 ```typescript
-export const handler = async ({ context, input }) => {
-  const auth = assertAuthenticated(context.auth);
-  
-  // ✅ Check organization access (no manual headers)
-  const hasAccess = await auth.org.hasAccess(input.organizationId);
-  
-  // ✅ Add member (headers auto-injected)
-  const member = await auth.org.addMember({
-    organizationId: input.organizationId,
-    userId: input.userId,
-    role: 'member'
+import { organizationMiddlewares, requireAuth } from '@/core/modules/auth/plugin-utils';
+
+// Use middleware for organization role-based access control
+implement(contract)
+  .use(requireAuth())
+  .use(organizationMiddlewares.requireRole(['owner', 'admin', 'member']))
+  .handler(async ({ context, input }) => {
+    const auth = assertAuthenticated(context.auth);
+    
+    // ✅ Add member (headers auto-injected)
+    const member = await auth.org.addMember({
+      organizationId: input.organizationId,
+      userId: input.userId,
+      role: 'member'
+    });
+    
+    return member;
   });
-  
-  return member;
-};
 ```
 
 **Available Methods:**
-- `hasAccess()` - Check if user can access organization
 - `createOrganization()` - Create organizations
 - `updateOrganization()` / `deleteOrganization()` - Manage organizations
 - `getOrganization()` / `listOrganizations()` - Fetch organization data

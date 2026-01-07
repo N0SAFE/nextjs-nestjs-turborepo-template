@@ -26,13 +26,12 @@ import React from 'react'
 import redirect from '@/actions/redirect'
 import { AlertCircle, Spinner } from '@repo/ui/components/atomics/atoms/Icon'
 import { signupSchema } from './schema'
-import { Home, Authsignup, Authsignin } from '@/routes'
-import { ArrowLeft, UserPlus } from 'lucide-react'
+import { AuthSignup, AuthSignin } from '@/routes'
+import { UserPlus } from 'lucide-react'
 import { authClient } from '@/lib/auth'
-import { useSearchParams } from '@/routes/hooks'
 
-const SignupPage: React.FC = () => {
-    const searchParams = useSearchParams(Authsignup)
+// Use the Route wrapper to get type-safe, Suspense-wrapped search params
+export default AuthSignup.Route(({ searchParams }) => {
     const [isLoading, setIsLoading] = React.useState<boolean>(false)
     const [error, setError] = React.useState<string>('')
     const [success, setSuccess] = React.useState<string>('')
@@ -68,6 +67,7 @@ const SignupPage: React.FC = () => {
         } else {
             setSuccess('Account created successfully! Redirecting...')
             setTimeout(() => {
+                setIsLoading(false)
                 void redirect(searchParams.callbackUrl ?? '/')
             }, 1500)
         }
@@ -218,23 +218,15 @@ const SignupPage: React.FC = () => {
                 <div className="text-muted-foreground text-center text-sm">
                     <p>
                         Already have an account?{' '}
-                        <Authsignin.Link
+                        <AuthSignin.Link
                             search={{ callbackUrl: searchParams.callbackUrl }}
                             className="text-primary hover:underline"
                         >
                             Sign in here
-                        </Authsignin.Link>
-                    </p>
-                    <p className="mt-2">
-                        <Home.Link className="text-muted-foreground hover:text-foreground inline-flex items-center space-x-2 text-sm">
-                            <ArrowLeft className="h-4 w-4" />
-                            <span>Back to Home</span>
-                        </Home.Link>
+                        </AuthSignin.Link>
                     </p>
                 </div>
             </div>
         </div>
     )
-}
-
-export default SignupPage
+})

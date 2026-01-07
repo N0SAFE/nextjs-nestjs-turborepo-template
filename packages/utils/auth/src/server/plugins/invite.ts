@@ -176,7 +176,7 @@ export const invitePlugin = <TRoles extends string>(
           }
 
           await ctx.context.adapter.create({
-            model: "invite",
+            model: "platformInvite",
             data: {
               token,
               email: ctx.body.email,
@@ -206,7 +206,7 @@ export const invitePlugin = <TRoles extends string>(
           const token = ctx.body.token;
 
           const invite = await ctx.context.adapter.findOne<Invite>({
-            model: "invite",
+            model: "platformInvite",
             where: [{ field: "token", value: token }],
           });
 
@@ -244,7 +244,7 @@ export const invitePlugin = <TRoles extends string>(
           const { token, password, name } = ctx.body;
 
           const invite = await ctx.context.adapter.findOne<Invite>({
-            model: "invite",
+            model: "platformInvite",
             where: [{ field: "token", value: token }],
           });
 
@@ -306,7 +306,7 @@ export const invitePlugin = <TRoles extends string>(
 
           // Mark invitation as used
           await ctx.context.adapter.update({
-            model: "invite",
+            model: "platformInvite",
             where: [{ field: "token", value: token }],
             update: { usedAt: opts.getDate() },
           });
@@ -317,7 +317,7 @@ export const invitePlugin = <TRoles extends string>(
     },
     $ERROR_CODES: ERROR_CODES,
     schema: {
-      invite: {
+      platformInvite: {
         fields: {
           token: { type: "string", unique: true, required: true },
           email: { type: "string", required: true },

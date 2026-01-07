@@ -1,18 +1,25 @@
 import { z } from "zod";
+import { createRouteInfo{{#if verbs}}, {{#each verbs}}create{{this.upperVerb}}Info{{#unless @last}}, {{/unless}}{{/each}}{{/if}} } from "@/routes/makeRoute";
 
-export const Route = {
+// Auto-generated flags - DO NOT EDIT manually, these are synced by dr:build
+export const page = {{{hasPage}}};
+export const layout = {{{hasLayout}}};
+
+export const Route = createRouteInfo({
   name: "{{{name}}}",
+{{#if params.length}}
   params: z.object({
 {{#each params}}
     {{{this}}},
 {{/each}}  
-  })
-};
+  }),
+{{/if}}
+});
 
 {{#each verbs}}
-export const {{{this.verb}}} = {
+export const {{{this.verb}}} = create{{{this.upperVerb}}}Info({
   {{#each this.keys}}
   {{{this}}}: z.object({}),
   {{/each}}
-};
+});
 {{/each}}

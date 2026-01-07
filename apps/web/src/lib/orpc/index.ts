@@ -7,6 +7,7 @@ import { toAbsoluteUrl } from '@/lib/utils'
 import clientRedirect from '@/actions/redirect'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
+import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
 
 // Re-export the contract for use in hooks (needed for type discrimination)
 export { appContract }
@@ -31,10 +32,14 @@ export function createORPCClientWithCookies() {
                 if (typeof window === 'undefined') {
                     try {
                         const nh = await import('next/headers')
-                        headers.cookie = (await nh.cookies()).toString()
-                    } catch {
+                        const cookieString = (await nh.cookies()).toString()
+                        headers.cookie = cookieString
+                        console.log(`🔧 ORPC: Setting cookie header (server-side), length=${String(cookieString.length)}`)
+                    } catch (error) {
+                        unstable_rethrow(error)
                         console.log(
-                            'Warning: next/headers could not be imported. Are you running in a non-Next.js environment?'
+                            'Warning: next/headers could not be imported. Are you running in a non-Next.js environment?',
+                            error
                         )
                         const existing = Array.isArray(headers.cookie)
                             ? headers.cookie.filter(Boolean)
@@ -58,16 +63,42 @@ export function createORPCClientWithCookies() {
                 })
             },
         ],
-        // Use direct API URLs, bypassing Next.js proxy
+        // Use direct API URLs for optimal performance
         // Server: API_URL (private Docker network endpoint)
         // Browser: NEXT_PUBLIC_API_URL (public endpoint)
+        // Note: Server-side must manually forward cookies via headers (done in interceptor)
         url:
             typeof window === 'undefined'
                 ? validateEnvPath(process.env.API_URL ?? '', 'API_URL')
                 : validateEnvPath(process.env.NEXT_PUBLIC_API_URL ?? '', 'NEXT_PUBLIC_API_URL'),
         fetch(request, init, options) {
+            // CRITICAL: OpenAPILink doesn't pass interceptor headers to init automatically  
+            // The headers are in the Request object, not in init
+            // Extract them from the Request and merge with any init headers
+            const headers = new Headers()
+            
+            // First, add headers from the Request object (includes interceptor changes)
+            request.headers.forEach((value, key) => {
+                headers.set(key, value)
+            })
+            
+            // Then, merge/override with any explicit init headers
+            if ('headers' in init) {
+                const initHeaders = new Headers(init.headers as HeadersInit)
+                initHeaders.forEach((value, key) => {
+                    headers.set(key, value)
+                })
+            }
+            
+            if (typeof window === 'undefined') {
+                const cookieHeader = headers.get('cookie')
+                console.log(`🔧 ORPC fetch: Server-side request to ${request.url}`)
+                console.log(`🔧 ORPC fetch: Cookie header: ${cookieHeader ? cookieHeader.substring(0, 100) + '... (length=' + String(cookieHeader.length) + ')' : 'NONE'}`)
+            }
+            
             return fetch(request, {
                 ...init,
+                headers,
                 credentials: 'include',
                 cache: options.context.cache,
                 next: options.context.next

@@ -102,10 +102,11 @@ function runSeeding(config: EntrypointConfig): void {
  * Create default admin user if needed
  */
 function createDefaultAdmin(): void {
-  const createAdminScript = 'scripts/create-default-admin.ts'
+  // In production, use the compiled script from dist/
+  const createAdminScript = 'dist/create-default-admin.js'
 
   if (!existsSync(createAdminScript)) {
-    console.log('⚠️  create-default-admin script not found, skipping')
+    console.log('⚠️  create-default-admin script not found at', createAdminScript, ', skipping')
     return
   }
 
@@ -140,8 +141,8 @@ function main(): void {
   const config: EntrypointConfig = {
     skipMigrations: process.env.SKIP_MIGRATIONS === 'true',
     diagnosePath: 'scripts/diagnose-build.ts',
-    migrateScript: 'db:migrate',
-    seedScript: 'db:seed',
+    migrateScript: 'db:migrate:prod',
+    seedScript: 'db:seed:prod',
   }
 
   const mode = process.env.ENABLE_SEEDING === 'true' ? 'Production-Like (with mock data)' : 'Production'
@@ -151,9 +152,16 @@ function main(): void {
   validateEnvironment()
 
   runDiagnostics(config)
+  
+  // Run migrations first (schema must exist before any user creation)
   runMigrations(config)
-  runSeeding(config)
+  
+  // Create default admin BEFORE seeding so seed can detect existing admin
   createDefaultAdmin()
+  
+  // Run seeding after admin creation (only in production-like mode)
+  runSeeding(config)
+  
   startAPI()
 }
 

@@ -1,5 +1,5 @@
 // Export types
-export type { IEnvService, Session, Auth, User } from "./types";
+export type { IEnvService, Session, Auth, User, InferSessionFromAuth } from "./types";
 
 // Export permissions at root level
 export * from "./permissions";

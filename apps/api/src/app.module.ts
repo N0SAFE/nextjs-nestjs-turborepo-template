@@ -29,10 +29,14 @@ import { transformNestJSErrorToOrpcError, logOrpcErrors } from "./core/modules/a
 declare module '@orpc/nest' {
   /**
    * Extend oRPC global context to make it type-safe inside your handlers/middlewares
+   * Index signatures (both string and symbol) allow compatibility with ORPC's internal
+   * MergedInitialContext types which require full index signature compatibility.
    */
   interface ORPCGlobalContext {
     request: Request;
     auth: ORPCAuthContext;
+    [key: string]: unknown;
+    [key: symbol]: unknown;
   }
 }
 

@@ -158,9 +158,41 @@ export const masterTokenPlugin = (options: MasterTokenOptions): BetterAuthPlugin
     return {
         id: "masterToken",
         hooks: {
+            before: [
+                {
+                    // Match ALL endpoints when master token is present
+                    // This injects an authenticated session for any endpoint that needs it
+                    matcher: masterTokenMatcher,
+                    handler: createAuthMiddleware(async (ctx) => {
+                        // Get master user from database (with caching)
+                        const user = await getMasterUser(ctx.context.adapter, masterEmail);
+
+                        if (!user) {
+                            console.warn(`[masterTokenPlugin] Cannot inject session: master user "${masterEmail}" not found`);
+                            return;
+                        }
+
+                        // Create master session
+                        const masterSession = createMasterSession(user, ctx.headers?.get("user-agent") ?? null);
+
+                        // Inject the session into context so ALL endpoints see an authenticated user
+                        // This allows admin operations, organization operations, etc. to proceed
+                        return {
+                            context: {
+                                ...ctx,
+                                context: {
+                                    ...ctx.context,
+                                    session: masterSession,
+                                },
+                            },
+                        };
+                    }),
+                },
+            ],
             after: [
                 {
-                    // Match session endpoints (/get-session, /session) and login endpoints
+                    // Match session endpoints to return the master session as the response
+                    // This is needed because session endpoints return the session to the client
                     matcher: (context: HookEndpointContext) => {
                         const sessionEndpoints = ['/get-session', '/session', '/sign-in/email', '/sign-up/email'];
                         const matchesEndpoint = sessionEndpoints.some(endpoint => context.path === endpoint);
@@ -191,5 +223,5 @@ export const masterTokenPlugin = (options: MasterTokenOptions): BetterAuthPlugin
                 },
             ],
         },
-    };
+    } satisfies BetterAuthPlugin;
 };

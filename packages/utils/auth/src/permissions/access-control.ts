@@ -6,8 +6,8 @@
  */
 
 import { 
-  type RoleName, 
-  type ResourceName,
+  type PlatformRole as RoleName, 
+  type PlatformResource as ResourceName,
 } from "./config";
 import { 
   PermissionChecker, 

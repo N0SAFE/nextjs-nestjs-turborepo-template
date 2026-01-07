@@ -16,7 +16,8 @@ export const {{{this.importKey}}} = makeRoute(
   {
     ...defaultInfo,
     ...{{{this.importKey}}}Route.Route
-  }
+  },
+  { page: {{{this.importKey}}}Route.page, layout: {{{this.importKey}}}Route.layout }
 );
 {{/each}}
 

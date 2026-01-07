@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { requireAuth, accessControl, publicAccess } from './middlewares';
+import { requireAuth, publicAccess } from './middlewares';
 import { AuthUtils, AuthUtilsEmpty } from './auth-utils';
-import { ORPCError } from '@orpc/client';
+import type { MiddlewareOptions, MiddlewareOutputFn } from '@orpc/server';
 
 // Mock only validatePermission to avoid dependency on actual permission config
 vi.mock('@repo/auth/permissions', async (importOriginal) => {
@@ -13,6 +13,31 @@ vi.mock('@repo/auth/permissions', async (importOriginal) => {
   
   return actual;
 });
+
+/**
+ * Helper to create middleware options with proper ORPC signature
+ */
+function createMiddlewareOptions(
+  context: any,
+  nextFn: any
+): MiddlewareOptions<any, any, any, any> {
+  return {
+    context,
+    path: [],
+    procedure: {} as any,
+    signal: undefined,
+    lastEventId: undefined,
+    next: nextFn,
+    errors: {},
+  };
+}
+
+/**
+ * Helper to create the output function
+ */
+function createOutputFn(): MiddlewareOutputFn<any> {
+  return vi.fn((output) => ({ output, context: {} }));
+}
 
 describe('ORPC Auth Middlewares', () => {
   let mockAuth: any;
@@ -65,161 +90,17 @@ describe('ORPC Auth Middlewares', () => {
     });
   });
 
-  describe('accessControl', () => {
-    it('should pass when user has required role', async () => {
-      const middleware = accessControl({ roles: ['admin'] });
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
-
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
-
-      expect(nextFn).toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user lacks required role', async () => {
-      const sessionWithUserRole = {
-        ...mockSession,
-        user: { ...mockSession.user, role: 'user' },
-      };
-      const userContext = {
-        ...mockContext,
-        auth: new AuthUtils(sessionWithUserRole, mockAuth),
-      };
-
-      const middleware = accessControl({ roles: ['admin'] });
-
-      await expect(
-        middleware({
-          context: userContext,
-          input: {},
-          next: vi.fn(),
-        })
-      ).rejects.toThrow(ORPCError);
-    });
-
-    it('should pass when user has any of the required roles', async () => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const middleware = accessControl({ roles: ['manager', 'admin'] });
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
-
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
-
-      expect(nextFn).toHaveBeenCalled();
-    });
-
-    it('should pass when user has all required roles', async () => {
-      const middleware = accessControl({ allRoles: ['admin'] });
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
-
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
-
-      expect(nextFn).toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user lacks one of all required roles', async () => {
-      const sessionWithUserRole = {
-        ...mockSession,
-        user: { ...mockSession.user, role: 'user' },
-      };
-      const userContext = {
-        ...mockContext,
-        auth: new AuthUtils(sessionWithUserRole, mockAuth),
-      };
-
-      const middleware = accessControl({ allRoles: ['user', 'admin'] });
-
-      await expect(
-        middleware({
-          context: userContext,
-          input: {},
-          next: vi.fn(),
-        })
-      ).rejects.toThrow(ORPCError);
-    });
-
-    it('should pass when user has required permissions', async () => {
-      mockAuth.api.userHasPermission.mockResolvedValue({ success: true });
-      const middleware = accessControl({ permissions: { project: ['read'] } });
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
-
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
-
-      expect(nextFn).toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user lacks required permissions', async () => {
-      mockAuth.api.userHasPermission.mockResolvedValue({ success: false });
-      const middleware = accessControl({ permissions: { project: ['delete'] } });
-
-      await expect(
-        middleware({
-          context: mockContext,
-          input: {},
-          next: vi.fn(),
-        })
-      ).rejects.toThrow(ORPCError);
-    });
-
-    it('should check roles and permissions together', async () => {
-      mockAuth.api.userHasPermission.mockResolvedValue({ success: true });
-      const middleware = accessControl({
-        roles: ['admin'],
-        permissions: { project: ['read'] },
-      });
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
-
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
-
-      expect(nextFn).toHaveBeenCalled();
-    });
-
-    it('should throw UNAUTHORIZED when not authenticated', async () => {
-      const unauthContext = {
-        ...mockContext,
-        auth: new AuthUtilsEmpty(mockAuth),
-      };
-      const middleware = accessControl({ roles: ['admin'] });
-
-      await expect(
-        middleware({
-          context: unauthContext,
-          input: {},
-          next: vi.fn(),
-        })
-      ).rejects.toThrow(ORPCError);
-    });
-  });
+  // NOTE: accessControl has been removed in favor of plugin-based middlewares
+  // Use adminMiddlewares.requireRole() or adminMiddlewares.requireAccess() instead
+  // See plugin-factory.ts for the new implementation
 
   describe('publicAccess', () => {
     it('should always pass for authenticated users', async () => {
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
+      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success', context: {} }));
 
-      await middleware({
-        context: mockContext,
-        input: {},
-        next: nextFn,
-      });
+      const options = createMiddlewareOptions(mockContext, nextFn);
+      await middleware(options, {}, createOutputFn());
 
       expect(nextFn).toHaveBeenCalled();
     });
@@ -230,26 +111,20 @@ describe('ORPC Auth Middlewares', () => {
         auth: new AuthUtilsEmpty(mockAuth),
       };
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success' }));
+      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success', context: {} }));
 
-      await middleware({
-        context: unauthContext,
-        input: {},
-        next: nextFn,
-      });
+      const options = createMiddlewareOptions(unauthContext, nextFn);
+      await middleware(options, {}, createOutputFn());
 
       expect(nextFn).toHaveBeenCalled();
     });
 
     it('should do nothing and just pass through', async () => {
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'test-output' }));
+      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'test-output', context: {} }));
 
-      await middleware({
-        context: mockContext,
-        input: { test: 'data' },
-        next: nextFn,
-      });
+      const options = createMiddlewareOptions(mockContext, nextFn);
+      await middleware(options, { test: 'data' }, createOutputFn());
 
       expect(nextFn).toHaveBeenCalled();
     });

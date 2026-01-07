@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "migrate:unified-info-files": "bun --bun migrations/2026-01-01-unified-info-files.migration.ts"
   },
   "keywords": [],
   "author": {

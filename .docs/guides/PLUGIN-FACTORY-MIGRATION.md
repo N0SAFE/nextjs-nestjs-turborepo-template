@@ -1,11 +1,12 @@
 # Migration Guide: From Permission Decorators to Plugin-Based Access Control
 
 > **Date**: 2025-12-16  
+> **Updated**: 2025-01-XX  
 > **Status**: Current Best Practice
 
 ## Overview
 
-This guide explains how to migrate from the deprecated permission-based decorators (`@RequirePermissions`, `@RequireCommonPermission`) to the new plugin-based access control system using scope methods like `auth.admin.hasAccess()` and `auth.org.hasAccess()`.
+This guide explains how to migrate from the deprecated permission-based decorators (`@RequirePermissions`, `@RequireCommonPermission`) to the new plugin-based access control system using role-based middlewares like `adminMiddlewares.requireRole()` and `organizationMiddlewares.requireRole()`.
 
 ## Why This Change?
 
@@ -22,10 +23,10 @@ The old approach using `@RequirePermissions` had several issues:
 
 The new plugin-based approach provides:
 
-1. **Scope-based access**: Each plugin provides its own `hasAccess()` method
-2. **Full type safety**: Uses Better Auth's type inference for all checks
-3. **Extensible**: Easy to add new plugins with automatic decorator/middleware generation
-4. **Flexible**: Can implement custom access logic per plugin
+1. **Role-based access**: Simple role checks using `requireRole(['admin'])`
+2. **Permission-based access**: Permission checks using `requirePermission({ user: ['read'] })`
+3. **Full type safety**: Uses Better Auth's type inference for all checks
+4. **Extensible**: Easy to add new plugins with automatic decorator/middleware generation
 5. **Consistent**: Same pattern across NestJS controllers and ORPC procedures
 
 ## Migration Steps
@@ -67,19 +68,19 @@ import { PluginAccessGuard } from '@/core/modules/auth/guards/plugin-access.guar
 @Controller('admin')
 @UseGuards(PluginAccessGuard) // Apply guard at controller level
 export class AdminController {
-  // New: Using plugin-based decorator
-  @adminDecorators.RequireAccess()
+  // New: Using plugin-based decorator with role check
+  @adminDecorators.RequireRole(['admin'])
   @Post('/users')
   async createUser(@Body() data: CreateUserDto) {
-    // Access check is handled by PluginAccessGuard via auth.admin.hasAccess()
+    // Role check is handled by PluginAccessGuard
     // ...
   }
 
   // New: Same pattern for all admin operations
-  @adminDecorators.RequireAccess()
+  @adminDecorators.RequireRole(['admin', 'superAdmin'])
   @Get('/users')
   async listUsers() {
-    // Consistent access checking
+    // Consistent role checking
     // ...
   }
 }
@@ -112,29 +113,30 @@ export const userRouter = implement(userContract, {
 #### New Way (Recommended)
 
 ```typescript
-import { adminMiddlewares } from '@/core/modules/auth/plugin-utils';
+import { adminMiddlewares, requireAuth } from '@/core/modules/auth/plugin-utils';
 import { assertAuthenticated } from '@/core/modules/auth/orpc/types';
 
 export const userRouter = implement(userContract, {
   create: {
-    // New: Using plugin-based middleware
-    middleware: [adminMiddlewares.requireAccess()],
+    // New: Using plugin-based middleware with role check
+    middleware: [requireAuth(), adminMiddlewares.requireRole(['admin'])],
     handler: async ({ context, input }) => {
       const auth = assertAuthenticated(context.auth);
       
-      // Access already checked by middleware via auth.admin.hasAccess()
+      // Role already checked by middleware
       const user = await auth.admin.createUser(input);
       return user;
     },
   },
   
-  // For operations that don't need plugin access check,
-  // do manual checks in handler
+  // For operations that don't need admin role check,
+  // just authenticate the user
   getSelf: {
+    middleware: [requireAuth()],
     handler: async ({ context }) => {
       const auth = assertAuthenticated(context.auth);
       
-      // Just need to be authenticated, no admin access required
+      // Just need to be authenticated, no admin role required
       return auth.user;
     },
   },
@@ -174,7 +176,7 @@ import { AuthUtils } from '@/core/modules/auth/utils/auth-utils';
 export class OrganizationController {
   constructor(private readonly authService: AuthService) {}
 
-  // New: Check access in handler using scope method
+  // New: Check organization role in handler
   @UseGuards(AuthGuard) // Still need authentication
   @Post('/:orgId/members')
   async addMember(
@@ -195,10 +197,10 @@ export class OrganizationController {
       headers
     );
     
-    // Check organization access using scope method
-    const hasAccess = await authUtils.org.hasAccess(orgId);
-    if (!hasAccess) {
-      throw new ForbiddenException('Access to organization denied');
+    // Check if user has admin or owner role in organization
+    const userOrgRole = session.user.organizationRole;
+    if (!['owner', 'admin'].includes(userOrgRole)) {
+      throw new ForbiddenException('Only organization owners and admins can add members');
     }
     
     // Proceed with operation
@@ -216,20 +218,19 @@ export class OrganizationController {
 For ORPC with organization scope:
 
 ```typescript
-import { organizationMiddlewares } from '@/core/modules/auth/plugin-utils';
+import { organizationMiddlewares, requireAuth } from '@/core/modules/auth/plugin-utils';
 
 export const organizationRouter = implement(organizationContract, {
   addMember: {
-    // Use resource-specific middleware
+    // Use role-based middleware for organization
     middleware: [
-      organizationMiddlewares.requireResourceAccess(
-        (input: any) => input.organizationId
-      )
+      requireAuth(),
+      organizationMiddlewares.requireRole(['owner', 'admin'])
     ],
     handler: async ({ context, input }) => {
       const auth = assertAuthenticated(context.auth);
       
-      // Access to organization already verified by middleware
+      // Role already verified by middleware
       const member = await auth.org.addMember(input);
       return member;
     },
@@ -258,13 +259,13 @@ export const myPluginDecorators = createPluginDecorators(myPluginMetadata);
 export const myPluginMiddlewares = createPluginMiddlewares(myPluginMetadata);
 
 // Use in code
-@myPluginDecorators.RequireAccess()
+@myPluginDecorators.RequireRole(['admin'])
 @Get('/my-plugin-route')
 async myRoute() { ... }
 
 // Or in ORPC
 implement(contract)
-  .use(myPluginMiddlewares.requireAccess())
+  .use(myPluginMiddlewares.requireRole(['admin']))
   .handler(({ context }) => { ... })
 ```
 
@@ -306,19 +307,20 @@ Use this checklist when migrating your code:
 
 ### NestJS Controllers
 
-- [ ] Replace `@RequirePermissions()` with `@adminDecorators.RequireAccess()` or scope checks
+- [ ] Replace `@RequirePermissions()` with `@adminDecorators.RequireRole(['admin'])` or role checks
 - [ ] Replace `@RequireCommonPermission()` with plugin-specific decorators
 - [ ] Add `@UseGuards(PluginAccessGuard)` where needed
 - [ ] Remove imports of deprecated decorators
-- [ ] Update tests to mock new scope methods
+- [ ] Update tests to mock new role-based methods
 
 ### ORPC Procedures
 
-- [ ] Replace `accessControl({ permissions: ... })` with `adminMiddlewares.requireAccess()`
-- [ ] For organization checks, use `organizationMiddlewares.requireResourceAccess()`
-- [ ] Update handler logic to use scope methods (`auth.admin.*`, `auth.org.*`)
+- [ ] Replace `accessControl({ permissions: ... })` with `adminMiddlewares.requireRole(['admin'])`
+- [ ] For organization checks, use `organizationMiddlewares.requireRole(['owner', 'admin'])`
+- [ ] For permission checks, use `adminMiddlewares.requirePermission({ resource: ['action'] })`
+- [ ] Update handler logic to use plugin methods (`auth.admin.*`, `auth.org.*`)
 - [ ] Remove manual header passing (now automatic)
-- [ ] Update tests to mock plugin scope methods
+- [ ] Update tests to mock plugin methods
 
 ### General
 
@@ -333,7 +335,7 @@ Use this checklist when migrating your code:
 
 ```typescript
 @UseGuards(PluginAccessGuard)
-@adminDecorators.RequireAccess()
+@adminDecorators.RequireRole(['admin'])
 @Post('/admin/action')
 async adminAction() {
   // Only admins can access
@@ -348,11 +350,10 @@ async getOrgData(
   @Param('orgId') orgId: string,
   @Session() session: UserSession
 ) {
-  const authUtils = new AuthUtils(session, this.authService.instance, headers);
-  
-  // Check membership
-  if (!(await authUtils.org.hasAccess(orgId))) {
-    throw new ForbiddenException();
+  // Check user's organization role
+  const userOrgRole = session.user.organizationRole;
+  if (!['owner', 'admin', 'member'].includes(userOrgRole)) {
+    throw new ForbiddenException('You are not a member of this organization');
   }
   
   // Proceed
@@ -370,8 +371,8 @@ async getResource(
 ) {
   const authUtils = new AuthUtils(session, this.authService.instance, headers);
   
-  // Check if admin OR resource owner
-  const isAdmin = await authUtils.admin.hasAccess();
+  // Check if admin role OR resource owner
+  const isAdmin = ['admin', 'superAdmin'].includes(session.user.role);
   const isOwner = resource.ownerId === authUtils.user.id;
   
   if (!isAdmin && !isOwner) {
@@ -398,19 +399,19 @@ async getResource(
 
 ### Q: How do I test the new approach?
 
-**A:** Mock the scope methods in your tests:
+**A:** Mock the role-based methods in your tests:
 
 ```typescript
 const mockAuth = {
   isLoggedIn: true,
-  user: { id: 'user-123' },
+  user: { id: 'user-123', role: 'admin' },
   admin: {
-    hasAccess: vi.fn().mockResolvedValue(true),
     createUser: vi.fn(),
+    setRole: vi.fn(),
   },
   org: {
-    hasAccess: vi.fn().mockResolvedValue(true),
     addMember: vi.fn(),
+    updateMemberRole: vi.fn(),
   },
 };
 ```

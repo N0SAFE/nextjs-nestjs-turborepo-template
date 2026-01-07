@@ -1,5 +1,14 @@
 # ORPC Auth Context Examples
 
+> ⚠️ **DEPRECATED**: This documentation uses legacy `accessControl()` patterns.
+> 
+> **Use plugin-based middlewares instead:**
+> - `adminMiddlewares.requireRole(['admin'])` - Role-based access
+> - `adminMiddlewares.requirePermission({ resource: ['action'] })` - Permission-based access
+> - `organizationMiddlewares.requireRole(['owner', 'admin', 'member'])` - Organization role-based access
+> 
+> See `plugin-factory.ts` and `test.controller.ts` for examples of the new implementation.
+
 This document provides practical examples of using the ORPC auth context layer for common authentication and authorization scenarios.
 
 ## Table of Contents

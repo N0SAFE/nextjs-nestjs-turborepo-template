@@ -5,8 +5,8 @@ import type {
   StandardHandlerOptions,
 } from "@orpc/server/standard";
 import type { Auth } from "@/auth";
-import { AuthUtils } from "../auth-utils";
-import type { ORPCAuthContext, UserSession } from "../types";
+import { AuthUtils, type UserSession } from "../auth-utils";
+import type { ORPCAuthContext } from "../types";
 
 /**
  * Converts headers to web standard Headers.
@@ -79,54 +79,48 @@ export class AuthPlugin<TContext extends AuthPluginContext>
       const { context, request, next } = interceptorOptions;
 
       // Extract session from request headers
-      let session: UserSession | null = null;
+      let sessionData: UserSession | null = null;
       
       // Get headers from the ORPC request object
       const headers = request.headers;
       const webHeaders = toWebHeaders(headers);
 
       try {
-        console.log("Auth Plugin: Extracting session with headers:", Object.fromEntries(webHeaders.entries()));
-        
-        const sessionData = await auth.api.getSession({
+        const rawSessionData = await auth.api.getSession({
           headers: webHeaders,
           asResponse: false,
         });
-        
-        console.log("Auth Plugin: Retrieved session data:", sessionData);
-        
+
         // Better Auth's toAuthEndpoints wraps response in { response: Response }
         // We need to extract the actual session data from the Response body
-        if (sessionData && typeof sessionData === 'object') {
+        if (rawSessionData && typeof rawSessionData === 'object') {
           // Check if it's wrapped in { response: Response }
-          if ('response' in sessionData && sessionData.response instanceof Response) {
-            const response = sessionData.response as Response;
+          if ('response' in rawSessionData && rawSessionData.response instanceof Response) {
+            const response = rawSessionData.response as Response;
             if (response.ok) {
               const body = await response.json().catch(() => null);
-              session = body as UserSession | null;
+              sessionData = body as UserSession | null;
             }
           } 
           // Direct Response object
-          else if (sessionData instanceof Response) {
-            if (sessionData.ok) {
-              const body = await sessionData.json().catch(() => null);
-              session = body as UserSession | null;
+          else if (rawSessionData instanceof Response) {
+            if (rawSessionData.ok) {
+              const body = await rawSessionData.json().catch(() => null);
+              sessionData = body as UserSession | null;
             }
           }
           // Raw session data (ideal case)
-          else if ('session' in sessionData && 'user' in sessionData) {
-            session = sessionData as UserSession;
+          else if ('session' in rawSessionData && 'user' in rawSessionData) {
+            sessionData = rawSessionData as UserSession;
           }
         }
       } catch (error) {
         console.error("Auth Plugin: Error extracting session:", error);
         // Continue with null session - allow unauthenticated access
       }
-      
-      console.log("Auth Plugin: Final session object:", session);
 
       // Create auth utilities with session AND headers for plugin utilities
-      const authUtils = new AuthUtils(session, auth, webHeaders);
+      const authUtils = new AuthUtils(sessionData, auth, webHeaders);
 
       // Continue with enriched context
       return next({

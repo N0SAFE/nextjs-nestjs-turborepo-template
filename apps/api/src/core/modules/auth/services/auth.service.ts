@@ -1,244 +1,197 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Scope } from "@nestjs/common";
+import { REQUEST } from "@nestjs/core";
 import type { Auth } from "@/auth";
 import {
-	type AuthModuleOptions,
-	MODULE_OPTIONS_TOKEN,
-} from "../definitions/auth-module-definition"
-import { fromNodeHeaders } from "better-auth/node";
-import type { IncomingHttpHeaders } from "http";
-import { os } from "@orpc/server";
-import { AuthUtils, AuthUtilsEmpty } from "../orpc/auth-utils";
-import type { UserSession, AccessOptions } from "../utils/auth-utils";
-import type { Permission, RoleName } from "@repo/auth/permissions";
+	AuthCoreService,
+	normalizeHeaders,
+	type RequestHeaders,
+} from "./auth-core.service";
+import type { PluginRegistry } from "../plugin-utils/plugin-wrapper-factory";
+
+// ============================================================================
+// AuthService Class (REQUEST-SCOPED - Wrapper for HTTP Context)
+// ============================================================================
 
 /**
- * NestJS service that provides access to the Better Auth instance
- * Use generics to support auth instances extended by plugins
+ * Request-scoped authentication service that wraps AuthCoreService.
  * 
- * This service also provides utility methods for authentication and authorization
- * that can be used via dependency injection in any NestJS service
+ * **Architecture**:
+ * - REQUEST-scoped: One instance per HTTP request
+ * - Thin wrapper: Delegates all business logic to AuthCoreService
+ * - Auto-injects headers: Automatically passes request headers to core methods
+ * 
+ * This service provides convenience for HTTP handlers:
+ * - `plugin()` - Get plugin with auto-injected request headers
+ * - All other methods delegate to AuthCoreService
+ * 
+ * **Why this pattern?**
+ * - AuthCoreService (singleton) contains all business logic
+ * - AuthService (request-scoped) adds automatic header injection
+ * - CLI commands can use AuthCoreService directly with manual headers
+ * 
+ * @example
+ * ```typescript
+ * // In an HTTP handler (headers auto-injected)
+ * const admin = this.authService.plugin('admin');
+ * await admin.createUser({ ... });
+ * 
+ * // In a CLI command (use AuthCoreService directly)
+ * const headers = new Headers({ Authorization: `Bearer ${token}` });
+ * const admin = this.authCoreService.plugin('admin', headers);
+ * await admin.createUser({ ... });
+ * ```
  */
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AuthService<T extends { api: T["api"] } = Auth> {
+
 	constructor(
-		@Inject(MODULE_OPTIONS_TOKEN)
-		private readonly options: AuthModuleOptions<T>,
+		private readonly core: AuthCoreService<T>,
+		@Inject(REQUEST)
+		private readonly request: Request,
 	) {}
 
+	// ==========================================================================
+	// Request-Aware Plugin Access (Auto Headers Injection)
+	// ==========================================================================
+
 	/**
-	 * Returns the API endpoints provided by the auth instance
+	 * Get the request headers, normalized to Web Headers format.
+	 * Automatically extracted from the current request context.
+	 */
+	private getRequestHeaders(): Headers {
+		const rawHeaders: unknown = this.request.headers;
+		
+		if (!rawHeaders || typeof rawHeaders !== 'object') {
+			return new Headers();
+		}
+
+		return normalizeHeaders(rawHeaders as RequestHeaders);
+	}
+
+	/**
+	 * Get a plugin by name with automatic header injection from request.
+	 * 
+	 * This method provides:
+	 * - Compile-time type checking for plugin names (only 'admin', 'organization', etc.)
+	 * - Full type safety for plugin methods and return types
+	 * - Automatic header injection from the request context
+	 * - IDE autocomplete for plugin names and methods
+	 * 
+	 * @template K - Plugin name, strongly typed from PluginRegistry keys
+	 * @param name - Name of the plugin to retrieve (e.g., 'admin', 'organization')
+	 * @returns The plugin instance with fully typed methods
+	 * 
+	 * @example
+	 * ```typescript
+	 * // Strongly typed - only 'admin' and 'organization' are valid
+	 * const adminPlugin = this.authService.plugin('admin');
+	 * await adminPlugin.createUser({ ... }); // Fully typed
+	 * 
+	 * const orgPlugin = this.authService.plugin('organization');
+	 * await orgPlugin.createOrganization({ ... }); // Fully typed
+	 * ```
+	 */
+	plugin<K extends keyof PluginRegistry>(name: K): PluginRegistry[K] {
+		const headers = this.getRequestHeaders();
+		return this.core.plugin(name, headers);
+	}
+
+	/**
+	 * Get all plugins with auto-injected request headers.
+	 * 
+	 * @returns Object containing all available plugins
+	 */
+	getPlugins() {
+		const headers = this.getRequestHeaders();
+		return this.core.getPlugins(headers);
+	}
+
+	// ==========================================================================
+	// Delegated Core Methods (No Request Context Needed)
+	// ==========================================================================
+
+	/**
+	 * Returns the API endpoints provided by the auth instance.
+	 * Delegated to AuthCoreService.
 	 */
 	get api(): T["api"] {
-		return this.options.auth.api;
+		return this.core.api;
 	}
 
 	/**
-	 * Returns the complete auth instance
-	 * Access this for plugin-specific functionality
+	 * Returns the complete auth instance.
+	 * Delegated to AuthCoreService.
 	 */
 	get instance(): T {
-		return this.options.auth;
+		return this.core.instance;
 	}
 
 	/**
-	 * Creates ORPC auth middleware that populates context.auth with authentication utilities
-	 * This middleware should be added globally in the ORPC module configuration
+	 * Get the plugin registry for direct plugin access with manual headers.
+	 * Delegated to AuthCoreService.
 	 * 
 	 * @example
 	 * ```ts
-	 * ORPCModule.forRootAsync({
-	 *   useFactory: (request: Request, authService: AuthService) => {
-	 *     const authMiddleware = authService.createOrpcAuthMiddleware();
-	 *     return {
-	 *       context: { request },
-	 *       middlewares: [authMiddleware],
-	 *     };
-	 *   },
-	 *   inject: [REQUEST, AuthService],
-	 * })
+	 * const plugins = this.authService.getPluginRegistry().getAll(headers);
+	 * await plugins.admin.createUser({ ... });
 	 * ```
+	 */
+	getPluginRegistry() {
+		return this.core.getRegistry();
+	}
+
+	/**
+	 * ORPC Middleware builder.
+	 * Delegated to AuthCoreService.
+	 * 
+	 * @example
+	 * ```typescript
+	 * const adminProcedure = baseProcedure.use(
+	 *   authService.middleware.admin.hasPermission({ user: ['manage'] })
+	 * );
+	 * ```
+	 */
+	get middleware() {
+		return this.core.middleware;
+	}
+
+	/**
+	 * Raw middleware checks builder.
+	 * Delegated to AuthCoreService.
+	 */
+	get checks() {
+		return this.core.checks;
+	}
+
+	/**
+	 * Creates ORPC auth middleware.
+	 * Delegated to AuthCoreService.
 	 */
 	createOrpcAuthMiddleware() {
-		const auth = this.options.auth as any as Auth;
-
-		return os.$context<{
-			request: Request;
-		}>().middleware(async (opts) => {
-			// Extract session from request headers
-			const session = await auth.api.getSession({
-				headers: fromNodeHeaders(opts.context.request.headers as unknown as IncomingHttpHeaders),
-			});
-			
-			console.log(session)
-			
-			// Create auth utilities with session
-			const authUtils = new AuthUtils(session, auth);
-
-			// Pass context with auth to next middleware/handler
-			return opts.next({
-				context: {
-					...opts.context,
-					auth: authUtils,
-				},
-			});
-		});
+		return this.core.createOrpcAuthMiddleware();
 	}
 
 	/**
-	 * Creates an empty auth utilities instance for initial ORPC context
-	 * This is used when setting up the ORPC module before middleware runs
-	 * 
-	 * @example
-	 * ```ts
-	 * ORPCModule.forRootAsync({
-	 *   useFactory: (request: Request, authService: AuthService) => {
-	 *     const emptyAuthUtils = authService.createEmptyAuthUtils();
-	 *     return {
-	 *       context: { request, auth: emptyAuthUtils },
-	 *     };
-	 *   },
-	 *   inject: [REQUEST, AuthService],
-	 * })
-	 * ```
+	 * Creates an empty auth utilities instance.
+	 * Delegated to AuthCoreService.
 	 */
 	createEmptyAuthUtils() {
-		return new AuthUtilsEmpty(this.options.auth as any as Auth);
-	}
-
-	// ============================================================================
-	// Auth Utility Methods
-	// These methods can be used via dependency injection in any NestJS service
-	// ============================================================================
-
-	/**
-	 * Check if user has access based on options
-	 * 
-	 * @example
-	 * ```ts
-	 * private readonly authService = inject(AuthService);
-	 * 
-	 * const hasAccess = await this.authService.hasAccess(session, {
-	 *   roles: ['admin'],
-	 *   permissions: { project: ['delete'] }
-	 * });
-	 * ```
-	 */
-	async hasAccess(session: UserSession | null, options: AccessOptions): Promise<boolean> {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.access(options);
+		return this.core.createEmptyAuthUtils();
 	}
 
 	/**
-	 * Check if user has specific role
-	 * 
-	 * @example
-	 * ```ts
-	 * const isAdmin = this.authService.hasRole(session, 'admin');
-	 * ```
+	 * Require user to be authenticated.
+	 * Delegated to AuthCoreService.
 	 */
-	hasRole(session: UserSession | null, role: RoleName): boolean {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.hasRole(role);
+	requireAuth(session: Parameters<AuthCoreService<T>['requireAuth']>[0]) {
+		return this.core.requireAuth(session);
 	}
 
 	/**
-	 * Check if user has specific permission
-	 * 
-	 * @example
-	 * ```ts
-	 * const canDelete = await this.authService.hasPermission(session, {
-	 *   project: ['delete']
-	 * });
-	 * ```
+	 * Generate the Better Auth OpenAPI schema.
+	 * Delegated to AuthCoreService.
 	 */
-	async hasPermission(session: UserSession | null, permission: Permission): Promise<boolean> {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.hasPermission(permission);
-	}
-
-	/**
-	 * Get user roles as array
-	 * 
-	 * @example
-	 * ```ts
-	 * const roles = this.authService.getRoles(session);
-	 * // Returns: ['user', 'admin']
-	 * ```
-	 */
-	getRoles(session: UserSession | null): RoleName[] {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.getRoles();
-	}
-
-	/**
-	 * Require user to be authenticated
-	 * 
-	 * @throws ORPCError with UNAUTHORIZED code if not authenticated
-	 * @example
-	 * ```ts
-	 * const authenticatedSession = this.authService.requireAuth(session);
-	 * ```
-	 */
-	requireAuth(session: UserSession | null): UserSession {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.requireAuth();
-	}
-
-	/**
-	 * Require user to have specific role(s)
-	 * 
-	 * @param session - User session
-	 * @param roles - User must have ANY of these roles
-	 * @throws ORPCError with UNAUTHORIZED/FORBIDDEN code
-	 * @example
-	 * ```ts
-	 * const authenticatedSession = this.authService.requireRole(session, 'admin', 'manager');
-	 * ```
-	 */
-	requireRole(session: UserSession | null, ...roles: RoleName[]): UserSession {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.requireRole(...roles);
-	}
-
-	/**
-	 * Require user to have ALL specified roles
-	 * 
-	 * @param session - User session
-	 * @param roles - User must have ALL of these roles
-	 * @throws ORPCError with UNAUTHORIZED/FORBIDDEN code
-	 * @example
-	 * ```ts
-	 * const authenticatedSession = this.authService.requireAllRoles(session, 'admin', 'superuser');
-	 * ```
-	 */
-	requireAllRoles(session: UserSession | null, ...roles: RoleName[]): UserSession {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.requireAllRoles(...roles);
-	}
-
-	/**
-	 * Require user to have specific permissions
-	 * 
-	 * @param session - User session
-	 * @param permissions - Required permission object
-	 * @throws ORPCError with UNAUTHORIZED/FORBIDDEN code
-	 * @example
-	 * ```ts
-	 * const authenticatedSession = await this.authService.requirePermissions(session, {
-	 *   project: ['delete']
-	 * });
-	 * ```
-	 */
-	async requirePermissions(session: UserSession | null, permissions: Permission): Promise<UserSession> {
-		const auth = this.options.auth as any as Auth;
-		const utils = new AuthUtils(session, auth);
-		return utils.requirePermissions(permissions);
+	async generateAuthOpenAPISchema() {
+		return this.core.generateAuthOpenAPISchema();
 	}
 }

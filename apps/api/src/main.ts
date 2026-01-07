@@ -13,7 +13,7 @@ async function bootstrap() {
     bodyParser: false, // Disable NestJS body parser for oRPC
   });
 
-  const authService = app.get<AuthService>(AuthService);
+  const authService = await app.resolve<AuthService>(AuthService);
 
   // Build list of allowed origins for CORS
   // @ts-expect-error - process.env typing
@@ -66,7 +66,7 @@ async function bootstrap() {
         { oas: (await generateSpec()) as any },
         {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          oas: (await authService.api.generateOpenAPISchema({})) as any,
+          oas: (await authService.generateAuthOpenAPISchema()) as any,
           pathModification: { prepend: "/api/auth" },
         },
       ]);
