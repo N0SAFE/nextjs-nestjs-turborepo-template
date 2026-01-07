@@ -47,14 +47,14 @@ function FeatureCard({
     gradient: string
 }) {
     return (
-        <Card className="from-background to-muted/20 relative overflow-hidden border-0 bg-linear-to-br">
+        <Card className="from-background to-muted/20 relative overflow-hidden border-0 bg-gradient-to-br">
             <div
-                className={`absolute inset-0 bg-linear-to-br ${gradient} opacity-5`}
+                className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-5`}
             />
             <CardHeader className="relative">
                 <div className="flex items-center space-x-3">
                     <div
-                        className={`rounded-lg bg-linear-to-br p-2 ${gradient}`}
+                        className={`rounded-lg bg-gradient-to-br p-2 ${gradient}`}
                     >
                         <Icon className="h-5 w-5 text-white" />
                     </div>
@@ -79,7 +79,7 @@ export default function Page(): JSX.Element {
             {/* Hero Section */}
             <section className="space-y-6 text-center">
                 <div className="space-y-4">
-                    <h1 className="from-primary to-primary/60 bg-linear-to-r bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
+                    <h1 className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
                         Next.js NestJS Template
                     </h1>
                     <p className="text-muted-foreground mx-auto max-w-2xl text-xl">
