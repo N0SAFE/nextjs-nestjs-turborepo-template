@@ -8,10 +8,14 @@ import clientRedirect from '@/actions/redirect'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
 import { redirect, RedirectType } from 'next/navigation'
 import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
+import { logger } from '@repo/logger'
 
 // Re-export the contract for use in hooks (needed for type discrimination)
 export { appContract }
 export type { AppContract }
+
+// Create a scoped logger for ORPC operations
+const orpcLogger = logger.scope('ORPC')
 
 export function createORPCClientWithCookies() {
     const link = new OpenAPILink<{
@@ -34,13 +38,12 @@ export function createORPCClientWithCookies() {
                         const nh = await import('next/headers')
                         const cookieString = (await nh.cookies()).toString()
                         headers.cookie = cookieString
-                        console.log(`🔧 ORPC: Setting cookie header (server-side), length=${String(cookieString.length)}`)
+                        orpcLogger.debug('Setting cookie header (server-side)', { cookieLength: cookieString.length })
                     } catch (error) {
                         unstable_rethrow(error)
-                        console.log(
-                            'Warning: next/headers could not be imported. Are you running in a non-Next.js environment?',
-                            error
-                        )
+                        orpcLogger.warn('next/headers could not be imported - not in Next.js environment?', {
+                            error: error instanceof Error ? error.message : String(error)
+                        })
                         const existing = Array.isArray(headers.cookie)
                             ? headers.cookie.filter(Boolean)
                             : headers.cookie
@@ -92,8 +95,10 @@ export function createORPCClientWithCookies() {
             
             if (typeof window === 'undefined') {
                 const cookieHeader = headers.get('cookie')
-                console.log(`🔧 ORPC fetch: Server-side request to ${request.url}`)
-                console.log(`🔧 ORPC fetch: Cookie header: ${cookieHeader ? cookieHeader.substring(0, 100) + '... (length=' + String(cookieHeader.length) + ')' : 'NONE'}`)
+                orpcLogger.debug('Server-side request', {
+                    url: request.url,
+                    cookieHeader: cookieHeader ? `${cookieHeader.substring(0, 100)}... (length=${cookieHeader.length})` : 'NONE'
+                })
             }
             
             return fetch(request, {
@@ -131,7 +136,7 @@ export function createORPCClientWithCookies() {
                     'status' in error &&
                     error.status === 401
                 ) {
-                    console.log('ORPC Unauthorized - redirecting to login')
+                    orpcLogger.info('Unauthorized - redirecting to login')
                     if (typeof window !== 'undefined') {
                         const loginUrl = toAbsoluteUrl('/login')
                         void clientRedirect(loginUrl)

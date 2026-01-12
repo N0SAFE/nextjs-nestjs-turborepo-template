@@ -68,3 +68,21 @@ export {
   type CompositeHooksConfig,
   type CompositeHooksOptions
 } from './composite-hooks';
+
+// Hook merging utilities
+export {
+  mergeHooks,
+  defineCustomHooks,
+  type MergeHooksConfig,
+  type MergedHooks,
+  type CustomHooks,
+  type CustomHooksWithKeys,
+  type QueryKeys,
+  type QueryKeyFactory,
+} from './merge-hooks';
+
+// Re-export key-related types from generate-hooks
+export {
+  type ExtractCustomHooksKeys,
+  type CustomInvalidationContext,
+} from './generate-hooks';

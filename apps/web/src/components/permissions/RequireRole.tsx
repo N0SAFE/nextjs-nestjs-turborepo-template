@@ -1,7 +1,7 @@
 'use client'
 
 import { type ReactNode } from 'react'
-import { useOrganizationPermissions, type OrganizationRole } from '@/hooks/usePermissions'
+import { useOrganizationPermissions, type OrganizationRole } from '@/lib/permissions'
 import { Skeleton } from '@repo/ui/components/shadcn/skeleton'
 
 export interface RequireRoleProps {

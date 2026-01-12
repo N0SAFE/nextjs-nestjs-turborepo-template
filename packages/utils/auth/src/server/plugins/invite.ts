@@ -53,7 +53,7 @@ export interface InvitePluginOptions<TRoles extends string = string> {
   getDate?: () => Date;
 }
 
-interface Invite {
+export interface Invite {
   id: string;
   token: string;
   email?: string;
@@ -188,6 +188,78 @@ export const invitePlugin = <TRoles extends string>(
           });
 
           return ctx.json({ token, email: ctx.body.email, role: ctx.body.role, expiresAt: expiresAt.toISOString(), invitedUserId }, { status: 201 });
+        }
+      ),
+
+      /**
+       * List platform invitations with optional status filter
+       */
+      list: createAuthEndpoint(
+        "/invite/list",
+        {
+          query: z.object({
+            status: z.enum(["pending", "used", "expired"]).optional(),
+          }),
+          method: "GET",
+          use: [sessionMiddleware],
+        },
+        async (ctx) => {
+          const userId = ctx.context.session.user.id;
+          if (!userId) {
+            throw ctx.error("BAD_REQUEST", {
+              message: ERROR_CODES.USER_NOT_LOGGED_IN,
+            });
+          }
+
+          const user = await ctx.context.internalAdapter.findUserById(userId);
+
+          if (!user) {
+            throw ctx.error("BAD_REQUEST", {
+              message: ERROR_CODES.NO_SUCH_USER,
+            });
+          }
+
+          // Check if user can list invites
+          if (options.canCreateInvite !== undefined) {
+            // @ts-expect-error UserWithRole type assertion
+            const canListInvites = options.canCreateInvite(user);
+            if (!canListInvites) {
+              throw ctx.error("BAD_REQUEST", {
+                message: ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+              });
+            }
+          }
+
+          // Query all platformInvite records and filter in memory
+          // Better Auth adapter has limited WHERE clause support
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          const allInvitations = await ctx.context.adapter.findMany({
+            model: "platformInvite",
+            limit: 1000,
+            sortBy: { field: "createdAt", direction: "desc" },
+          }) as Invite[];
+
+          // Filter based on status
+          let invitations = allInvitations;
+          if (ctx.query.status) {
+            const now = opts.getDate();
+            if (ctx.query.status === "pending") {
+              // Pending: not used and not expired
+              invitations = allInvitations.filter((inv) => 
+                inv.usedAt === undefined && new Date(inv.expiresAt) > now
+              );
+            } else if (ctx.query.status === "used") {
+              // Used: usedAt is not null
+              invitations = allInvitations.filter((inv) => inv.usedAt !== undefined);
+            } else {
+              // Expired: expiresAt < now and not used
+              invitations = allInvitations.filter((inv) => 
+                inv.usedAt === undefined && new Date(inv.expiresAt) <= now
+              );
+            }
+          }
+
+          return ctx.json({ invitations }, { status: 200 });
         }
       ),
 

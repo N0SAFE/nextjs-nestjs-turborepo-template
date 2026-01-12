@@ -17,14 +17,3 @@ export {
   type RequireOrganizationRoleProps,
 } from './RequireOrganizationRole'
 
-// Permission component - fine-grained permission checking
-export {
-  RequirePermission,
-  usePermission,
-  usePlatformPermission,
-  useOrganizationPermission,
-  type RequirePermissionProps,
-  type PlatformPermissionDef,
-  type OrganizationPermissionDef,
-  type PermissionDef,
-} from './RequirePermission'

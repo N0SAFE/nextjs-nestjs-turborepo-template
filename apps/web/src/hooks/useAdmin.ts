@@ -1,8 +1,32 @@
 'use client'
 
+/**
+ * @fileoverview Admin Hooks - Better Auth Admin Plugin
+ * 
+ * This file provides React hooks for administrative operations using Better Auth's Admin plugin.
+ * The Admin plugin extends Better Auth with user management capabilities.
+ * 
+ * Key Features:
+ * - User listing with pagination and sorting
+ * - Permission management and checking
+ * - User banning/unbanning
+ * - Role management (platform-wide roles)
+ * - User CRUD operations (create, update, remove)
+ * - Centralized query key management
+ * - Automatic cache invalidation
+ * - Toast notifications for feedback
+ * 
+ * Unlike ORPC hooks which use generated contracts, these hooks wrap Better Auth's
+ * Admin plugin methods with React Query for optimal caching and state management.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authClient } from '@/lib/auth'
 import { toast } from 'sonner'
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 // Infer role type from Better Auth setRole method parameters
 type SetRoleParams = Parameters<typeof authClient.admin.setRole>[0]
@@ -10,6 +34,10 @@ type PlatformRole = SetRoleParams['role']
 
 // Infer create user parameters
 type CreateUserParams = Parameters<typeof authClient.admin.createUser>[0]
+
+// ============================================================================
+// QUERY KEY REGISTRY
+// ============================================================================
 
 /**
  * Query key registry for admin-related queries

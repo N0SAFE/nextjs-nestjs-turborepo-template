@@ -1,7 +1,7 @@
 'use client'
 
 import { type ReactNode } from 'react'
-import { usePermissions, type PlatformRole } from '@/hooks/usePermissions'
+import { usePermissions, type PlatformRole } from '@/lib/permissions'
 import { Skeleton } from '@repo/ui/components/shadcn/skeleton'
 
 export interface RequirePlatformRoleProps {

@@ -48,6 +48,7 @@
     "@repo/declarative-routing": "*",
     "@repo/auth": "*",
     "@repo/env": "*",
+    "@repo/logger": "*",
     "@repo/orpc-utils": "*",
     "@repo/ui": "*",
     "@serwist/turbopack": "^10.0.0-preview.14",

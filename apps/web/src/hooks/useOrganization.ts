@@ -1,5 +1,30 @@
 'use client'
 
+/**
+ * @fileoverview Organization Hooks - Better Auth Organization Plugin
+ * 
+ * This file provides React hooks for multi-tenancy organization operations using
+ * Better Auth's Organization plugin. Organizations provide tenant isolation and
+ * role-based access control within each organization context.
+ * 
+ * Key Features:
+ * - Organization CRUD operations (create, update, delete)
+ * - Member management (invite, remove, update roles)
+ * - Organization-specific roles and permissions
+ * - Active organization context switching
+ * - Centralized query key management
+ * - Automatic cache invalidation
+ * - Toast notifications for feedback
+ * 
+ * Unlike ORPC hooks which use generated contracts, these hooks wrap Better Auth's
+ * Organization plugin methods with React Query for optimal caching and state management.
+ * 
+ * Organization Hierarchy:
+ * - Platform (top level) - managed by Admin plugin
+ * - Organizations (tenants) - managed by Organization plugin
+ * - Organization Members - users with organization-specific roles
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authClient } from '@/lib/auth'
 import { toast } from 'sonner'

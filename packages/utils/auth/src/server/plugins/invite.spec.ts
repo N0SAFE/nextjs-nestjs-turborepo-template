@@ -48,6 +48,11 @@ describe('invitePlugin', () => {
       expect(plugin.endpoints.create).toBeDefined();
     });
 
+    it('should have list endpoint', () => {
+      const plugin = invitePlugin(defaultOptions);
+      expect(plugin.endpoints.list).toBeDefined();
+    });
+
     it('should have check endpoint', () => {
       const plugin = invitePlugin(defaultOptions);
       expect(plugin.endpoints.check).toBeDefined();

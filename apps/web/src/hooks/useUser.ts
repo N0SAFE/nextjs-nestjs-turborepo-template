@@ -60,6 +60,7 @@ const userInvalidations = defineInvalidations<typeof appContract.user, typeof or
 const userHooks = createRouterHooks<typeof appContract.user, typeof orpc.user>(orpc.user, {
   invalidations: userInvalidations,
   useQueryClient,
+  baseKey: 'user', // Custom base key for query keys
 })
 
 /**
@@ -69,6 +70,72 @@ const userHooks = createRouterHooks<typeof appContract.user, typeof orpc.user>(o
 const userComposite = createCompositeHooks(orpc.user, userHooks, {
   useQueryClient,
 })
+
+// ============================================================================
+// QUERY KEY EXPORTS - For manual cache management
+// ============================================================================
+
+/**
+ * Query key registry exported from generated hooks
+ * Use these for manual cache operations like prefetching or invalidation
+ * 
+ * This follows the same pattern as Better Auth hooks (useAdmin, useOrganization):
+ * - `queryKeys.all` - Base key for all user queries
+ * - `queryKeys.{procedureName}(input)` - Key factory for specific procedure
+ * 
+ * @example Basic Usage
+ * ```ts
+ * import { userQueryKeys } from '@/hooks/useUser.orpc-hooks'
+ * import { useQueryClient } from '@tanstack/react-query'
+ * 
+ * function MyComponent() {
+ *   const queryClient = useQueryClient()
+ *   
+ *   // Prefetch user list
+ *   queryClient.prefetchQuery({
+ *     queryKey: userQueryKeys.list({ limit: 20 }),
+ *     queryFn: ...
+ *   })
+ *   
+ *   // Invalidate all user queries
+ *   queryClient.invalidateQueries({
+ *     queryKey: userQueryKeys.all
+ *   })
+ *   
+ *   // Invalidate specific user
+ *   queryClient.invalidateQueries({
+ *     queryKey: userQueryKeys.findById({ id: 'user-123' })
+ *   })
+ * }
+ * ```
+ * 
+ * @example In Mutations (Better Auth Style)
+ * ```ts
+ * // This matches the pattern used in useAdmin.ts and useOrganization.ts
+ * function useUpdateUser() {
+ *   const queryClient = useQueryClient()
+ *   
+ *   return useMutation({
+ *     mutationFn: async (data) => { ... },
+ *     onSuccess: (_, variables) => {
+ *       // Invalidate the specific user
+ *       void queryClient.invalidateQueries({
+ *         queryKey: userQueryKeys.findById({ id: variables.id })
+ *       })
+ *       // Invalidate the user list
+ *       void queryClient.invalidateQueries({
+ *         queryKey: userQueryKeys.list()
+ *       })
+ *     }
+ *   })
+ * }
+ * ```
+ * 
+ * @see useAdmin.ts for Better Auth query key pattern
+ * @see useOrganization.ts for Better Auth query key pattern
+ * @see packages/utils/orpc/src/hooks/generate-hooks.ts for ORPC hook generator
+ */
+export const userQueryKeys = userHooks.queryKeys
 
 // ============================================================================
 // NAMED EXPORTS - For convenience and discoverability

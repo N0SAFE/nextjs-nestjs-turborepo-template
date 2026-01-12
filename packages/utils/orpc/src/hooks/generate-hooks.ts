@@ -8,16 +8,37 @@
  * - Automatic cache invalidation based on operation semantics
  * - Smart dependency detection between queries and mutations
  * - Composable utility hooks for common patterns
+ * - Query key registry for manual cache operations
  * 
  * IMPORTANT: Only contracts created via RouteBuilder will generate hooks.
  * Hand-made ORPC contracts (without RouteBuilder metadata) are NOT supported.
+ * 
+ * UNIFIED HOOK PATTERN:
+ * This generator creates hooks that follow the same pattern as Better Auth hooks
+ * (useAdmin, useOrganization), providing consistency across the codebase:
+ * 
+ * - Generated hooks: `hooks.use{ProcedureName}()` - TanStack Query hooks
+ * - Query keys: `hooks.queryKeys.{procedureName}(input)` - Key factories for cache operations
+ * - Base key: `hooks.queryKeys.all` - Root key for invalidating all queries
+ * 
+ * This allows Better Auth style invalidation in mutations:
+ * ```ts
+ * useMutation({
+ *   onSuccess: () => {
+ *     // Invalidate specific query
+ *     queryClient.invalidateQueries({ queryKey: hooks.queryKeys.findById({ id }) })
+ *     // Invalidate all list queries
+ *     queryClient.invalidateQueries({ queryKey: hooks.queryKeys.list() })
+ *   }
+ * })
+ * ```
  * 
  * TYPE-LEVEL ENFORCEMENT:
  * Since TanStack Query's `createTanstackQueryUtils()` wraps contracts into `ProcedureUtils`
  * types that lose the `~orpc` metadata, you must pass the RAW CONTRACT TYPE as a generic
  * parameter to enable type-level hook discrimination:
  * 
- * @example
+ * @example Basic Usage
  * ```ts
  * import { appContract } from '@repo/api-contracts'
  * 
@@ -36,24 +57,45 @@
  *
  * const userHooks = createRouterHooks<typeof appContract.user>(orpc.user, { 
  *   invalidations, 
- *   useQueryClient 
+ *   useQueryClient,
+ *   baseKey: 'user' // Optional: customize base key (default: 'orpc')
  * });
  * 
  * // Use generated hooks - only procedures with RouteBuilder metadata get hooks
  * const { data } = userHooks.useList({ limit: 20 });
  * const createMutation = userHooks.useCreate();
+ * 
+ * // Export query keys for manual operations
+ * export const userQueryKeys = userHooks.queryKeys;
+ * 
+ * // Use in other hooks (Better Auth style)
+ * function useUpdateUserMutation() {
+ *   const queryClient = useQueryClient();
+ *   return useMutation({
+ *     mutationFn: async (data) => { ... },
+ *     onSuccess: () => {
+ *       queryClient.invalidateQueries({ queryKey: userQueryKeys.list() })
+ *       queryClient.invalidateQueries({ queryKey: userQueryKeys.findById({ id: data.id }) })
+ *     }
+ *   });
+ * }
  * ```
+ * 
+ * @see apps/web/src/hooks/useUser.orpc-hooks.ts for ORPC usage example
+ * @see apps/web/src/hooks/useAdmin.ts for Better Auth pattern reference
+ * @see apps/web/src/hooks/useOrganization.ts for Better Auth pattern reference
  */
 
 import type {
   QueryClient,
+  QueryKey,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import type { AnySchema } from '@orpc/contract';
+import type { AnySchema, InferSchemaInput, InferSchemaOutput } from '@orpc/contract';
 import { getEventIteratorSchemaDetails } from '@orpc/contract';
 import {
   ExtractRouteMethod,
@@ -61,7 +103,7 @@ import {
   hasRouteMethodMeta,
   getRouteMethod,
 } from '../builder/mount-method';
-import { isContractProcedure } from '../utils/type-helpers';
+import { isContractProcedure, type InferInputSchema, type InferOutputSchema, type AnyContractProcedureOrBuilder } from '../utils/type-helpers';
 
 /**
  * Extract the HTTP method from RouteBuilder contract metadata.
@@ -172,7 +214,310 @@ type ResolverResult<TContract extends object, TRouter extends object = TContract
     : never;
 }>;
 
-export type InvalidationConfig<TContract extends object, TRouter extends object = TContract> = Partial<{
+/**
+ * Unified invalidation configuration for both ORPC and custom hooks.
+ * 
+ * Supports two patterns:
+ * 1. ORPC mutations: Map mutation name to queries to invalidate
+ * 2. Custom hooks: Map custom hook name to queries to invalidate
+ * 
+ * @example
+ * ```ts
+ * const invalidations = defineInvalidations({
+ *   contract: appContract.user,
+ *   custom: authCustomHooks
+ * }, {
+ *   // ORPC mutations
+ *   create: () => ['list', 'count'],
+ *   update: (input) => ({ list: undefined, findById: { id: input.id } }),
+ *   
+ *   // Custom hook invalidations (type-safe!)
+ *   useSignInEmail: () => ['*'], // Invalidate all
+ *   useSignOut: () => ['*'],
+ * })
+ * ```
+ */
+/**
+ * Extract the keys type from custom hooks (if defined).
+ * The keys are expected to be on `TCustom['keys']`.
+ */
+export type ExtractCustomHooksKeys<TCustom extends Record<string, unknown>> = 
+  TCustom extends { keys: infer TKeys } ? TKeys : Record<string, never>;
+
+// ============================================================================
+// CUSTOM HOOK TYPE EXTRACTION UTILITIES
+// ============================================================================
+
+/**
+ * Extract the input (variables) type from a UseMutationResult.
+ * For mutations, TVariables represents the input passed to mutate().
+ * 
+ * Uses `any` in the pattern to be permissive in matching, then infer
+ * extracts the actual type.
+ * 
+ * @example
+ * ```ts
+ * // Given: UseMutationResult<User, Error, { email: string }>
+ * // Extracts: { email: string }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractMutationVariables<T> = T extends UseMutationResult<any, any, infer TVariables, any>
+  ? TVariables 
+  : never;
+
+/**
+ * Extract the data (result) type from a UseMutationResult.
+ * 
+ * @example
+ * ```ts
+ * // Given: UseMutationResult<User, Error, { email: string }>
+ * // Extracts: User
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractMutationData<T> = T extends UseMutationResult<infer TData, any, any, any>
+  ? TData 
+  : never;
+
+/**
+ * Extract the data type from a UseQueryResult.
+ * For queries, TData represents the query result.
+ * 
+ * @example
+ * ```ts
+ * // Given: UseQueryResult<User[]>
+ * // Extracts: User[]
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractQueryData<T> = T extends UseQueryResult<infer TData, any>
+  ? TData 
+  : never;
+
+/**
+ * Check if a type is a UseMutationResult.
+ * Uses `any` for permissive pattern matching.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IsMutationResult<T> = T extends UseMutationResult<any, any, any, any> 
+  ? true 
+  : false;
+
+/**
+ * Check if a type is a UseQueryResult.
+ * Uses `any` for permissive pattern matching.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IsQueryResult<T> = T extends UseQueryResult<any, any> 
+  ? true 
+  : false;
+
+/**
+ * Extract the return type of a custom hook function.
+ * Custom hooks are functions that return UseQueryResult or UseMutationResult.
+ * 
+ * Uses `any` for the args pattern to be permissive in matching.
+ * 
+ * @example
+ * ```ts
+ * // Given: () => UseMutationResult<User, Error, { email: string }>
+ * // Extracts: UseMutationResult<User, Error, { email: string }>
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractHookReturnType<T> = T extends (...args: any[]) => infer TReturn 
+  ? TReturn 
+  : never;
+
+/**
+ * Extract the input type from a custom hook.
+ * 
+ * For mutation hooks: Returns the TVariables type (input to mutate())
+ * For query hooks: Returns the parameters of the hook function itself
+ * 
+ * This allows invalidation callbacks to receive the input that was used:
+ * ```ts
+ * useUpdateUser: ({ keys, input }) => [keys.findById({ id: input.id })]
+ * ```
+ * 
+ * @example Mutation Hook
+ * ```ts
+ * // Hook: useSignInEmail: () => useMutation<User, Error, { email: string; password: string }>()
+ * // ExtractCustomHookInput: { email: string; password: string }
+ * ```
+ * 
+ * @example Query Hook  
+ * ```ts
+ * // Hook: useUser: (id: string) => useQuery<User>()
+ * // ExtractCustomHookInput: string (first parameter)
+ * ```
+ */
+export type ExtractCustomHookInput<T> = 
+  ExtractHookReturnType<T> extends infer TReturn
+    ? IsMutationResult<TReturn> extends true
+      ? ExtractMutationVariables<TReturn>
+      : IsQueryResult<TReturn> extends true
+        // For queries, extract input from the hook's parameters
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? T extends (input: infer TInput, ...args: any[]) => any
+          ? TInput
+          : void
+        : never
+    : never;
+
+/**
+ * Extract the result/output type from a custom hook.
+ * 
+ * For mutation hooks: Returns the TData type (mutation result)
+ * For query hooks: Returns the TData type (query data)
+ * 
+ * This allows invalidation callbacks to access the result:
+ * ```ts
+ * useCreateUser: ({ keys, result }) => [keys.findById({ id: result.id })]
+ * ```
+ * 
+ * @example Mutation Hook
+ * ```ts
+ * // Hook: useCreateUser: () => useMutation<User, Error, CreateUserInput>()
+ * // ExtractCustomHookOutput: User
+ * ```
+ * 
+ * @example Query Hook
+ * ```ts
+ * // Hook: useUsers: () => useQuery<User[]>()
+ * // ExtractCustomHookOutput: User[]
+ * ```
+ */
+export type ExtractCustomHookOutput<T> =
+  ExtractHookReturnType<T> extends infer TReturn
+    ? IsMutationResult<TReturn> extends true
+      ? ExtractMutationData<TReturn>
+      : IsQueryResult<TReturn> extends true
+        ? ExtractQueryData<TReturn>
+        : never
+    : never;
+
+// ============================================================================
+// CUSTOM INVALIDATION CONTEXT
+// ============================================================================
+
+/**
+ * Context passed to custom hook invalidation callbacks.
+ * Provides type-safe access to query keys, hook input, and result data.
+ * 
+ * @template TKeys - The query key factories from the custom hooks
+ * @template TInput - The input type for this specific hook (mutation variables or query input)
+ * @template TOutput - The output type for this specific hook (mutation/query result data)
+ * 
+ * @example Basic usage with keys only
+ * ```ts
+ * useSignOut: ({ keys }) => [keys.all()]
+ * ```
+ * 
+ * @example With input for conditional invalidation
+ * ```ts
+ * useUpdateUser: ({ keys, input }) => [
+ *   keys.list(),
+ *   keys.findById({ id: input.id }),
+ * ]
+ * ```
+ * 
+ * @example With result for post-mutation invalidation
+ * ```ts
+ * useCreateUser: ({ keys, result }) => [
+ *   keys.list(),
+ *   keys.findById({ id: result.id }),
+ * ]
+ * ```
+ */
+export type CustomInvalidationContext<
+  TKeys,
+  TInput = unknown,
+  TOutput = unknown
+> = {
+  /**
+   * Type-safe query key factories from custom hooks.
+   * Each key is a function returning a readonly query key tuple.
+   * 
+   * @example
+   * ```ts
+   * useSignInEmail: ({ keys }) => [keys.session()]
+   * ```
+   */
+  keys: TKeys;
+  
+  /**
+   * The input passed to the hook/mutation.
+   * 
+   * For mutations: The variables passed to mutate()
+   * For queries: The input parameters passed to the hook
+   * 
+   * @example
+   * ```ts
+   * useUpdateUser: ({ keys, input }) => [
+   *   keys.findById({ id: input.id }),
+   * ]
+   * ```
+   */
+  input: TInput;
+  
+  /**
+   * The result data from the hook operation.
+   * 
+   * For mutations: The data returned by the mutation (available in onSuccess)
+   * For queries: The query data
+   * 
+   * Note: This is optional in the context because it may not be available
+   * at all invalidation points (e.g., before mutation completes).
+   * 
+   * @example
+   * ```ts
+   * useCreateUser: ({ keys, result }) => [
+   *   keys.findById({ id: result.id }),
+   * ]
+   * ```
+   */
+  result: TOutput;
+};
+
+/**
+ * Custom hook invalidation config - only applies when TCustom has actual keys
+ * Uses the presence of 'keys' property to detect custom hooks.
+ * 
+ * Each hook gets its own typed context with:
+ * - keys: The shared query key factories
+ * - input: The specific input type for that hook
+ * - result: The specific output type for that hook
+ */
+type CustomInvalidationPart<
+  TContract extends object,
+  TRouter extends object,
+  TCustom extends Record<string, unknown>
+> = TCustom extends { keys: infer TKeys } 
+  ? Partial<{
+      [K in Exclude<keyof TCustom, 'keys'>]: 
+        | readonly (QueryProcedureNames<TContract, TRouter> | keyof TCustom | '*')[]
+        | ((
+            /**
+             * Context providing type-safe access to query keys, input, and result.
+             * Types are inferred from the custom hook definition.
+             */
+            context: CustomInvalidationContext<
+              TKeys,
+              ExtractCustomHookInput<TCustom[K]>,
+              ExtractCustomHookOutput<TCustom[K]>
+            >
+          ) => readonly QueryKey[])
+    }>
+  : object;
+
+export type InvalidationConfig<
+  TContract extends object, 
+  TRouter extends object = TContract,
+  TCustom extends Record<string, unknown> = Record<string, never>
+> = Partial<{
+  // ORPC mutation invalidations
   [M in MutationProcedureNames<TContract, TRouter>]: M extends keyof TRouter
     ? | readonly QueryProcedureNames<TContract, TRouter>[]
       | ((
@@ -192,46 +537,69 @@ export type InvalidationConfig<TContract extends object, TRouter extends object 
           context: ExtractMutationContext<TRouter[M]>
         ) => ResolverResult<TContract, TRouter>)
     : never;
-}>;
+}> & CustomInvalidationPart<TContract, TRouter, TCustom>;
 
 /**
- * Extract input type from ORPC procedure
+ * Extract input type from ORPC contract via schema inference.
+ * 
+ * Strategy:
+ * 1. Extract inputSchema from contract using InferInputSchema
+ * 2. Use ORPC's InferSchemaInput to infer the TypeScript type
+ * 3. If no schema, use undefined (procedures without input)
  */
-export type ExtractInput<T> = T extends { queryOptions: (opts: infer Opts) => unknown }
-  ? Opts extends { input: infer Input }
+export type ExtractContractInput<T extends AnyContractProcedureOrBuilder> = 
+  InferInputSchema<T> extends infer TInputSchema
+    ? [TInputSchema] extends [undefined]
+      ? undefined
+      : TInputSchema extends AnySchema
+        ? InferSchemaInput<TInputSchema>
+        : undefined
+    : undefined;
+
+/**
+ * Extract output type from ORPC contract via schema inference.
+ * 
+ * Strategy:
+ * 1. Extract outputSchema from contract using InferOutputSchema
+ * 2. Use ORPC's InferSchemaOutput to infer the TypeScript type
+ * 3. If no schema, use unknown
+ */
+export type ExtractContractOutput<T extends AnyContractProcedureOrBuilder> = 
+  InferOutputSchema<T> extends infer TOutputSchema
+    ? [TOutputSchema] extends [undefined]
+      ? unknown
+      : TOutputSchema extends AnySchema
+        ? InferSchemaOutput<TOutputSchema>
+        : unknown
+    : unknown;
+
+/**
+ * Extract input type from ORPC procedure (for runtime extraction).
+ * Uses the contract type when available, falls back to runtime methods.
+ */
+export type ExtractInput<T> = 
+  T extends { call: (input: infer Input) => unknown }
     ? Input
-    : never
-  : never;
+    : undefined;
 
 /**
- * Extract output type from ORPC procedure
+ * Extract output type from ORPC procedure (for runtime extraction).
+ * Uses the contract type when available, falls back to runtime methods.
  */
-export type ExtractOutput<T> = T extends { queryOptions: (...args: unknown[]) => unknown }
-  ? ReturnType<T['queryOptions']> extends UseQueryOptions<infer Data>
-    ? Data
-    : never
-  : never;
-
-/**
- * Extract mutation input type from ORPC TanStack procedure utils.
- * 
- * ORPC's createTanstackQueryUtils wraps procedures with a `call(input)` method,
- * so we extract the input type from there (not from mutationOptions).
- */
-export type ExtractMutationInput<T> = T extends { call: (input: infer Input) => unknown }
-  ? Input
-  : never;
-
-/**
- * Extract mutation output type from ORPC TanStack procedure utils.
- * 
- * ORPC's `call(input)` returns a Promise<Output>, so we unwrap that.
- */
-export type ExtractMutationOutput<T> = T extends { call: (input: unknown) => Promise<infer Output> }
-  ? Output
-  : T extends { call: (input: unknown) => infer Output }
+export type ExtractOutput<T> = 
+  T extends { call: (...args: unknown[]) => Promise<infer Output> }
     ? Output
-    : never;
+    : unknown;
+
+/**
+ * Extract mutation input type from ORPC procedure.
+ */
+export type ExtractMutationInput<T> = ExtractInput<T>;
+
+/**
+ * Extract mutation output type from ORPC procedure.
+ */
+export type ExtractMutationOutput<T> = ExtractOutput<T>;
 
 /**
  * Extract TanStack mutation context type (returned by onMutate)
@@ -601,6 +969,16 @@ export type RouterHooksOptions<TContract extends object, TRouter extends object 
   hookNaming?: (procedureName: string) => string;
   
   /**
+   * Base key for query key registry (default: 'orpc')
+   * Used as the root key for all generated query keys
+   * 
+   * @example
+   * baseKey: 'user' → queryKeys.all = ['user']
+   * baseKey: 'org' → queryKeys.all = ['org']
+   */
+  baseKey?: string;
+  
+  /**
    * Enable debug logging
    */
   debug?: boolean;
@@ -613,54 +991,70 @@ export type RouterHooksOptions<TContract extends object, TRouter extends object 
  * Some tooling (notably type-aware ESLint rules) can degrade to `error`/`any` when
  * consuming deeply-instantiated mapped types built from instantiation expressions.
  */
-export type GeneratedQueryHook<TProcedure extends { queryOptions: unknown; queryKey: unknown }> = (
-  input?: ExtractInput<TProcedure>,
+export type GeneratedQueryHook<
+  TContract extends AnyContractProcedureOrBuilder,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TProcedure extends { queryOptions: unknown; queryKey: unknown }
+> = (
+  input?: ExtractContractInput<TContract>,
   options?: Omit<
-    UseQueryOptions<ExtractOutput<TProcedure>, Error, ExtractOutput<TProcedure>>,
+    UseQueryOptions<ExtractContractOutput<TContract>, Error, ExtractContractOutput<TContract>>,
     'queryKey' | 'queryFn'
   >
-) => UseQueryResult<ExtractOutput<TProcedure>>;
+) => UseQueryResult<ExtractContractOutput<TContract>>;
 
-export type GeneratedMutationHook<TProcedure extends { mutationOptions: unknown; queryKey?: unknown }> = (
+export type GeneratedMutationHook<
+  TContract extends AnyContractProcedureOrBuilder,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TProcedure extends { mutationOptions: unknown; queryKey?: unknown }
+> = (
   options?: Omit<
     UseMutationOptions<
-      ExtractMutationOutput<TProcedure>,
+      ExtractContractOutput<TContract>,
       Error,
-      ExtractMutationInput<TProcedure>
+      ExtractContractInput<TContract>
     >,
     'mutationFn'
   >
 ) => UseMutationResult<
-  ExtractMutationOutput<TProcedure>,
+  ExtractContractOutput<TContract>,
   Error,
-  ExtractMutationInput<TProcedure>
+  ExtractContractInput<TContract>
 >;
 
-export type GeneratedLiveQueryHook<TProcedure extends {
-  experimental_liveOptions?: unknown;
-  queryOptions?: unknown;
-  queryKey?: unknown;
-}> = (
-  input?: ExtractInput<TProcedure>,
+export type GeneratedLiveQueryHook<
+  TContract extends AnyContractProcedureOrBuilder,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TProcedure extends {
+    experimental_liveOptions?: unknown;
+    queryOptions?: unknown;
+    queryKey?: unknown;
+  }
+> = (
+  input?: ExtractContractInput<TContract>,
   options?: LiveQueryOptions &
     Omit<
-      UseQueryOptions<ExtractOutput<TProcedure>, Error, ExtractOutput<TProcedure>>,
+      UseQueryOptions<ExtractContractOutput<TContract>, Error, ExtractContractOutput<TContract>>,
       'queryKey' | 'queryFn'
     >
-) => UseQueryResult<ExtractOutput<TProcedure>>;
+) => UseQueryResult<ExtractContractOutput<TContract>>;
 
-export type GeneratedStreamedQueryHook<TProcedure extends {
-  experimental_streamedOptions?: unknown;
-  queryOptions?: unknown;
-  queryKey?: unknown;
-}> = (
-  input?: ExtractInput<TProcedure>,
+export type GeneratedStreamedQueryHook<
+  TContract extends AnyContractProcedureOrBuilder,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  TProcedure extends {
+    experimental_streamedOptions?: unknown;
+    queryOptions?: unknown;
+    queryKey?: unknown;
+  }
+> = (
+  input?: ExtractContractInput<TContract>,
   options?: StreamedQueryOptions &
     Omit<
-      UseQueryOptions<ExtractOutput<TProcedure>[], Error, ExtractOutput<TProcedure>[]>,
+      UseQueryOptions<ExtractContractOutput<TContract>[], Error, ExtractContractOutput<TContract>[]>,
       'queryKey' | 'queryFn'
     >
-) => UseQueryResult<ExtractOutput<TProcedure>[]>;
+) => UseQueryResult<ExtractContractOutput<TContract>[]>;
 
 type IsStreamingProcedure<TContractProc, TRouterProc = TContractProc> =
   // Only RouteBuilder contracts can generate streaming hooks.
@@ -692,7 +1086,7 @@ type IsStreamingProcedure<TContractProc, TRouterProc = TContractProc> =
 export type RouterHooks<TContract extends object, TRouter extends object = TContract> = {
   // Standard query/mutation hooks
   // ONLY procedures with RouteBuilder metadata generate hooks.
-  // Discriminate using TContract (has ~orpc), extract types from TRouter (has runtime methods)
+  // Discriminate using TContract (has ~orpc), extract types from TContract (has schemas)
   // Note: We use optional property checks ({prop?: unknown}) to handle both required and optional properties
   [K in keyof TContract as K extends string
     ? IsNonGetMethod<TContract[K]> extends true
@@ -715,17 +1109,17 @@ export type RouterHooks<TContract extends object, TRouter extends object = TCont
   ]: K extends keyof TRouter
     ? IsNonGetMethod<TContract[K]> extends true
       ? TRouter[K] extends { mutationOptions?: unknown }
-        ? GeneratedMutationHook<TRouter[K] & { mutationOptions: unknown; queryKey?: unknown }>
+        ? GeneratedMutationHook<Extract<TContract[K], AnyContractProcedureOrBuilder>, TRouter[K] & { mutationOptions: unknown; queryKey?: unknown }>
         : never
       : IsGetMethod<TContract[K]> extends true
         ? TRouter[K] extends { queryOptions?: unknown }
-          ? GeneratedQueryHook<TRouter[K] & { queryOptions: unknown; queryKey: unknown }>
+          ? GeneratedQueryHook<Extract<TContract[K], AnyContractProcedureOrBuilder>, TRouter[K] & { queryOptions: unknown; queryKey: unknown }>
           : never
         : never
     : never;
 } & {
   // Streaming hooks (useLive*/useStreamed*)
-  // Discriminate using TContract, extract types from TRouter
+  // Discriminate using TContract, extract types from TContract (has schemas)
   [K in keyof TContract as K extends string
     ? K extends keyof TRouter
       ? IsStreamingProcedure<TContract[K], TRouter[K]> extends true
@@ -734,7 +1128,7 @@ export type RouterHooks<TContract extends object, TRouter extends object = TCont
       : never
     : never
   ]: K extends keyof TRouter
-    ? GeneratedLiveQueryHook<TRouter[K] & {
+    ? GeneratedLiveQueryHook<Extract<TContract[K], AnyContractProcedureOrBuilder>, TRouter[K] & {
         experimental_liveOptions?: unknown;
         queryOptions?: unknown;
         queryKey?: unknown;
@@ -749,12 +1143,52 @@ export type RouterHooks<TContract extends object, TRouter extends object = TCont
       : never
     : never
   ]: K extends keyof TRouter
-    ? GeneratedStreamedQueryHook<TRouter[K] & {
+    ? GeneratedStreamedQueryHook<Extract<TContract[K], AnyContractProcedureOrBuilder>, TRouter[K] & {
         experimental_streamedOptions?: unknown;
         queryOptions?: unknown;
         queryKey?: unknown;
       }>
     : never;
+} & {
+  /**
+   * Query key registry for manual cache operations
+   * 
+   * Contains factory functions for generating query keys for each procedure.
+   * Use these for manual prefetching, invalidation, or other cache operations.
+   * 
+   * @example
+   * ```ts
+   * const hooks = createRouterHooks(orpc.user, { ... });
+   * 
+   * // All procedures
+   * queryClient.invalidateQueries({ queryKey: hooks.queryKeys.all });
+   * 
+   * // Specific procedure with input
+   * queryClient.prefetchQuery({
+   *   queryKey: hooks.queryKeys.list({ limit: 20 }),
+   *   queryFn: ...
+   * });
+   * ```
+   */
+  queryKeys: {
+    /** Base key for all query keys */
+    all: readonly [string];
+  } & {
+    [K in keyof TContract as K extends string
+      ? K extends keyof TRouter
+        ? IsGetMethod<TContract[K]> extends true
+          ? TRouter[K] extends { queryOptions?: unknown }
+            ? K
+            : never
+          : IsStreamingProcedure<TContract[K], TRouter[K]> extends true
+            ? TRouter[K] extends { queryOptions?: unknown }
+              ? K
+              : never
+            : never
+        : never
+      : never
+    ]: (input?: ExtractContractInput<Extract<TContract[K], AnyContractProcedureOrBuilder>>) => readonly unknown[];
+  };
 };
 
 /**
@@ -806,6 +1240,11 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
   const hooks: Record<string, unknown> = {};
   type RouterKey = Extract<keyof TRouter, string>;
   const procedureNames = Object.keys(router) as RouterKey[];
+  
+  // Build query key registry
+  const queryKeys: Record<string, unknown> = {
+    all: [options.baseKey ?? 'orpc'] as const,
+  };
   
   // Separate queries, mutations, and streaming procedures using contract-based detection
   const queries: RouterKey[] = [];
@@ -865,13 +1304,23 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
     }
   }
   
-  // Generate query hooks
+  // Generate query hooks and query key factories
   queries.forEach(name => {
     const hookName = options.hookNaming?.(name) ?? `use${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-    hooks[hookName] = createQueryHook((router as Record<string, unknown>)[name] as { queryOptions: unknown; queryKey: unknown });
+    const procedure = (router as Record<string, unknown>)[name] as { queryOptions: unknown; queryKey: unknown };
+    hooks[hookName] = createQueryHook(procedure);
+    
+    // Add query key factory
+    queryKeys[name] = (input?: unknown) => {
+      if (!procedure.queryKey) return [...(queryKeys.all as readonly string[]), name];
+      return typeof procedure.queryKey === 'function'
+        ? procedure.queryKey({ input })
+        : procedure.queryKey;
+    };
     
     if (options.debug) {
       console.log(`Generated query hook: ${hookName}`);
+      console.log(`Generated query key factory: queryKeys.${name}`);
     }
   });
   
@@ -939,12 +1388,13 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
       return results;
     };
 
+    const mutationProcedure = (router as Record<string, unknown>)[name] as { mutationOptions: unknown; queryKey?: unknown };
     hooks[hookName] = createMutationHook(
-      (router as Record<string, unknown>)[name] as { mutationOptions: unknown; queryKey?: unknown },
+      mutationProcedure,
       name,
-      getInvalidateQueries as unknown as (
-        data: never,
-        variables: never,
+      getInvalidateQueries as (
+        data: ExtractMutationOutput<typeof mutationProcedure>,
+        variables: ExtractMutationInput<typeof mutationProcedure>,
         context: unknown
       ) => { queryKey: unknown; input?: unknown; scope?: 'all' | 'exact' }[],
       options.useQueryClient
@@ -956,6 +1406,9 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
       });
     }
   });
+  
+  // Add queryKeys to the hooks object
+  hooks.queryKeys = queryKeys;
   
   return hooks as RouterHooks<TContract, TRouter>;
 }
@@ -969,30 +1422,56 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
 export type HookNames<TContract extends object, TRouter extends object = TContract> = keyof RouterHooks<TContract, TRouter>;
 
 /**
- * Helper to create a typed invalidation config
+ * Helper to create a unified typed invalidation config for both ORPC and custom hooks.
  * 
- * USAGE: When using with TanStack Query utils (ProcedureUtils), pass the raw contract type
- * as the first generic parameter for proper type-level discrimination:
+ * NEW UNIFIED PATTERN: Pass both ORPC contract and custom hooks in a sources object,
+ * then define all invalidation rules (ORPC + custom) in one config for type safety.
  * 
- * @example
+ * @example With both ORPC and custom hooks
  * ```ts
  * import { appContract } from '@repo/api-contracts'
  * 
- * const invalidations = defineInvalidations<typeof appContract.user>(orpc.user, {
+ * const authCustomHooks = defineCustomHooks({
+ *   useSignInEmail: () => useMutation({ mutationFn: authClient.signIn.email }),
+ *   useSignOut: () => useMutation({ mutationFn: signOut }),
+ * })
+ * 
+ * const invalidations = defineInvalidations({
+ *   contract: appContract.user,  // ORPC contract
+ *   custom: authCustomHooks,     // Custom hooks
+ * }, {
+ *   // ORPC mutations (type-safe from contract)
  *   create: ['list', 'count'],
- *   update: (data, input) => ({
- *     list: undefined,
- *     findById: { id: input.id }
- *   })
- * });
+ *   update: (input) => ({ list: undefined, findById: { id: input.id } }),
+ *   
+ *   // Custom hook invalidations (type-safe from authCustomHooks!)
+ *   useSignInEmail: () => ['*'], // Special key to invalidate all
+ *   useSignOut: () => ['*'],
+ * })
+ * ```
+ * 
+ * @example ORPC only (backwards compatible)
+ * ```ts
+ * const invalidations = defineInvalidations(orpc.user, {
+ *   create: ['list', 'count'],
+ *   update: (input) => ({ list: undefined, findById: { id: input.id } })
+ * })
  * ```
  * 
  * @typeParam TContract - The raw contract type (from @repo/api-contracts) with ~orpc metadata
- * @typeParam TRouter - The TanStack utils type (inferred from _router parameter)
+ * @typeParam TRouter - The TanStack utils type (inferred from sources parameter)
+ * @typeParam TCustom - Custom hooks type for custom invalidations
  */
-export function defineInvalidations<TContract extends object, TRouter extends object = TContract>(
-  _router: TRouter,
-  config: InvalidationConfig<TContract, TRouter>
-): InvalidationConfig<TContract, TRouter> {
+export function defineInvalidations<
+  TContract extends object, 
+  TRouter extends object = TContract,
+  TCustom extends Record<string, unknown> = Record<string, never>
+>(
+  sourcesOrRouter: TRouter | { contract?: TRouter; custom?: TCustom },
+  config: InvalidationConfig<TContract, TRouter, TCustom>
+): InvalidationConfig<TContract, TRouter, TCustom> {
+  // Type guard to detect new unified pattern vs legacy pattern
+  // New pattern: { contract, custom }
+  // Legacy pattern: router object directly
   return config;
 }

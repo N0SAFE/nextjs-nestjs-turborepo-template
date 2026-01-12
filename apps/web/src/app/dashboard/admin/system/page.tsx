@@ -2,7 +2,7 @@
 
 import { useOrganizations } from '@/hooks/useOrganization'
 import { useAllInvitations } from '@/hooks/useInvitation'
-import { useUsers } from '@/hooks/useUsers'
+import { userHooks } from '@/hooks/useUser'
 import {
   Card,
   CardContent,
@@ -26,7 +26,13 @@ import Image from 'next/image'
 export default function AdminSystemPage() {
   const { data: organizations, isLoading: orgsLoading } = useOrganizations()
   const { data: invitations, isLoading: invitesLoading } = useAllInvitations()
-  const { data: usersData, isLoading: usersLoading } = useUsers()
+  
+  // Use generated ORPC hooks with queryKeys export
+  const { data: usersData, isLoading: usersLoading } = userHooks.useList({})
+  
+  // Note: userQueryKeys can be used for manual cache operations:
+  // queryClient.invalidateQueries({ queryKey: userQueryKeys.list() })
+  // queryClient.prefetchQuery({ queryKey: userQueryKeys.list({ limit: 100 }), ... })
 
   const users = usersData?.data ?? []
   const pendingInvitations = invitations?.filter(inv => inv.status === 'pending') ?? []
