@@ -71,7 +71,7 @@ describe('generate-hooks', () => {
 
     const invalidations = defineInvalidations(router, {
       create: resolver,
-    });
+    } as any);
 
     // Make useMutation return the received options so we can trigger onSuccess manually.
     reactQueryMocks.useMutation.mockImplementation((opts: any) => ({ options: opts }));

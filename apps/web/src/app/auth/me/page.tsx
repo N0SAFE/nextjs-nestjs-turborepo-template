@@ -56,7 +56,7 @@ import { authClient, useSession } from "@/lib/auth";
 import { Spinner } from "@repo/ui/components/atomics/atoms/Icon";
 import { Session } from "better-auth";
 import { PushNotificationSettings } from "@/components/push-notifications/PushNotificationSettings";
-import { usePushStats } from "@/hooks/usePushNotifications";
+import { usePushStats } from "@/hooks/usePush";
 
 const ProfilePage: React.FC = () => {
   const { data: session } = useSession();

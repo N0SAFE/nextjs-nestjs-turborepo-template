@@ -300,7 +300,7 @@ export function createBooleanFilterSchema(fieldName: string) {
 /**
  * Creates filters for enum fields (returns ZodObject)
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T preserves literal tuple type for enum values
+ 
 export function createEnumFilterSchema<T extends readonly [string, ...string[]]>(
   fieldName: string,
   values: T
@@ -347,7 +347,7 @@ export function createBooleanFilter() {
  * // { value: z.enum(...).optional(), value_in: z.array(...).optional(), value_nin: z.array(...).optional() }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T preserves literal tuple type for enum values
+ 
 export function createEnumFilter<T extends readonly [string, ...string[]]>(
   values: T,
   operators: readonly FilterOperator[] = ['eq'] as const

@@ -1,0 +1,55 @@
+{
+  "name": "@repo/declarative-routing",
+  "version": "0.1.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./hooks": "./src/hooks.ts",
+    "./utils": "./src/utils.ts",
+    "./page-wrappers": {
+      "react-server": "./src/page-wrappers/server.tsx",
+      "default": "./src/page-wrappers/client.tsx"
+    },
+    "./page-wrappers/server": "./src/page-wrappers/server.tsx",
+    "./page-wrappers/client": "./src/page-wrappers/client.tsx",
+    "./layout-wrappers": "./src/layout-wrappers/index.ts",
+    "./layout-wrappers/server": "./src/layout-wrappers/server.tsx"
+  },
+  "scripts": {
+    "lint": "eslint . --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "query-string": "^9.0.0",
+    "zod": "catalog:utils"
+  },
+  "peerDependencies": {
+    "@repo/auth": "*",
+    "@tanstack/react-query": ">=5.0.0",
+    "next": ">=14.0.0",
+    "nprogress": ">=0.2.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "nprogress": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@repo/auth": "*",
+    "@repo-configs/eslint": "*",
+    "@repo-configs/typescript": "*",
+    "@types/nprogress": "^0.2.3",
+    "@types/react": "catalog:react",
+    "eslint": "catalog:linting",
+    "typescript": "catalog:build",
+    "server-only": "^0.0.1"
+  }
+}

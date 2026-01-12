@@ -46,7 +46,7 @@ describe('WithEnv Middleware', () => {
         }))
 
         vi.doMock('@/routes', () => ({
-            Middlewareerrorenv: vi.fn().mockReturnValue('/middleware/error/env'),
+            InternalMiddlewareErrorEnv: vi.fn().mockReturnValue('/middleware/error/env'),
         }))
     })
 

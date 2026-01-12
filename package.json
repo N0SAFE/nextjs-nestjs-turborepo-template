@@ -41,7 +41,6 @@
                 "declarative-routing": "^0.1.20"
             },
             "auth": {
-                "@better-fetch/fetch": "^1.1.18",
                 "better-auth": "^1.4.4",
                 "@thallesp/nestjs-better-auth": "^2.1.0"
             },

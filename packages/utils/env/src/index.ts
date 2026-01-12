@@ -29,6 +29,7 @@ const sharedEnvVars = {
 export const apiEnvSchema = zod.object({
     // Database
     DATABASE_URL: zod.string().min(1, 'DATABASE_URL is required'),
+    MIGRATIONS_FOLDER: zod.string().default('./src/config/drizzle/migrations'),
     
     // API
     API_PORT: zod.coerce.number().int().min(1).max(65535).default(DEFAULT_API_PORT),
@@ -42,8 +43,9 @@ export const apiEnvSchema = zod.object({
     BETTER_AUTH_SECRET: zod.string().min(1, 'BETTER_AUTH_SECRET is required'),
     AUTH_BASE_DOMAIN: zod.string().optional(),
     DEV_AUTH_KEY: zod.string().optional(),
-    DEV_AUTH_EMAIL: zod.email().optional(), // Email of the user to impersonate when using master token
+    DEFAULT_ADMIN_EMAIL: zod.email().optional(), // Email of the default admin user (also used for master token impersonation)
     TRUSTED_ORIGINS: zod.string().optional(),
+    ENABLE_MASTER_TOKEN: zod.coerce.boolean().default(false),
     
     // Shared
     ...sharedEnvVars,

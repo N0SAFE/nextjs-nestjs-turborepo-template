@@ -115,52 +115,7 @@ export const organizationPermissions = {
     },
 } as const;
 
-// ============================================================================
-// LEGACY COMMON PERMISSIONS (for backward compatibility)
-// ============================================================================
 
-/**
- * @deprecated Use `platformPermissions` and `organizationPermissions` instead.
- * These are kept for backward compatibility.
- */
-export const commonPermissions = {
-    // Platform role permissions (mapped from platformPermissions)
-    userManagement: platformPermissions.admin,
-    userSelf: platformPermissions.user,
-    systemFull: platformPermissions.superAdmin,
-    systemReadOnly: platformPermissions.admin,
-
-    // Organization role permissions (mapped from organizationPermissions)
-    organizationOwner: organizationPermissions.owner,
-    organizationAdmin: organizationPermissions.admin,
-    organizationMember: organizationPermissions.member,
-
-    // Project-level permissions (subset of organization permissions)
-    projectOwner: {
-        project: organizationPermissions.owner.project,
-        analytics: organizationPermissions.owner.analytics,
-        logs: organizationPermissions.owner.logs,
-        apiKey: organizationPermissions.owner.apiKey,
-        webhook: organizationPermissions.owner.webhook,
-    },
-    projectAdmin: {
-        project: organizationPermissions.admin.project,
-        analytics: organizationPermissions.admin.analytics,
-        logs: organizationPermissions.admin.logs,
-        apiKey: organizationPermissions.admin.apiKey,
-        webhook: organizationPermissions.admin.webhook,
-    },
-    projectDeveloper: {
-        project: ["list", "read", "create", "update"] as const,
-        logs: ["view", "search", "stream"] as const,
-        apiKey: ["list", "read", "create"] as const,
-        webhook: ["list", "read", "create", "update"] as const,
-    },
-    projectViewer: {
-        project: ["list", "read"] as const,
-        logs: ["view"] as const,
-    },
-} as const;
 
 // ============================================================================
 // SCHEMA DEFINITIONS
@@ -229,11 +184,7 @@ export const organizationSchemaHelpers = {
     memberAllActions: organizationSchemas.actions.forRole("member"),
 } as const;
 
-/**
- * @deprecated Use `organizationSchemaHelpers` instead.
- * Kept for backward compatibility.
- */
-export const commonSchemas = organizationSchemaHelpers;
+
 
 // ============================================================================
 // TYPE EXPORTS
@@ -251,15 +202,4 @@ export type PlatformPermission<T extends PlatformPermissionKeys> = (typeof platf
 /** Get the permission bundle type for an organization role */
 export type OrganizationPermission<T extends OrganizationPermissionKeys> = (typeof organizationPermissions)[T];
 
-/* eslint-disable @typescript-eslint/no-deprecated */
-/**
- * @deprecated Use `PlatformPermissionKeys` or `OrganizationPermissionKeys` instead.
- */
-export type CommonPermissionKeys = keyof typeof commonPermissions;
 
-/**
- * @deprecated Use `PlatformPermission` or `OrganizationPermission` instead.
- */
-export type CommonPermission<T extends CommonPermissionKeys> = (typeof commonPermissions)[T];
-
-/* eslint-enable @typescript-eslint/no-deprecated */

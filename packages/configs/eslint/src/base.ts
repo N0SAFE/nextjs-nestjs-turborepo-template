@@ -28,6 +28,7 @@ export const baseConfig = defineConfig([
     {
         rules: {
             "@typescript-eslint/unified-signatures": "off",
+            "@typescript-eslint/no-unnecessary-type-parameters": "off",
         }
     }
 ]);

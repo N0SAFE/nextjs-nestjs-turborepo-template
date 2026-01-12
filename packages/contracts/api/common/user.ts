@@ -1,4 +1,5 @@
 import z from "zod/v4";
+import { PLATFORM_ROLES } from "@repo/auth/permissions";
 
 export const userSchema = z.object({
   id: z.string(),
@@ -8,4 +9,6 @@ export const userSchema = z.object({
   image: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
+  role: z.enum(PLATFORM_ROLES).optional(),
+  banned: z.boolean().optional(),
 });

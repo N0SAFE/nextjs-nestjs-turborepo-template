@@ -1,28 +1,171 @@
 'use client'
 
-import { usePushNotifications, useNotificationPermission, usePushStats } from '@/hooks/usePushNotifications'
+import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
+import {
+  usePushNotifications,
+  usePushNotificationSupport,
+  useNotificationPermission,
+} from '@/hooks/usePush'
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/shadcn/card'
 import { Bell, BellOff, Send } from 'lucide-react'
+
+// Helper to convert VAPID key from base64 to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
+
+// Helper to get device name from user agent
+function getDeviceName(): string {
+  const ua = navigator.userAgent
+  if (ua.includes('Chrome')) return 'Chrome'
+  if (ua.includes('Firefox')) return 'Firefox'
+  if (ua.includes('Safari')) return 'Safari'
+  if (ua.includes('Edge')) return 'Edge'
+  return 'Unknown Browser'
+}
 
 /**
  * Push Notification Settings Component
  * Allows users to enable/disable push notifications and send test notifications
  */
 export function PushNotificationSettings() {
-  const {
-    isSupported,
-    isSubscribed,
-    subscribe,
-    unsubscribe,
-    sendTest,
-    isLoading,
-    isSendingTest,
-    subscriptions,
-  } = usePushNotifications()
+  // Use composite hook for all push notification functionality
+  const push = usePushNotifications()
+  const isSupported = usePushNotificationSupport()
+  const permission = useNotificationPermission()
 
-  const { permission, isGranted, requestPermission } = useNotificationPermission()
-  const statsQuery = usePushStats()
+  const requestPermission = useCallback(async () => {
+    if ('Notification' in window) {
+      const result = await Notification.requestPermission()
+      return result
+    }
+    return 'denied'
+  }, [])
+
+  const isGranted = permission === 'granted'
+
+  // Subscription state
+  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [currentSubscription, setCurrentSubscription] = useState<PushSubscription | null>(null)
+
+  // Check current subscription status
+  useEffect(() => {
+    if (!isSupported) return
+
+    const checkSubscription = async () => {
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const browserSubscription = await registration.pushManager.getSubscription()
+        
+        const backendSubscriptions = push.subscriptions.data?.subscriptions ?? []
+        const isBackendSubscribed = browserSubscription
+          ? backendSubscriptions.some((sub: any) => sub.endpoint === browserSubscription.endpoint)
+          : false
+        
+        if (browserSubscription && !isBackendSubscribed) {
+          setIsSubscribed(false)
+          setCurrentSubscription(null)
+        } else {
+          setCurrentSubscription(browserSubscription)
+          setIsSubscribed(isBackendSubscribed)
+        }
+      } catch (error) {
+        console.error('Error checking push subscription:', error)
+      }
+    }
+
+    void checkSubscription()
+  }, [isSupported, push.subscriptions.data])
+
+  // Subscribe action
+  const subscribe = useCallback(async () => {
+    if (!isSupported) {
+      toast.error('Push notifications are not supported in your browser')
+      return
+    }
+
+    try {
+      const permissionResult = await Notification.requestPermission()
+      if (permissionResult !== 'granted') {
+        toast.error('Notification permission denied')
+        return
+      }
+
+      const registration = await navigator.serviceWorker.getRegistration('/')
+      if (!registration) {
+        throw new Error('Service worker not registered')
+      }
+      await navigator.serviceWorker.ready
+
+      const { publicKey } = push.publicKey.data ?? { publicKey: '' }
+      if (!publicKey) {
+        throw new Error('Failed to get VAPID public key')
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+      })
+
+      await push.subscribe.mutateAsync({
+        endpoint: subscription.endpoint,
+        keys: {
+          p256dh: subscription.toJSON().keys?.p256dh ?? '',
+          auth: subscription.toJSON().keys?.auth ?? '',
+        },
+        deviceName: getDeviceName(),
+        userAgent: navigator.userAgent,
+      })
+
+      setCurrentSubscription(subscription)
+      setIsSubscribed(true)
+    } catch (error) {
+      console.error('Failed to subscribe:', error)
+      toast.error('Failed to subscribe to notifications')
+    }
+  }, [isSupported, push.publicKey.data, push.subscribe])
+
+  // Unsubscribe action
+  const unsubscribe = useCallback(async () => {
+    if (!currentSubscription) return
+
+    try {
+      await push.unsubscribe.mutateAsync({
+        endpoint: currentSubscription.endpoint,
+      })
+
+      await currentSubscription.unsubscribe()
+      setCurrentSubscription(null)
+      setIsSubscribed(false)
+    } catch (error) {
+      console.error('Failed to unsubscribe:', error)
+      toast.error('Failed to unsubscribe from notifications')
+    }
+  }, [currentSubscription, push.unsubscribe])
+
+  // Send test notification
+  const sendTest = useCallback(async () => {
+    try {
+      await push.sendTest.mutateAsync({})
+    } catch (error) {
+      console.error('Failed to send test notification:', error)
+    }
+  }, [push.sendTest])
+
+  const isLoading = push.publicKey.isLoading || push.subscribe.isPending || push.unsubscribe.isPending
+  const isSendingTest = push.sendTest.isPending
+  const subscriptions = push.subscriptions.data?.subscriptions ?? []
 
   if (!isSupported) {
     return (
@@ -98,24 +241,24 @@ export function PushNotificationSettings() {
         </div>
 
         {/* Statistics */}
-        {isSubscribed && statsQuery.data && (
+        {isSubscribed && push.stats.data && (
           <div className="rounded-lg border p-4 space-y-2">
             <p className="font-medium">Statistics</p>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Active Devices</p>
-                <p className="text-2xl font-bold">{statsQuery.data.activeSubscriptions}</p>
+                <p className="text-2xl font-bold">{push.stats.data.activeSubscriptions}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Total Subscriptions</p>
-                <p className="text-2xl font-bold">{statsQuery.data.totalSubscriptions}</p>
+                <p className="text-2xl font-bold">{push.stats.data.totalSubscriptions}</p>
               </div>
             </div>
-            {statsQuery.data.devices.length > 0 && (
+            {push.stats.data.devices.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-medium mb-2">Your Devices</p>
                 <ul className="space-y-1">
-                  {statsQuery.data.devices.map((device, index) => (
+                  {push.stats.data.devices.map((device: any, index: number) => (
                     <li key={index} className="text-sm text-muted-foreground">
                       {device.deviceName} - Last used:{' '}
                       {new Date(device.lastUsed).toLocaleDateString()}

@@ -33,22 +33,8 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1764158444066,
-      "tag": "0004_kind_cardiac",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1764677029578,
-      "tag": "0005_noisy_sunset_bain",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1764852681591,
-      "tag": "0006_demonic_bastion",
+      "when": 1766860184280,
+      "tag": "0004_cool_bruce_banner",
       "breakpoints": true
     }
   ]

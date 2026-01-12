@@ -2,8 +2,8 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { IncomingHttpHeaders } from "http";
 import type { Auth } from "@/auth";
 import { AuthUtils } from "./auth-utils";
-import type { AccessOptions, ORPCAuthContext, UserSession } from "./types";
-import { os } from "@orpc/server";
+import type { ORPCAuthContext } from "./types";
+import { os, ORPCError } from "@orpc/server";
 
 /**
  * Converts headers to web standard Headers.
@@ -19,11 +19,27 @@ function toWebHeaders(headers: Headers | IncomingHttpHeaders | Record<string, st
 }
 
 /**
- * ORPC context with auth utilities
+ * Minimal ORPC context requiring only auth utilities
+ * Use this for middlewares that only need auth context (most access control)
+ * 
+ * Note: Index signatures (both string and symbol) allow compatibility with ORPC's
+ * MergedInitialContext types which require full index signature compatibility.
  */
-export interface ORPCContextWithAuth {
+export interface ORPCContextWithAuthOnly<TLoggedIn extends boolean = boolean> {
+    auth: ORPCAuthContext<TLoggedIn>;
+    [key: string]: unknown;
+    [key: symbol]: unknown;
+}
+
+/**
+ * Full ORPC context with request and auth utilities
+ * Use this for middlewares that need access to the raw request
+ * 
+ * Note: Index signature inherited from ORPCContextWithAuthOnly allows compatibility
+ * with Record<string, unknown> constraints in middleware generics
+ */
+export interface ORPCContextWithAuth<TLoggedIn extends boolean = boolean> extends ORPCContextWithAuthOnly<TLoggedIn> {
     request: Request;
-    auth: ORPCAuthContext;
 }
 
 /**
@@ -38,12 +54,13 @@ export function createAuthMiddleware(auth: Auth) {
         // Extract session from request headers
         // ORPC provides headers as web standard Headers, not Node.js IncomingHttpHeaders
         const headers = opts.context.request.headers;
+        const webHeaders = toWebHeaders(headers);
         const session = await auth.api.getSession({
-            headers: toWebHeaders(headers),
+            headers: webHeaders,
         });
         
-        // Create auth utilities with session
-        const authUtils = new AuthUtils(session as UserSession | null, auth);
+        // Create auth utilities with session AND headers for plugin utilities
+        const authUtils = new AuthUtils(session, auth, webHeaders);
 
         // Pass context with auth to next middleware/handler
         return opts.next({
@@ -53,53 +70,6 @@ export function createAuthMiddleware(auth: Auth) {
             },
         });
     })
-}
-
-/**
- * Middleware factory for access control
- * Use this to require authentication, roles, or permissions on specific procedures
- *
- * After this middleware, use assertAuthenticated() helper to get proper types without null assertions.
- *
- * @example
- * ```ts
- * import { assertAuthenticated } from '@/core/modules/auth/orpc';
- *
- * implement(contract)
- *   .use(accessControl({ roles: ['admin'] }))
- *   .handler(({ context }) => {
- *     const auth = assertAuthenticated(context.auth);
- *     const userId = auth.user.id; // No ! needed
- *   })
- * ```
- */
-export function accessControl(options: AccessOptions & { requireAuth?: boolean } = {}) {
-    return async function accessControlMiddleware<TContext extends ORPCContextWithAuth>(opts: { context: TContext; input: unknown; next: (opts: { context: TContext }) => Promise<unknown> }) {
-        const { auth } = opts.context;
-
-        // Check if authentication is required
-        if (options.requireAuth !== false) {
-            // By default, require auth if any access options are specified
-            const requiresAuth = options.requireAuth === true || Boolean(options.roles?.length) || Boolean(options.allRoles?.length) || Boolean(options.permissions);
-
-            if (requiresAuth) {
-                auth.requireAuth();
-            }
-        }
-
-        // Enforce access requirements directly using require methods
-        if (options.roles) {
-            auth.requireRole(...options.roles);
-        }
-        if (options.allRoles) {
-            auth.requireAllRoles(...options.allRoles);
-        }
-        if (options.permissions) {
-            await auth.requirePermissions(options.permissions);
-        }
-
-        return opts.next(opts);
-    };
 }
 
 /**
@@ -116,40 +86,85 @@ export function accessControl(options: AccessOptions & { requireAuth?: boolean }
  * ```
  */
 export function publicAccess() {
-    return async function publicAccessMiddleware<TContext extends ORPCContextWithAuth>(opts: { context: TContext; input: unknown; next: (opts: { context: TContext }) => Promise<unknown> }) {
-        // Simply pass through without any checks
-        return opts.next(opts);
-    };
+    return os
+        .$context<ORPCContextWithAuthOnly>()
+        .middleware(({ context, next }) => {
+            // Simply pass through without any checks
+            return next({ context });
+        });
 }
 
 /**
  * Middleware to require authentication but allow any authenticated user
  *
- * After this middleware, use assertAuthenticated() helper to get proper types without null assertions.
+ * This middleware:
+ * 1. Ensures user is logged in (throws UNAUTHORIZED if not)
+ * 2. Narrows context type to ORPCContextWithAuth<true> so subsequent middlewares
+ *    can require authenticated context at the type level
  *
  * @example
  * ```ts
- * import { assertAuthenticated } from '@/core/modules/auth/orpc';
- *
  * implement(contract)
- *   .use(requireAuth())
+ *   .use(requireAuth())  // After this, context.auth is typed as ORPCAuthContext<true>
+ *   .use(adminMiddlewares.requireAccess({ roles: ['admin'] }))  // Requires auth<true>
  *   .handler(({ context }) => {
- *     const auth = assertAuthenticated(context.auth);
- *     const userId = auth.user.id; // No ! needed
+ *     const userId = context.auth.user.id; // No null check needed
  *   })
  * ```
  */
 export function requireAuth() {
     return os
-        .$context<{
-            auth: ORPCAuthContext;
-        }>()
+        .$context<ORPCContextWithAuthOnly>()
         .middleware(({ context, next }) => {
+            // This throws if not authenticated
+            const authResult = context.auth.requireAuth();
+            
+            // Return narrowed context - auth is now ORPCAuthContext<true>
             return next({
                 context: {
                     ...context,
-                    auth: { ...context.auth, ...context.auth.requireAuth() },
+                    auth: { 
+                        ...context.auth, 
+                        ...authResult,
+                        isLoggedIn: true as const,
+                    } as ORPCAuthContext<true>,
                 },
             });
+        });
+}
+
+/**
+ * Middleware to require specific platform role(s)
+ *
+ * This middleware:
+ * 1. Requires authenticated context (must be used after requireAuth())
+ * 2. Checks if user has one of the allowed roles
+ * 3. Throws FORBIDDEN if user doesn't have required role
+ *
+ * @param allowedRoles - Array of roles that are allowed to access the endpoint
+ *
+ * @example
+ * ```ts
+ * implement(contract)
+ *   .use(requireAuth())  // Must be authenticated first
+ *   .use(requirePlatformRole(['admin', 'superAdmin']))
+ *   .handler(({ context }) => {
+ *     // Only admins and superAdmins can access this
+ *   })
+ * ```
+ */
+export function requirePlatformRole(allowedRoles: string[]) {
+    return os
+        .$context<ORPCContextWithAuthOnly<true>>()  // Requires authenticated context
+        .middleware(({ context, next }) => {
+            const userRole = context.auth.user.role;
+            
+            if (!userRole || !allowedRoles.includes(userRole)) {
+                throw new ORPCError('FORBIDDEN', {
+                    message: 'Insufficient permissions. Required role: ' + allowedRoles.join(', '),
+                });
+            }
+            
+            return next({ context });
         });
 }

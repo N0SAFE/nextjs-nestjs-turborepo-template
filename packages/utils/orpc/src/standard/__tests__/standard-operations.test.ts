@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { StandardOperations, standard } from '../standard-operations';
 import { RouteBuilder } from '../../builder/route-builder';
 import { createPaginationConfigSchema } from '../../query/pagination';

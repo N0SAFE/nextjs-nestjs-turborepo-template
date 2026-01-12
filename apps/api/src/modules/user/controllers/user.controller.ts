@@ -3,6 +3,7 @@ import { Implement, implement } from "@orpc/nest";
 import { userContract } from "@repo/api-contracts";
 import { UserService } from "../services/user.service";
 import { requireAuth } from "@/core/modules/auth/orpc/middlewares";
+import { PLATFORM_ROLES } from '../../../../../../packages/utils/auth/src/permissions/config';
 
 @Controller()
 export class UserController {
@@ -30,7 +31,15 @@ export class UserController {
     @Implement(userContract.findById)
     findById() {
         return implement(userContract.findById).use(requireAuth()).handler(async ({ input }) => {
-            return await this.userService.findUserById(input.id);
+            const user = await this.userService.findUserById(input.id);
+            if (!user) {
+                return null;
+            }
+            return {
+                ...user,
+                role: user.role as typeof PLATFORM_ROLES[number],
+                banned: user.banned ?? undefined,
+            };
         });
     }
 

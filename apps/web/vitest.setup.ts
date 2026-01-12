@@ -205,16 +205,21 @@ vi.mock('@/routes', () => {
 
     return {
         // Route functions that match the actual routes/index.ts exports
-        Middlewareerrorenv: createRouteMock('Middlewareerrorenv'),
-        MiddlewareerrorhealthCheck: createRouteMock('MiddlewareerrorhealthCheck'),
-        Autherror: createRouteMock('Autherror'),
-        Authme: createRouteMock('Authme'),
-        Authsignin: createRouteMock('Authsignin'),
-        Authsignup: createRouteMock('Authsignup'),
-        Dashboard: createRouteMock('Dashboard'),
-        DashboardProjects: createRouteMock('DashboardProjects'),
-        DashboardProjectsId: createRouteMock('DashboardProjectsId'),
-        Profile: createRouteMock('Profile'),
+        InternalMiddlewareErrorEnv: createRouteMock('InternalMiddlewareErrorEnv'),
+        InternalMiddlewareErrorHealthCheck: createRouteMock('InternalMiddlewareErrorHealthCheck'),
+        AuthError: createRouteMock('AuthError'),
+        AuthMe: createRouteMock('AuthMe'),
+        AuthSignin: createRouteMock('AuthSignin'),
+        AuthSignup: createRouteMock('AuthSignup'),
+        AuthDashboard: createRouteMock('AuthDashboard'),
+        AuthDashboardProfile: createRouteMock('AuthDashboardProfile'),
+        AuthDashboardDemo: createRouteMock('AuthDashboardDemo'),
+        AuthDashboardOrganizations: createRouteMock('AuthDashboardOrganizations'),
+        AuthDashboardOrganizationsNew: createRouteMock('AuthDashboardOrganizationsNew'),
+        AuthDashboardOrganizationsOrganizationId: createRouteMock('AuthDashboardOrganizationsOrganizationId'),
+        Showcase: createRouteMock('Showcase'),
+        ShowcaseClient: createRouteMock('ShowcaseClient'),
+        ShowcaseServer: createRouteMock('ShowcaseServer'),
         Home: createRouteMock('Home'),
         
         // API route functions
@@ -262,16 +267,21 @@ vi.mock('@/routes/index', () => {
     // Return static pre-defined routes to avoid proxy performance issues
     return {
         // Common routes that are actually used in the codebase (matching @/routes mock)
-        Middlewareerrorenv: createRouteMock('Middlewareerrorenv'),
-        MiddlewareerrorhealthCheck: createRouteMock('MiddlewareerrorhealthCheck'),
-        Autherror: createRouteMock('Autherror'),
-        Authme: createRouteMock('Authme'),
-        Authsignin: createRouteMock('Authsignin'),
-        Authsignup: createRouteMock('Authsignup'),
-        Dashboard: createRouteMock('Dashboard'),
-        DashboardProjects: createRouteMock('DashboardProjects'),
-        DashboardProjectsId: createRouteMock('DashboardProjectsId'),
-        Profile: createRouteMock('Profile'),
+        InternalMiddlewareErrorEnv: createRouteMock('InternalMiddlewareErrorEnv'),
+        InternalMiddlewareErrorHealthCheck: createRouteMock('InternalMiddlewareErrorHealthCheck'),
+        AuthError: createRouteMock('AuthError'),
+        AuthMe: createRouteMock('AuthMe'),
+        AuthSignin: createRouteMock('AuthSignin'),
+        AuthSignup: createRouteMock('AuthSignup'),
+        AuthDashboard: createRouteMock('AuthDashboard'),
+        AuthDashboardProfile: createRouteMock('AuthDashboardProfile'),
+        AuthDashboardDemo: createRouteMock('AuthDashboardDemo'),
+        AuthDashboardOrganizations: createRouteMock('AuthDashboardOrganizations'),
+        AuthDashboardOrganizationsNew: createRouteMock('AuthDashboardOrganizationsNew'),
+        AuthDashboardOrganizationsOrganizationId: createRouteMock('AuthDashboardOrganizationsOrganizationId'),
+        Showcase: createRouteMock('Showcase'),
+        ShowcaseClient: createRouteMock('ShowcaseClient'),
+        ShowcaseServer: createRouteMock('ShowcaseServer'),
         Home: createRouteMock('Home'),
         
         // API route functions

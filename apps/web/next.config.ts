@@ -38,7 +38,6 @@ const apiUrl = new URL(envSchema.shape.API_URL.parse(process.env.API_URL));
 const noCheck = process.env.CHECK_ON_BUILD !== "true";
 
 const nextConfig: NextConfig = {
-  // Required for @serwist/turbopack PWA support
   serverExternalPackages: ["esbuild-wasm"],
   async rewrites() {
     return [
@@ -60,7 +59,7 @@ const nextConfig: NextConfig = {
     // },
   },
   reactStrictMode: true,
-  transpilePackages: ["@repo/nextjs-devtool"],
+  transpilePackages: ["@repo/nextjs-devtool", "@repo/declarative-routing"],
   cacheComponents: true,
   reactCompiler: true, // disable because of https://github.com/vercel/next.js/issues/85234
   images: {

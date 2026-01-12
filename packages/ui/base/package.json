@@ -97,6 +97,7 @@
     "dependencies": {
         "@hookform/resolvers": "catalog:utils",
         "@radix-ui/react-alert-dialog": "catalog:ui",
+        "@radix-ui/react-avatar": "^1.1.11",
         "@radix-ui/react-dialog": "catalog:ui",
         "@radix-ui/react-dropdown-menu": "catalog:ui",
         "@radix-ui/react-icons": "catalog:ui",

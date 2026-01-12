@@ -21,15 +21,7 @@
     "inlineSources": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "preserveWatchOutput": true,
-    "paths": {
-      "@repo/database": [
-        "../../packages/database/src"
-      ],
-      "@repo/database/*": [
-        "../../packages/database/src/*"
-      ]
-    }
+    "preserveWatchOutput": true
   },
   "exclude": ["node_modules"]
 }

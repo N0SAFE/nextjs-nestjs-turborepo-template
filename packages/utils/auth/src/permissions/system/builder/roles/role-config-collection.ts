@@ -281,9 +281,9 @@ export class RoleConfigCollection<TRoles extends Record<string, Record<string, r
    * collection.withResource('code').withoutActionOnResource('project', 'delete')
    */
   withoutActionOnResource<
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+     
     TResource extends AllRoleResources<TRoles>,
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+     
     TAction extends AllRoleActions<TRoles>
   >(
     resource: TResource,

@@ -8,10 +8,10 @@
 import { adminClient, organizationClient } from "better-auth/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth/client";
 import {
-  ac,
+  platformAc,
   organizationAc,
   organizationRoles,
-  roles,
+  platformRoles,
 } from "../../permissions/index";
 import type { invitePlugin } from "../../server/plugins/invite";
 
@@ -72,8 +72,8 @@ export function useAdminClient(
   options: Omit<Parameters<typeof adminClient>[0], "ac" | "roles"> = {}
 ) {
   return adminClient({
-    ac,
-    roles,
+    ac: platformAc,
+    roles: platformRoles,
     ...options,
   });
 }

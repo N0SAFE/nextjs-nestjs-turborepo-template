@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 'use client'
 
-import Link from 'next/link'
+// Using typed routing: replace raw next/link with declarative routes
 
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Input } from '@repo/ui/components/shadcn/input'
@@ -28,13 +28,13 @@ import React from 'react'
 import redirect from '@/actions/redirect'
 import { AlertCircle, Spinner } from '@repo/ui/components/atomics/atoms/Icon'
 import { loginSchema } from './schema'
-import { Authsignin } from '@/routes'
-import { ArrowLeft, Shield } from 'lucide-react'
+import { AuthSignin, AuthSignup } from '@/routes'
+import { Shield } from 'lucide-react'
 import { authClient } from '@/lib/auth'
-import { useSearchParams } from '@/routes/hooks'
+import { PageTimingLogger } from '@/lib/timing'
 
-const LoginPage: React.FC = () => {
-    const searchParams = useSearchParams(Authsignin)
+// Use the Route wrapper to get type-safe, Suspense-wrapped search params
+export default AuthSignin.Route(({ searchParams }) => {
     const [isLoading, setIsLoading] = React.useState<boolean>(false)
     const [error, setError] = React.useState<string>('')
 
@@ -62,6 +62,7 @@ const LoginPage: React.FC = () => {
             setError(errorMessage)
             setIsLoading(false)
         } else {
+            setIsLoading(false)
             void redirect(searchParams.callbackUrl ?? '/')
         }
     }
@@ -122,17 +123,9 @@ const LoginPage: React.FC = () => {
                                         name="password"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <div className="flex items-center justify-between">
-                                                    <FormLabel htmlFor="password">
-                                                        Password
-                                                    </FormLabel>
-                                                    <Link
-                                                        href="/forgot-password"
-                                                        className="text-primary text-sm hover:underline"
-                                                    >
-                                                        Forgot password?
-                                                    </Link>
-                                                </div>
+                                                <FormLabel htmlFor="password">
+                                                    Password
+                                                </FormLabel>
                                                 <FormControl>
                                                     <Input
                                                         id="password"
@@ -195,28 +188,23 @@ const LoginPage: React.FC = () => {
                                 </div>
                             </form>
                         </Form>
-                    </CardContent>
+                </CardContent>
                 </Card>
                 <div className="text-muted-foreground text-center text-sm">
                     <p>
                         Don&apos;t have an account?{' '}
-                        <Link
-                            href={`/auth/signup${searchParams.callbackUrl ? `?callbackUrl=${encodeURIComponent(searchParams.callbackUrl)}` : ''}`}
+                        <AuthSignup.Link
+                            search={{ callbackUrl: searchParams.callbackUrl }}
                             className="text-primary hover:underline"
                         >
-                            Sign Up
-                        </Link>
-                    </p>
-                    <p className="mt-2">
-                        <Link href="/" className="text-muted-foreground hover:text-foreground inline-flex items-center space-x-2 text-sm">
-                            <ArrowLeft className="h-4 w-4" />
-                            <span>Back to Home</span>
-                        </Link>
+                            Create one here
+                        </AuthSignup.Link>
                     </p>
                 </div>
+                
+                {/* Timing Logger */}
+                <PageTimingLogger pageName="Sign In" />
             </div>
         </div>
     )
-}
-
-export default LoginPage
+})

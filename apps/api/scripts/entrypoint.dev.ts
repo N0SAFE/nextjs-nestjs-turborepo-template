@@ -50,18 +50,18 @@ function runDiagnostics(config: EntrypointConfig): void {
 }
 
 /**
- * Run database migrations
+ * Run database migrations only (not seeding)
  */
-function runMigrations(config: EntrypointConfig): void {
+function runMigrationsOnly(config: EntrypointConfig): void {
   if (config.skipMigrations) {
-    console.log('⏭️  SKIP_MIGRATIONS set, skipping migrations and seeding')
+    console.log('⏭️  SKIP_MIGRATIONS set, skipping migrations')
     return
   }
 
   const apiPackageJson = 'package.json'
 
   if (!existsSync(apiPackageJson)) {
-    console.log('⚠️  package.json missing, skipping migrations and seeding')
+    console.log('⚠️  package.json missing, skipping migrations')
     return
   }
 
@@ -72,6 +72,16 @@ function runMigrations(config: EntrypointConfig): void {
     execSync(`bun run ${config.migrateScript}`, { stdio: 'inherit' })
   } catch (error) {
     console.error('⚠️  db:migrate failed (continuing)')
+  }
+}
+
+/**
+ * Run database seeding
+ */
+function runSeeding(config: EntrypointConfig): void {
+  if (config.skipMigrations) {
+    console.log('⏭️  SKIP_MIGRATIONS set, skipping seeding')
+    return
   }
 
   try {
@@ -169,8 +179,16 @@ function main(): void {
   validateEnvironment()
 
   runDiagnostics(config)
-  runMigrations(config)
+  
+  // Run migrations first (schema must exist before any user creation)
+  runMigrationsOnly(config)
+  
+  // Create default admin BEFORE seeding so seed can detect existing admin
   createDefaultAdmin()
+  
+  // Run seeding after admin creation
+  runSeeding(config)
+  
   startProcesses()
 }
 

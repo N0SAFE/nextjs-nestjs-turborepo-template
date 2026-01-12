@@ -53,8 +53,10 @@ export const build = new Command()
                             /index@.*\.(jsx|tsx)$/.test(relativePath);
                 break;
               default:
-                isRelevant = /(route|page)\.info\.(ts|tsx)$/.test(relativePath) ||
-                            /(route|page)\.(js|jsx|ts|tsx)$/.test(relativePath);
+                // New naming: route.info.ts (pages/layouts), api.info.ts (API routes)
+                // Source files: page.tsx, layout.tsx, route.ts
+                isRelevant = /(route|api)\.info\.(ts|tsx)$/.test(relativePath) ||
+                            /(route|page|layout)\.(js|jsx|ts|tsx)$/.test(relativePath);
                 break;
             }
 

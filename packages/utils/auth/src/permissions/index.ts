@@ -18,6 +18,9 @@ export {
     platformSchemas,
 } from "./config";
 
+// Platform builder (for generic plugin type inference)
+export { platformBuilder } from "./config";
+
 // Platform roles
 export {
     PLATFORM_ROLES,
@@ -44,6 +47,9 @@ export {
     organizationRoles,
     organizationSchemas,
 } from "./config";
+
+// Organization builder (for generic plugin type inference)
+export { organizationBuilder } from "./config";
 
 // Organization roles
 export {
@@ -73,27 +79,6 @@ export {
 } from "./config";
 
 // ============================================================================
-// LEGACY EXPORTS (for backward compatibility)
-// ============================================================================
-
-// These exports maintain backward compatibility with existing code
-export {
-    // Legacy config exports (alias to platform)
-    permissionConfig,
-    statement,
-    ac,
-    roles,
-    schemas,
-    // Legacy role exports (alias to platform)
-    ROLE_NAMES,
-    type RoleName,
-    // Legacy resource exports (alias to platform)
-    RESOURCE_NAMES,
-    type ResourceName,
-    type ActionsForResource,
-} from "./config";
-
-// ============================================================================
 // COMMON PERMISSIONS & UTILITIES
 // ============================================================================
 
@@ -113,19 +98,15 @@ export {
     organizationSchemaHelpers,
 } from "./common";
 
-// Export legacy common permissions (for backward compatibility)
-/* eslint-disable @typescript-eslint/no-deprecated */
-export {
-    commonPermissions,
-    commonSchemas,
-    type CommonPermissionKeys,
-    type CommonPermission,
-} from "./common";
-/* eslint-enable @typescript-eslint/no-deprecated */
-
 // Export utilities
 export * from './utils';
 
 // Export access control utilities
 export * from './access-control';
 
+// ============================================================================
+// PLUGIN WRAPPERS (V2 PERMISSIONS)
+// ============================================================================
+
+// Export plugin system (registry, base types, auth-with-plugins)
+export * from './plugins';
