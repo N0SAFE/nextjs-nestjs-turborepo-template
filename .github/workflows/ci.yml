@@ -48,12 +48,7 @@ jobs:
             - name: 📦 Install dependencies
               if: steps.cache-dependencies.outputs.cache-hit != 'true'
               run: |
-                if [ "${{ github.actor }}" = "dependabot[bot]" ]; then
-                  echo "Dependabot PR detected: running bun install without --frozen-lockfile"
-                  bun install
-                else
-                  bun install --frozen-lockfile
-                fi
+                bun install
 
     # Job 1: Generate Declarative Routes
     generate-declarative-routes:
