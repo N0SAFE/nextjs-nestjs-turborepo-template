@@ -121,7 +121,7 @@
         "next-themes": "catalog:next",
         "react-hook-form": "catalog:react",
         "react-use": "^17.6.0",
-        "recharts": "3.5.1",
+        "recharts": "3.6.0",
         "rimraf": "catalog:build",
         "sonner": "catalog:ui",
         "tailwind-merge": "catalog:styling",

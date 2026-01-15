@@ -101,7 +101,7 @@
     "@types/nprogress": "catalog:web",
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
-    "@typescript/native-preview": "^7.0.0-dev.20260114.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260115.1",
     "@vitejs/plugin-react": "catalog:testing",
     "@vitest/coverage-v8": "catalog:testing",
     "@vitest/ui": "catalog:testing",
