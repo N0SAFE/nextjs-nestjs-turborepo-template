@@ -2,7 +2,6 @@
     "extends": "@repo-configs/typescript/config/nextjs.json",
     "compilerOptions": {
         "useDefineForClassFields": true,
-        "baseUrl": ".",
         "incremental": true,
         "plugins": [
             {

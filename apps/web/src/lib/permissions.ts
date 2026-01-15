@@ -11,7 +11,7 @@ import type { PlatformRole } from '@repo/auth'
 import type { UseSessionResult } from '@repo/auth/react'
 import { createPermissionHooks, createRequirePermissionComponents } from '@repo/auth/react'
 import { authClient } from '@/lib/auth'
-import { useOrganizationMembers } from '@/hooks/useOrganization'
+import { useOrganizationMembers } from '@/domains/organization/hooks'
 
 /**
  * Adapter hook that converts Better Auth's useSession to the format

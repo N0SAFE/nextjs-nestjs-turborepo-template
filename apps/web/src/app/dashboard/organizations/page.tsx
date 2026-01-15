@@ -8,7 +8,7 @@ import {
   CardDescription,
 } from '@repo/ui/components/shadcn/card'
 import { Button } from '@repo/ui/components/shadcn/button'
-import { useOrganizations, type Organization } from '@/hooks/useOrganization'
+import { useOrganizations, type Organization } from '@/domains/organization/hooks'
 import { Skeleton } from '@repo/ui/components/shadcn/skeleton'
 import { AuthDashboardOrganizationsNew, AuthDashboardOrganizationsOrganizationId } from '@/routes'
 

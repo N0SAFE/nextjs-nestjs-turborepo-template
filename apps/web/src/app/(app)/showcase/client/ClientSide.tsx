@@ -1,53 +1,54 @@
-'use client'
+"use client";
 
-import React, { Suspense } from 'react'
-import ListItemShowcase from '../ListItem'
-import { Loader2 } from 'lucide-react'
-import { orpc } from '@/lib/orpc'
-import { useQuery } from '@tanstack/react-query'
+import React, { Suspense } from "react";
+import ListItemShowcase from "../ListItem";
+import { Loader2 } from "lucide-react";
+import { orpc } from "@/lib/orpc";
+import { useQuery } from "@tanstack/react-query";
 
 const ClientSideShowcase: React.FC = function ClientSideShowcase() {
-    const [timeTaken, setTimeTaken] = React.useState<number | null>(null)
-    // eslint-disable-next-line react-hooks/purity -- Initial timing is acceptable in useRef
-    const startTime = React.useRef(Date.now()).current
+  const [timeTaken, setTimeTaken] = React.useState<number | null>(null);
+  // eslint-disable-next-line react-hooks/purity -- Initial timing is acceptable in useRef
+  const startTime = React.useRef(Date.now()).current;
 
-    const { data: result, isFetched } = useQuery(
-        orpc.user.list.queryOptions({
-            input: {
-                
-            }
-        })
-    )
+  const { data: result, isFetched } = useQuery(
+    orpc.user.list.queryOptions({
+      input: {
+        limit: 10,
+        offset: 0,
+      },
+    }),
+  );
 
-    React.useEffect(() => {
-        if (isFetched && !timeTaken) {
-            const endTime = Date.now()
-            setTimeTaken(endTime - startTime)
-        }
-    }, [isFetched, timeTaken, startTime])
+  React.useEffect(() => {
+    if (isFetched && !timeTaken) {
+      const endTime = Date.now();
+      setTimeTaken(endTime - startTime);
+    }
+  }, [isFetched, timeTaken, startTime]);
 
-    return (
-        <Suspense
-            fallback={
-                <div className="flex h-full w-full items-center justify-center">
-                    <Loader2 className="animate-spin" />
-                </div>
-            }
-        >
-            <div className="mb-4 flex items-center justify-between">
-                <p>first load</p>
-                <div>Time taken: {timeTaken}ms</div>
-            </div>
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full w-full items-center justify-center">
+          <Loader2 className="animate-spin" />
+        </div>
+      }
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <p>first load</p>
+        <div>Time taken: {timeTaken}ms</div>
+      </div>
 
-            {!isFetched && (
-                <div className="flex h-full w-full items-center justify-center">
-                    {' '}
-                    <Loader2 className="animate-spin" />{' '}
-                </div>
-            )}
-            <ListItemShowcase users={result?.data ?? []} />
-        </Suspense>
-    )
-}
+      {!isFetched && (
+        <div className="flex h-full w-full items-center justify-center">
+          {" "}
+          <Loader2 className="animate-spin" />{" "}
+        </div>
+      )}
+      <ListItemShowcase users={result?.data ?? []} />
+    </Suspense>
+  );
+};
 
-export default ClientSideShowcase
+export default ClientSideShowcase;

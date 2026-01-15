@@ -275,21 +275,12 @@ export function createSessionPage<
             session,
         } as UnwrappedPageProps<Params, Search> & AdditionalProps & { session: S | null }
 
-        // If React Query integration is configured, hydrate the session
-        console.log('[createSessionPage] React Query configured:', {
-            HydrationBoundary: !!HydrationBoundary,
-            createQueryClient: !!createQueryClient,
-            dehydrateQueryClient: !!dehydrateQueryClient,
-            session: session ? { userId: (session as { user?: { id?: string } }).user?.id } : null,
-        })
-        
         if (HydrationBoundary && createQueryClient && dehydrateQueryClient) {
             const queryClient = createQueryClient()
             // Always set session data (even if null) so client knows it was fetched
             // Client distinguishes "not fetched" (undefined) from "fetched but no session" (null)
             queryClient.setQueryData(SESSION_QUERY_KEY, session)
             const dehydratedState = dehydrateQueryClient(queryClient)
-            console.log('[createSessionPage] Dehydrated state:', JSON.stringify(dehydratedState).slice(0, 500))
             
             return (
                 <HydrationBoundary state={dehydratedState}>

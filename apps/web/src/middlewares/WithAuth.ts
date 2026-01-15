@@ -18,9 +18,6 @@ import type { Session } from "@repo/auth";
 const debugAuth = createDebug("middleware/auth");
 const debugAuthError = createDebug("middleware/auth/error");
 
-// Helper to get readable timestamp HH:MM:SS.mmm
-const ts = () => new Date().toISOString().substring(11, 23);
-
 const env = validateEnvSafe(process.env).data;
 
 const showcaseRegexpAndChildren = /^\/showcase(\/.*)?$/;
@@ -35,8 +32,6 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
     throw new Error("env is not valid");
   }
   return async (request: NextRequest, _next: NextFetchEvent) => {
-    console.log(`[${ts()}] 🔐 AUTH-MW: START - ${request.nextUrl.pathname}`);
-
     debugAuth(`Checking authentication for ${request.nextUrl.pathname}`, {
       path: request.nextUrl.pathname,
     });
@@ -47,7 +42,6 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
         : false;
 
     if (masterTokenEnabled) {
-      console.log(`[${ts()}] 🔐 AUTH-MW: Master token enabled, skipping auth`);
       return next(request, _next);
     }
 
@@ -57,12 +51,9 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
 
     try {
       debugAuth("Getting session using Better Auth");
-      console.log(`[${ts()}] 🔐 AUTH-MW: Getting session cookie...`);
 
       sessionCookie = getSessionCookie(request);
-      console.log(`[${ts()}] 🔐 AUTH-MW: Got session cookie: ${sessionCookie ? 'yes' : 'no'}`);
 
-      console.log(`[${ts()}] 🔐 AUTH-MW: Calling getCookieCache...`);
       const s = await getCookieCache<
         Session & {
           updatedAt: number;
@@ -73,14 +64,12 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
         // In Docker without HTTPS termination, use non-secure cookies
         isSecure: env.NEXT_PUBLIC_API_URL?.startsWith("https://") ?? false,
       });
-      console.log(`[${ts()}] 🔐 AUTH-MW: getCookieCache done, hasSession: ${String(!!s)}`);
 
       debugAuth("Session processed:", {
         hasSession: !!sessionCookie,
         hasCachedSession: !!s,
       });
     } catch (error) {
-      console.error(`[${ts()}] 🔐 AUTH-MW: Error getting session:`, error);
       sessionError = error;
       debugAuthError("Error getting session from Better Auth:", {
         error: error instanceof Error ? error.message : error,
@@ -91,8 +80,6 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
     }
 
     const isAuth = !!sessionCookie;
-
-    console.log(`[${ts()}] 🔐 AUTH-MW: isAuth=${String(isAuth)}, hasError=${String(!!sessionError)}`);
 
     debugAuth(
       `Session result - isAuth: ${String(isAuth)}, hasError: ${String(!!sessionError)}`,
@@ -115,14 +102,12 @@ const withAuth: MiddlewareFactory = (next: NextProxy) => {
       if (matcher.hit) {
         return matcher.data; // return the Response associated
       }
-      console.log(`[${ts()}] 🔐 AUTH-MW: END - authenticated, calling next()`);
       return next(request, _next); // call the next middleware because the route is good
     } else {
       // User is not authenticated, redirect to login for protected routes
       debugAuth(
         `Redirecting unauthenticated user from ${request.nextUrl.pathname} to signin`,
       );
-      console.log(`[${ts()}] 🔐 AUTH-MW: END - redirecting to signin`);
       return NextResponse.redirect(
         toAbsoluteUrl(
           AuthSignin(

@@ -13,7 +13,7 @@ import { Skeleton } from '@repo/ui/components/shadcn/skeleton'
 import { Badge } from '@repo/ui/components/shadcn/badge'
 import { AuthDashboardOrganizationsOrganizationId, AuthDashboardOrganizationsOrganizationIdMembers, AuthDashboardOrganizationsOrganizationIdSettings } from '@/routes'
 import { useParams } from '@/routes/hooks'
-import { useOrganization, useOrganizationMembers } from '@/hooks/useOrganization'
+import { useOrganization, useOrganizationMembers } from '@/domains/organization/hooks'
 
 export default function OrganizationDetailPage() {
   const params = useParams(AuthDashboardOrganizationsOrganizationId)

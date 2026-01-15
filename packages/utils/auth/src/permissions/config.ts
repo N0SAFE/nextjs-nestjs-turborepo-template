@@ -1,4 +1,7 @@
 import { PermissionBuilder } from "./system/builder/builder";
+import { defaultStatements as adminDefaultStatements } from "better-auth/plugins/admin/access";
+import { defaultStatements as organizationDefaultStatements } from 'better-auth/plugins/organization/access'
+
 
 /**
  * Permission Configuration for the Deployer Platform
@@ -55,38 +58,8 @@ const platformBuilder = new PermissionBuilder()
         // ========================================
         // USER & SESSION MANAGEMENT (Platform-wide)
         // ========================================
-        user: actions([
-            'list',           // List all platform users
-            'read',           // View user profile details
-            'create',         // Create new users (admin invite)
-            'update',         // Update user profile/settings
-            'delete',         // Delete user accounts
-            'ban',            // Ban/unban users
-            'setRole',        // Change platform roles
-            'setPassword',    // Reset user passwords
-            'impersonate',    // Impersonate users (superAdmin)
-        ] as const),
-        
-        session: actions([
-            'list',           // List active sessions
-            'read',           // View session details
-            'revoke',         // Revoke/logout sessions
-            'delete',         // Delete session records
-        ] as const),
-        
-        // ========================================
-        // ORGANIZATION MANAGEMENT (Platform-wide view)
-        // ========================================
-        organization: actions([
-            'list',           // List all organizations (admin view)
-            'read',           // View any organization details
-            'create',         // Create new organizations
-            'update',         // Update any organization
-            'delete',         // Delete any organization
-            'manageMembers',  // Manage members of any org
-            'manageInvites',  // Manage invites of any org
-            'transfer',       // Transfer org ownership
-        ] as const),
+        user: actions(adminDefaultStatements.user),
+        session: actions(adminDefaultStatements.session),
         
         // ========================================
         // PLATFORM ADMINISTRATION
@@ -153,9 +126,8 @@ const platformBuilder = new PermissionBuilder()
          * Cannot access system configuration or maintenance
          */
         admin: permissions({
-            user: ['list', 'read', 'create', 'update', 'ban', 'setRole'],
-            session: ['list', 'read', 'revoke'],
-            organization: ['list', 'read', 'create', 'update', 'manageMembers', 'manageInvites'],
+            user: ['list', 'create', 'update', 'ban', 'set-role'],
+            session: ['list', 'revoke'],
             system: ['view'],
             platformAnalytics: ['view', 'export'],
             platformLogs: ['view', 'search', 'export'],
@@ -169,9 +141,8 @@ const platformBuilder = new PermissionBuilder()
          * Actual resource access determined by organization membership
          */
         user: permissions({
-            user: ['read', 'update'], // Own profile only (enforced at app level)
-            session: ['list', 'read', 'revoke'], // Own sessions only
-            organization: ['list', 'read', 'create'], // List own orgs, create new
+            user: ['update'], // Own profile only (enforced at app level)
+            session: ['list', 'revoke'], // Own sessions only
         }),
     }));
 
@@ -204,172 +175,11 @@ const organizationBuilder = new PermissionBuilder()
         // ========================================
         // ORGANIZATION SETTINGS & MEMBERS
         // ========================================
-        orgSettings: actions([
-            'read',           // View org settings
-            'update',         // Update org settings
-            'delete',         // Delete the organization
-            'transferOwnership', // Transfer org to another member
-        ] as const),
-        
-        orgMember: actions([
-            'list',           // List org members
-            'read',           // View member details
-            'invite',         // Invite new members
-            'remove',         // Remove members
-            'updateRole',     // Change member roles
-        ] as const),
-        
-        orgInvitation: actions([
-            'list',           // List pending invitations
-            'create',         // Create invitations
-            'revoke',         // Revoke invitations
-            'resend',         // Resend invitation emails
-        ] as const),
-        
-        // ========================================
-        // TEAMS (Sub-groups within organization)
-        // ========================================
-        team: actions([
-            'list',           // List teams
-            'read',           // View team details
-            'create',         // Create teams
-            'update',         // Update team settings
-            'delete',         // Delete teams
-            'manageMembers',  // Add/remove team members
-        ] as const),
-        
-        // ========================================
-        // PROJECTS (Deployment projects)
-        // ========================================
-        project: actions([
-            'list',           // List projects
-            'read',           // View project details
-            'create',         // Create projects
-            'update',         // Update project settings
-            'delete',         // Delete projects
-            'archive',        // Archive projects
-            'manageCollaborators', // Manage project collaborators
-        ] as const),
-        
-        // ========================================
-        // SERVICES (Within projects)
-        // ========================================
-        service: actions([
-            'list',           // List services
-            'read',           // View service details
-            'create',         // Create services
-            'update',         // Update service config
-            'delete',         // Delete services
-            'deploy',         // Trigger deployments
-            'scale',          // Scale replicas
-            'restart',        // Restart service
-            'stop',           // Stop service
-        ] as const),
-        
-        // ========================================
-        // DEPLOYMENTS
-        // ========================================
-        deployment: actions([
-            'list',           // List deployments
-            'read',           // View deployment details
-            'create',         // Create/trigger deployments
-            'cancel',         // Cancel running deployments
-            'rollback',       // Rollback to previous
-            'promote',        // Promote to production
-        ] as const),
-        
-        // ========================================
-        // ENVIRONMENT & SECRETS
-        // ========================================
-        environment: actions([
-            'list',           // List environments
-            'read',           // View environment details
-            'create',         // Create environments
-            'update',         // Update environment
-            'delete',         // Delete environments
-        ] as const),
-        
-        secret: actions([
-            'list',           // List secrets (names only)
-            'read',           // Read secret values
-            'create',         // Create secrets
-            'update',         // Update secret values
-            'delete',         // Delete secrets
-        ] as const),
-        
-        // ========================================
-        // DOMAINS (Organization's domains)
-        // ========================================
-        domain: actions([
-            'list',           // List domains
-            'read',           // View domain details
-            'create',         // Add domains
-            'update',         // Update domain config
-            'delete',         // Remove domains
-            'verify',         // Verify domain ownership
-            'manageSsl',      // Manage SSL certificates
-        ] as const),
-        
-        // ========================================
-        // INTEGRATIONS
-        // ========================================
-        webhook: actions([
-            'list',           // List webhooks
-            'read',           // View webhook details
-            'create',         // Create webhooks
-            'update',         // Update webhook config
-            'delete',         // Delete webhooks
-            'test',           // Test webhook delivery
-        ] as const),
-        
-        apiKey: actions([
-            'list',           // List API keys
-            'read',           // View API key details
-            'create',         // Create API keys
-            'update',         // Update API key
-            'delete',         // Delete API keys
-            'regenerate',     // Regenerate API key
-        ] as const),
-        
-        github: actions([
-            'list',           // List GitHub connections
-            'read',           // View connection details
-            'connect',        // Connect GitHub repo
-            'disconnect',     // Disconnect GitHub
-            'sync',           // Sync repositories
-            'configureWebhook', // Configure GitHub webhooks
-        ] as const),
-        
-        // ========================================
-        // MONITORING & LOGS
-        // ========================================
-        analytics: actions([
-            'view',           // View org analytics
-            'export',         // Export analytics data
-        ] as const),
-        
-        logs: actions([
-            'view',           // View logs
-            'search',         // Search logs
-            'export',         // Export logs
-            'stream',         // Stream live logs
-        ] as const),
-        
-        healthCheck: actions([
-            'view',           // View health status
-            'configure',      // Configure health checks
-            'trigger',        // Manually trigger checks
-        ] as const),
-        
-        // ========================================
-        // BILLING (If org has billing)
-        // ========================================
-        billing: actions([
-            'view',           // View billing info
-            'manage',         // Manage subscription
-            'viewInvoices',   // View invoices
-            'updatePayment',  // Update payment method
-        ] as const),
+        organization: actions(organizationDefaultStatements.organization),
+        member: actions(organizationDefaultStatements.member),
+        team: actions(organizationDefaultStatements.team),
+        invitation: actions(organizationDefaultStatements.invitation),
+        ac: actions(organizationDefaultStatements.ac),
     }))
     // ==========================================
     // ORGANIZATION ROLES
@@ -385,48 +195,17 @@ const organizationBuilder = new PermissionBuilder()
          * Can manage most things except delete org or transfer ownership
          */
         admin: permissions({
-            orgSettings: ['read', 'update'],
-            orgMember: ['list', 'read', 'invite', 'remove', 'updateRole'],
-            orgInvitation: ['list', 'create', 'revoke', 'resend'],
-            team: ['list', 'read', 'create', 'update', 'delete', 'manageMembers'],
-            project: ['list', 'read', 'create', 'update', 'delete', 'archive', 'manageCollaborators'],
-            service: ['list', 'read', 'create', 'update', 'delete', 'deploy', 'scale', 'restart', 'stop'],
-            deployment: ['list', 'read', 'create', 'cancel', 'rollback', 'promote'],
-            environment: ['list', 'read', 'create', 'update', 'delete'],
-            secret: ['list', 'read', 'create', 'update', 'delete'],
-            domain: ['list', 'read', 'create', 'update', 'delete', 'verify', 'manageSsl'],
-            webhook: ['list', 'read', 'create', 'update', 'delete', 'test'],
-            apiKey: ['list', 'read', 'create', 'update', 'delete', 'regenerate'],
-            github: ['list', 'read', 'connect', 'disconnect', 'sync', 'configureWebhook'],
-            analytics: ['view', 'export'],
-            logs: ['view', 'search', 'export', 'stream'],
-            healthCheck: ['view', 'configure', 'trigger'],
-            billing: ['view', 'viewInvoices'],
+            organization: ['update', 'delete'],
+            invitation: ['cancel', 'create'],
+            member: ['create', 'delete', 'update'],
+            team: ['create', 'delete', 'update'],
         }),
         
         /**
          * Member - Standard organization member
          * Can work on projects and services but limited management access
          */
-        member: permissions({
-            orgSettings: ['read'],
-            orgMember: ['list', 'read'],
-            orgInvitation: ['list'],
-            team: ['list', 'read'],
-            project: ['list', 'read', 'create', 'update'],
-            service: ['list', 'read', 'create', 'update', 'deploy', 'scale', 'restart'],
-            deployment: ['list', 'read', 'create', 'cancel', 'rollback'],
-            environment: ['list', 'read', 'create', 'update'],
-            secret: ['list', 'create', 'update'], // Cannot read secret values
-            domain: ['list', 'read', 'create', 'update', 'verify'],
-            webhook: ['list', 'read', 'create', 'update'],
-            apiKey: ['list', 'read', 'create'],
-            github: ['list', 'read', 'connect', 'sync'],
-            analytics: ['view'],
-            logs: ['view', 'search', 'stream'],
-            healthCheck: ['view', 'trigger'],
-            billing: ['view'],
-        }),
+        member: permissions({}),
     }));
 
 // Export the builder for type inference in generic plugins

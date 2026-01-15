@@ -2,11 +2,11 @@
   "extends": "@repo-configs/typescript/react-library",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "types": ["vitest/globals"]
   },
   "include": ["src/**/*"],

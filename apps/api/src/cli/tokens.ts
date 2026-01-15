@@ -14,6 +14,7 @@ export const DATABASE_SERVICE = 'DATABASE_SERVICE';
 export const AUTH_CORE_SERVICE = 'AUTH_CORE_SERVICE';
 export const CONFIG_SERVICE = 'CONFIG_SERVICE';
 export const ENV_SERVICE = 'ENV_SERVICE';
+export const CLI_AUTH_SERVICE_TOKEN = 'CLI_AUTH_SERVICE_TOKEN';
 
 /**
  * @deprecated Use AUTH_CORE_SERVICE instead. AuthCoreService is a singleton that

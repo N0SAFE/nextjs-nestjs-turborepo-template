@@ -124,11 +124,7 @@ const RoutesPluginComponent = () => {
                   const paramKeys: string[] = [];
                   try {
                     if ("shape" in schema) {
-                      paramKeys.push(
-                        ...Object.keys(
-                          schema.shape,
-                        ),
-                      );
+                      paramKeys.push(...Object.keys(schema.shape));
                     }
                   } catch {
                     // Fallback - parse from error message
@@ -699,16 +695,9 @@ const ConfiguredAuth = () => {
   const usersQuery = useQuery(
     orpc.user.list.queryOptions({
       input: {
-        pagination: {
-          limit: 20,
-          offset: 0,
-        },
-        sort: {
-          direction: "asc",
-          field: "email",
-        },
-        // Server-side filter, only include when non-empty
-        filter: userSearch ? { name: userSearch } : undefined,
+        limit: 20,
+        offset: 0,
+        name: userSearch,
       },
       context: {
         headers: {

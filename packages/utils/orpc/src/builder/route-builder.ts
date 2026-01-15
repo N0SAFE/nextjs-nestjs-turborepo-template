@@ -419,10 +419,16 @@ export class RouteBuilder<
     // IMPORTANT: Use this._method (TMethod generic) instead of this.routeMetadata.method
     // to preserve the specific method literal type (e.g., "GET", "POST") rather than
     // the union type HTTPMethod. This is essential for type-level discrimination.
+    //
+    // CRITICAL: Explicitly pass type parameters to .input<>() and .output<>() to
+    // preserve our declared types. Without explicit type parameters, TypeScript
+    // would infer the type from the runtime value (z.ZodObject), losing our
+    // computed types like z.ZodType<ComputeInputSchema<TConfig>>. This ensures
+    // z.infer<contract["~orpc"]["inputSchema"]> correctly returns the expected type.
     return withRouteMethod(this._method, oc)
       .route(this.routeMetadata)
-      .input(finalInput)
-      .output(finalOutput);
+      .input<NonNullable<ApplyWrapper<TInput, TInputWrapper>>>(finalInput)
+      .output<NonNullable<ApplyWrapper<TOutput, TOutputWrapper>>>(finalOutput);
   }
 
   /**

@@ -362,7 +362,7 @@ export type ExtractCustomHookInput<T> =
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ? T extends (input: infer TInput, ...args: any[]) => any
           ? TInput
-          : void
+          : never
         : never
     : never;
 
@@ -1314,8 +1314,8 @@ export function createRouterHooks<TContract extends object, TRouter extends obje
     queryKeys[name] = (input?: unknown) => {
       if (!procedure.queryKey) return [...(queryKeys.all as readonly string[]), name];
       return typeof procedure.queryKey === 'function'
-        ? procedure.queryKey({ input })
-        : procedure.queryKey;
+        ? (procedure.queryKey as (opts: { input: unknown }) => QueryKey)({ input })
+        : (procedure.queryKey as QueryKey);
     };
     
     if (options.debug) {

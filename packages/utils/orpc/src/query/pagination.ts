@@ -101,7 +101,7 @@ type PaginationSchemaOutput<TConfig> = {
  */
 export function createPaginationSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-): z.ZodType<PaginationSchemaOutput<TConfig>, PaginationSchemaOutput<TConfig>> {
+): z.ZodType<PaginationSchemaOutput<TConfig>> {
   // Extract config from schema
   const config = configSchema[CONFIG_SYMBOL] as {
     defaultLimit: number;
@@ -121,7 +121,7 @@ export function createPaginationSchema<TConfig>(
     includePage,
   } = config;
 
-  // Build base schema with limit
+  // Base schema with limit
   let schema = z.object({
     limit: z.coerce
       .number()
@@ -171,7 +171,7 @@ export function createPaginationSchema<TConfig>(
     });
   }
 
-  return schema as unknown as z.ZodType<PaginationSchemaOutput<TConfig>, PaginationSchemaOutput<TConfig>>;
+  return schema as unknown as z.ZodType<PaginationSchemaOutput<TConfig>>;
 }
 
 /**
@@ -204,7 +204,7 @@ type PaginationMetaSchemaOutput<TConfig> = {
  */
 export function createPaginationMetaSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-): z.ZodType<PaginationMetaSchemaOutput<TConfig>, PaginationMetaSchemaOutput<TConfig>> {
+): z.ZodType<PaginationMetaSchemaOutput<TConfig>> {
   // Extract config from schema
   const config = configSchema[CONFIG_SYMBOL] as {
     includeOffset: boolean;
@@ -214,7 +214,7 @@ export function createPaginationMetaSchema<TConfig>(
 
   const { includeOffset, includeCursor, includePage } = config;
 
-  // Build base meta schema
+  // Base meta schema
   let schema = z.object({
     total: z.number().int().min(0).describe("Total number of items"),
     limit: z.number().int().positive().describe("Items per page"),
@@ -244,7 +244,7 @@ export function createPaginationMetaSchema<TConfig>(
     });
   }
 
-  return schema as unknown as z.ZodType<PaginationMetaSchemaOutput<TConfig>, PaginationMetaSchemaOutput<TConfig>>;
+  return schema as unknown as z.ZodType<PaginationMetaSchemaOutput<TConfig>>;
 }
 
 /**

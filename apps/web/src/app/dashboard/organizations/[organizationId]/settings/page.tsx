@@ -17,7 +17,7 @@ import {
   useOrganization,
   useUpdateOrganization,
   useDeleteOrganization,
-} from '@/hooks/useOrganization'
+} from '@/domains/organization/hooks'
 import { useRouter } from 'next/navigation'
 
 export default function SettingsPage() {

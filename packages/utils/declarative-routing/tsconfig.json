@@ -4,10 +4,11 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "target": "ES2020",
     "lib": ["ES2022", "dom", "dom.iterable"],
     "noEmit": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "eslint.config.ts"],
   "exclude": ["node_modules"]
 }

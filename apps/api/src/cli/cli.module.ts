@@ -12,7 +12,8 @@ import { createBetterAuth } from '@/config/auth/auth';
 import { EnvService } from '@/config/env/env.service';
 import { DatabaseService } from '../core/modules/database/services/database.service';
 import { AuthCoreService } from '../core/modules/auth/services/auth-core.service';
-import { DATABASE_SERVICE, AUTH_CORE_SERVICE, CONFIG_SERVICE, ENV_SERVICE } from './tokens';
+import { DATABASE_SERVICE, AUTH_CORE_SERVICE, CONFIG_SERVICE, ENV_SERVICE, CLI_AUTH_SERVICE_TOKEN } from './tokens';
+import { CliAuthService } from './services/cli-auth.service';
 
 @Module({
   imports: [
@@ -47,6 +48,12 @@ import { DATABASE_SERVICE, AUTH_CORE_SERVICE, CONFIG_SERVICE, ENV_SERVICE } from
     {
       provide: ENV_SERVICE,
       useExisting: EnvService,
+    },
+    // CLI-specific services
+    CliAuthService,
+    {
+      provide: CLI_AUTH_SERVICE_TOKEN,
+      useExisting: CliAuthService,
     },
   ],
 })

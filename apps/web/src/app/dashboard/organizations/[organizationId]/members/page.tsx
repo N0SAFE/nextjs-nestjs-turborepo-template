@@ -18,7 +18,7 @@ import {
   useInviteOrganizationMember,
   useRemoveOrganizationMember,
   type OrganizationRole,
-} from '@/hooks/useOrganization'
+} from '@/domains/organization/hooks'
 
 export default function MembersPage() {
   const params = useParams(AuthDashboardOrganizationsOrganizationIdMembers)

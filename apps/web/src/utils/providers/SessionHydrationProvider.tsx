@@ -39,11 +39,6 @@ import { SessionHydration } from '@repo/auth/react/session/server'
 import { SESSION_QUERY_KEY } from '@/lib/auth'
 import type { Session } from '@/lib/auth'
 import { getSessionFromCookie } from '@/lib/auth/cookie-session'
-import { serverTiming } from '@/lib/timing/server'
-
-// Performance timing helper
-const startTimer = () => performance.now()
-const elapsed = (start: number) => (performance.now() - start).toFixed(2)
 
 export interface SessionHydrationProviderProps {
     children: React.ReactNode
@@ -73,40 +68,24 @@ export interface SessionHydrationProviderProps {
 export async function SessionHydrationProvider({ 
     children 
 }: SessionHydrationProviderProps): Promise<React.ReactElement> {
-    const totalStart = startTimer()
-    console.log(`📦 SessionHydrationProvider: START`)
-    
     // Create fetchSession closure using cookie-based session retrieval
     // This is MUCH faster than HTTP-based getSession (~5ms vs ~1500ms)
     const fetchSession = async (): Promise<Session | null> => {
-        const fetchStart = startTimer()
         try {
-            console.log(`📦 SessionHydrationProvider.fetchSession: START`)
-            const session = await serverTiming(
-                'SessionHydration.fetchSession (cookie)',
-                () => getSessionFromCookie()
-            )
-            console.log(`📦 SessionHydrationProvider.fetchSession: END in ${elapsed(fetchStart)}ms, hasSession=${session ? 'yes' : 'no'}`)
-            return session
+            return await getSessionFromCookie()
         } catch (e) {
             // Re-throw internal Next.js errors (PPR bailout, redirects, etc.)
             unstable_rethrow(e)
             // During static prerendering or if cookies not available
             // Gracefully return null - page can still render without session
-            console.log(`📦 SessionHydrationProvider.fetchSession: ERROR after ${elapsed(fetchStart)}ms`, e)
             return null
         }
     }
-
-    console.log(`📦 SessionHydrationProvider: Calling SessionHydration...`)
-    const hydrationStart = startTimer()
     const result = await SessionHydration<Session>({
         fetchSession,
         sessionQueryKey: SESSION_QUERY_KEY,
         children,
     })
-    
-    console.log(`📦 SessionHydrationProvider: SessionHydration done in ${elapsed(hydrationStart)}ms`)
-    console.log(`📦 SessionHydrationProvider: END - Total: ${elapsed(totalStart)}ms`)
+
     return result
 }

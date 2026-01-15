@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import {
+  usePushActions,
   usePushNotifications,
-  usePushNotificationSupport,
-  useNotificationPermission,
-} from '@/hooks/usePush'
+} from '@/domains/push/hooks'
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/shadcn/card'
 import { Bell, BellOff, Send } from 'lucide-react'
+import { usePushNotificationSupport } from '@/domains/push/utils'
 
 // Helper to convert VAPID key from base64 to Uint8Array
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -42,12 +42,23 @@ function getDeviceName(): string {
 export function PushNotificationSettings() {
   // Use composite hook for all push notification functionality
   const push = usePushNotifications()
+  const actions = usePushActions()
   const isSupported = usePushNotificationSupport()
-  const permission = useNotificationPermission()
+  
+  // Track notification permission state
+  const [permission, setPermission] = useState<NotificationPermission>('default')
+
+  // Update permission state on mount and when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission)
+    }
+  }, [])
 
   const requestPermission = useCallback(async () => {
     if ('Notification' in window) {
       const result = await Notification.requestPermission()
+      setPermission(result)
       return result
     }
     return 'denied'
@@ -68,9 +79,9 @@ export function PushNotificationSettings() {
         const registration = await navigator.serviceWorker.ready
         const browserSubscription = await registration.pushManager.getSubscription()
         
-        const backendSubscriptions = push.subscriptions.data?.subscriptions ?? []
+        const backendSubscriptions = push.subscriptions?.subscriptions ?? []
         const isBackendSubscribed = browserSubscription
-          ? backendSubscriptions.some((sub: any) => sub.endpoint === browserSubscription.endpoint)
+          ? backendSubscriptions.some((sub) => sub.endpoint === browserSubscription.endpoint)
           : false
         
         if (browserSubscription && !isBackendSubscribed) {
@@ -86,7 +97,7 @@ export function PushNotificationSettings() {
     }
 
     void checkSubscription()
-  }, [isSupported, push.subscriptions.data])
+  }, [isSupported, push.subscriptions])
 
   // Subscribe action
   const subscribe = useCallback(async () => {
@@ -108,7 +119,7 @@ export function PushNotificationSettings() {
       }
       await navigator.serviceWorker.ready
 
-      const { publicKey } = push.publicKey.data ?? { publicKey: '' }
+      const { publicKey } = push.publicKey ?? { publicKey: '' }
       if (!publicKey) {
         throw new Error('Failed to get VAPID public key')
       }
@@ -118,7 +129,7 @@ export function PushNotificationSettings() {
         applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       })
 
-      await push.subscribe.mutateAsync({
+      await actions.subscribe.mutateAsync({
         endpoint: subscription.endpoint,
         keys: {
           p256dh: subscription.toJSON().keys?.p256dh ?? '',
@@ -134,14 +145,14 @@ export function PushNotificationSettings() {
       console.error('Failed to subscribe:', error)
       toast.error('Failed to subscribe to notifications')
     }
-  }, [isSupported, push.publicKey.data, push.subscribe])
+  }, [isSupported, push.publicKey, actions.subscribe])
 
   // Unsubscribe action
   const unsubscribe = useCallback(async () => {
     if (!currentSubscription) return
 
     try {
-      await push.unsubscribe.mutateAsync({
+      await actions.unsubscribe.mutateAsync({
         endpoint: currentSubscription.endpoint,
       })
 
@@ -152,20 +163,20 @@ export function PushNotificationSettings() {
       console.error('Failed to unsubscribe:', error)
       toast.error('Failed to unsubscribe from notifications')
     }
-  }, [currentSubscription, push.unsubscribe])
+  }, [currentSubscription, actions.unsubscribe])
 
   // Send test notification
   const sendTest = useCallback(async () => {
     try {
-      await push.sendTest.mutateAsync({})
+      await actions.sendTest.mutateAsync({})
     } catch (error) {
       console.error('Failed to send test notification:', error)
     }
-  }, [push.sendTest])
+  }, [actions.sendTest])
 
-  const isLoading = push.publicKey.isLoading || push.subscribe.isPending || push.unsubscribe.isPending
-  const isSendingTest = push.sendTest.isPending
-  const subscriptions = push.subscriptions.data?.subscriptions ?? []
+  const isLoading = push.isLoading.publicKey || actions.subscribe.isPending || actions.unsubscribe.isPending
+  const isSendingTest = actions.sendTest.isPending
+  const subscriptions = push.subscriptions?.subscriptions ?? []
 
   if (!isSupported) {
     return (
@@ -241,24 +252,24 @@ export function PushNotificationSettings() {
         </div>
 
         {/* Statistics */}
-        {isSubscribed && push.stats.data && (
+        {isSubscribed && push.stats && (
           <div className="rounded-lg border p-4 space-y-2">
             <p className="font-medium">Statistics</p>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Active Devices</p>
-                <p className="text-2xl font-bold">{push.stats.data.activeSubscriptions}</p>
+                <p className="text-2xl font-bold">{push.stats.activeSubscriptions}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Total Subscriptions</p>
-                <p className="text-2xl font-bold">{push.stats.data.totalSubscriptions}</p>
+                <p className="text-2xl font-bold">{push.stats.totalSubscriptions}</p>
               </div>
             </div>
-            {push.stats.data.devices.length > 0 && (
+            {push.stats.devices.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-medium mb-2">Your Devices</p>
                 <ul className="space-y-1">
-                  {push.stats.data.devices.map((device: any, index: number) => (
+                  {push.stats.devices.map((device, index) => (
                     <li key={index} className="text-sm text-muted-foreground">
                       {device.deviceName} - Last used:{' '}
                       {new Date(device.lastUsed).toLocaleDateString()}

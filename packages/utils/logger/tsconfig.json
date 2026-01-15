@@ -3,10 +3,11 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "target": "ES2020"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "eslint.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

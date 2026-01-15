@@ -1,7 +1,7 @@
 'use client'
 
-import { useOrganizations } from '@/hooks/useOrganization'
-import { usePendingInvitations, useAcceptInvitation, useRejectInvitation } from '@/hooks/useInvitation'
+import { useOrganizations, useAllOrganizationPendingInvitations } from '@/domains/organization/hooks'
+import { useAcceptInvitation, useRejectInvitation } from '@/domains/invitation/hooks'
 import {
   Card,
   CardContent,
@@ -26,16 +26,16 @@ interface DashboardOverviewClientProps {
  */
 export function DashboardOverviewClient({ isAdmin, userRole }: DashboardOverviewClientProps) {
   const { data: organizations, isLoading: orgsLoading } = useOrganizations()
-  const { data: invitations, isLoading: invitesLoading } = usePendingInvitations()
+  const { data: invitations, isLoading: invitesLoading } = useAllOrganizationPendingInvitations()
   const acceptInvitation = useAcceptInvitation()
   const rejectInvitation = useRejectInvitation()
 
   const handleAcceptInvite = (invitationId: string) => {
-    acceptInvitation.mutate(invitationId)
+    acceptInvitation.mutate({ invitationId })
   }
 
   const handleRejectInvite = (invitationId: string) => {
-    rejectInvitation.mutate(invitationId)
+    rejectInvitation.mutate({ invitationId })
   }
 
   return (

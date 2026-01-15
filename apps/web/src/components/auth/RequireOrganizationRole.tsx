@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useOrganizationMembers, type OrganizationMember } from '@/hooks/useOrganization'
+import { useOrganizationMembers, type OrganizationMember } from '@/domains/organization/hooks'
 import { useSession } from '@/lib/auth'
 import type { OrganizationRole } from '@repo/auth/permissions'
 import { isOrganizationRoleAtLeast } from '@repo/auth/permissions'

@@ -1,155 +1,89 @@
-import { createORPCClient, onError } from '@orpc/client'
-import { type AppContract, appContract } from '@repo/api-contracts'
-import { OpenAPILink } from '@orpc/openapi-client/fetch'
-import { ContractRouterClient } from '@orpc/contract'
-import { validateEnvPath } from '#/env'
-import { toAbsoluteUrl } from '@/lib/utils'
-import clientRedirect from '@/actions/redirect'
-import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import { redirect, RedirectType } from 'next/navigation'
-import { unstable_rethrow } from 'next/dist/client/components/unstable-rethrow.server'
-import { logger } from '@repo/logger'
+import { createORPCClient } from "@orpc/client";
+import {
+  type AppContract,
+  appContract,
+} from "@repo/api-contracts";
+import { ContractRouterClient } from "@orpc/contract";
+import { validateEnvPath } from "#/env";
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { ContextPlugin } from "./plugins/context-plugin";
+import { MasterTokenPlugin } from "./plugins/masterTokenClient";
+import { CookieHeadersPlugin } from "./plugins/cookie-headers-plugin";
+import { RedirectOnUnauthorizedPlugin } from "./plugins/redirect-on-unauthorized-plugin";
+import { StandardLinkPlugin } from "@orpc/client/standard";
+import { FileUploadOpenAPILink, WithFileUploadsClient } from "./links/file-upload-link";
+import { addCacheOperations } from "@/domains/shared/cache-operations";
 
-// Re-export the contract for use in hooks (needed for type discrimination)
-export { appContract }
-export type { AppContract }
+const Plugins = [
+  new CookieHeadersPlugin(),
+  new MasterTokenPlugin(),
+  new RedirectOnUnauthorizedPlugin(),
+  new ContextPlugin(),
+];
 
-// Create a scoped logger for ORPC operations
-const orpcLogger = logger.scope('ORPC')
+type PluginsContext = {
+  [K in keyof typeof Plugins]: (typeof Plugins)[K] extends StandardLinkPlugin<
+    infer C
+  >
+    ? C
+    : never;
+}[number] extends infer U
+  ? (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void
+    ? I
+    : never
+  : never;
 
 export function createORPCClientWithCookies() {
-    const link = new OpenAPILink<{
-        cookie?: string | string[]
-        headers?: Record<string, string | string[] | undefined>
-        noRedirectOnUnauthorized?: boolean
-        cache?: RequestCache
-        next?: NextFetchRequestConfig
-    }>(appContract, {
-        clientInterceptors: [
-            async (options) => {
-                options.request.headers = {
-                    ...options.request.headers,
-                    ...options.context.headers,
-                }
-                const headers = options.request.headers
-
-                if (typeof window === 'undefined') {
-                    try {
-                        const nh = await import('next/headers')
-                        const cookieString = (await nh.cookies()).toString()
-                        headers.cookie = cookieString
-                        orpcLogger.debug('Setting cookie header (server-side)', { cookieLength: cookieString.length })
-                    } catch (error) {
-                        unstable_rethrow(error)
-                        orpcLogger.warn('next/headers could not be imported - not in Next.js environment?', {
-                            error: error instanceof Error ? error.message : String(error)
-                        })
-                        const existing = Array.isArray(headers.cookie)
-                            ? headers.cookie.filter(Boolean)
-                            : headers.cookie
-                              ? [headers.cookie]
-                              : []
-                        const ctx = Array.isArray(options.context.cookie)
-                            ? options.context.cookie.filter(Boolean)
-                            : options.context.cookie
-                              ? [options.context.cookie]
-                              : []
-                        const merged = [...existing, ...ctx]
-                        headers.cookie = merged.length > 0 ? merged : undefined
-                    }
-
-                    headers['Content-Type'] = 'application/json'
-                }
-
-                return options.next({
-                    ...options,
-                })
-            },
-        ],
-        // Use direct API URLs for optimal performance
-        // Server: API_URL (private Docker network endpoint)
-        // Browser: NEXT_PUBLIC_API_URL (public endpoint)
-        // Note: Server-side must manually forward cookies via headers (done in interceptor)
-        url:
-            typeof window === 'undefined'
-                ? validateEnvPath(process.env.API_URL ?? '', 'API_URL')
-                : validateEnvPath(process.env.NEXT_PUBLIC_API_URL ?? '', 'NEXT_PUBLIC_API_URL'),
-        fetch(request, init, options) {
-            // CRITICAL: OpenAPILink doesn't pass interceptor headers to init automatically  
-            // The headers are in the Request object, not in init
-            // Extract them from the Request and merge with any init headers
-            const headers = new Headers()
-            
-            // First, add headers from the Request object (includes interceptor changes)
-            request.headers.forEach((value, key) => {
-                headers.set(key, value)
-            })
-            
-            // Then, merge/override with any explicit init headers
-            if ('headers' in init) {
-                const initHeaders = new Headers(init.headers as HeadersInit)
-                initHeaders.forEach((value, key) => {
-                    headers.set(key, value)
-                })
-            }
-            
-            if (typeof window === 'undefined') {
-                const cookieHeader = headers.get('cookie')
-                orpcLogger.debug('Server-side request', {
-                    url: request.url,
-                    cookieHeader: cookieHeader ? `${cookieHeader.substring(0, 100)}... (length=${cookieHeader.length})` : 'NONE'
-                })
-            }
-            
-            return fetch(request, {
-                ...init,
-                headers,
-                credentials: 'include',
-                cache: options.context.cache,
-                next: options.context.next
-                    ??
-                     {
-                          revalidate: 60, // Revalidation toutes les 60 secondes
-                      },
-            })
+  // Use FileUploadOpenAPILink instead of OpenAPILink to handle file uploads with progress
+  const link = new FileUploadOpenAPILink<PluginsContext>(appContract, {
+    // Use direct API URLs, bypassing Next.js proxy
+    // Server: API_URL (private Docker network endpoint)
+    // Browser: NEXT_PUBLIC_API_URL (public endpoint)
+    url:
+      typeof window === "undefined"
+        ? validateEnvPath(process.env.API_URL ?? "", "API_URL")
+        : validateEnvPath(
+            process.env.NEXT_PUBLIC_API_URL ?? "",
+            "NEXT_PUBLIC_API_URL",
+          ),
+    fetch(request, init, options) {
+      return fetch(request, {
+        ...init,
+        credentials: "include",
+        cache: options.context.cache,
+        next: options.context.next ?? {
+          revalidate: 60, // Revalidation toutes les 60 secondes
         },
-        interceptors: [
-            onError((error, options) => {
-                if (
-                    (error as Error | undefined)?.name === 'AbortError' ||
-                    (error &&
-                        typeof error === 'object' &&
-                        'code' in error &&
-                        error.code === 'ABORT_ERR')
-                ) {
-                    return
-                }
+      });
+    },
+    plugins: Plugins,
+  });
 
-                if (options.context.noRedirectOnUnauthorized) {
-                    return
-                }
+  const client =
+    createORPCClient<
+      ContractRouterClient<
+        AppContract,
+        typeof link extends FileUploadOpenAPILink<infer C> ? C : never
+      >
+    >(link);
 
-                // Check if this is a 401 Unauthorized error
-                if (
-                    error &&
-                    typeof error === 'object' &&
-                    'status' in error &&
-                    error.status === 401
-                ) {
-                    orpcLogger.info('Unauthorized - redirecting to login')
-                    if (typeof window !== 'undefined') {
-                        const loginUrl = toAbsoluteUrl('/login')
-                        void clientRedirect(loginUrl)
-                    } else {
-                        const loginUrl = toAbsoluteUrl('/login')
-                        redirect(loginUrl, RedirectType.replace)
-                    }
-                }
-            }),
-        ],
-    })
-
-    return createORPCClient<ContractRouterClient<AppContract>>(link)
+  // Apply the type transformation to add FileUploadContext to routes with file inputs
+  return client as WithFileUploadsClient<typeof client>;
 }
 
-export const orpc = createTanstackQueryUtils(createORPCClientWithCookies())
+// Create TanStack Query utils directly from the client
+// File upload progress tracking is now handled at the Link level (FileUploadOpenAPILink)
+// This is the correct ORPC architecture pattern
+// The WithFileUploadsClient type transformation ensures onProgress is available in context
+const client = createORPCClientWithCookies();
+
+const baseOrpc = createTanstackQueryUtils(client);
+
+// Enhance with cache operations for type-safe cache manipulation
+// This adds .cache property to all query endpoints with get/set/update/invalidate/remove methods
+export const orpc = addCacheOperations(baseOrpc);
+
+// Export appContract for type checking and testing
+export { appContract };
+
+export type Context = PluginsContext;

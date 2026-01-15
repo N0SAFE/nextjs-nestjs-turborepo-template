@@ -1,8 +1,7 @@
 'use client'
 
-import { useOrganizations } from '@/hooks/useOrganization'
-import { useAllInvitations } from '@/hooks/useInvitation'
-import { userHooks } from '@/hooks/useUser'
+import { useOrganizations, useAllOrganizationPendingInvitations } from '@/domains/organization/hooks'
+import { useUserList } from '@/domains/user/hooks'
 import {
   Card,
   CardContent,
@@ -25,17 +24,19 @@ import Image from 'next/image'
 
 export default function AdminSystemPage() {
   const { data: organizations, isLoading: orgsLoading } = useOrganizations()
-  const { data: invitations, isLoading: invitesLoading } = useAllInvitations()
+  const { data: pendingInvitations, isLoading: invitesLoading } = useAllOrganizationPendingInvitations()
   
-  // Use generated ORPC hooks with queryKeys export
-  const { data: usersData, isLoading: usersLoading } = userHooks.useList({})
+  // Use domain-based user hooks
+  const { data: usersData, isLoading: usersLoading } = useUserList({
+    limit: 100,
+    offset: 0,
+  })
   
   // Note: userQueryKeys can be used for manual cache operations:
   // queryClient.invalidateQueries({ queryKey: userQueryKeys.list() })
   // queryClient.prefetchQuery({ queryKey: userQueryKeys.list({ limit: 100 }), ... })
 
   const users = usersData?.data ?? []
-  const pendingInvitations = invitations?.filter(inv => inv.status === 'pending') ?? []
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -91,7 +92,7 @@ export default function AdminSystemPage() {
             {invitesLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{invitations?.length ?? 0}</div>
+              <div className="text-2xl font-bold">{pendingInvitations?.length ?? 0}</div>
             )}
           </CardContent>
         </Card>
@@ -107,7 +108,7 @@ export default function AdminSystemPage() {
             {invitesLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{pendingInvitations.length}</div>
+              <div className="text-2xl font-bold">{pendingInvitations?.length ?? 0}</div>
             )}
           </CardContent>
         </Card>
@@ -174,12 +175,12 @@ export default function AdminSystemPage() {
       </Card>
 
       {/* Pending Invitations Table */}
-      {pendingInvitations.length > 0 && (
+      {(pendingInvitations?.length ?? 0) > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Pending Invitations</CardTitle>
             <CardDescription>
-              {pendingInvitations.length} pending invitation{pendingInvitations.length !== 1 ? 's' : ''}
+              {pendingInvitations?.length ?? 0} pending invitation{(pendingInvitations?.length ?? 0) !== 1 ? 's' : ''}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -194,7 +195,7 @@ export default function AdminSystemPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingInvitations.map((invitation) => (
+                {pendingInvitations?.map((invitation) => (
                   <TableRow key={invitation.id}>
                     <TableCell className="font-medium">{invitation.email}</TableCell>
                     <TableCell>{invitation.organizationId}</TableCell>

@@ -43,8 +43,6 @@ import {
   isOrganizationRoleAtLeast,
   platformRoleConfig,
   organizationRoleConfig,
-  PLATFORM_ROLES,
-  ORGANIZATION_ROLES,
 } from '../permissions'
 
 // ============================================================================
@@ -187,7 +185,7 @@ export function createPermissionHooks({
         id: session.data.user.id,
         email: session.data.user.email,
         name: session.data.user.name,
-        role: session.data.user.role as PlatformRole,
+        role: session.data.user.role,
       }
     }, [session.data])
 

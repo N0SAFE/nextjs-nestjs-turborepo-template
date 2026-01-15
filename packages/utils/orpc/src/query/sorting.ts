@@ -129,7 +129,7 @@ type SortingSchemaOutput<TConfig> =
  */
 export function createSortingSchema<TConfig>(
   configSchema: ZodSchemaWithConfig<TConfig>
-): z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>> {
+): z.ZodType<SortingSchemaOutput<TConfig>> {
   const config = configSchema[CONFIG_SYMBOL] as {
     fields: readonly string[];
     defaultField?: string;
@@ -174,7 +174,9 @@ export function createSortingSchema<TConfig>(
         .optional()
         .describe("Array of sort criteria");
 
-    let schema = z.object({ sortBy: sortBySchema });
+    let schema = z.object({
+      sortBy: sortBySchema,
+    });
 
     if (allowNullsHandling) {
       schema = schema.extend({
@@ -185,7 +187,7 @@ export function createSortingSchema<TConfig>(
       });
     }
 
-    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>>;
+    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>>;
   } else {
     // Single sort field
     const sortBySchema = defaultField
@@ -209,7 +211,7 @@ export function createSortingSchema<TConfig>(
       });
     }
 
-    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>, SortingSchemaOutput<TConfig>>;
+    return schema as unknown as z.ZodType<SortingSchemaOutput<TConfig>>;
   }
 }
 

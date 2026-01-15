@@ -22,6 +22,7 @@ import {
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import type { ORPCAuthContext } from "./core/modules/auth/orpc/types";
 import { TestModule } from "./modules/test/test.module";
+import { OrganizationModule } from "./modules/organization/organization.module";
 import { AuthPlugin } from "./core/modules/auth/orpc/plugins/auth.plugin";
 import { transformNestJSErrorToOrpcError, logOrpcErrors } from "./core/modules/auth/orpc/interceptors";
 
@@ -53,6 +54,7 @@ declare module '@orpc/nest' {
     }),
     HealthModule,
     UserModule,
+    OrganizationModule,
     PushModule,
     TestModule,
     ORPCModule.forRootAsync({

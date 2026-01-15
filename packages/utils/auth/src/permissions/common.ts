@@ -1,4 +1,11 @@
-import { organizationSchemas, platformSchemas } from "./config";
+import { 
+    platformSchemas, 
+    organizationSchemas,
+    type PlatformRole,
+    type OrganizationRole,
+    platformRoles,
+    organizationRoles,
+} from "./config";
 
 /**
  * Common Permission Definitions
@@ -9,124 +16,35 @@ import { organizationSchemas, platformSchemas } from "./config";
  * - PLATFORM ROLES: superAdmin, admin, user (global access)
  * - ORGANIZATION ROLES: owner, admin, member (org-scoped access)
  * 
- * These permission bundles can be imported and used across the application
- * for consistent permission checks.
+ * The permission bundles are derived directly from the config to ensure consistency.
  */
 
 // ============================================================================
-// PLATFORM-LEVEL PERMISSION BUNDLES
+// RE-EXPORT PERMISSION BUNDLES FROM CONFIG
 // ============================================================================
 
 /**
- * Platform permission bundles for different platform roles.
- * Use these for platform-wide resource access.
+ * Platform permission bundles - derived from platformRoles in config
+ * These are the actual permissions assigned to each platform role.
  */
-export const platformPermissions = {
-    // ==========================================
-    // Super Admin - Full Platform Access
-    // ==========================================
-    superAdmin: {
-        user: ["list", "read", "create", "update", "delete", "ban", "setRole", "setPassword", "impersonate"] as const,
-        session: ["list", "read", "revoke", "delete"] as const,
-        organization: ["list", "read", "create", "update", "delete", "manageMembers", "manageInvites", "transfer"] as const,
-        system: ["view", "configure", "maintenance", "backup", "audit"] as const,
-        setup: ["initialize", "configure"] as const,
-        platformAnalytics: ["view", "export", "configure"] as const,
-        platformLogs: ["view", "search", "export", "configure"] as const,
-    },
-
-    // ==========================================
-    // Admin - Platform Administration
-    // ==========================================
-    admin: {
-        user: ["list", "read", "create", "update", "ban", "setRole"] as const,
-        session: ["list", "read", "revoke"] as const,
-        organization: ["list", "read", "create", "update", "manageMembers", "manageInvites"] as const,
-        system: ["view"] as const,
-        platformAnalytics: ["view", "export"] as const,
-        platformLogs: ["view", "search", "export"] as const,
-    },
-
-    // ==========================================
-    // User - Standard Platform Access
-    // ==========================================
-    user: {
-        user: ["read", "update"] as const, // Own profile only
-        session: ["list", "read", "revoke"] as const, // Own sessions only
-        organization: ["list", "read", "create"] as const, // List own orgs, create new
-    },
-} as const;
-
-// ============================================================================
-// ORGANIZATION-LEVEL PERMISSION BUNDLES
-// ============================================================================
+export const platformPermissions = platformRoles;
 
 /**
- * Organization permission bundles for different organization roles.
- * Use these for organization-scoped resource access.
+ * Organization permission bundles - derived from organizationRoles in config
+ * These are the actual permissions assigned to each organization role.
  */
-export const organizationPermissions = {
-    // ==========================================
-    // Owner - Full Organization Access
-    // ==========================================
-    owner: {
-        orgSettings: ["read", "update", "delete", "transferOwnership"] as const,
-        orgMember: ["list", "read", "invite", "remove", "updateRole"] as const,
-        orgInvitation: ["list", "create", "revoke", "resend"] as const,
-        team: ["list", "read", "create", "update", "delete", "manageMembers"] as const,
-        project: ["list", "read", "create", "update", "delete", "archive", "manageCollaborators"] as const,
-        analytics: ["view", "export"] as const,
-        logs: ["view", "search", "export", "stream"] as const,
-        apiKey: ["list", "read", "create", "update", "delete", "regenerate"] as const,
-        webhook: ["list", "read", "create", "update", "delete", "test"] as const,
-        billing: ["view", "manage", "viewInvoices", "updatePayment"] as const,
-    },
-
-    // ==========================================
-    // Admin - Organization Management
-    // ==========================================
-    admin: {
-        orgSettings: ["read", "update"] as const,
-        orgMember: ["list", "read", "invite", "remove", "updateRole"] as const,
-        orgInvitation: ["list", "create", "revoke", "resend"] as const,
-        team: ["list", "read", "create", "update", "delete", "manageMembers"] as const,
-        project: ["list", "read", "create", "update", "delete", "archive", "manageCollaborators"] as const,
-        analytics: ["view", "export"] as const,
-        logs: ["view", "search", "export", "stream"] as const,
-        apiKey: ["list", "read", "create", "update", "delete", "regenerate"] as const,
-        webhook: ["list", "read", "create", "update", "delete", "test"] as const,
-        billing: ["view", "viewInvoices"] as const,
-    },
-
-    // ==========================================
-    // Member - Standard Organization Access
-    // ==========================================
-    member: {
-        orgSettings: ["read"] as const,
-        orgMember: ["list", "read"] as const,
-        orgInvitation: ["list"] as const,
-        team: ["list", "read"] as const,
-        project: ["list", "read", "create", "update"] as const,
-        analytics: ["view"] as const,
-        logs: ["view", "search", "stream"] as const,
-        apiKey: ["list", "read", "create"] as const,
-        webhook: ["list", "read", "create", "update"] as const,
-        billing: ["view"] as const,
-    },
-} as const;
-
-
+export const organizationPermissions = organizationRoles;
 
 // ============================================================================
-// SCHEMA DEFINITIONS
+// SCHEMA HELPERS
 // ============================================================================
 
 /**
- * Platform-level schema definitions for permission validation
+ * Platform-level schema helpers for permission validation
  */
 export const platformSchemaHelpers = {
     /** Schema for read-only actions across platform resources */
-    readOnlyActions: platformSchemas.actions.only("list", "read"),
+    readOnlyActions: platformSchemas.actions.only("list"),
 
     /** Schema for user management actions */
     userManagementActions: platformSchemas.actions.forResource("user"),
@@ -145,34 +63,23 @@ export const platformSchemaHelpers = {
 } as const;
 
 /**
- * Organization-level schema definitions for permission validation
+ * Organization-level schema helpers for permission validation
  */
 export const organizationSchemaHelpers = {
     /** Schema for read-only actions across organization resources */
-    readOnlyActions: organizationSchemas.actions.only("list", "read"),
+    readOnlyActions: organizationSchemas.actions.only("update"),
 
-    /** Schema for write actions (create, update, delete) */
-    writeActions: organizationSchemas.actions.filter((action): action is "create" | "update" | "delete" =>
-        /create|update|delete/.test(action)
-    ),
+    /** Schema for organization actions */
+    organizationActions: organizationSchemas.actions.forResource("organization"),
 
-    /** Schema for project actions */
-    projectActions: organizationSchemas.actions.forResource("project"),
+    /** Schema for member actions */
+    memberActions: organizationSchemas.actions.forResource("member"),
 
     /** Schema for team actions */
     teamActions: organizationSchemas.actions.forResource("team"),
 
-    /** Schema for dangerous/destructive actions */
-    destructiveActions: organizationSchemas.actions.only("delete"),
-
-    /** Schema for safe actions (excluding delete) */
-    safeActions: organizationSchemas.actions.excluding("delete"),
-
-    /** Custom permission schema for read-only project access */
-    readOnlyPermission: organizationSchemas.actions.customPermission({
-        project: ["list", "read"] as const,
-        team: ["list", "read"] as const,
-    }),
+    /** Schema for invitation actions */
+    invitationActions: organizationSchemas.actions.forResource("invitation"),
 
     /** Schema for organization owner permissions */
     ownerAllActions: organizationSchemas.actions.forRole("owner"),
@@ -184,17 +91,15 @@ export const organizationSchemaHelpers = {
     memberAllActions: organizationSchemas.actions.forRole("member"),
 } as const;
 
-
-
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
 /** Keys for platform permission bundles */
-export type PlatformPermissionKeys = keyof typeof platformPermissions;
+export type PlatformPermissionKeys = PlatformRole;
 
 /** Keys for organization permission bundles */
-export type OrganizationPermissionKeys = keyof typeof organizationPermissions;
+export type OrganizationPermissionKeys = OrganizationRole;
 
 /** Get the permission bundle type for a platform role */
 export type PlatformPermission<T extends PlatformPermissionKeys> = (typeof platformPermissions)[T];

@@ -44,6 +44,7 @@ export const apiEnvSchema = zod.object({
     AUTH_BASE_DOMAIN: zod.string().optional(),
     DEV_AUTH_KEY: zod.string().optional(),
     DEFAULT_ADMIN_EMAIL: zod.email().optional(), // Email of the default admin user (also used for master token impersonation)
+    DEFAULT_ADMIN_PASSWORD: zod.string().optional(), // Password for the default admin user (used for credential-based auth fallback)
     TRUSTED_ORIGINS: zod.string().optional(),
     ENABLE_MASTER_TOKEN: zod.coerce.boolean().default(false),
     

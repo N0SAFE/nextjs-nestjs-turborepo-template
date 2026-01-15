@@ -17,7 +17,7 @@ import {
   createSearchConfigSchema,
 } from "../query/search";
 import { 
-  createQueryBuilder, 
+  createQueryBuilder,
   type QueryConfig,
   type ComputeInputSchema,
   type ComputeOutputSchema,
@@ -80,6 +80,7 @@ type _DefaultListQueryConfig = {
  * Default input schema type for list() when called without options
  * Matches ComputeInputSchema<DefaultListQueryConfig>
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type DefaultListInputSchema = {
   limit: number;
   offset: number;
@@ -88,6 +89,7 @@ type DefaultListInputSchema = {
 /**
  * Default output schema type for list() when called without options
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type DefaultListOutputSchema<TData> = {
   data: TData[];
   meta: {
@@ -532,7 +534,7 @@ export class StandardOperations<TEntity extends EntitySchema> {
    * ```
    */
   list<TConfig extends QueryConfig = QueryConfig>(queryConfig?: TConfig): RouteBuilder<
-    z.ZodType<ComputeInputSchema<TConfig>>,
+    z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>,
     z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
   >;
   list(options?: {
@@ -540,18 +542,13 @@ export class StandardOperations<TEntity extends EntitySchema> {
     sorting?: ZodSchemaWithConfig<unknown> | { fields: readonly string[]; defaultField?: string; defaultDirection?: "asc" | "desc" };
     filtering?: ZodSchemaWithConfig<unknown> | { fields: Record<string, z.ZodType>; allowLogicalOperators?: boolean };
   }): RouteBuilder<
-    z.ZodType<DefaultListInputSchema>,
-    z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
+    z.ZodType<ComputeInputSchema<QueryConfig>, ComputeInputSchema<QueryConfig>>,
+    z.ZodType<ComputeOutputSchema<QueryConfig, z.infer<TEntity>>>
   >;
-  list<TConfig extends QueryConfig = QueryConfig>(optionsOrConfig?: TConfig | StandardListPlainOptions):
-    | RouteBuilder<
-        z.ZodType<ComputeInputSchema<TConfig>>,
-        z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
-      >
-    | RouteBuilder<
-        z.ZodType<DefaultListInputSchema>,
-        z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
-      > {
+  list<TConfig extends QueryConfig = QueryConfig>(optionsOrConfig?: TConfig | StandardListPlainOptions): RouteBuilder<
+    z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>,
+    z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
+  > {
     // Cast to a partial QueryConfig shape for type-safe access
     const input = optionsOrConfig;
 
@@ -579,8 +576,10 @@ export class StandardOperations<TEntity extends EntitySchema> {
         outputSchema
       );
 
+      // Cast to match the declared return type - the runtime types match
+      // but TypeScript can't prove the complex type relationships
       return builder as unknown as RouteBuilder<
-        z.ZodType<ComputeInputSchema<TConfig>>,
+        z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>,
         z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
       >;
     }
@@ -642,9 +641,11 @@ export class StandardOperations<TEntity extends EntitySchema> {
       outputSchema
     );
 
+    // Cast to match the declared return type - the runtime types match
+    // but TypeScript can't prove the complex type relationships
     return builder as unknown as RouteBuilder<
-      z.ZodType<DefaultListInputSchema>,
-      z.ZodType<DefaultListOutputSchema<z.infer<TEntity>>>
+      z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>,
+      z.ZodType<ComputeOutputSchema<TConfig, z.infer<TEntity>>>
     >;
   }
 

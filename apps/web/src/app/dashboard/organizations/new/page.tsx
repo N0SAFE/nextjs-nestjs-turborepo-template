@@ -11,7 +11,7 @@ import {
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Input } from '@repo/ui/components/shadcn/input'
 import { Label } from '@repo/ui/components/shadcn/label'
-import { useCreateOrganization } from '@/hooks/useOrganization'
+import { useCreateOrganization } from '@/domains/organization/hooks'
 
 export default function CreateOrganizationPage() {
   const router = useRouter()

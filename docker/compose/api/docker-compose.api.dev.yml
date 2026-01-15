@@ -51,6 +51,7 @@ services:
             - docker/compose/docker-compose.dev.yml
         # Sync+Restart when migrations change to automatically apply them
         - action: sync+restart
+          initial_sync: true
           path: ../../..
           target: /app
           include:
@@ -72,6 +73,7 @@ services:
             - packages/**/package.json
         # Sync source code excluding node_modules and build artifacts
         - action: sync
+          initial_sync: true
           path: ../../..
           target: /app
           ignore:

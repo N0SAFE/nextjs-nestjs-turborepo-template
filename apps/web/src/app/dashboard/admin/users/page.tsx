@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useAdminListUsers, useAdminActions } from '@/hooks/useAdmin'
+import { useAdminListUsers, useAdminActions } from '@/domains/admin/hooks'
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Badge } from '@repo/ui/components/shadcn/badge'
 import {

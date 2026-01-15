@@ -27,10 +27,6 @@ import { unstable_rethrow } from 'next/navigation'
 import { validateEnvSafe } from '#/env'
 import type { Session } from '@repo/auth'
 
-// Performance timing helper
-const startTimer = () => performance.now()
-const elapsed = (start: number) => (performance.now() - start).toFixed(2)
-
 // Validate environment variables
 const env = validateEnvSafe(process.env).data
 
@@ -98,50 +94,27 @@ export async function getRawSessionCookie(): Promise<string | null> {
  * ```
  */
 export async function getSessionFromCookie(): Promise<Session | null> {
-    const totalStart = startTimer()
-    console.log(`🍪 getSessionFromCookie: START`)
-    
     if (!env?.BETTER_AUTH_SECRET) {
         console.warn(`🍪 getSessionFromCookie: BETTER_AUTH_SECRET not configured`)
         return null
     }
 
     try {
-        // Step 1: Get cookies from Next.js
-        console.log(`🍪 getSessionFromCookie: [1/4] Calling cookies()...`)
-        const cookiesStart = startTimer()
         const cookiesList = await cookies()
-        console.log(`🍪 getSessionFromCookie: [1/4] cookies() done in ${elapsed(cookiesStart)}ms`)
-
-        // Step 2: Convert cookies to string
-        console.log(`🍪 getSessionFromCookie: [2/4] Calling toString()...`)
-        const toStringStart = startTimer()
         const cookieString = cookiesList.toString()
-        console.log(`🍪 getSessionFromCookie: [2/4] toString() done in ${elapsed(toStringStart)}ms (length=${String(cookieString.length)})`)
-
-        // Step 3: Create Headers object
-        console.log(`🍪 getSessionFromCookie: [3/4] Creating Headers...`)
-        const headersStart = startTimer()
         const headersObj = new Headers({ cookie: cookieString })
-        console.log(`🍪 getSessionFromCookie: [3/4] Headers created in ${elapsed(headersStart)}ms`)
 
-        // Step 4: Decrypt and parse the session from cookie
-        console.log(`🍪 getSessionFromCookie: [4/4] Calling getCookieCache...`)
-        const decryptStart = startTimer()
         const cachedSession = await getCookieCache<CachedSession>(headersObj, {
             secret: env.BETTER_AUTH_SECRET,
             // Match the cookie security setting from the API
             // In Docker without HTTPS termination, use non-secure cookies
             isSecure: env.NEXT_PUBLIC_API_URL.startsWith('https://'),
         })
-        console.log(`🍪 getSessionFromCookie: [4/4] getCookieCache done in ${elapsed(decryptStart)}ms, hasSession=${String(!!cachedSession)}`)
-
-        console.log(`🍪 getSessionFromCookie: END - Total: ${elapsed(totalStart)}ms`)
         return cachedSession ?? null
     } catch (error) {
         // Re-throw internal Next.js errors (PPR bailout, redirects, etc.)
         unstable_rethrow(error)
-        console.error(`🍪 getSessionFromCookie: ERROR after ${elapsed(totalStart)}ms`, error)
+        console.error(`🍪 getSessionFromCookie: ERROR`, error)
         return null
     }
 }
