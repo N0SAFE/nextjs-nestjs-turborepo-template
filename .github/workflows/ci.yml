@@ -97,7 +97,9 @@ jobs:
 
             - name: 🛤️ Generate declarative routes
               if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
-              run: bun run --cwd apps/web dr:build
+              run: |
+                bun run @repo-bin/declarative-routing build
+                bun run web dr:build
 
             - name: 📝 Generate OpenAPI documentation
               if: steps.cache-declarative-routes.outputs.cache-hit != 'true'

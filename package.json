@@ -275,6 +275,7 @@
         "@repo-configs/typescript": "dotenv -e .env -- bun --bun --cwd=./packages/configs/typescript run --",
         "@repo-configs/tailwind": "dotenv -e .env -- bun --bun --cwd=./packages/configs/tailwind run --",
         "@repo-configs/eslint": "dotenv -e .env -- bun --bun --cwd=./packages/configs/eslint run --",
+        "@repo-bin/declarative-routing": "dotenv -e .env -- bun --bun --cwd=./packages/bin/declarative-routing run --",
         "@repo/mcp-repo-manager": "dotenv -e .env -- bun --bun --cwd=./packages/mcp-repo-manager run --",
         ".": "dotenv -e .env -- bun --bun --cwd=./ run --",
         "rm:node_modules": "concurrently \"bun --bun x rimraf node_modules\" \"bun --bun x rimraf --glob packages/*/node_modules\" \"bun --bun x rimraf --glob apps/*/node_modules\"",
