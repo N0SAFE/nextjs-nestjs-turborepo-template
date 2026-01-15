@@ -82,7 +82,6 @@ jobs:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 💾 Restore Bun dependencies cache
-              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
               uses: actions/cache@v4
               with:
                   path: |
