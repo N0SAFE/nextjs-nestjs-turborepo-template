@@ -32,8 +32,8 @@ jobs:
                   path: |
                       ~/.bun
                       node_modules
-                      apps/*/node_modules
-                      packages/*/node_modules
+                      apps/**/node_modules
+                      packages/**/node_modules
                       bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
@@ -82,13 +82,14 @@ jobs:
                   bun-version: ${{ env.BUN_VERSION }}
 
             - name: 💾 Restore Bun dependencies cache
+              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
               uses: actions/cache@v4
               with:
                   path: |
                       ~/.bun
                       node_modules
-                      apps/*/node_modules
-                      packages/*/node_modules
+                      apps/**/node_modules
+                      packages/**/node_modules
                       bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
@@ -166,8 +167,8 @@ jobs:
                   path: |
                       ~/.bun
                       node_modules
-                      apps/*/node_modules
-                      packages/*/node_modules
+                      apps/**/node_modules
+                      packages/**/node_modules
                       bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
@@ -264,8 +265,8 @@ jobs:
                   path: |
                       ~/.bun
                       node_modules
-                      apps/*/node_modules
-                      packages/*/node_modules
+                      apps/**/node_modules
+                      packages/**/node_modules
                       bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
@@ -364,8 +365,8 @@ jobs:
                   path: |
                       ~/.bun
                       node_modules
-                      apps/*/node_modules
-                      packages/*/node_modules
+                      apps/**/node_modules
+                      packages/**/node_modules
                       bun.lock
                   key: bun-deps-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}
                   restore-keys: |
