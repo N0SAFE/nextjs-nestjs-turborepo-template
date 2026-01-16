@@ -417,40 +417,62 @@ export type EndpointWithCache<TEndpoint> = TEndpoint & {
 export function addCacheOperations<TRouter>(
   router: TRouter,
 ): AddCacheToRouter<TRouter> {
-  const enhanced: Record<string, unknown> = {};
-
-  for (const key in router) {
-    const value = router[key];
-
-    if (!value || typeof value !== "object") {
-      enhanced[key] = value;
-      continue;
-    }
-
-    // Check if it's a query endpoint (has queryKey method)
-    if ("queryKey" in value && typeof value.queryKey === "function") {
-      // This is a query endpoint - add cache operations
-      enhanced[key] = {
-        ...(value as object),
-        cache: createCacheOperations(value),
-      };
-    } else if (
-      // Check if it's a nested router (has properties that might be endpoints)
-      Object.keys(value).some(
-        (k) =>
-          value[k as keyof typeof value] &&
-          typeof value[k as keyof typeof value] === "object",
-      )
-    ) {
-      // This might be a nested router - recursively enhance
-      enhanced[key] = addCacheOperations(value);
-    } else {
-      // Neither endpoint nor router - keep as is (e.g., mutations)
-      enhanced[key] = value;
-    }
-  }
-
-  return enhanced as AddCacheToRouter<TRouter>;
+  // Use a Proxy to intercept property access and add cache operations on-the-fly
+  // This preserves the original object structure without copying
+  return new Proxy(router as object, {
+    get(target: object, prop: string | symbol, receiver: unknown) {
+      const value = Reflect.get(target, prop, receiver);
+      
+      // If not an object or null, return as-is
+      if (!value || typeof value !== "object") {
+        return value;
+      }
+      
+      // If it's a query endpoint (has queryKey method), add cache operations
+      if ("queryKey" in value && typeof value.queryKey === "function") {
+        // Check if we've already enhanced this endpoint (cached)
+        if ("cache" in value) {
+          return value;
+        }
+        
+        // Create enhanced endpoint with cache operations
+        return new Proxy(value as object, {
+          get(endpointTarget: object, endpointProp: string | symbol) {
+            if (endpointProp === "cache") {
+              return createCacheOperations(value);
+            }
+            return Reflect.get(endpointTarget, endpointProp);
+          },
+          has(endpointTarget: object, endpointProp: string | symbol) {
+            if (endpointProp === "cache") {
+              return true;
+            }
+            return Reflect.has(endpointTarget, endpointProp);
+          },
+        });
+      }
+      
+      // For nested routers (objects that are not endpoints), recursively enhance
+      if (typeof value === "object" && !Array.isArray(value) && !(value instanceof Date)) {
+        return addCacheOperations(value);
+      }
+      
+      // Return everything else as-is
+      return value;
+    },
+    
+    has(target: object, prop: string | symbol) {
+      return Reflect.has(target, prop);
+    },
+    
+    ownKeys(target: object) {
+      return Reflect.ownKeys(target);
+    },
+    
+    getOwnPropertyDescriptor(target: object, prop: string | symbol) {
+      return Reflect.getOwnPropertyDescriptor(target, prop);
+    },
+  }) as AddCacheToRouter<TRouter>;
 }
 
 /**
