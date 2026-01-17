@@ -420,8 +420,8 @@ export function addCacheOperations<TRouter>(
   // Use a Proxy to intercept property access and add cache operations on-the-fly
   // This preserves the original object structure without copying
   return new Proxy(router as object, {
-    get(target: object, prop: string | symbol, receiver: unknown) {
-      const value = Reflect.get(target, prop, receiver);
+    get(target: object, prop: string | symbol, receiver: unknown): unknown {
+      const value = Reflect.get(target, prop, receiver) as unknown;
       
       // If not an object or null, return as-is
       if (!value || typeof value !== "object") {
@@ -437,13 +437,13 @@ export function addCacheOperations<TRouter>(
         
         // Create enhanced endpoint with cache operations
         return new Proxy(value as object, {
-          get(endpointTarget: object, endpointProp: string | symbol) {
+          get(endpointTarget: object, endpointProp: string | symbol): unknown {
             if (endpointProp === "cache") {
               return createCacheOperations(value);
             }
             return Reflect.get(endpointTarget, endpointProp);
           },
-          has(endpointTarget: object, endpointProp: string | symbol) {
+          has(endpointTarget: object, endpointProp: string | symbol): boolean {
             if (endpointProp === "cache") {
               return true;
             }
@@ -461,15 +461,15 @@ export function addCacheOperations<TRouter>(
       return value;
     },
     
-    has(target: object, prop: string | symbol) {
+    has(target: object, prop: string | symbol): boolean {
       return Reflect.has(target, prop);
     },
     
-    ownKeys(target: object) {
+    ownKeys(target: object): (string | symbol)[] {
       return Reflect.ownKeys(target);
     },
     
-    getOwnPropertyDescriptor(target: object, prop: string | symbol) {
+    getOwnPropertyDescriptor(target: object, prop: string | symbol): PropertyDescriptor | undefined {
       return Reflect.getOwnPropertyDescriptor(target, prop);
     },
   }) as AddCacheToRouter<TRouter>;

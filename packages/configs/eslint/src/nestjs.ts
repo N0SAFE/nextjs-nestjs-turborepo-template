@@ -1,9 +1,9 @@
 import eslintNestJs from "@darraghor/eslint-plugin-nestjs-typed";
 import { defineConfig } from "eslint/config";
 import { Linter } from "eslint"
-import coreConfig from "./base";
-const coreBase = coreConfig.configs.base;
-const coreTest = coreConfig.configs.test;
+import coreConfig, { type BaseConfigOptions } from "./base";
+const coreBaseFactory = coreConfig.configs.base;
+const coreTestFactory = coreConfig.configs.test;
 
 const sharedRules: Partial<Linter.RulesRecord> = {
             "@typescript-eslint/interface-name-prefix": "off",
@@ -24,16 +24,16 @@ const sharedRules: Partial<Linter.RulesRecord> = {
             "@darraghor/nestjs-typed/injectable-should-be-provided": "off",
         }
 
-const base = defineConfig([
-    coreBase,
+const base = (options: BaseConfigOptions = {}) => defineConfig([
+    coreBaseFactory(options),
     ...(eslintNestJs.configs.flatRecommended as any),
     {
         rules: sharedRules
     },
 ]);
 
-const test = defineConfig([
-    coreTest,
+const test = (options: BaseConfigOptions = {}) => defineConfig([
+    coreTestFactory(options),
     ...(eslintNestJs.configs.flatRecommended as any),
     {
         rules: sharedRules
@@ -55,9 +55,9 @@ const test = defineConfig([
     },
 ]);
 
-const all = defineConfig([
-    base,
-    test,
+const all = (options: BaseConfigOptions = {}) => defineConfig([
+    base(options),
+    test(options),
 ]);
 
 export default {

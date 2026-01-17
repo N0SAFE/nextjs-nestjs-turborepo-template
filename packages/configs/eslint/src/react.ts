@@ -4,14 +4,17 @@ import reactHooks from "eslint-plugin-react-hooks";
 import pluginQuery from "@tanstack/eslint-plugin-query";
 import globals from "globals";
 import tsEslint from "typescript-eslint";
-import coreConfig from "./base";
-const coreBase = coreConfig.configs.base;
-const coreTest = coreConfig.configs.test;
+import coreConfig, { type BaseConfigOptions } from "./base";
+
+export type ReactConfig = BaseConfigOptions;
+
+const coreBaseFactory = coreConfig.configs.base;
+const coreTestFactory = coreConfig.configs.test;
 
 const tsconfigRootDir = process.cwd();
 
-const base = defineConfig([
-    coreBase,
+const base = (options: ReactConfig = {}) => defineConfig([
+    coreBaseFactory(options),
     {
         files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
         ...reactPlugin.configs.flat.recommended,
@@ -40,8 +43,8 @@ const base = defineConfig([
     ...pluginQuery.configs["flat/recommended"],
 ]);
 
-const test = defineConfig([
-    coreTest,
+const test = (options: ReactConfig = {}) => defineConfig([
+    coreTestFactory(options),
     {
         files: ["**/*.{test,spec}.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
         ...reactPlugin.configs.flat.recommended,
@@ -71,9 +74,9 @@ const test = defineConfig([
     ...pluginQuery.configs["flat/recommended"],
 ]);
 
-const all = defineConfig([
-    base,
-    test,
+const all = (options: ReactConfig = {}) => defineConfig([
+    base(options),
+    test(options),
 ]);
 
 export default {

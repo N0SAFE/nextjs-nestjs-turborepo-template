@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server'
+import process from 'process'
 
 describe('WithEnv Middleware', () => {
     // Mock all the required modules inside the describe block

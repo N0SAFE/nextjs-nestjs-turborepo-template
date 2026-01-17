@@ -3,7 +3,7 @@ import { defineConfig } from "@repo-configs/eslint";
 
 export default defineConfig([
     {
-        extends: [nextjsConfig.configs.base],
+        extends: [nextjsConfig.configs.base()],
         files: ["src/**/*.{ts,tsx,js,jsx}"],
         ignores: [
             // Ignore node_modules and external packages for type-checking
@@ -18,7 +18,7 @@ export default defineConfig([
             "@typescript-eslint/no-unnecessary-type-parameters": "off",
         },
     },
-    {extends: [nextjsConfig.configs.test],
+    {extends: [nextjsConfig.configs.test()],
         files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "**/*.test.{ts,tsx,js,jsx}", "**/*.spec.{ts,tsx,js,jsx}"],
     },
 ])

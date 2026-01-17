@@ -1,10 +1,10 @@
 import baseConfig, { defineConfig } from '@repo-configs/eslint'
 
 export default defineConfig([
-    {extends:[baseConfig.configs.base],
+    {extends:[baseConfig.configs.base()],
         files: ["src/**/*.{ts,tsx}"],
     },
-    {extends: [baseConfig.configs.test],
+    {extends: [baseConfig.configs.test()],
         files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
     },
 ])

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { toUseQuery, toUseMutation } from '../tanstack-query'
+import React from 'react'
 
 // Create a wrapper component for QueryClient
 const createWrapper = () => {
