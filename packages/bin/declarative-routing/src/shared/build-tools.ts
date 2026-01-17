@@ -150,11 +150,16 @@ export async function parseInfoFile(fpath: string) {
     hasLayout: false
   };
 
+  // Dynamically import the route.info.ts file to get the actual Route object with runtime values
+  const absPath = absoluteFilePath(config, fpath);
+  const imported = await import(absPath);
+  
+  newPath.importKey = imported.Route?.name || "tempKey";
+  
   const code: string = fs
-    .readFileSync(absoluteFilePath(config, fpath))
+    .readFileSync(absPath)
     .toString();
   const mod = parseModule(code);
-  newPath.importKey = newPath.importKey || mod.exports.Route?.name || "tempKey";
 
   // Read page and layout flags from the info file
   newPath.hasPage = mod.exports.page === true;

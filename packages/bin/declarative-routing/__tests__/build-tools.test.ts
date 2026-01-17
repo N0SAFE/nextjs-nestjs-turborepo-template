@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import path from 'path'
 import { parseModule } from 'magicast'
 import { glob } from 'glob'
 import * as config from '../src/config'
@@ -43,7 +42,15 @@ describe('build-tools', () => {
     vi.clearAllMocks()
     vi.mocked(config.getConfig).mockReturnValue(mockConfig as any)
     vi.mocked(config.absoluteFilePath).mockImplementation((cfg, p) => p)
+    
+    // Mock dynamic imports
+    vi.resetModules()
   })
+  
+  // Helper to mock dynamic imports
+  const mockDynamicImport = (modulePath: string, exports: any) => {
+    vi.doMock(modulePath, () => exports)
+  }
 
   describe('removeFileFromCache', () => {
     it('should remove file from internal paths cache', () => {
@@ -56,6 +63,11 @@ describe('build-tools', () => {
   describe('parseInfoFile', () => {
     it('should parse basic route info', async () => {
       const testPath = 'app/users/page.info.ts'
+      
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' }
+      })
       
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
@@ -74,6 +86,12 @@ describe('build-tools', () => {
 
     it('should parse route with GET verb', async () => {
       const testPath = 'app/api/users/route.info.ts'
+      
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' },
+        GET: true
+      })
       
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
@@ -94,6 +112,15 @@ describe('build-tools', () => {
 
     it('should parse route with multiple verbs', async () => {
       const testPath = 'app/api/users/route.info.ts'
+      
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' },
+        GET: true,
+        POST: true,
+        DELETE: true,
+        PUT: true
+      })
       
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
@@ -126,6 +153,11 @@ describe('build-tools', () => {
       
       const testPath = 'app/users/page.info.ts'
       
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' }
+      })
+      
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
       `)
@@ -149,6 +181,11 @@ describe('build-tools', () => {
       } as any)
       
       const testPath = 'app/users/page.info.ts'
+      
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' }
+      })
       
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
@@ -174,6 +211,11 @@ describe('build-tools', () => {
       
       const testPath = 'routes/users/routeInfo.ts'
       
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'Users' }
+      })
+      
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "Users" }
       `)
@@ -191,6 +233,11 @@ describe('build-tools', () => {
 
     it('should generate correct path template from directory structure', async () => {
       const testPath = 'app/api/v1/users/route.info.ts'
+      
+      // Mock the dynamic import
+      mockDynamicImport(testPath, {
+        Route: { name: 'ApiV1Users' }
+      })
       
       readFileSyncMock.mockReturnValue(`
         export const Route = { name: "ApiV1Users" }
@@ -363,6 +410,10 @@ describe('build-tools', () => {
         'app/posts/page.tsx'
       ] as any)
       
+      // Mock dynamic imports for each route
+      mockDynamicImport('app/users/page.tsx', { Route: { name: 'Users' } })
+      mockDynamicImport('app/posts/page.tsx', { Route: { name: 'Posts' } })
+      
       existsSyncMock.mockReturnValue(true)
       readFileSyncMock.mockReturnValue('')
       writeFileSyncMock.mockReturnValue(undefined)
@@ -386,6 +437,9 @@ describe('build-tools', () => {
         'app/users/page.info.ts'
       ] as any)
       
+      // Mock dynamic import for the existing info file
+      mockDynamicImport('app/users/page.info.ts', { Route: { name: 'Users' } })
+      
       existsSyncMock.mockReturnValueOnce(true).mockReturnValueOnce(false)
       readFileSyncMock.mockReturnValue('')
       writeFileSyncMock.mockReturnValue(undefined)
@@ -407,6 +461,9 @@ describe('build-tools', () => {
       vi.mocked(glob).mockResolvedValue([
         'routes/users/index.tsx'
       ] as any)
+      
+      // Mock dynamic import for qwikcity route
+      mockDynamicImport('routes/users/index.tsx', { Route: { name: 'Users' } })
       
       existsSyncMock.mockReturnValue(true)
       readFileSyncMock.mockReturnValue('')
