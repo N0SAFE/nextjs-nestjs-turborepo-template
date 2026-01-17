@@ -1,0 +1,515 @@
+import { Injectable } from '@nestjs/common';
+import { Tool } from '@rekog/mcp-nest';
+import { z } from 'zod';
+import { DependencyService } from '../services/dependency.service.js';
+import { PackageService } from '../services/package.service.js';
+import type {
+  AddDependencyOptions,
+  RemoveDependencyOptions,
+  UpdateDependencyOptions,
+} from '../types/dependency.types.js';
+
+// Define Zod schemas as constants for use in decorators
+const addDependencySchema = z
+  .object({
+    packageName: z
+      .string()
+      .describe('Name of the package to add the dependency to'),
+    dependencyName: z.string().describe('Name of the dependency to add'),
+    version: z
+      .string()
+      .optional()
+      .describe(
+        'Version to install (e.g., "^1.0.0", "latest", "workspace:*"). Defaults to "latest" for external or "workspace:*" for internal.',
+      ),
+    type: z
+      .enum(['dependencies', 'devDependencies', 'peerDependencies'])
+      .default('dependencies')
+      .describe('Type of dependency to add'),
+    workspace: z
+      .boolean()
+      .optional()
+      .describe(
+        'Force workspace protocol usage (workspace:*) for internal dependencies',
+      ),
+  })
+  .describe('Parameters for adding a dependency');
+
+const removeDependencySchema = z
+  .object({
+    packageName: z
+      .string()
+      .describe('Name of the package to remove the dependency from'),
+    dependencyName: z.string().describe('Name of the dependency to remove'),
+    types: z
+      .array(z.enum(['dependencies', 'devDependencies', 'peerDependencies']))
+      .optional()
+      .describe(
+        'Dependency types to remove from. If not specified, removes from all types.',
+      ),
+  })
+  .describe('Parameters for removing a dependency');
+
+const updateDependencySchema = z
+  .object({
+    packageName: z
+      .string()
+      .describe('Name of the package containing the dependency'),
+    dependencyName: z.string().describe('Name of the dependency to update'),
+    version: z.string().describe('New version to update to'),
+    type: z
+      .enum(['dependencies', 'devDependencies', 'peerDependencies'])
+      .optional()
+      .describe('Type of dependency. If not specified, searches all types.'),
+  })
+  .describe('Parameters for updating a dependency');
+
+/**
+ * MCP tools for dependency management
+ */
+@Injectable()
+export class DependencyToolsProvider {
+  constructor(
+    private readonly dependencyService: DependencyService,
+    private readonly packageService: PackageService,
+  ) {}
+
+  /**
+   * Add a dependency to a package
+   */
+  @Tool({
+    name: 'add-dependency',
+    description:
+      'Add a dependency to a package. Supports workspace protocol for internal dependencies.',
+  })
+  async addDependency(
+    @addDependencySchema
+    params: {
+      packageName: string;
+      dependencyName: string;
+      version?: string;
+      type?: 'dependencies' | 'devDependencies' | 'peerDependencies';
+      workspace?: boolean;
+    },
+  ): Promise<string> {
+    try {
+      // Check if package exists
+      const packageJson = await this.packageService.getPackageJson(
+        params.packageName,
+      );
+      if (!packageJson) {
+        return `Error: Package "${params.packageName}" not found`;
+      }
+
+      // Check if dependency already exists
+      const existingDeps = packageJson[params.type || 'dependencies'] || {};
+      if (existingDeps[params.dependencyName]) {
+        return `Error: Dependency "${params.dependencyName}" already exists in ${params.type || 'dependencies'} with version ${existingDeps[params.dependencyName]}`;
+      }
+
+      // Determine if this is an internal dependency
+      const allPackages = [
+        ...(await this.packageService.listApps()),
+        ...(await this.packageService.listPackages()),
+      ];
+      const isInternal = allPackages.some(
+        (pkg) => pkg.name === params.dependencyName,
+      );
+
+      // Determine version to use
+      let version = params.version;
+      if (!version) {
+        if (isInternal || params.workspace) {
+          version = 'workspace:*';
+        } else {
+          version = 'latest';
+        }
+      }
+
+      // Validate the update
+      const validation = await this.dependencyService.validateUpdate(
+        params.packageName,
+        params.dependencyName,
+        version,
+      );
+
+      if (!validation.valid) {
+        return `Error: Validation failed:\n${validation.warnings.join('\n')}`;
+      }
+
+      // Add the dependency
+      const options: AddDependencyOptions = {
+        packageName: params.packageName,
+        dependencyName: params.dependencyName,
+        version,
+        type: params.type || 'dependencies',
+        workspace: params.workspace || isInternal,
+      };
+
+      // Update package.json
+      const updatedPackageJson = { ...packageJson };
+      if (!updatedPackageJson[options.type]) {
+        updatedPackageJson[options.type] = {};
+      }
+      updatedPackageJson[options.type]![options.dependencyName] =
+        options.version || 'latest';
+
+      await this.packageService.updatePackageJson(
+        options.packageName,
+        updatedPackageJson,
+      );
+
+      let message = `Successfully added "${params.dependencyName}" to ${params.packageName}`;
+      if (validation.warnings.length > 0) {
+        message += `\n\nWarnings:\n${validation.warnings.join('\n')}`;
+      }
+
+      return message;
+    } catch (error) {
+      return `Error adding dependency: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Remove a dependency from a package
+   */
+  @Tool({
+    name: 'remove-dependency',
+    description:
+      'Remove a dependency from a package. Can remove from multiple dependency types at once.',
+  })
+  async removeDependency(
+    @z
+      .object({
+        packageName: z
+          .string()
+          .describe('Name of the package to remove the dependency from'),
+        dependencyName: z.string().describe('Name of the dependency to remove'),
+        types: z
+          .array(
+            z.enum(['dependencies', 'devDependencies', 'peerDependencies']),
+          )
+          .optional()
+          .describe(
+            'Dependency types to remove from. If not specified, removes from all types.',
+          ),
+      })
+      .describe('Parameters for removing a dependency')
+    params: {
+      packageName: string;
+      dependencyName: string;
+      types?: Array<'dependencies' | 'devDependencies' | 'peerDependencies'>;
+    },
+  ): Promise<string> {
+    try {
+      // Check if package exists
+      const packageJson = await this.packageService.getPackageJson(
+        params.packageName,
+      );
+      if (!packageJson) {
+        return `Error: Package "${params.packageName}" not found`;
+      }
+
+      const typesToCheck: Array<
+        'dependencies' | 'devDependencies' | 'peerDependencies'
+      > = params.types || ['dependencies', 'devDependencies', 'peerDependencies'];
+
+      let removed = false;
+      const removedFrom: string[] = [];
+
+      // Update package.json
+      const updatedPackageJson = { ...packageJson };
+
+      for (const type of typesToCheck) {
+        if (
+          updatedPackageJson[type] &&
+          updatedPackageJson[type]![params.dependencyName]
+        ) {
+          delete updatedPackageJson[type]![params.dependencyName];
+          removed = true;
+          removedFrom.push(type);
+        }
+      }
+
+      if (!removed) {
+        return `Error: Dependency "${params.dependencyName}" not found in ${params.packageName}`;
+      }
+
+      await this.packageService.updatePackageJson(
+        params.packageName,
+        updatedPackageJson,
+      );
+
+      return `Successfully removed "${params.dependencyName}" from ${params.packageName} (${removedFrom.join(', ')})`;
+    } catch (error) {
+      return `Error removing dependency: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Update a dependency version
+   */
+  @Tool({
+    name: 'update-dependency',
+    description:
+      'Update a dependency to a new version. Validates compatibility before updating.',
+  })
+  async updateDependency(
+    @z
+      .object({
+        packageName: z
+          .string()
+          .describe('Name of the package containing the dependency'),
+        dependencyName: z
+          .string()
+          .describe('Name of the dependency to update'),
+        version: z.string().describe('New version to update to'),
+        type: z
+          .enum(['dependencies', 'devDependencies', 'peerDependencies'])
+          .optional()
+          .describe(
+            'Type of dependency. If not specified, searches all types.',
+          ),
+      })
+      .describe('Parameters for updating a dependency')
+    params: {
+      packageName: string;
+      dependencyName: string;
+      version: string;
+      type?: 'dependencies' | 'devDependencies' | 'peerDependencies';
+    },
+  ): Promise<string> {
+    try {
+      // Check if package exists
+      const packageJson = await this.packageService.getPackageJson(
+        params.packageName,
+      );
+      if (!packageJson) {
+        return `Error: Package "${params.packageName}" not found`;
+      }
+
+      // Find the dependency
+      let foundType: 'dependencies' | 'devDependencies' | 'peerDependencies' | null =
+        null;
+      let currentVersion: string | undefined;
+
+      if (params.type) {
+        // Check specific type
+        currentVersion = packageJson[params.type]?.[params.dependencyName];
+        if (currentVersion) {
+          foundType = params.type;
+        }
+      } else {
+        // Search all types
+        const types: Array<
+          'dependencies' | 'devDependencies' | 'peerDependencies'
+        > = ['dependencies', 'devDependencies', 'peerDependencies'];
+
+        for (const type of types) {
+          if (packageJson[type]?.[params.dependencyName]) {
+            foundType = type;
+            currentVersion = packageJson[type]![params.dependencyName];
+            break;
+          }
+        }
+      }
+
+      if (!foundType || !currentVersion) {
+        return `Error: Dependency "${params.dependencyName}" not found in ${params.packageName}`;
+      }
+
+      // Validate the update
+      const validation = await this.dependencyService.validateUpdate(
+        params.packageName,
+        params.dependencyName,
+        params.version,
+      );
+
+      if (!validation.valid) {
+        return `Error: Validation failed:\n${validation.warnings.join('\n')}`;
+      }
+
+      // Update the dependency
+      const updatedPackageJson = { ...packageJson };
+      updatedPackageJson[foundType]![params.dependencyName] = params.version;
+
+      await this.packageService.updatePackageJson(
+        params.packageName,
+        updatedPackageJson,
+      );
+
+      let message = `Successfully updated "${params.dependencyName}" in ${params.packageName} from ${currentVersion} to ${params.version} (${foundType})`;
+
+      if (validation.warnings.length > 0) {
+        message += `\n\nWarnings:\n${validation.warnings.join('\n')}`;
+      }
+
+      return message;
+    } catch (error) {
+      return `Error updating dependency: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * List all internal (workspace) dependencies
+   */
+  @Tool({
+    name: 'list-internal-dependencies',
+    description:
+      'List all internal dependencies used across the workspace with their usage count.',
+  })
+  async listInternalDependencies(): Promise<string> {
+    try {
+      const graph = await this.dependencyService.getDependencyGraph();
+      const analysis = await this.dependencyService.analyzeDependencies();
+
+      // Build a map of internal dependencies and their usage
+      const internalDeps = new Map<
+        string,
+        {
+          usedBy: string[];
+          type: Set<'dependencies' | 'devDependencies' | 'peerDependencies'>;
+        }
+      >();
+
+      const internalPackages = new Set(Object.keys(graph.nodes));
+
+      for (const [pkgName, node] of Object.entries(graph.nodes)) {
+        // Check dependencies
+        for (const dep of Object.keys(node.dependencies)) {
+          if (internalPackages.has(dep)) {
+            if (!internalDeps.has(dep)) {
+              internalDeps.set(dep, { usedBy: [], type: new Set() });
+            }
+            internalDeps.get(dep)!.usedBy.push(pkgName);
+            internalDeps.get(dep)!.type.add('dependencies');
+          }
+        }
+
+        // Check devDependencies
+        for (const dep of Object.keys(node.devDependencies)) {
+          if (internalPackages.has(dep)) {
+            if (!internalDeps.has(dep)) {
+              internalDeps.set(dep, { usedBy: [], type: new Set() });
+            }
+            internalDeps.get(dep)!.usedBy.push(pkgName);
+            internalDeps.get(dep)!.type.add('devDependencies');
+          }
+        }
+
+        // Check peerDependencies
+        for (const dep of Object.keys(node.peerDependencies)) {
+          if (internalPackages.has(dep)) {
+            if (!internalDeps.has(dep)) {
+              internalDeps.set(dep, { usedBy: [], type: new Set() });
+            }
+            internalDeps.get(dep)!.usedBy.push(pkgName);
+            internalDeps.get(dep)!.type.add('peerDependencies');
+          }
+        }
+      }
+
+      if (internalDeps.size === 0) {
+        return 'No internal dependencies found in the workspace.';
+      }
+
+      let result = `Internal Dependencies (${internalDeps.size} total, ${analysis.workspaceProtocolUsage} using workspace:* protocol):\n\n`;
+
+      // Sort by usage count (most used first)
+      const sorted = Array.from(internalDeps.entries()).sort(
+        (a, b) => b[1].usedBy.length - a[1].usedBy.length,
+      );
+
+      for (const [depName, info] of sorted) {
+        result += `📦 ${depName}\n`;
+        result += `   Used by: ${info.usedBy.length} package(s)\n`;
+        result += `   Types: ${Array.from(info.type).join(', ')}\n`;
+        result += `   Dependents: ${info.usedBy.join(', ')}\n\n`;
+      }
+
+      return result;
+    } catch (error) {
+      return `Error listing internal dependencies: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Analyze dependency graph
+   */
+  @Tool({
+    name: 'analyze-dependencies',
+    description:
+      'Analyze the dependency graph for circular dependencies, duplicated versions, and other issues.',
+  })
+  async analyzeDependenciesGraph(): Promise<string> {
+    try {
+      const analysis = await this.dependencyService.analyzeDependencies();
+
+      let result = '📊 Dependency Analysis\n\n';
+
+      result += '## Summary\n';
+      result += `- Total Dependencies: ${analysis.totalDependencies}\n`;
+      result += `- Total Dev Dependencies: ${analysis.totalDevDependencies}\n`;
+      result += `- Total Peer Dependencies: ${analysis.totalPeerDependencies}\n`;
+      result += `- Internal Dependencies: ${analysis.internalDependencies}\n`;
+      result += `- External Dependencies: ${analysis.externalDependencies}\n`;
+      result += `- Workspace Protocol Usage: ${analysis.workspaceProtocolUsage}\n\n`;
+
+      // Circular dependencies
+      if (analysis.circularDependencies.length > 0) {
+        result += `## ⚠️ Circular Dependencies (${analysis.circularDependencies.length})\n`;
+        for (const circular of analysis.circularDependencies) {
+          result += `- ${circular.path}\n`;
+        }
+        result += '\n';
+      } else {
+        result += '## ✅ No Circular Dependencies\n\n';
+      }
+
+      // Duplicated versions
+      const duplicatedCount = Object.keys(analysis.duplicatedVersions).length;
+      if (duplicatedCount > 0) {
+        result += `## ⚠️ Duplicated Versions (${duplicatedCount})\n`;
+        for (const [dep, versions] of Object.entries(
+          analysis.duplicatedVersions,
+        )) {
+          result += `- ${dep}: ${versions.join(', ')}\n`;
+        }
+        result += '\n';
+      } else {
+        result += '## ✅ No Duplicated Versions\n\n';
+      }
+
+      // Unused dependencies (TODO)
+      if (analysis.unusedDependencies.length > 0) {
+        result += `## ⚠️ Unused Dependencies (${analysis.unusedDependencies.length})\n`;
+        for (const unused of analysis.unusedDependencies) {
+          result += `- ${unused}\n`;
+        }
+        result += '\n';
+      }
+
+      return result;
+    } catch (error) {
+      return `Error analyzing dependencies: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+
+  /**
+   * Get dependency graph
+   */
+  @Tool({
+    name: 'get-dependency-graph',
+    description:
+      'Get the complete dependency graph for visualization. Returns nodes and edges.',
+  })
+  async getDependencyGraph(): Promise<string> {
+    try {
+      const graph = await this.dependencyService.getDependencyGraph();
+
+      return JSON.stringify(graph, null, 2);
+    } catch (error) {
+      return `Error getting dependency graph: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  }
+}
