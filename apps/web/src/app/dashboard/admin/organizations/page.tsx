@@ -1,6 +1,6 @@
 'use client'
 
-import { useAllOrganizations } from '@/domains/organization/hooks'
+import { useOrganizations } from '@/domains/organization/hooks'
 import {
   Card,
   CardContent,
@@ -22,21 +22,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export default function AdminOrganizationsPage() {
-  const { data, isLoading, error } = useAllOrganizations({
-    pagination: { limit: 50, offset: 0 },
-    sorting: { sortBy: 'createdAt', sortDirection: 'desc' }
-  })
-
-  const organizations = data?.data ?? []
-  const total = data?.meta.total ?? 0
-
-  // Debug logging
-  console.log('Admin Organizations Debug:', {
-    total,
-    organizationsLength: organizations.length,
-    organizations: organizations.map(o => ({ id: o.id, name: o.name, slug: o.slug })),
-    rawData: data,
-  })
+  const { data: organizations, isLoading, error } = useOrganizations({ pagination: { pageSize: 50 } })
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -52,7 +38,7 @@ export default function AdminOrganizationsPage() {
         <CardHeader>
           <CardTitle>All Organizations</CardTitle>
           <CardDescription>
-            {total} organization{total !== 1 ? 's' : ''} in the system
+            {organizations?.length ?? 0} organization{organizations?.length !== 1 ? 's' : ''} in the system
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,7 +54,7 @@ export default function AdminOrganizationsPage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : organizations.length > 0 ? (
+          ) : organizations && organizations.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>

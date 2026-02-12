@@ -714,7 +714,7 @@ tools/              # CLI tools (separate from packages)
 - [ ] Update each package's `vitest.config.ts` to extend base:
   ```typescript
   import { mergeConfig } from 'vitest/config'
-  import { reactConfig } from '@repo-configs/vitest'
+  import { reactConfig } from '@repo/config-vitest'
   export default mergeConfig(reactConfig, { /* overrides */ })
   ```
 - [ ] Verify all tests still pass

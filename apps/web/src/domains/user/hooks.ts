@@ -32,7 +32,7 @@ export function useUserList(
  */
 export function useUser(userId: string) {
   return useQuery(
-    userEndpoints.findById.queryOptions({ input: { id: userId } }),
+    userEndpoints.findById.queryOptions({ input: { params: { id: userId } } }),
   );
 }
 

@@ -6,6 +6,7 @@ import { AuthService } from "./core/modules/auth/services/auth.service";
 import { isErrorResult, merge } from "openapi-merge";
 import type {Express} from 'express';
 import { buildAllowedOrigins, normalizeUrl, isLocalhostOrigin } from "./core/utils/cors.utils";
+import { logger } from "@repo/logger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -44,8 +45,8 @@ async function bootstrap() {
       }
       
       // Reject the origin
-      console.warn(`CORS: Rejected origin: ${origin}`);
-      console.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
+      logger.warn(`CORS: Rejected origin: ${origin}`);
+      logger.warn(`CORS: Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -102,14 +103,14 @@ async function bootstrap() {
 
   const port = process.env.API_PORT ?? 3005;
   await app.listen(port);
-  console.log(`🚀 NestJS API with oRPC running on port ${String(port)}`);
-  console.log(
+  logger.info(`🚀 NestJS API with oRPC running on port ${String(port)}`);
+  logger.info(
     `📘 OpenAPI JSON available at http://localhost:${String(port)}/openapi.json`
   );
-  console.log(`📗 Scalar API Reference at http://localhost:${String(port)}/reference`);
+  logger.info(`📗 Scalar API Reference at http://localhost:${String(port)}/reference`);
 }
 
 bootstrap().catch((error: unknown) => {
-  console.error("Failed to start the application:", error);
+  logger.error("Failed to start the application", { error });
   process.exit(1);
 });

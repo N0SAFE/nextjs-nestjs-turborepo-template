@@ -261,8 +261,7 @@ export type ExtractCustomHooksKeys<TCustom extends Record<string, unknown>> =
  * // Extracts: { email: string }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractMutationVariables<T> = T extends UseMutationResult<any, any, infer TVariables, any>
+type ExtractMutationVariables<T> = T extends UseMutationResult<unknown, unknown, infer TVariables>
   ? TVariables 
   : never;
 
@@ -275,8 +274,7 @@ type ExtractMutationVariables<T> = T extends UseMutationResult<any, any, infer T
  * // Extracts: User
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractMutationData<T> = T extends UseMutationResult<infer TData, any, any, any>
+type ExtractMutationData<T> = T extends UseMutationResult<infer TData, unknown>
   ? TData 
   : never;
 
@@ -290,26 +288,21 @@ type ExtractMutationData<T> = T extends UseMutationResult<infer TData, any, any,
  * // Extracts: User[]
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractQueryData<T> = T extends UseQueryResult<infer TData, any>
+type ExtractQueryData<T> = T extends UseQueryResult<infer TData, unknown>
   ? TData 
   : never;
 
 /**
  * Check if a type is a UseMutationResult.
- * Uses `any` for permissive pattern matching.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IsMutationResult<T> = T extends UseMutationResult<any, any, any, any> 
+type IsMutationResult<T> = T extends UseMutationResult<unknown, unknown> 
   ? true 
   : false;
 
 /**
  * Check if a type is a UseQueryResult.
- * Uses `any` for permissive pattern matching.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IsQueryResult<T> = T extends UseQueryResult<any, any> 
+type IsQueryResult<T> = T extends UseQueryResult<unknown, unknown> 
   ? true 
   : false;
 
@@ -317,16 +310,13 @@ type IsQueryResult<T> = T extends UseQueryResult<any, any>
  * Extract the return type of a custom hook function.
  * Custom hooks are functions that return UseQueryResult or UseMutationResult.
  * 
- * Uses `any` for the args pattern to be permissive in matching.
- * 
  * @example
  * ```ts
  * // Given: () => UseMutationResult<User, Error, { email: string }>
  * // Extracts: UseMutationResult<User, Error, { email: string }>
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractHookReturnType<T> = T extends (...args: any[]) => infer TReturn 
+type ExtractHookReturnType<T> = T extends (...args: readonly unknown[]) => infer TReturn 
   ? TReturn 
   : never;
 
@@ -359,8 +349,7 @@ export type ExtractCustomHookInput<T> =
       ? ExtractMutationVariables<TReturn>
       : IsQueryResult<TReturn> extends true
         // For queries, extract input from the hook's parameters
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ? T extends (input: infer TInput, ...args: any[]) => any
+        ? T extends (input: infer TInput, ...args: readonly unknown[]) => unknown
           ? TInput
           : never
         : never

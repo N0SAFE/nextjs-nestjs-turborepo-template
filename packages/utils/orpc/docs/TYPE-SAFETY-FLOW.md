@@ -35,7 +35,7 @@ const userSchema = z.object({
 // Type: ZodObject<{ id: ZodString, name: ZodString, email: ZodString }>
 
 // Step 2: Create Standard Operations
-const userOps = standard(userSchema, 'user');
+const userOps = standard.zod(userSchema, 'user');
 // Type: StandardOperations<typeof userSchema>
 
 // Step 3: Build Contracts

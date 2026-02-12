@@ -212,7 +212,7 @@ export default defineConfig({
 ```typescript
 // packages/utils/orpc/vitest.config.ts
 import { defineConfig, mergeConfig } from 'vitest/config'
-import baseConfig from '@repo-configs/vitest'
+import baseConfig from '@repo/config-vitest'
 
 export default mergeConfig(baseConfig, {
   test: {

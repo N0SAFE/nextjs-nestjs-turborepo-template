@@ -28,7 +28,7 @@
     "zod": "catalog:utils"
   },
   "devDependencies": {
-    "@repo-configs/typescript": "*",
+    "@repo/config-typescript": "*",
     "typescript": "catalog:build",
     "vitest": "catalog:testing",
     "@vitest/coverage-v8": "catalog:testing"

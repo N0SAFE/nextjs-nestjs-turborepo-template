@@ -53,6 +53,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { authClient, useSession } from "@/lib/auth";
+import { logger } from "@repo/logger";
 import { Spinner } from "@repo/ui/components/atomics/atoms/Icon";
 import { Session } from "better-auth";
 import { PushNotificationSettings } from "@/components/push-notifications/PushNotificationSettings";
@@ -94,7 +95,7 @@ const ProfilePage: React.FC = () => {
         setSessions(result.data);
       }
     } catch (err) {
-      console.error("Error loading sessions:", err);
+      logger.error("Error loading sessions", { error: err });
       setError("Failed to load sessions");
     } finally {
       setSessionLoading(false);
@@ -124,7 +125,7 @@ const ProfilePage: React.FC = () => {
         await loadSessions();
       }
     } catch (err) {
-      console.error("Error revoking session:", err);
+      logger.error("Error revoking session", { error: err });
       setError("Failed to revoke session");
     } finally {
       setIsSessionDeleteModalOpen(false);
@@ -145,7 +146,7 @@ const ProfilePage: React.FC = () => {
         await loadSessions();
       }
     } catch (err) {
-      console.error("Error revoking other sessions:", err);
+      logger.error("Error revoking other sessions", { error: err });
       setError("Failed to revoke other sessions");
     }
   };

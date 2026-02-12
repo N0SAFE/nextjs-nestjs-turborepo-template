@@ -1,13 +1,11 @@
-import { oc } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod/v4";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 /**
  * Test contract for file upload
  * This contract demonstrates how to accept file uploads using z.file()
  */
-export const testFileUploadContract = withRouteMethod("POST", oc)
-  .route({
+export const testFileUploadContract = route({
     method: "POST",
     path: "/file-upload",
     summary: "Upload a file",
@@ -28,7 +26,8 @@ export const testFileUploadContract = withRouteMethod("POST", oc)
       mimeType: z.string(),
       message: z.string().optional(),
     })
-  );
+  )
+  .build();
 
 // Define types based on schemas
 export type TestFileUploadInput = {

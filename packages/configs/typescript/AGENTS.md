@@ -1,4 +1,4 @@
-# AGENTS.md — @repo-configs/typescript
+# AGENTS.md — @repo/config-typescript
 
 Shared TypeScript configurations.
 

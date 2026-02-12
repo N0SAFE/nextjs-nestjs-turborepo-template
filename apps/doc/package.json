@@ -21,7 +21,7 @@
     "react-dom": "catalog:react"
   },
   "devDependencies": {
-    "@repo-configs/eslint": "*",
+    "@repo/config-eslint": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
     "@types/node": "catalog:build",

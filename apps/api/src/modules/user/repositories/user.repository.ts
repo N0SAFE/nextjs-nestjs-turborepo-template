@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { DatabaseService } from "../../../core/modules/database/services/database.service";
 import { user } from "@/config/drizzle/schema/auth";
-import { eq, desc, asc, like, count, and, SQL, gte, lte, gt, lt, ilike } from "drizzle-orm";
+import { eq, like, and, count, gte, lte, gt, lt, ilike } from "drizzle-orm";
+import { listBuilder } from "@/core/utils/drizzle-filter.utils";
 import { randomUUID } from "crypto";
 import type {
   UserCreateInput,
@@ -103,112 +104,60 @@ export class UserRepository {
      * Find all users with pagination and filtering
      */
     async findMany(input: GetUsersInput) {
-        // Build the where conditions with new filter structure
-        const conditions: (SQL | undefined)[] = [];
-
-        // Handle new filter operators for each field
-        // ID filters
-        if (input.id) {
-            conditions.push(eq(user.id, input.id));
-        }
-
-        // Name filters with operators
-        if (input.name) {
-            conditions.push(eq(user.name, input.name));
-        }
-        if (input.name_like) {
-            conditions.push(like(user.name, `%${input.name_like}%`));
-        }
-        if (input.name_ilike) {
-            conditions.push(ilike(user.name, `%${input.name_ilike}%`));
-        }
-
-        // Email filters with operators
-        if (input.email) {
-            conditions.push(eq(user.email, input.email));
-        }
-        if (input.email_like) {
-            conditions.push(like(user.email, `%${input.email_like}%`));
-        }
-        if (input.email_ilike) {
-            conditions.push(ilike(user.email, `%${input.email_ilike}%`));
-        }
-
-        // EmailVerified filter
-        if (input.emailVerified !== undefined) {
-            conditions.push(eq(user.emailVerified, input.emailVerified));
-        }
-
-        // CreatedAt filters with operators
-        if (input.createdAt_gt) {
-            conditions.push(gt(user.createdAt, new Date(input.createdAt_gt)));
-        }
-        if (input.createdAt_gte) {
-            conditions.push(gte(user.createdAt, new Date(input.createdAt_gte)));
-        }
-        if (input.createdAt_lt) {
-            conditions.push(lt(user.createdAt, new Date(input.createdAt_lt)));
-        }
-        if (input.createdAt_lte) {
-            conditions.push(lte(user.createdAt, new Date(input.createdAt_lte)));
-        }
-        if (input.createdAt_between) {
-            conditions.push(
-                and(
-                    gte(user.createdAt, new Date(input.createdAt_between.from)),
-                    lte(user.createdAt, new Date(input.createdAt_between.to))
-                )
-            );
-        }
-
-        const whereCondition = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : and(...conditions)) : undefined;
-
-        // Build the order by condition - now uses sortBy and sortDirection
-        let orderByCondition: SQL;
-
-        if (!input.sortBy) {
-            // Default sorting when no sort is provided
-            orderByCondition = desc(user.createdAt);
-        } else {
-            const direction = input.sortDirection === "asc" ? asc : desc;
-            switch (input.sortBy) {
-                case "name":
-                    orderByCondition = direction(user.name);
-                    break;
-                case "email":
-                    orderByCondition = direction(user.email);
-                    break;
-                case "createdAt":
-                    orderByCondition = direction(user.createdAt);
-                    break;
-                case "updatedAt":
-                    orderByCondition = direction(user.updatedAt);
-                    break;
-                default:
-                    throw new Error(`Unsupported sort field: ${input.sortBy}`);
-            }
-        }
-
-        // Execute the main query with all conditions
-        const users = whereCondition
-            ? await this.databaseService.db.select().from(user).where(whereCondition).orderBy(orderByCondition).limit(input.limit).offset(input.offset)
-            : await this.databaseService.db.select().from(user).orderBy(orderByCondition).limit(input.limit).offset(input.offset);
-
-        // Get total count for pagination info
-        const totalResult = whereCondition
-            ? await this.databaseService.db.select({ count: count() }).from(user).where(whereCondition)
-            : await this.databaseService.db.select({ count: count() }).from(user);
-
-        const total = totalResult[0]?.count ?? 0;
+        const result = await listBuilder(input.filter)
+            .filter({
+                id: ({ operator, value }) => {
+                    switch (operator) {
+                        case "eq": return eq(user.id, value);
+                    }
+                },
+                name: ({ operator, value }) => {
+                    switch (operator) {
+                        case "eq":    return eq(user.name, value);
+                        case "like":  return like(user.name, `%${value}%`);
+                        case "ilike": return ilike(user.name, `%${value}%`);
+                    }
+                },
+                email: ({ operator, value }) => {
+                    switch (operator) {
+                        case "eq":    return eq(user.email, value);
+                        case "like":  return like(user.email, `%${value}%`);
+                        case "ilike": return ilike(user.email, `%${value}%`);
+                    }
+                },
+                emailVerified: ({ operator, value }) => {
+                    switch (operator) {
+                        case "eq": return eq(user.emailVerified, value);
+                    }
+                },
+                createdAt: ({ operator, value }) => {
+                    switch (operator) {
+                        case "gt":  return gt(user.createdAt, new Date(value));
+                        case "gte": return gte(user.createdAt, new Date(value));
+                        case "lt":  return lt(user.createdAt, new Date(value));
+                        case "lte": return lte(user.createdAt, new Date(value));
+                        case "between": {
+                            const [from, to] = value;
+                            return and(
+                                gte(user.createdAt, new Date(from)),
+                                lte(user.createdAt, new Date(to))
+                            );
+                        }
+                    }
+                },
+            })
+            .order(input.sortBy, input.sortDirection, {
+                name: user.name,
+                email: user.email,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            }, user.createdAt)
+            .pagination({ limit: input.limit, offset: input.offset })
+            .execute(this.databaseService.db, user);
 
         return {
-            data: this.transformUsers(users),
-            meta: {
-                total,
-                limit: input.limit,
-                offset: input.offset,
-                hasMore: input.offset + input.limit < total,
-            },
+            data: this.transformUsers(result.data),
+            meta: result.meta,
         };
     }
 

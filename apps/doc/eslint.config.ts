@@ -1,6 +1,6 @@
-import nextjsConfig from "@repo-configs/eslint/nextjs";
-// import mdxConfig from "@repo-configs/eslint/mdx";
-import { defineConfig } from "@repo-configs/eslint";
+import nextjsConfig from "@repo/config-eslint/nextjs";
+// import mdxConfig from "@repo/config-eslint/mdx";
+import { defineConfig } from "@repo/config-eslint";
 
 export default defineConfig([
     {

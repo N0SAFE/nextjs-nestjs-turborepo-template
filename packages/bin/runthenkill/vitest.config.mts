@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineProject } from 'vitest/config'
 import * as path from 'path'
-import { createNodeConfig } from '@repo-configs/vitest/node'
+import { createNodeConfig } from '@repo/config-vitest/node'
 
 export default defineProject(
     createNodeConfig({

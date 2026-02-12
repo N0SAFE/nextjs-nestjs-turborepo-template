@@ -81,7 +81,7 @@ const all = (options: ReactConfig = {}) => defineConfig([
 
 export default {
     meta: {
-        name: "@repo-configs/eslint/react-internal",
+        name: "@repo/config-eslint/react-internal",
         version: "0.0.0",
     },
     configs: {

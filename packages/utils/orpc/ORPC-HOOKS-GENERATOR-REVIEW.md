@@ -1,4 +1,4 @@
-# ORPC Hooks Generator with standard() Review
+# ORPC Hooks Generator with standard.zod() Review
 
 ## Summary
 ✅ **The ORPC hooks generator with the `standard()` function works perfectly and maintains full type safety throughout the entire chain.**
@@ -39,7 +39,7 @@ const userSchema = z.object({
 });
 
 // 2. Standard Operations (Fully Typed)
-const userOps = standard(userSchema, 'user');
+const userOps = standard.zod(userSchema, 'user');
 // Type: StandardOperations<typeof userSchema>
 
 // 3. Contracts (Typed Input/Output)

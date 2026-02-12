@@ -1,4 +1,4 @@
-# AGENTS.md — @repo-configs/eslint
+# AGENTS.md — @repo/config-eslint
 
 Centralized ESLint configuration for the monorepo.
 

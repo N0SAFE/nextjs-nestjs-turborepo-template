@@ -2,7 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { getTimingHistory, clearTimingHistory, type TimingEntry } from '@/lib/timing'
+import { getTimingHistory, clearTimingHistory } from '@/lib/timing'
 import { Button } from '@repo/ui/components/shadcn/button'
 import {
   Card,
@@ -12,6 +12,14 @@ import {
   CardTitle,
 } from '@repo/ui/components/shadcn/card'
 import { X, Trash2, Clock, TrendingUp, AlertTriangle } from 'lucide-react'
+
+// Import the TimingEntry type from timing module
+type TimingEntry = ReturnType<typeof getTimingHistory>[number]
+
+// Helper to get the primary duration from timing entry
+function getDuration(entry: TimingEntry): number {
+  return entry.hydrationTime ?? entry.navigationTime ?? 0
+}
 
 function getPerformanceColor(duration: number): string {
   if (duration < 100) return 'text-green-500'
@@ -81,15 +89,15 @@ export function PerformancePanel({ isOpen = true, onClose }: PerformancePanelPro
 
   // Calculate stats
   const avgDuration = history.length > 0
-    ? history.reduce((sum, entry) => sum + entry.duration, 0) / history.length
+    ? history.reduce((sum, entry) => sum + getDuration(entry), 0) / history.length
     : 0
   
   const slowestPage = history.length > 0
-    ? history.reduce((max, entry) => entry.duration > (max?.duration ?? 0) ? entry : max, history[0])
+    ? history.reduce((max, entry) => getDuration(entry) > getDuration(max ?? entry) ? entry : max, history[0])
     : null
 
   const fastestPage = history.length > 0
-    ? history.reduce((min, entry) => entry.duration < (min?.duration ?? Infinity) ? entry : min, history[0])
+    ? history.reduce((min, entry) => getDuration(entry) < getDuration(min ?? entry) ? entry : min, history[0])
     : null
 
   return (
@@ -142,7 +150,7 @@ export function PerformancePanel({ isOpen = true, onClose }: PerformancePanelPro
                 Fastest
               </div>
               <div className="font-mono font-semibold text-green-500">
-                {fastestPage ? formatDuration(fastestPage.duration) : '-'}
+                {fastestPage ? formatDuration(getDuration(fastestPage)) : '-'}
               </div>
             </div>
             <div className="bg-muted rounded-lg p-2 text-center">
@@ -151,7 +159,7 @@ export function PerformancePanel({ isOpen = true, onClose }: PerformancePanelPro
                 Slowest
               </div>
               <div className="font-mono font-semibold text-red-500">
-                {slowestPage ? formatDuration(slowestPage.duration) : '-'}
+                {slowestPage ? formatDuration(getDuration(slowestPage)) : '-'}
               </div>
             </div>
           </div>
@@ -164,22 +172,25 @@ export function PerformancePanel({ isOpen = true, onClose }: PerformancePanelPro
               No timing data yet. Navigate between pages to see performance metrics.
             </p>
           ) : (
-            history.slice().reverse().map((entry, index) => (
-              <div
-                key={`${entry.pageName}-${String(entry.timestamp)}-${String(index)}`}
-                className={`flex items-center justify-between rounded-md px-3 py-2 ${getPerformanceBg(entry.duration)}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{entry.pageName}</span>
-                  <span className="text-muted-foreground text-xs">
-                    {new Date(entry.timestamp).toLocaleTimeString()}
+            history.slice().reverse().map((entry, index) => {
+              const duration = getDuration(entry)
+              return (
+                <div
+                  key={`${entry.pageName}-${String(entry.timestamp)}-${String(index)}`}
+                  className={`flex items-center justify-between rounded-md px-3 py-2 ${getPerformanceBg(duration)}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{entry.pageName}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <span className={`font-mono text-sm font-semibold ${getPerformanceColor(duration)}`}>
+                    {formatDuration(duration)}
                   </span>
                 </div>
-                <span className={`font-mono text-sm font-semibold ${getPerformanceColor(entry.duration)}`}>
-                  {formatDuration(entry.duration)}
-                </span>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

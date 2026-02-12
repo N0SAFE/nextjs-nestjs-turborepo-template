@@ -1,4 +1,4 @@
-import baseConfig, { defineConfig } from '@repo-configs/eslint'
+import baseConfig, { defineConfig } from '@repo/config-eslint'
 
 export default defineConfig([
     {extends:[baseConfig.configs.base()],

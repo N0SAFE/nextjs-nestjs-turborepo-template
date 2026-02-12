@@ -35,9 +35,9 @@
   },
   "devDependencies": {
     "eslint": "catalog:linting",
-    "@repo-configs/eslint": "*",
-    "@repo-configs/prettier": "*",
-    "@repo-configs/typescript": "*",
+    "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
+    "@repo/config-typescript": "*",
     "@types/react": "catalog:react",
     "typescript": "catalog:build",
     "vitest": "catalog:testing",

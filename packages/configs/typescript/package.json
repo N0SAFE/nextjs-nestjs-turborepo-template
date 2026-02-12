@@ -1,5 +1,5 @@
 {
-    "name": "@repo-configs/typescript",
+    "name": "@repo/config-typescript",
     "version": "0.0.0",
     "private": true,
     "license": "MIT",
@@ -8,7 +8,7 @@
         "./config/*": "./config/*"
     },
     "devDependencies": {
-        "@repo-configs/vitest": "*",
+        "@repo/config-vitest": "*",
         "vitest": "catalog:testing"
     },
     "scripts": {

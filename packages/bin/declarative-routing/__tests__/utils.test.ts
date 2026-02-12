@@ -25,7 +25,7 @@ describe('utils', () => {
   describe('getPackageInfo', () => {
     it('should read package.json from correct path', () => {
       const mockPackageJson = {
-        name: '@repo-bin/declarative-routing',
+        name: '@repo/cli-declarative-routing',
         version: '0.1.20'
       }
       

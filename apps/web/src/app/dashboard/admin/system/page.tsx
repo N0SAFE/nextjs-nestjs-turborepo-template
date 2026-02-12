@@ -28,8 +28,10 @@ export default function AdminSystemPage() {
   
   // Use domain-based user hooks
   const { data: usersData, isLoading: usersLoading } = useUserList({
-    limit: 100,
-    offset: 0,
+    query: {
+      limit: 100,
+      offset: 0,
+    },
   })
   
   // Note: userQueryKeys can be used for manual cache operations:

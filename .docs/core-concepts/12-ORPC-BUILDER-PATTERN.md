@@ -40,7 +40,7 @@ import { standard } from "@repo/orpc-utils";
 import { userSchema } from "./schemas";
 
 // Create standard operations instantly
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 // Generate complete, type-safe contracts with minimal code
 const userFindByIdContract = userOps.read().build();
@@ -80,7 +80,7 @@ The `standard()` function creates a builder with predefined operations for commo
 import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 ```
 
 Available standard operations:
@@ -142,7 +142,7 @@ import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
 // Create standard operations
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 // Build all CRUD contracts
 export const userContract = oc.tag("User").prefix("/user").router({
@@ -374,7 +374,7 @@ const adminUserSchema = new SchemaBuilder(userSchema)
 import { standard } from "@repo/orpc-utils";
 import { postSchema, commentSchema } from "./schemas";
 
-const postOps = standard(postSchema, "post");
+const postOps = standard.zod(postSchema, "post");
 
 // Post with comments
 const postWithCommentsContract = postOps.read()
@@ -399,7 +399,7 @@ const createPostWithTagsContract = postOps.create()
 
 ```typescript
 // shared/user-operations.ts
-export const userOps = standard(userSchema, "user");
+export const userOps = standard.zod(userSchema, "user");
 
 // modules/user/contracts.ts
 import { userOps } from "@/shared/user-operations";
@@ -414,12 +414,12 @@ export const userCreateContract = userOps.create()
 
 ```typescript
 // Good: Clear entity name and operation
-const userOps = standard(userSchema, "user");
-const postOps = standard(postSchema, "post");
+const userOps = standard.zod(userSchema, "user");
+const postOps = standard.zod(postSchema, "post");
 
 // Bad: Unclear or inconsistent
-const ops1 = standard(userSchema, "usr");
-const builder = standard(postSchema, "Post"); // Capitalize for consistency
+const ops1 = standard.zod(userSchema, "usr");
+const builder = standard.zod(postSchema, "Post"); // Capitalize for consistency
 ```
 
 ### 3. Extract Common Patterns
@@ -431,7 +431,7 @@ export function createStandardCrud<T extends EntitySchema>(
   entityName: string,
   omitFields: (keyof z.infer<T>)[]
 ) {
-  const ops = standard(schema, entityName);
+  const ops = standard.zod(schema, entityName);
   
   return {
     read: ops.read().build(),
@@ -526,7 +526,7 @@ export const userCreateContract = oc
 import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 export const userFindByIdContract = userOps.read()
   .outputBuilder.nullable()
@@ -602,7 +602,7 @@ const streamContract = new RouteBuilder()
 The builder maintains complete type safety throughout:
 
 ```typescript
-const ops = standard(userSchema, "user");
+const ops = standard.zod(userSchema, "user");
 
 // Input types are inferred
 const createContract = ops.create()

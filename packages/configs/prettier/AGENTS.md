@@ -1,4 +1,4 @@
-# AGENTS.md — @repo-configs/prettier
+# AGENTS.md — @repo/config-prettier
 
 Shared Prettier configuration.
 

@@ -138,7 +138,7 @@ describe('Tailwind Config', () => {
       const packageJsonPath = path.join(__dirname, '../', 'package.json')
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
       
-      expect(packageJson.name).toBe('@repo-configs/tailwind')
+      expect(packageJson.name).toBe('@repo/config-tailwind')
       expect(packageJson.main).toBe('index.mts')
       expect(packageJson.types).toBe('index.mts')
     })

@@ -16,9 +16,9 @@
     "pino-pretty": "^13.0.0"
   },
   "devDependencies": {
-    "@repo-configs/eslint": "*",
-    "@repo-configs/prettier": "*",
-    "@repo-configs/typescript": "*",
+    "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
+    "@repo/config-typescript": "*",
     "eslint": "catalog:linting",
     "typescript": "catalog:build"
   }

@@ -2,13 +2,7 @@ import { build, Options } from "tsup";
 import { existsSync, rmSync } from "fs";
 import { Glob } from "bun";
 import path from "path";
-
-let chokidar: any = null;
-try {
-    chokidar = await import("chokidar");
-} catch {
-    // chokidar not available, watch mode will be unavailable
-}
+import * as watcher from "@parcel/watcher";
 
 const __dirname = import.meta.dir;
 const packageRoot = path.resolve(__dirname, "..");

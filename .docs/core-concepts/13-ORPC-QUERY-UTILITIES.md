@@ -20,7 +20,7 @@ The ORPC Query Utilities provide comprehensive, **type-safe query parameter** ha
 import { createQueryBuilder, standard } from "@repo/orpc-utils";
 
 // Create a list endpoint with comprehensive query support
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 const listUsers = userOps.list({
   pagination: { defaultLimit: 20, maxLimit: 100 },
@@ -414,7 +414,7 @@ const advancedQuery = createAdvancedQuery({
 ```typescript
 import { standard } from "@repo/orpc-utils";
 
-const productOps = standard(productSchema, "product");
+const productOps = standard.zod(productSchema, "product");
 
 const listProducts = productOps.list({
   pagination: { defaultLimit: 20, maxLimit: 100 },

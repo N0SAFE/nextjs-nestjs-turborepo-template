@@ -87,7 +87,7 @@ export const allConfig = (options: BaseConfigOptions = {}) => {
 
 export default {
     meta: {
-        name: "@repo-configs/eslint",
+        name: "@repo/config-eslint",
         version: "0.0.0",
     },
     configs: {

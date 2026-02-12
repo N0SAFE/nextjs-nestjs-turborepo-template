@@ -11,8 +11,10 @@ const ServerSideShowcase: React.FC = async function ServerSideShowcase() {
 
   try {
     const result = await orpc.user.list.call({
-      limit: 10,
-      offset: 0,
+      query: {
+        limit: 10,
+        offset: 0,
+      },
     });
 
     // eslint-disable-next-line react-hooks/purity -- Server component, timing capture is acceptable

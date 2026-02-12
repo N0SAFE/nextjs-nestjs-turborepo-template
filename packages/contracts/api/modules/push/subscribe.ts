@@ -1,6 +1,5 @@
-import { oc } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 const subscriptionKeysSchema = z.object({
   p256dh: z.string(),
@@ -20,12 +19,12 @@ export const subscribeOutputSchema = z.object({
   createdAt: z.date(),
 });
 
-export const subscribeContract = withRouteMethod("POST", oc)
-  .input(subscribeInputSchema)
-  .output(subscribeOutputSchema)
-  .route({
+export const subscribeContract = route({
     method: "POST",
     path: "/subscribe",
     summary: "Subscribe to push notifications",
     description: "Subscribe the current user to push notifications",
-  });
+  })
+  .input(subscribeInputSchema)
+  .output(subscribeOutputSchema)
+  .build();

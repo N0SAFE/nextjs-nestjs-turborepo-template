@@ -258,10 +258,10 @@ export const userListContract = new RouteBuilder()
   .output(outputSchema)
   .build();
 
-// ✅ Using standard() helper (wraps RouteBuilder)
+// ✅ Using standard.zod() helper (wraps RouteBuilder)
 import { standard } from "@repo/orpc-utils";
 
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 export const userListContract = userOps.list(queryConfig).build();
 ```
 

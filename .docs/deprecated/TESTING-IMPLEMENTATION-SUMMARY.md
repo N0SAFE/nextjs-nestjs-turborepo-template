@@ -35,7 +35,7 @@ bun run api test
 
 ### ✅ **PASSING: Test Suites (168/183 tests passing)**
 
-- **@repo-configs/eslint**: 8/8 tests ✅
+- **@repo/config-eslint**: 8/8 tests ✅
 - **@repo/prettier-config**: 12/12 tests ✅ 
 - **api**: 4/4 tests ✅
 - **types**: 16/16 tests ✅
@@ -45,7 +45,7 @@ bun run api test
 
 ### ❌ **REMAINING: Test Issues (15 failing tests)**
 
-#### 1. @repo-configs/typescript (2 failing tests)
+#### 1. @repo/config-typescript (2 failing tests)
 - Missing `target` property in base.json compiler options
 - Module system validation expects 'esnext' but config has different casing
 
@@ -85,7 +85,7 @@ I have implemented comprehensive unit testing across the monorepo using Vitest. 
 
 ## 📁 Package Structure with Testing
 
-### Core Testing Package: `@repo-configs/vitest`
+### Core Testing Package: `@repo/config-vitest`
 - **Base Configuration**: Common Vitest settings for all packages
 - **React Configuration**: Specialized setup for React component testing
 - **Node Configuration**: Setup for Node.js/backend testing
@@ -201,7 +201,7 @@ bun turbo test --filter=@repo/ui
 ## 🏗️ Architecture Benefits
 
 1. **Containerized Testing**: Each package has its own test configuration
-2. **Shared Configuration**: Common test setup via `@repo-configs/vitest`
+2. **Shared Configuration**: Common test setup via `@repo/config-vitest`
 3. **Parallel Execution**: Turborepo runs tests efficiently across packages
 4. **Dependency Aware**: Tests run in the correct order based on package dependencies
 5. **Cached Results**: Turbo caches test results for faster subsequent runs

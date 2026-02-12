@@ -767,7 +767,7 @@ static version(options?: { path?: string }): RouteBuilder<
 import { standard } from "@repo/orpc-utils";
 import { userSchema } from "./schemas";
 
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 // All CRUD operations
 export const userReadContract = userOps.read().build();

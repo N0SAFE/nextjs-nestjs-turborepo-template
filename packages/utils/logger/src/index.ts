@@ -33,7 +33,109 @@
  * ```
  */
 
-import pino from 'pino'
+import type pino from 'pino'
+
+type LoggerBackend = {
+  trace: (objOrMsg: unknown, msg?: string) => void
+  debug: (objOrMsg: unknown, msg?: string) => void
+  info: (objOrMsg: unknown, msg?: string) => void
+  warn: (objOrMsg: unknown, msg?: string) => void
+  error: (objOrMsg: unknown, msg?: string) => void
+  fatal: (objOrMsg: unknown, msg?: string) => void
+  child: (bindings: LogData) => LoggerBackend
+}
+
+type PinoFactory = typeof import('pino')
+
+function loadPinoFactory(): PinoFactory | null {
+  const isBrowserRuntime = typeof globalThis !== 'undefined' && 'window' in globalThis
+  if (isBrowserRuntime) {
+    return null
+  }
+
+  try {
+    const req = eval('require') as NodeJS.Require
+    return req('pino') as PinoFactory
+  } catch {
+    return null
+  }
+}
+
+function createConsoleBackend(scope?: string, base: LogData = {}): LoggerBackend {
+  const prefix = scope ? `[${scope}]` : ''
+
+  const toArgs = (objOrMsg: unknown, maybeMsg?: string): [string, LogData?] => {
+    if (typeof objOrMsg === 'string') {
+      return [objOrMsg, undefined]
+    }
+
+    if (objOrMsg && typeof objOrMsg === 'object' && typeof maybeMsg === 'string') {
+      return [maybeMsg, objOrMsg as LogData]
+    }
+
+    if (typeof maybeMsg === 'string') {
+      return [maybeMsg, undefined]
+    }
+
+    return [String(objOrMsg), undefined]
+  }
+
+  const emit = (level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal', objOrMsg: unknown, maybeMsg?: string): void => {
+    const [message, payload] = toArgs(objOrMsg, maybeMsg)
+    const merged = {
+      ...base,
+      ...(payload ?? {}),
+    }
+    const finalMessage = `${prefix} ${message}`.trim()
+
+    if (Object.keys(merged).length > 0) {
+      if (level === 'warn') {
+        console.warn(finalMessage, merged)
+      } else if (level === 'error' || level === 'fatal') {
+        console.error(finalMessage, merged)
+      } else if (level === 'info') {
+        console.info(finalMessage, merged)
+      } else {
+        console.debug(finalMessage, merged)
+      }
+      return
+    }
+
+    if (level === 'warn') {
+      console.warn(finalMessage)
+    } else if (level === 'error' || level === 'fatal') {
+      console.error(finalMessage)
+    } else if (level === 'info') {
+      console.info(finalMessage)
+    } else {
+      console.debug(finalMessage)
+    }
+  }
+
+  return {
+    trace(objOrMsg: unknown, msg?: string): void {
+      emit('trace', objOrMsg, msg)
+    },
+    debug(objOrMsg: unknown, msg?: string): void {
+      emit('debug', objOrMsg, msg)
+    },
+    info(objOrMsg: unknown, msg?: string): void {
+      emit('info', objOrMsg, msg)
+    },
+    warn(objOrMsg: unknown, msg?: string): void {
+      emit('warn', objOrMsg, msg)
+    },
+    error(objOrMsg: unknown, msg?: string): void {
+      emit('error', objOrMsg, msg)
+    },
+    fatal(objOrMsg: unknown, msg?: string): void {
+      emit('fatal', objOrMsg, msg)
+    },
+    child(bindings: LogData): LoggerBackend {
+      return createConsoleBackend(scope, { ...base, ...bindings })
+    },
+  }
+}
 
 // ============================================
 // Types and Interfaces
@@ -385,7 +487,7 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 /**
  * Create a Pino logger instance with the provided options
  */
-function createPinoLogger(options: LoggerOptions = {}): pino.Logger {
+function createPinoLogger(options: LoggerOptions = {}): LoggerBackend {
   const {
     level = isDevelopment ? 'debug' : 'info',
     pretty = isDevelopment,
@@ -394,6 +496,13 @@ function createPinoLogger(options: LoggerOptions = {}): pino.Logger {
     redact = DEFAULT_REDACT_PATHS,
     serializers = true,
   } = options
+
+  const pinoFactory = loadPinoFactory()
+  if (!pinoFactory) {
+    return createConsoleBackend(scope, base)
+  }
+
+  const pinoRuntime = (pinoFactory as { default?: unknown }).default ?? pinoFactory
 
   const pinoOptions: pino.LoggerOptions = {
     level,
@@ -407,39 +516,43 @@ function createPinoLogger(options: LoggerOptions = {}): pino.Logger {
     },
     ...(serializers && {
       serializers: {
-        err: pino.stdSerializers.err,
-        error: pino.stdSerializers.err,
-        req: pino.stdSerializers.req,
-        res: pino.stdSerializers.res,
+        err: (pinoRuntime as typeof pino).stdSerializers.err,
+        error: (pinoRuntime as typeof pino).stdSerializers.err,
+        req: (pinoRuntime as typeof pino).stdSerializers.req,
+        res: (pinoRuntime as typeof pino).stdSerializers.res,
       },
     }),
   }
 
-  // In development, use pretty printing
-  if (pretty) {
-    return pino({
-      ...pinoOptions,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-          messageFormat: scope ? '{name}: {msg}' : '{msg}',
-          errorLikeObjectKeys: ['err', 'error'],
+  try {
+    // In development, use pretty printing
+    if (pretty) {
+      return (pinoRuntime as typeof pino)({
+        ...pinoOptions,
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+            messageFormat: scope ? '{name}: {msg}' : '{msg}',
+            errorLikeObjectKeys: ['err', 'error'],
+          },
         },
-      },
-    })
-  }
+      }) as unknown as LoggerBackend
+    }
 
-  // In production, use JSON format
-  return pino(pinoOptions)
+    // In production, use JSON format
+    return (pinoRuntime as typeof pino)(pinoOptions) as unknown as LoggerBackend
+  } catch {
+    return createConsoleBackend(scope, base)
+  }
 }
 
 /**
  * Create a logger instance that wraps Pino with strongly typed overloads
  */
-function createLogger(options: LoggerOptions = {}, pinoInstance?: pino.Logger): Logger {
+function createLogger(options: LoggerOptions = {}, pinoInstance?: LoggerBackend): Logger {
   const pinoLogger = pinoInstance ?? createPinoLogger(options)
   const scope = options.scope
 
@@ -448,7 +561,7 @@ function createLogger(options: LoggerOptions = {}, pinoInstance?: pino.Logger): 
    * Supports: Error, Error + data, string, string + data, string + Error
    */
   function handleErrorLog(
-    pinoMethod: pino.LogFn,
+    pinoMethod: (objOrMsg: unknown, msg?: string) => void,
     messageOrError: string | Error,
     dataOrError?: LogData | Error
   ): void {

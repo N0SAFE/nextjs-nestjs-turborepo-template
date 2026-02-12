@@ -2,7 +2,7 @@
 import { defineProject } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import * as path from 'path'
-import { createReactConfig } from '@repo-configs/vitest/react'
+import { createReactConfig } from '@repo/config-vitest/react'
 
 export default defineProject(
     createReactConfig({

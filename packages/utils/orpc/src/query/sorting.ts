@@ -1,9 +1,10 @@
-import { z } from "zod/v4";
+import * as z from "zod";
+import { CONFIG_SYMBOL as STANDARD_CONFIG_SYMBOL } from "../standard/base/types";
 
 /**
  * Symbol to store config data on Zod schemas
  */
-export const CONFIG_SYMBOL = Symbol.for("orpc:config");
+export const CONFIG_SYMBOL: typeof STANDARD_CONFIG_SYMBOL = STANDARD_CONFIG_SYMBOL;
 
 /**
  * Type for Zod schema with attached config
@@ -76,8 +77,10 @@ export const createSortingConfigSchema = <
     /** Available fields for sorting */
     fields: (z.custom<TFields>().default as unknown as (fn: () => TFields) => z.ZodDefault<z.ZodType<TFields>>)(() => fields),
     /** Default field to sort by */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument -- TFields[number] is constrained but TypeScript needs explicit cast for enum default
-    defaultField: z.enum(fields as unknown as [string, ...string[]]).optional().default(defaults?.defaultField as any),
+     
+    defaultField: defaults?.defaultField 
+      ? z.enum(fields as unknown as [string, ...string[]]).optional().default(defaults.defaultField)
+      : z.enum(fields as unknown as [string, ...string[]]).optional(),
     /** Default sort direction */
     defaultDirection: z.enum(["asc", "desc"]).optional().default(defaults?.defaultDirection ?? "asc"),
     /** Allow multiple sort fields */

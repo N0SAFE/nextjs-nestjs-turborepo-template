@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
-import { createNodeConfig } from '@repo-configs/vitest/node'
+import { createNodeConfig } from '@repo/config-vitest/node'
 
 export default defineConfig(
   createNodeConfig({

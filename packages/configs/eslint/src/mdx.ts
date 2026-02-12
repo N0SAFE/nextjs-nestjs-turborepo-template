@@ -37,7 +37,7 @@ const all = defineConfig([
 
 export default {
     meta: {
-        name: "@repo-configs/eslint/mdx",
+        name: "@repo/config-eslint/mdx",
         version: "0.0.0",
     },
     configs: {

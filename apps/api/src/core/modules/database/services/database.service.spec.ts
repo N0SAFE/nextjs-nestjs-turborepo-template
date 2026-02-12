@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DatabaseService } from './database.service';
 import { DATABASE_CONNECTION } from '../database-connection';
+import { logger } from '@repo/logger';
 
 describe('DatabaseService', () => {
   let service: DatabaseService;
@@ -67,16 +68,18 @@ describe('DatabaseService', () => {
     });
 
     it('should return false when database query fails', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
       mockDatabase.execute.mockRejectedValue(new Error('Connection failed'));
 
       const result = await service.isHealthy();
 
       expect(result).toBe(false);
       expect(mockDatabase.execute).toHaveBeenCalledWith('SELECT 1');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Database health check failed:',
-        expect.any(Error)
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Database health check failed',
+        expect.objectContaining({
+          error: expect.any(Error),
+        })
       );
     });
   });

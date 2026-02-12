@@ -30,12 +30,12 @@ All 19 packages pass type-checking (33.1s total):
 ✔ @repo/orpc-utils
 ✔ @repo/api-contracts
 ✔ @repo/ui
-✔ @repo-configs/eslint
+✔ @repo/config-eslint
 ✔ @repo/env
 ✔ @repo/declarative-routing
-✔ @repo-configs/vitest
-✔ @repo-configs/typescript
-✔ @repo-configs/tailwind
+✔ @repo/config-vitest
+✔ @repo/config-typescript
+✔ @repo/config-tailwind
 ✔ @repo/runthenkill
 ✔ @repo/tanstack-start (stub)
 ✔ web
@@ -241,11 +241,11 @@ packages/
 ```
 
 ### Configuration Packages ✅
-- `@repo-configs/eslint` - ESLint configuration
-- `@repo-configs/prettier` - Prettier configuration
-- `@repo-configs/typescript` - TypeScript configuration
-- `@repo-configs/vitest` - Vitest configuration
-- `@repo-configs/tailwind` - Tailwind configuration
+- `@repo/config-eslint` - ESLint configuration
+- `@repo/config-prettier` - Prettier configuration
+- `@repo/config-typescript` - TypeScript configuration
+- `@repo/config-vitest` - Vitest configuration
+- `@repo/config-tailwind` - Tailwind configuration
 
 ---
 

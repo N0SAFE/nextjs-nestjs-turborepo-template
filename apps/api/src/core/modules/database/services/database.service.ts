@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { DATABASE_CONNECTION } from "../database-connection";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "@/config/drizzle/schema";
+import { logger } from "@repo/logger";
 
 // Define the proper database type with schema
 export type Database = NodePgDatabase<typeof schema>;
@@ -34,7 +35,7 @@ export class DatabaseService {
             await this._db.execute("SELECT 1");
             return true;
         } catch (error) {
-            console.error("Database health check failed:", error);
+            logger.error("Database health check failed", { error });
             return false;
         }
     }

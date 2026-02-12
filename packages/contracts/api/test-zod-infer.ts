@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import * as z from "zod";
 import { oc, InferSchemaInput, InferSchemaOutput } from "@orpc/contract";
 
 // ========================================

@@ -1,34 +1,69 @@
-import type { HTTPMethod, HTTPPath } from "@orpc/contract";
+/**
+ * Core type definitions for route-builder-v2
+ * Maximizes reuse of types from @orpc/contract and @orpc/shared
+ */
+
+import type { AnySchema, Route } from "@orpc/contract";
+
+/**
+ * Re-export commonly used ORPC types
+ */
+export type { 
+    HTTPMethod, 
+    HTTPPath, 
+    AnySchema, 
+    Route,
+    InputStructure,
+    OutputStructure,
+    ErrorMap,
+    ErrorMapItem,
+    InferSchemaInput,
+    InferSchemaOutput,
+    ContractProcedure,
+} from "@orpc/contract";
+
+// Utility types (formerly from @orpc/shared)
+export type IsEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+export type IsNever<T> = [T] extends [never] ? true : false;
+
+/**
+ * Route metadata alias for backward compatibility
+ */
+export type RouteMetadata = Route;
+
+/**
+ * Custom modifier type for extending builder functionality
+ */
+export type CustomModifier<TInput = unknown, TOutput = unknown> = (schema: TInput) => TOutput;
+
+/**
+ * Contract procedure state
+ */
+export type ContractProcedureState = {
+    input?: AnySchema;
+    output?: AnySchema;
+};
+
+/**
+ * Union tuple type - a tuple with at least 2 elements
+ * Required for unionSchema which needs at least 2 schemas
+ */
+export type UnionTuple = readonly [AnySchema, AnySchema, ...AnySchema[]];
+
+// ============================================================================
+// LEGACY TYPES - Backward compatibility with V1 builder consumers
+// ============================================================================
+
 import type { z } from "zod/v4";
 
 /**
- * HTTP methods supported by ORPC routes
+ * HTTP method alias (V1 backward compat)
  */
-export type HttpMethod = HTTPMethod;
+export type HttpMethod = import("@orpc/contract").HTTPMethod;
 
 /**
- * Route metadata for defining ORPC route characteristics
- * This matches the ORPC Route interface
+ * Base entity schema type
  */
-export type RouteMetadata = {
-  method?: HTTPMethod;
-  path?: HTTPPath;
-  operationId?: string;
-  summary?: string;
-  description?: string;
-  deprecated?: boolean;
-  tags?: readonly string[];
-  successStatus?: number;
-  successDescription?: string;
-  inputStructure?: 'compact' | 'detailed';
-  outputStructure?: 'compact' | 'detailed';
-}
-
-/**
- * Base entity schema type - any Zod object schema
- * Using `any` is intentional for dynamic schema manipulation
- */
- 
 export type EntitySchema = z.ZodObject;
 
 /**
@@ -37,77 +72,56 @@ export type EntitySchema = z.ZodObject;
 export type InferSchemaType<T extends z.ZodType> = z.infer<T>;
 
 /**
- * Contract procedure builder state
- * Using `any` defaults is intentional for unconstrained generic defaults
- */
- 
-export type ContractProcedureState<
-  TInput extends z.ZodType = z.ZodType,
-  TOutput extends z.ZodType = z.ZodType
-> = {
-  route: RouteMetadata;
-  input: TInput;
-  output: TOutput;
-}
-
-/**
- * Custom modifier function type for chaining
- */
-export type CustomModifier<TState, TResult = TState> = (
-  state: TState
-) => TResult;
-
-/**
  * Pagination options for list operations
  */
 export type PaginationOptions = {
-  defaultLimit?: number;
-  maxLimit?: number;
-  includeOffset?: boolean;
-  includeCursor?: boolean;
-}
+    defaultLimit?: number;
+    maxLimit?: number;
+    includeOffset?: boolean;
+    includeCursor?: boolean;
+};
 
 /**
  * Sorting options for list operations
  */
 export type SortingOptions = {
-  fields: readonly string[];
-  defaultField?: string;
-  defaultDirection?: "asc" | "desc";
-}
+    fields: readonly string[];
+    defaultField?: string;
+    defaultDirection?: "asc" | "desc";
+};
 
 /**
  * Filtering options for list operations
  */
 export type FilteringOptions = {
-  fields?: Record<string, z.ZodType>;
-  searchFields?: readonly string[];
-}
+    fields?: Record<string, z.ZodType>;
+    searchFields?: readonly string[];
+};
 
 /**
  * Standard operation types
  */
 export type StandardOperation =
-  | "read"
-  | "create"
-  | "update"
-  | "delete"
-  | "list"
-  | "count"
-  | "search";
+    | "read"
+    | "create"
+    | "update"
+    | "delete"
+    | "list"
+    | "count"
+    | "search";
 
 /**
  * Batch operation options
  */
 export type BatchOptions = {
-  maxBatchSize?: number;
-  allowPartialSuccess?: boolean;
-}
+    maxBatchSize?: number;
+    allowPartialSuccess?: boolean;
+};
 
 /**
  * Event iterator options for streaming
  */
 export type EventIteratorOptions = {
-  bufferSize?: number;
-  timeoutMs?: number;
-}
+    bufferSize?: number;
+    timeoutMs?: number;
+};

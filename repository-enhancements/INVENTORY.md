@@ -142,11 +142,11 @@ apps/doc/
 
 | Package | Purpose | Files |
 |---------|---------|-------|
-| `@repo-configs/eslint` | ESLint configuration | eslint.config.ts |
-| `@repo-configs/prettier` | Prettier configuration | prettier.config.ts |
-| `@repo-configs/typescript` | TypeScript configs | base.json, react.json |
-| `@repo-configs/vitest` | Vitest configuration | vitest.config.ts |
-| `@repo-configs/tailwind` | Tailwind configuration | tailwind.config.ts |
+| `@repo/config-eslint` | ESLint configuration | eslint.config.ts |
+| `@repo/config-prettier` | Prettier configuration | prettier.config.ts |
+| `@repo/config-typescript` | TypeScript configs | base.json, react.json |
+| `@repo/config-vitest` | Vitest configuration | vitest.config.ts |
+| `@repo/config-tailwind` | Tailwind configuration | tailwind.config.ts |
 
 ---
 

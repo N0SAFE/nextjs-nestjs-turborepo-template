@@ -44,8 +44,8 @@
   },
   "devDependencies": {
     "@repo/auth": "*",
-    "@repo-configs/eslint": "*",
-    "@repo-configs/typescript": "*",
+    "@repo/config-eslint": "*",
+    "@repo/config-typescript": "*",
     "@types/nprogress": "^0.2.3",
     "@types/react": "catalog:react",
     "eslint": "catalog:linting",

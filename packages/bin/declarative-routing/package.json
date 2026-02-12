@@ -1,5 +1,5 @@
 {
-  "name": "@repo-bin/declarative-routing",
+  "name": "@repo/cli-declarative-routing",
   "version": "0.1.20",
   "description": "Declarative routes for React (monorepo fork)",
   "bin": {
@@ -33,7 +33,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@repo-configs/vitest": "*",
+    "@repo/config-vitest": "*",
     "@types/diff": "catalog:utils",
     "@types/fs-extra": "catalog:utils",
     "@types/prompts": "catalog:utils",

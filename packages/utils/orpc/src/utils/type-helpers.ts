@@ -3,6 +3,10 @@
 /**
  * Type utilities for inferring properties from ORPC builders and contracts.
  * These helpers provide type-safe access to ORPC's internal type system.
+ * 
+ * NOTE: This file requires `any` types to match ORPC's type constraints.
+ * ORPC's ContractBuilder/ContractProcedure types use `any` as generic bounds
+ * to accept any Zod schema type. Using `unknown` breaks ORPC's type system.
  */
 
 import {
@@ -118,9 +122,9 @@ export function getProcedureMeta<T extends AnyContractProcedureOrBuilder>(
   procedure: T
 ): T extends ContractProcedure<any, any, any, infer TMeta> ? TMeta : undefined {
   if (!isContractProcedure(procedure)) {
-    return undefined as any;
+    return undefined as T extends ContractProcedure<any, any, any, infer TMeta> ? TMeta : undefined;
   }
-  return procedure["~orpc"].meta;
+  return procedure["~orpc"].meta as T extends ContractProcedure<any, any, any, infer TMeta> ? TMeta : undefined;
 }
 
 /**
@@ -132,9 +136,9 @@ export function getProcedureRoute<T extends AnyContractProcedureOrBuilder>(
   procedure: T
 ): T extends { "~orpc": { route: infer TRoute } } ? TRoute : undefined {
   if (!isContractProcedure(procedure)) {
-    return undefined as any;
+    return undefined as T extends { "~orpc": { route: infer TRoute } } ? TRoute : undefined;
   }
-  return procedure["~orpc"].route as any;
+  return procedure["~orpc"].route as T extends { "~orpc": { route: infer TRoute } } ? TRoute : undefined;
 }
 
 /**
@@ -146,9 +150,9 @@ export function getProcedureErrorMap<T extends AnyContractProcedureOrBuilder>(
   procedure: T
 ): T extends ContractProcedure<any, any, infer TErrorMap, any> ? TErrorMap : undefined {
   if (!isContractProcedure(procedure)) {
-    return undefined as any;
+    return undefined as T extends ContractProcedure<any, any, infer TErrorMap, any> ? TErrorMap : undefined;
   }
-  return procedure["~orpc"].errorMap;
+  return procedure["~orpc"].errorMap as T extends ContractProcedure<any, any, infer TErrorMap, any> ? TErrorMap : undefined;
 }
 
 /**
@@ -160,9 +164,9 @@ export function getProcedureInputSchema<T extends AnyContractProcedureOrBuilder>
   procedure: T
 ): T extends ContractProcedure<infer TInputSchema, any, any, any> ? TInputSchema | undefined : undefined {
   if (!isContractProcedure(procedure)) {
-    return undefined as any;
+    return undefined as T extends ContractProcedure<infer TInputSchema, any, any, any> ? TInputSchema | undefined : undefined;
   }
-  return procedure["~orpc"].inputSchema;
+  return procedure["~orpc"].inputSchema as T extends ContractProcedure<infer TInputSchema, any, any, any> ? TInputSchema | undefined : undefined;
 }
 
 /**
@@ -174,9 +178,9 @@ export function getProcedureOutputSchema<T extends AnyContractProcedureOrBuilder
   procedure: T
 ): T extends ContractProcedure<any, infer TOutputSchema, any, any> ? TOutputSchema | undefined : undefined {
   if (!isContractProcedure(procedure)) {
-    return undefined as any;
+    return undefined as T extends ContractProcedure<any, infer TOutputSchema, any, any> ? TOutputSchema | undefined : undefined;
   }
-  return procedure["~orpc"].outputSchema;
+  return procedure["~orpc"].outputSchema as T extends ContractProcedure<any, infer TOutputSchema, any, any> ? TOutputSchema | undefined : undefined;
 }
 
 /**

@@ -1,13 +1,11 @@
-import { oc } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod/v4";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 /**
  * Test contract for file download
  * This contract demonstrates how to return files using z.file()
  */
-export const testFileDownloadContract = withRouteMethod("GET", oc)
-  .route({
+export const testFileDownloadContract = route({
     method: "GET",
     path: "/file-download",
     summary: "Download a file",
@@ -23,7 +21,8 @@ export const testFileDownloadContract = withRouteMethod("GET", oc)
     z.object({
       file: z.file(),
     })
-  );
+  )
+  .build();
 
 // Define types based on schemas
 export type TestFileDownloadInput = {

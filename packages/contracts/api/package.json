@@ -33,7 +33,7 @@
   "devDependencies": {
     "@types/node": "catalog:build",
     "chokidar": "catalog:build",
-    "@repo-configs/typescript": "*",
+    "@repo/config-typescript": "*",
     "typescript": "catalog:build"
   }
 }

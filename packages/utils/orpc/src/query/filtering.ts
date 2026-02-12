@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import * as z from "zod";
 import { CONFIG_SYMBOL, type ZodSchemaWithConfig } from "./sorting";
 
 /**
@@ -78,7 +78,7 @@ export function createFilteringConfigSchema<
 
   // Simple schema without complex typing
   const schema = z.object({
-    fields: z.any(),
+    fields: z.unknown(),
     allowLogicalOperators: z.boolean(),
     allowNested: z.boolean(),
     prefix: z.string(),
@@ -217,11 +217,11 @@ export function createFilteringSchema<TConfig>(
   if (allowLogicalOperators && allowNested) {
     schema = schema.extend({
       _and: z
-        .array(z.record(z.string(), z.any()))
+        .array(z.record(z.string(), z.unknown()))
         .optional()
         .describe("Combine filters with AND"),
       _or: z
-        .array(z.record(z.string(), z.any()))
+        .array(z.record(z.string(), z.unknown()))
         .optional()
         .describe("Combine filters with OR"),
     });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { EnvService } from './env.service';
 
 describe('EnvService', () => {

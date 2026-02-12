@@ -21,7 +21,7 @@ import { standard } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
 // Create a standard operations builder
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 // Generate complete CRUD contracts with minimal code
 export const userContract = oc.tag("User").prefix("/user").router({
@@ -136,7 +136,7 @@ Creates a standard operations builder for an entity schema.
 
 **Example:**
 ```typescript
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 ```
 
 ### StandardOperations Methods
@@ -294,7 +294,7 @@ new SchemaBuilder(schema)
 import { oc } from "@orpc/contract";
 import { standard } from "@repo/orpc-utils";
 
-const userOps = standard(userSchema, "user");
+const userOps = standard.zod(userSchema, "user");
 
 export const userContract = oc.tag("User").prefix("/user").router({
   findById: userOps.read().build(),

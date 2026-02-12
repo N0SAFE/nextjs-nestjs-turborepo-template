@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { organizationEndpoints, organizationAdminEndpoints } from "./endpoints";
+import { organizationEndpoints } from "./endpoints";
 import { organizationInvalidations } from "./invalidations";
 import { wrapWithInvalidations } from "@/domains/shared/helpers";
 
@@ -301,58 +301,3 @@ export type {
   OrganizationMember,
   OrganizationRole,
 };
-
-// ============================================================================
-// ADMIN HOOKS (ORPC)
-// ============================================================================
-
-/**
- * Hook to list all organizations in the system (admin only)
- * Supports pagination, sorting, and filtering
- *
- * @example
- * ```ts
- * const { data } = useAllOrganizations({
- *   pagination: { page: 1, pageSize: 20 },
- *   sorting: { field: 'createdAt', direction: 'desc' }
- * })
- * ```
- */
-export function useAllOrganizations(options?: {
-  pagination?: {
-    limit?: number;
-    offset?: number;
-  };
-  sorting?: {
-    sortBy?: 'name' | 'slug' | 'createdAt' | 'updatedAt';
-    sortDirection?: 'asc' | 'desc';
-  };
-  filtering?: {
-    id?: string;
-    name?: string;
-    name_like?: string;
-    name_ilike?: string;
-    slug?: string;
-    slug_like?: string;
-    slug_ilike?: string;
-    createdAt_gt?: Date;
-    createdAt_gte?: Date;
-    createdAt_lt?: Date;
-    createdAt_lte?: Date;
-    createdAt_between?: { from: Date; to: Date };
-  };
-  enabled?: boolean;
-}) {
-  return useQuery(
-    organizationAdminEndpoints.listAll.queryOptions({
-      input: {
-        limit: options?.pagination?.limit ?? 20,
-        offset: options?.pagination?.offset ?? 0,
-        sortBy: options?.sorting?.sortBy,
-        sortDirection: options?.sorting?.sortDirection,
-        ...options?.filtering,
-      },
-      enabled: options?.enabled ?? true,
-    }),
-  );
-}

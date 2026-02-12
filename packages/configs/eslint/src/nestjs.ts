@@ -62,7 +62,7 @@ const all = (options: BaseConfigOptions = {}) => defineConfig([
 
 export default {
     meta: {
-        name: "@repo-configs/eslint/nestjs",
+        name: "@repo/config-eslint/nestjs",
         version: "0.0.0",
     },
     configs: {

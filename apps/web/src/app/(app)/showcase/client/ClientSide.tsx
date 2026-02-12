@@ -14,8 +14,10 @@ const ClientSideShowcase: React.FC = function ClientSideShowcase() {
   const { data: result, isFetched } = useQuery(
     orpc.user.list.queryOptions({
       input: {
-        limit: 10,
-        offset: 0,
+        query: {
+          limit: 10,
+          offset: 0,
+        },
       },
     }),
   );

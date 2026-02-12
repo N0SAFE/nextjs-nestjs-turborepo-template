@@ -35,7 +35,7 @@ const all = (options: BaseConfigOptions = {}) => defineConfig([
 
 export default {
     meta: {
-        name: "@repo-configs/eslint/library",
+        name: "@repo/config-eslint/library",
         version: "0.0.0",
     },
     configs: {

@@ -1,10 +1,8 @@
-import { z } from "zod/v4";
+import * as z from "zod";
 import {
   standard,
-  createSortingConfigSchema,
   createPaginationConfigSchema,
-  createFilteringConfigSchema,
-  defineQueryConfig,
+  createSortingConfigSchema,
   type ComputeInputSchema,
   type ComputeOutputSchema,
 } from "@repo/orpc-utils";
@@ -17,49 +15,21 @@ import { testEntitySchema, testEntityInputSchema } from "./entity";
 // Define sorting fields available for list/search operations
 const sortingFieldsArray = ["createdAt", "updatedAt", "name", "priority", "status"] as const;
 
-// Create pagination config schema
+// Create pagination config schema for search and streaming operations
 const paginationConfigSchema = createPaginationConfigSchema({
   defaultLimit: 10,
   maxLimit: 50,
   includeOffset: true,
 } as const);
 
-// Create sorting config schema
+// Create sorting config schema for streaming operations
 const sortingConfigSchema = createSortingConfigSchema(sortingFieldsArray, {
   defaultField: "createdAt",
   defaultDirection: "desc",
 });
 
-// Create filtering config schema with field-specific operators
-const filteringConfigSchema = createFilteringConfigSchema({
-  id: testEntitySchema.shape.id,
-  name: {
-    schema: testEntitySchema.shape.name,
-    operators: ["eq", "like", "ilike"] as const,
-  },
-  status: {
-    schema: testEntitySchema.shape.status,
-    operators: ["eq", "in"] as const,
-  },
-  priority: {
-    schema: testEntitySchema.shape.priority,
-    operators: ["eq", "gt", "gte", "lt", "lte"] as const,
-  },
-  createdAt: {
-    schema: testEntitySchema.shape.createdAt,
-    operators: ["gt", "gte", "lt", "lte", "between"] as const,
-  },
-});
-
-// Export configuration schemas for reuse
-export const testEntityListConfigSchemas = defineQueryConfig({
-  pagination: paginationConfigSchema,
-  sorting: sortingConfigSchema,
-  filtering: filteringConfigSchema,
-});
-
 // Create standard operations builder for test entities
-const testOps = standard(testEntitySchema, "testEntity");
+const testOps = standard.zod(testEntitySchema, "testEntity");
 
 // ============================================================================
 // Standard CRUD Operations
@@ -68,9 +38,41 @@ const testOps = standard(testEntitySchema, "testEntity");
 /**
  * List test entities with pagination, sorting, and filtering
  */
-export const testEntityListContract = testOps.list(testEntityListConfigSchemas).build();
-export type TestEntityListInput = ComputeInputSchema<typeof testEntityListConfigSchemas>;
-export type TestEntityListOutput = ComputeOutputSchema<typeof testEntityListConfigSchemas, typeof testEntitySchema>;
+const listBuilder = testOps
+  .listBuilder()
+  .withPagination({
+    defaultLimit: 10,
+    maxLimit: 50,
+    includeOffset: true,
+  })
+  .withSorting(sortingFieldsArray, {
+    defaultField: "createdAt",
+    defaultDirection: "desc",
+  })
+  .withFiltering({
+    id: testEntitySchema.shape.id,
+    name: {
+      schema: testEntitySchema.shape.name,
+      operators: ["eq", "like", "ilike"] as const,
+    },
+    status: {
+      schema: testEntitySchema.shape.status,
+      operators: ["eq", "in"] as const,
+    },
+    priority: {
+      schema: testEntitySchema.shape.priority,
+      operators: ["eq", "gt", "gte", "lt", "lte"] as const,
+    },
+    createdAt: {
+      schema: testEntitySchema.shape.createdAt,
+      operators: ["gt", "gte", "lt", "lte", "between"] as const,
+    },
+  });
+
+export const testEntityListContract = listBuilder.build();
+type ListConfig = typeof listBuilder extends { queryBuilder: { config: infer C } } ? C : never;
+export type TestEntityListInput = ComputeInputSchema<ListConfig>;
+export type TestEntityListOutput = ComputeOutputSchema<ListConfig, typeof testEntitySchema>;
 
 /**
  * Find a single test entity by ID
@@ -139,9 +141,8 @@ export const testEntityStreamingListContract = testOps
  * - Streamed mode: Accumulates history of entity states/changes
  */
 export const testEntityStreamingReadContract = testOps
-  .streamingRead({
-    path: "/{id}/streaming",
-  })
+  .streamingRead()
+  .input(b => b.params(p => p`/${p("id", z.string())}/streaming`))
   .build();
 export type TestEntityStreamingReadInput = { id: string };
 export type TestEntityStreamingReadOutput = z.infer<typeof testEntitySchema>;

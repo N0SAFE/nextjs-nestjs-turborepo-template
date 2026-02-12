@@ -1,6 +1,41 @@
 import withBundleAnalyzer from "@next/bundle-analyzer";
 import { NextConfig } from "next";
 import { envSchema } from "./env";
+import { readFileSync } from "fs";
+
+type PackageJsonShape = {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
+
+function getWorkspaceTranspilePackages(): string[] {
+  try {
+    const packageJson = JSON.parse(
+      readFileSync("./package.json", "utf-8"),
+    ) as PackageJsonShape;
+
+    const allDeps = {
+      ...(packageJson.dependencies ?? {}),
+      ...(packageJson.devDependencies ?? {}),
+      ...(packageJson.optionalDependencies ?? {}),
+      ...(packageJson.peerDependencies ?? {}),
+    };
+
+    return Object.keys(allDeps)
+      .filter((dep) => dep.startsWith("@repo/"))
+      .sort();
+  } catch (error) {
+    console.warn(
+      "Failed to auto-resolve workspace transpile packages, using fallback list:",
+      error,
+    );
+    return ["@repo/declarative-routing", "@repo/nextjs-devtool"];
+  }
+}
+
+const workspaceTranspilePackages = getWorkspaceTranspilePackages();
 
 // Check if we're running in a lint context or other non-build contexts
 const commandLine = process.argv.join(" ");
@@ -59,7 +94,9 @@ const nextConfig: NextConfig = {
     // },
   },
   reactStrictMode: true,
-  transpilePackages: ["@repo/nextjs-devtool", "@repo/declarative-routing"],
+  // Auto-detected from this app's package.json (@repo/* deps)
+  // so adding/removing workspace deps keeps transpilation in sync.
+  transpilePackages: workspaceTranspilePackages,
   cacheComponents: true,
   reactCompiler: true, // disable because of https://github.com/vercel/next.js/issues/85234
   images: {

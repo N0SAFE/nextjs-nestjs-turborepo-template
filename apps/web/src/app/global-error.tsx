@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { logger } from '@repo/logger'
 
 export default function GlobalError({
   error,
@@ -11,7 +12,7 @@ export default function GlobalError({
 }) {
   React.useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error)
+    logger.error(error)
   }, [error])
 
   return (

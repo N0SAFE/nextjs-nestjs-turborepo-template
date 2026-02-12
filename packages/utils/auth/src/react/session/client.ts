@@ -194,7 +194,6 @@ export function createUseSession<TData>(
         const { 
             data: cachedSession, 
             hasData: hasHydratedData,
-            refetch: refetchCached,
         } = useSessionQuery<TData>(sessionQueryKey)
         
         // Use Better Auth's useSession as a fallback
@@ -207,12 +206,27 @@ export function createUseSession<TData>(
         const result = useMemo((): SessionResult<TData> => {
             // Priority 1: React Query cache (from SessionHydration hydration)
             if (hasHydratedData) {
+                // If Better Auth has completed at least one client-side resolution,
+                // prefer it as source of truth. Hydrated cache is only a bootstrap value.
+                if (!betterAuthSession.isPending) {
+                    return {
+                        data: betterAuthSession.data,
+                        isLoading: false,
+                        isPending: false,
+                        error: betterAuthSession.error,
+                        refetch: betterAuthSession.refetch,
+                    }
+                }
+
                 return {
                     data: cachedSession,
                     isLoading: false,
                     isPending: false,
                     error: undefined,
-                    refetch: refetchCached,
+                    // Never refetch the hydrated-cache query directly because its queryFn
+                    // is an intentional client fallback returning null.
+                    // Always delegate active refetch to Better Auth.
+                    refetch: betterAuthSession.refetch,
                 }
             }
             
@@ -236,7 +250,7 @@ export function createUseSession<TData>(
                 error: betterAuthSession.error,
                 refetch: betterAuthSession.refetch,
             }
-        }, [hasHydratedData, cachedSession, refetchCached, bridge, betterAuthSession])
+        }, [hasHydratedData, cachedSession, bridge, betterAuthSession])
         
         return result
     }

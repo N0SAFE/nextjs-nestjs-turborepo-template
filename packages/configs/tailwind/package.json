@@ -1,5 +1,5 @@
 {
-  "name": "@repo-configs/tailwind",
+  "name": "@repo/config-tailwind",
   "version": "0.0.0",
   "private": true,
   "main": "index.mts",
@@ -11,8 +11,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@repo-configs/typescript": "*",
-    "@repo-configs/vitest": "*",
+    "@repo/config-typescript": "*",
+    "@repo/config-vitest": "*",
     "tailwind-variants": "catalog:styling",
     "tailwindcss": "catalog:styling",
     "tailwindcss-animate": "catalog:styling",

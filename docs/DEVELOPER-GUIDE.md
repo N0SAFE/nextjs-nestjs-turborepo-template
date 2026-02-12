@@ -1028,7 +1028,7 @@ export class UserController {
 ```
 
 ### Adding New Endpoints/Hooks
-// TODO: add explanation on how to use the standard() function for 
+// TODO: add explanation on how to use the standard.zod() function for 
 
 **Step 1: Define Contract** (`packages/contracts/api/`)
 

@@ -1,1 +1,1 @@
-module.exports = require('@repo-configs/prettier/base')
+module.exports = require('@repo/config-prettier/base')

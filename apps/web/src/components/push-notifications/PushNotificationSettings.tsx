@@ -6,6 +6,7 @@ import {
   usePushActions,
   usePushNotifications,
 } from '@/domains/push/hooks'
+import { logger } from '@repo/logger'
 import { Button } from '@repo/ui/components/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/shadcn/card'
 import { Bell, BellOff, Send } from 'lucide-react'
@@ -92,7 +93,7 @@ export function PushNotificationSettings() {
           setIsSubscribed(isBackendSubscribed)
         }
       } catch (error) {
-        console.error('Error checking push subscription:', error)
+        logger.error('Error checking push subscription', { error })
       }
     }
 
@@ -142,7 +143,7 @@ export function PushNotificationSettings() {
       setCurrentSubscription(subscription)
       setIsSubscribed(true)
     } catch (error) {
-      console.error('Failed to subscribe:', error)
+      logger.error('Failed to subscribe', { error })
       toast.error('Failed to subscribe to notifications')
     }
   }, [isSupported, push.publicKey, actions.subscribe])
@@ -160,7 +161,7 @@ export function PushNotificationSettings() {
       setCurrentSubscription(null)
       setIsSubscribed(false)
     } catch (error) {
-      console.error('Failed to unsubscribe:', error)
+      logger.error('Failed to unsubscribe', { error })
       toast.error('Failed to unsubscribe from notifications')
     }
   }, [currentSubscription, actions.unsubscribe])
@@ -170,7 +171,7 @@ export function PushNotificationSettings() {
     try {
       await actions.sendTest.mutateAsync({})
     } catch (error) {
-      console.error('Failed to send test notification:', error)
+      logger.error('Failed to send test notification', { error })
     }
   }, [actions.sendTest])
 

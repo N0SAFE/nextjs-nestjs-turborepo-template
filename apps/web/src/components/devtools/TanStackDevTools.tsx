@@ -9,7 +9,8 @@ import {
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { orpc } from "@/lib/orpc";
 import { useQuery } from "@tanstack/react-query";
-import { authClient, useSession } from "@/lib/auth";
+import { authClient, signOut, useSession } from "@/lib/auth";
+import { logger } from "@repo/logger";
 import {
   hasMasterTokenPlugin,
   MasterTokenProvider,
@@ -295,7 +296,7 @@ const RoutesPluginComponent = () => {
       setRoutesList(filtered);
       setRouteStats(stats);
     } catch (error) {
-      console.error("Failed to load routes module:", error);
+      logger.error("Failed to load routes module", { error });
     } finally {
       setLoading(false);
     }
@@ -497,7 +498,7 @@ const BundlesPluginComponent = () => {
         setLoading(false);
       }, 800);
     } catch (error) {
-      console.error("Failed to fetch bundle info:", error);
+      logger.error("Failed to fetch bundle info", { error });
       setLoading(false);
     }
   };
@@ -591,7 +592,7 @@ const CLIPluginComponent = () => {
         setLoading(false);
       }, 600);
     } catch (error) {
-      console.error("Failed to fetch environment info:", error);
+      logger.error("Failed to fetch environment info", { error });
       setLoading(false);
     }
   };
@@ -670,6 +671,14 @@ const AuthPluginComponent = () => {
 
 const ConfiguredAuth = () => {
   const { enabled: devAuthEnabled, setEnabled } = useMasterToken();
+  const devAuthKey = process.env.NEXT_PUBLIC_DEV_AUTH_KEY?.trim();
+  const devAuthBearerHeader = devAuthKey
+    ? { Authorization: `Bearer ${devAuthKey}` }
+    : undefined;
+  const devAuthHeaders =
+    devAuthEnabled && devAuthKey
+      ? { Authorization: `Bearer ${devAuthKey}` }
+      : undefined;
   const [authConfig, setAuthConfig] = useState<{
     databaseUrl: string;
     baseUrl: string;
@@ -685,6 +694,10 @@ const ConfiguredAuth = () => {
     trustHost: true,
   });
   const [loading, setLoading] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [switchingUserId, setSwitchingUserId] = useState<string | null>(null);
+  const [switchMessage, setSwitchMessage] = useState<string | null>(null);
+  const [switchError, setSwitchError] = useState<string | null>(null);
 
   // Search term for filtering users (driven by the UserSelector's Command input)
   const [userSearch, setUserSearch] = useState("");
@@ -695,14 +708,19 @@ const ConfiguredAuth = () => {
   const usersQuery = useQuery(
     orpc.user.list.queryOptions({
       input: {
-        limit: 20,
-        offset: 0,
-        name: userSearch,
+        query: {
+          limit: 20,
+          offset: 0,
+          filter: {
+            _or: [
+              { name: { operator: "ilike", value: userSearch } },
+              { email: { operator: "ilike", value: userSearch } },
+            ],
+          },
+        },
       },
       context: {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ""}`,
-        },
+        headers: devAuthHeaders,
         noRedirectOnUnauthorized: true,
       },
     }),
@@ -733,12 +751,33 @@ const ConfiguredAuth = () => {
         setLoading(false);
       }, 500);
     } catch (error) {
-      console.error("Failed to fetch auth config:", error);
+      logger.error("Failed to fetch auth config", { error });
       setLoading(false);
     }
   };
 
   const { data: session, refetch } = useSession();
+
+  const handleLogout = async () => {
+    try {
+      setSwitchError(null);
+      setSwitchMessage(null);
+      setLogoutLoading(true);
+
+      await signOut();
+
+      await refetch();
+      await refetchUsers();
+      setSwitchMessage("Logged out successfully.");
+    } catch (err) {
+      logger.error("Logout error", { error: err });
+      setSwitchError(
+        err instanceof Error ? err.message : "Unexpected logout error",
+      );
+    } finally {
+      setLogoutLoading(false);
+    }
+  };
 
   // placeholder; actual toggle handled inside AuthPluginComponent via context
 
@@ -757,6 +796,12 @@ const ConfiguredAuth = () => {
                 All API requests are using Bearer token authentication with
                 admin privileges
               </p>
+              {!devAuthKey && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  Missing <code>NEXT_PUBLIC_DEV_AUTH_KEY</code>: bearer auth is
+                  enabled but no token is available client-side.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -845,6 +890,15 @@ const ConfiguredAuth = () => {
             >
               {usersLoading ? "Loading..." : "Refresh"}
             </button>
+            <button
+              onClick={() => {
+                void handleLogout();
+              }}
+              className="rounded bg-red-500 px-3 py-1 text-xs text-white hover:bg-red-600 disabled:opacity-60"
+              disabled={logoutLoading || switchingUserId !== null}
+            >
+              {logoutLoading ? "Logging out..." : "Logout"}
+            </button>
           </div>
         </div>
 
@@ -864,18 +918,37 @@ const ConfiguredAuth = () => {
               loading={usersLoading}
               selectedUserId={session?.user?.id}
               selectedUserName={session?.user?.name ?? session?.user?.email}
+              disabled={switchingUserId !== null}
               onSelect={async (userId: string) => {
                 try {
+                  setSwitchError(null);
+                  setSwitchMessage(null);
+
+                  if (session?.user?.id && session.user.id === userId) {
+                    setSwitchMessage("Already using this user session.");
+                    return;
+                  }
+
+                  setSwitchingUserId(userId);
+
+                  if (!devAuthKey) {
+                    setSwitchError(
+                      "Missing NEXT_PUBLIC_DEV_AUTH_KEY. Set it to the same value as DEV_AUTH_KEY, then restart the web dev server.",
+                    );
+                    return;
+                  }
+
                   if (authClient?.loginAs) {
                     await authClient.loginAs(
                       { userId },
                       {
-                        headers: {
-                          Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ""}`,
-                        },
+                        headers: devAuthBearerHeader,
                       },
                     );
-                    void refetch();
+
+                    await refetch();
+                    await refetchUsers();
+                    setSwitchMessage("Session switched successfully.");
                     return;
                   }
 
@@ -888,14 +961,19 @@ const ConfiguredAuth = () => {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
-                      Authorization: `Bearer ${process.env.NEXT_PUBLIC_DEV_AUTH_KEY ?? ""}`,
+                      Authorization: `Bearer ${devAuthKey}`,
                     },
                     body: JSON.stringify({ userId }),
                   });
 
                   if (!resp.ok) {
-                    console.error("Login as failed", resp.statusText);
-                    alert("Login as failed: " + resp.statusText);
+                    logger.error("Login as failed", {
+                      statusText: resp.statusText,
+                      status: resp.status,
+                    });
+                    setSwitchError(
+                      `Login as failed: ${resp.statusText || String(resp.status)}`,
+                    );
                     return;
                   }
 
@@ -903,14 +981,39 @@ const ConfiguredAuth = () => {
                     user?: { id: string; email: string };
                     session?: { id: string };
                   };
-                  alert(
-                    `Logged as ${String(data.user?.id)} - session: ${String(data.session?.id)}`,
+                  await refetch();
+                  await refetchUsers();
+                  setSwitchMessage(
+                    `Logged as ${data.user?.id ?? userId}${data.session?.id ? ` • session ${data.session.id}` : ""}`,
                   );
                 } catch (err) {
-                  console.error("Login as error", err);
+                  logger.error("Login as error", { error: err });
+                  setSwitchError(
+                    err instanceof Error ? err.message : "Unexpected login-as error",
+                  );
+                } finally {
+                  setSwitchingUserId(null);
                 }
               }}
             />
+
+            <div className="min-h-5 pt-2 text-xs">
+              {switchingUserId && (
+                <span className="text-blue-600 dark:text-blue-400">
+                  Switching session...
+                </span>
+              )}
+              {!switchingUserId && switchMessage && (
+                <span className="text-green-600 dark:text-green-400">
+                  {switchMessage}
+                </span>
+              )}
+              {!switchingUserId && switchError && (
+                <span className="text-red-600 dark:text-red-400">
+                  {switchError}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -940,6 +1043,7 @@ function UserSelector({
   loading,
   selectedUserId,
   selectedUserName,
+  disabled = false,
   onSelect,
   onSearchChange,
 }: {
@@ -947,6 +1051,7 @@ function UserSelector({
   loading: boolean;
   selectedUserId?: string | null;
   selectedUserName?: string | null;
+  disabled?: boolean;
   onSelect: (userId: string) => void | Promise<void>;
   onSearchChange?: (v: string) => void;
 }) {
@@ -989,6 +1094,7 @@ function UserSelector({
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          disabled={disabled}
           className="w-75 justify-between"
         >
           {value
@@ -1054,7 +1160,7 @@ const DrizzleStudioPluginComponent = () => {
     try {
       await navigator.clipboard.writeText(studioUrl);
     } catch (err) {
-      console.error("Copy failed", err);
+      logger.error("Copy failed", { error: err });
     }
   };
 
@@ -1135,7 +1241,7 @@ const ApiUrlPluginComponent = () => {
     try {
       await navigator.clipboard.writeText(apiUrl);
     } catch (err) {
-      console.error("Copy failed", err);
+      logger.error("Copy failed", { error: err });
     }
   };
 
@@ -1161,7 +1267,7 @@ const ApiUrlPluginComponent = () => {
           : `Error (${String(resp.status)})`,
       );
     } catch (err) {
-      console.error("Health check error:", err);
+      logger.error("Health check error", { error: err });
       setStatus("unreachable");
     } finally {
       setChecking(false);

@@ -1,6 +1,5 @@
 import { custom, mapBetterAuth } from '@/domains/shared/helpers'
 import { authClient } from '@/lib/auth/options'
-import { orpc } from '@/lib/orpc'
 import {
   listOrganizationsSchema,
   getOrganizationSchema,
@@ -128,21 +127,3 @@ export const organizationEndpoints = {
     map: mapBetterAuth(),
   }),
 }
-
-// ============================================================================
-// ADMIN ENDPOINTS (ORPC)
-// ============================================================================
-
-/**
- * Organization admin endpoints using ORPC
- * These endpoints bypass Better Auth's user-scoped restrictions
- */
-export const organizationAdminEndpoints = {
-  /**
-   * List all organizations in the system (admin only)
-   * Supports pagination, sorting, and filtering
-   */
-  listAll: orpc.organizationAdmin.listAll,
-} as const
-
-export type OrganizationAdminEndpoints = typeof organizationAdminEndpoints

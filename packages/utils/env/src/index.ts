@@ -46,7 +46,10 @@ export const apiEnvSchema = zod.object({
     DEFAULT_ADMIN_EMAIL: zod.email().optional(), // Email of the default admin user (also used for master token impersonation)
     DEFAULT_ADMIN_PASSWORD: zod.string().optional(), // Password for the default admin user (used for credential-based auth fallback)
     TRUSTED_ORIGINS: zod.string().optional(),
-    ENABLE_MASTER_TOKEN: zod.coerce.boolean().default(false),
+    // Optional: when undefined, auth factory auto-enables master token if
+    // DEV_AUTH_KEY and DEFAULT_ADMIN_EMAIL are both configured.
+    // Set explicitly to true/false to force behavior.
+    ENABLE_MASTER_TOKEN: zod.coerce.boolean().optional(),
     
     // Shared
     ...sharedEnvVars,

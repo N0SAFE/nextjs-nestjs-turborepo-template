@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import * as z from "zod";
 
 /**
  * Test entity schema for demonstrating ORPC contract builder

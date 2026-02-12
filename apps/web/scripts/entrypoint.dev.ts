@@ -6,28 +6,41 @@ import { join } from 'path'
 import { validateWebEnvSafe, webEnvIsValid } from '@repo/env'
 import zod from 'zod/v4'
 
-const DECLARATIVE_ROUTING_DIST = join(process.cwd(), '../../packages/bin/declarative-routing/dist/index.js')
+const DECLARATIVE_ROUTING_PKG_DIR = join(process.cwd(), '../../packages/bin/declarative-routing')
+const DECLARATIVE_ROUTING_DIST = join(DECLARATIVE_ROUTING_PKG_DIR, 'dist/index.js')
 
 /**
- * Wait for declarative-routing dist to be built
- * This is needed because turbo runs dev tasks in parallel
+ * Build local declarative-routing package and ensure dist/index.js exists.
+ * Required in container startup to guarantee dr:build/watch use local package only.
  */
-async function waitForDeclarativeRoutingDist(maxWaitMs = 60000): Promise<void> {
-  const startTime = Date.now()
-  const checkInterval = 500 // Check every 500ms
-  
-  console.log('⏳ Waiting for @repo-bin/declarative-routing to build...')
-  
-  while (!existsSync(DECLARATIVE_ROUTING_DIST)) {
-    if (Date.now() - startTime > maxWaitMs) {
-      console.error(`❌ Timeout: declarative-routing dist not found after ${maxWaitMs / 1000}s`)
-      console.error(`   Expected at: ${DECLARATIVE_ROUTING_DIST}`)
-      process.exit(1)
-    }
-    await new Promise(resolve => setTimeout(resolve, checkInterval))
+function ensureLocalDeclarativeRoutingBuilt(): void {
+  const localCliSourcePath = join(DECLARATIVE_ROUTING_PKG_DIR, 'src/index.ts')
+
+  if (!existsSync(localCliSourcePath)) {
+    console.error('❌ declarative-routing local package source is missing')
+    console.error(`   Expected at: ${localCliSourcePath}`)
+    process.exit(1)
   }
-  
-  console.log('✅ declarative-routing dist is ready')
+
+  console.log('🔨 Building local @repo/cli-declarative-routing package...')
+
+  const result = spawnSync('bun', ['run', '--cwd', DECLARATIVE_ROUTING_PKG_DIR, 'build'], {
+    stdio: 'inherit',
+    env: process.env,
+  })
+
+  if (result.status !== 0) {
+    console.error('❌ Failed to build local @repo/cli-declarative-routing package')
+    process.exit(1)
+  }
+
+  if (!existsSync(DECLARATIVE_ROUTING_DIST)) {
+    console.error('❌ local declarative-routing build completed but dist/index.js is missing')
+    console.error(`   Expected at: ${DECLARATIVE_ROUTING_DIST}`)
+    process.exit(1)
+  }
+
+  console.log('✅ Local declarative-routing package built successfully')
 }
 
 /**
@@ -56,9 +69,9 @@ function ensureRoutesGenerated(): void {
   
   if (!existsSync(routesIndexPath)) {
     console.log('⚠️  Routes not found, generating initial routes...')
-    const result = spawnSync('bun', ['x', 'declarative-routing', 'build'], {
+    const result = spawnSync('bun', ['--bun', 'run', 'dr:build'], {
       stdio: 'inherit',
-      shell: true,
+      env: process.env,
     })
     
     if (result.status !== 0) {
@@ -138,9 +151,9 @@ async function main(): Promise<void> {
   
   // Validate environment before starting
   validateEnvironment()
-  
-  // Wait for declarative-routing to be built (parallel turbo dev tasks)
-  await waitForDeclarativeRoutingDist()
+
+  // Build local declarative-routing package at container startup
+  ensureLocalDeclarativeRoutingBuilt()
   
   // Ensure routes are generated before starting Next.js
   ensureRoutesGenerated()

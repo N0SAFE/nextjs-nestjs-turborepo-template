@@ -36,43 +36,32 @@ import type {
 
 /**
  * Organization plugin instance type.
- * TStatement and TRoles are automatically derived from TPermissionBuilder.
  * 
- * Uses basic organization configuration - the API methods we wrap are
- * consistent across all organization plugin configurations.
+ * Returns the organization plugin type without specific configuration.
+ * The actual runtime configuration can have roles, ac, teams, dynamicAccessControl, etc.
  */
-export type OrganizationPluginInstance<
-    TPermissionBuilder extends AnyPermissionBuilder = PermissionBuilder
-> = ReturnType<
-    typeof organization<{
-        roles: ReturnType<TPermissionBuilder["getRoles"]>;
-        ac: ReturnType<TPermissionBuilder["getAc"]>;
-        teams: { enabled: true };
-        dynamicAccessControl: { enabled: true };
-    }>
->;
+export type OrganizationPluginInstance = ReturnType<typeof organization>;
 
 /**
  * Auth type with organization plugin - minimum requirement for OrganizationsPermissionsPlugin.
- * TStatement and TRoles are automatically derived from TPermissionBuilder.
  */
-export type AuthWithOrganizationPlugin<
-    TPermissionBuilder extends AnyPermissionBuilder = PermissionBuilder
-> = WithAuthPlugins<[OrganizationPluginInstance<TPermissionBuilder>]>;
+export type AuthWithOrganizationPlugin = WithAuthPlugins<[OrganizationPluginInstance]>;
 
 /**
  * Reduced constraint interface for organization plugin API methods.
  * Only requires the API methods actually used by OrganizationsPermissionsPlugin.
  * This allows testing with mocked auth instances.
  * 
- * TStatement and TRoles are automatically derived from TPermissionBuilder,
- * reducing the number of generic parameters needed.
+ * TPermissionBuilder is kept as a generic parameter to maintain type flow
+ * through the class constraint system, even though it doesn't directly affect
+ * the interface structure.
  */
 export interface ApiMethodsWithOrganizationPlugin<
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     TPermissionBuilder extends AnyPermissionBuilder = PermissionBuilder
 > {
     api: Pick<
-        AuthWithOrganizationPlugin<TPermissionBuilder>["api"],
+        AuthWithOrganizationPlugin["api"],
         | "createOrganization"
         | "getFullOrganization"
         | "updateOrganization"
@@ -86,18 +75,15 @@ export interface ApiMethodsWithOrganizationPlugin<
         | "hasPermission"
     >;
     /**
- * Type inference helper inherited from Auth type.
+     * Type inference helper inherited from Auth type.
      * Preserves all plugin type inference from the actual Auth instance.
      */
-    $Infer: AuthWithOrganizationPlugin<TPermissionBuilder>["$Infer"];
+    $Infer: AuthWithOrganizationPlugin["$Infer"];
 }
 
 /**
  * Options for creating OrganizationsPermissionsPlugin
  * Extends BasePluginWrapperOptions for consistent constructor signature.
- * 
- * NOTE: Uses only TPermissionBuilder and TAuth as generic parameters.
- * TStatement and TRoles are derived from TPermissionBuilder using conditional types.
  */
 export type OrganizationsPluginWrapperOptions<
     TPermissionBuilder extends AnyPermissionBuilder,

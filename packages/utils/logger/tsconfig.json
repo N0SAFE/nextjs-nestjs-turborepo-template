@@ -1,5 +1,5 @@
 {
-  "extends": "@repo-configs/typescript/base",
+  "extends": "@repo/config-typescript/base",
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,

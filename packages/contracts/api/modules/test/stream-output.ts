@@ -1,14 +1,13 @@
-import { oc, eventIterator } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod/v4";
+import { eventIterator } from "@orpc/contract";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 /**
  * Test contract with eventIterator as OUTPUT (Server-Sent Events)
  * This contract demonstrates streaming data from server to client
  * This is the most common streaming pattern in oRPC
  */
-export const testStreamOutputContract = withRouteMethod("GET", oc)
-  .route({
+export const testStreamOutputContract = route({
     method: "GET",
     path: "/stream-output",
     summary: "Test streaming output (SSE)",
@@ -29,7 +28,8 @@ export const testStreamOutputContract = withRouteMethod("GET", oc)
         timestamp: z.number(),
       })
     )
-  );
+  )
+  .build();
 
 // Define types based on schemas
 export type TestStreamOutputInput = {

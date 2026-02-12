@@ -1,4 +1,4 @@
-# @repo-bin/runthenkill
+# @repo/runthenkill
 
 A CLI tool to run a process and manage port state after termination. Written in TypeScript and runs with Bun.
 

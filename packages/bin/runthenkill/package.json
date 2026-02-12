@@ -1,5 +1,5 @@
 {
-  "name": "@repo-bin/runthenkill",
+  "name": "@repo/runthenkill",
   "version": "1.0.0",
   "description": "CLI tool to run a process and manage port state after termination",
   "main": "index.ts",
@@ -19,7 +19,7 @@
     "commander": "catalog:utils"
   },
   "devDependencies": {
-    "@repo-configs/vitest": "*",
+    "@repo/config-vitest": "*",
     "vitest": "catalog:testing",
     "@types/node": "catalog:build"
   }

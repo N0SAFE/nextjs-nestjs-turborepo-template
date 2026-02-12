@@ -22,6 +22,7 @@
     "@orpc/contract": "^1.13.4",
     "@orpc/client": "catalog:orpc",
     "@orpc/tanstack-query": "catalog:orpc",
+    "@standard-schema/spec": "^1.1.0",
     "@tanstack/react-query": "catalog:tanstack",
     "zod": "catalog:utils"
   },
@@ -29,9 +30,9 @@
     "@types/react": "catalog:react",
     "react": "catalog:react",
     "eslint": "catalog:linting",
-    "@repo-configs/eslint": "*",
-    "@repo-configs/prettier": "*",
-    "@repo-configs/typescript": "*",
+    "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
+    "@repo/config-typescript": "*",
     "typescript": "catalog:build",
     "vitest": "catalog:testing",
     "@vitest/coverage-v8": "catalog:testing"

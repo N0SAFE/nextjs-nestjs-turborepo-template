@@ -190,8 +190,10 @@ describe('UserRepository', () => {
       const input = {
         limit: 10,
         offset: 0,
-        name: 'John',
-        email: 'john',
+        filter: {
+          name: { operator: 'like' as const, value: 'John' },
+          email: { operator: 'like' as const, value: 'john' },
+        },
         sortBy: 'name' as const,
         sortDirection: 'asc' as const,
       };

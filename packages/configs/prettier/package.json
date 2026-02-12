@@ -1,5 +1,5 @@
 {
-    "name": "@repo-configs/prettier",
+    "name": "@repo/config-prettier",
     "version": "1.0.0",
     "main": "dist/cjs/base.js",
     "type": "module",
@@ -31,7 +31,7 @@
     "license": "ISC",
     "description": "",
     "devDependencies": {
-        "@repo-configs/vitest": "*",
+        "@repo/config-vitest": "*",
         "prettier": "catalog:linting",
         "prettier-plugin-tailwindcss": "catalog:linting",
         "vitest": "catalog:testing"

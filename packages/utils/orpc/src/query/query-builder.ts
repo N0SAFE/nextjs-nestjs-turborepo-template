@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import * as z from "zod";
 import {
   createPaginationSchema,
   createPaginationConfigSchema,
@@ -176,8 +176,7 @@ type InferSortingShape<T> = T extends ZodSchemaWithConfig<infer Config>
  * Convert union of object types to intersection (merge all properties)
  * Example: { a: string } | { b: number } => { a: string } & { b: number }
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
 /**
  * Extract Zod schema type from field config or raw Zod type

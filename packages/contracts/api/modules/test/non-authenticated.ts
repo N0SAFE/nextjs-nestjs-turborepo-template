@@ -1,13 +1,11 @@
-import { oc } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod/v4";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 /**
  * Test contract for non-authenticated ORPC endpoint
  * This contract demonstrates a simple GET request without authentication
  */
-export const testNonAuthenticatedContract = withRouteMethod("GET", oc)
-  .route({
+export const testNonAuthenticatedContract = route({
     method: "GET",
     path: "/non-authenticated",
     summary: "Test non-authenticated endpoint",
@@ -19,7 +17,8 @@ export const testNonAuthenticatedContract = withRouteMethod("GET", oc)
       ok: z.boolean(),
       message: z.string().optional(),
     })
-  );
+  )
+  .build();
 
 // Define types based on schemas
 export type TestNonAuthenticatedInput = Record<string, never>;

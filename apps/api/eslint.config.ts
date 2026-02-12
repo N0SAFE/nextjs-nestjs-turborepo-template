@@ -1,5 +1,5 @@
-import { defineConfig } from "@repo-configs/eslint";
-import nestjsConfig from "@repo-configs/eslint/nestjs";
+import { defineConfig } from "@repo/config-eslint";
+import nestjsConfig from "@repo/config-eslint/nestjs";
 
 export default defineConfig([
     { extends: [nestjsConfig.configs.base()], files: ["src/**/*"], ignores: ["**/*.spec.ts", "**/*.test.ts", "**/*.mock.ts", "**/__tests__/**/*", "**/*.test.*"] },

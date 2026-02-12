@@ -4,7 +4,7 @@
 
 > Works across the Docker-first SaaS template. Tests are runnable locally or in CI, with merged coverage across the monorepo.
 
-This monorepo is equipped with comprehensive testing using Vitest. Each package and app has its own containerized testing setup using the shared `@repo-configs/vitest` package.
+This monorepo is equipped with comprehensive testing using Vitest. Each package and app has its own containerized testing setup using the shared `@repo/config-vitest` package.
 
 ## Quick Start
 
@@ -79,7 +79,7 @@ bun run test --filter=@repo/ui
 
 ## Test Structure
 
-### Shared Vitest Configuration (`@repo-configs/vitest`)
+### Shared Vitest Configuration (`@repo/config-vitest`)
 
 - **Base Config**: Common settings for all packages
 - **React Config**: Configuration for React component testing
@@ -161,7 +161,7 @@ The test setup is designed to work with:
 ## Adding New Tests
 
 1. Create test files alongside your source code in `__tests__/` directories
-2. Use the appropriate vitest config from `@repo-configs/vitest`
+2. Use the appropriate vitest config from `@repo/config-vitest`
 3. Follow the naming convention: `*.test.ts` or `*.spec.ts`
 4. Import necessary testing utilities from vitest and @testing-library
 

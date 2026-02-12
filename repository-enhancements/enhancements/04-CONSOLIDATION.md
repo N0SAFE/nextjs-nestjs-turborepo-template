@@ -227,7 +227,7 @@ export const reactConfig = defineConfig({
 
 ```typescript
 import { mergeConfig } from 'vitest/config'
-import { reactConfig } from '@repo-configs/vitest'
+import { reactConfig } from '@repo/config-vitest'
 
 export default mergeConfig(reactConfig, {
   test: {

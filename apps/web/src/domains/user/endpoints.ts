@@ -44,5 +44,3 @@ export const userEndpoints = {
 } as const
 
 export type UserEndpoints = typeof userEndpoints
-
-orpc.user.count.queryKey()

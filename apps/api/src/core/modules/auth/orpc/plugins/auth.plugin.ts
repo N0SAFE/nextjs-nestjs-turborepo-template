@@ -7,6 +7,7 @@ import type {
 import type { Auth } from "@/auth";
 import { AuthUtils, type UserSession } from "../auth-utils";
 import type { ORPCAuthContext } from "../types";
+import { logger } from "@repo/logger";
 
 /**
  * Converts headers to web standard Headers.
@@ -115,7 +116,7 @@ export class AuthPlugin<TContext extends AuthPluginContext>
           }
         }
       } catch (error) {
-        console.error("Auth Plugin: Error extracting session:", error);
+        logger.error("Auth Plugin: Error extracting session", { error });
         // Continue with null session - allow unauthenticated access
       }
 

@@ -1,6 +1,5 @@
-import { oc } from "@orpc/contract";
-import { withRouteMethod } from "@repo/orpc-utils/builder";
-import { z } from "zod";
+import { route } from "@repo/orpc-utils/builder";
+import * as z from "zod";
 
 export const deviceSchema = z.object({
   deviceName: z.string(),
@@ -13,11 +12,11 @@ export const getStatsOutputSchema = z.object({
   devices: z.array(deviceSchema),
 });
 
-export const getStatsContract = withRouteMethod("GET", oc)
-  .output(getStatsOutputSchema)
-  .route({
+export const getStatsContract = route({
     method: "GET",
     path: "/stats",
     summary: "Get push notification stats",
     description: "Get push notification statistics for the current user",
-  });
+  })
+  .output(getStatsOutputSchema)
+  .build();

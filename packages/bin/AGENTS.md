@@ -68,8 +68,8 @@ After scaffolding, update the generated files:
     "@nestjs/cli": "catalog:nestjs",
     "@nestjs/schematics": "catalog:nestjs",
     "@nestjs/testing": "catalog:nestjs",
-    "@repo-configs/typescript": "*",
-    "@repo-configs/vitest": "*",
+    "@repo/config-typescript": "*",
+    "@repo/config-vitest": "*",
     "@types/node": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:testing"
@@ -103,7 +103,7 @@ bun add nest-commander
 **tsconfig.json**:
 ```json
 {
-  "extends": "@repo-configs/typescript/config/base.json",
+  "extends": "@repo/config-typescript/config/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
