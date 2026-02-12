@@ -40,6 +40,7 @@ jobs:
                       node_modules
                       apps/**/node_modules
                       packages/**/node_modules
+                      apps/doc/.source
                   key: bun-deps-${{ github.run_id }}-${{ runner.os }}
 
     # Job 1: Generate Declarative Routes
@@ -83,17 +84,13 @@ jobs:
                       node_modules
                       apps/**/node_modules
                       packages/**/node_modules
+                      apps/doc/.source
                   key: bun-deps-${{ github.run_id }}-${{ runner.os }}
 
             - name: 📦 Install dependencies (fallback)
               if: steps.cache-declarative-routes.outputs.cache-hit != 'true' && steps.restore-shared-deps.outputs.cache-hit != 'true'
               run: |
                 bun install --frozen-lockfile
-
-            - name: 📚 Run docs postinstall (generate sources)
-              if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
-              run: |
-                bun --bun --cwd=./apps/doc run postinstall
 
             - name: 🛤️ Generate declarative routes
               if: steps.cache-declarative-routes.outputs.cache-hit != 'true'
@@ -170,16 +167,13 @@ jobs:
                       node_modules
                       apps/**/node_modules
                       packages/**/node_modules
+                      apps/doc/.source
                   key: bun-deps-${{ github.run_id }}-${{ runner.os }}
 
             - name: 📦 Install dependencies (fallback)
               if: steps.restore-shared-deps.outputs.cache-hit != 'true'
               run: |
                 bun install --frozen-lockfile
-
-            - name: 📚 Run docs postinstall (generate sources)
-              run: |
-                bun --bun --cwd=./apps/doc run postinstall
 
             - name: � Restore declarative routes cache
               uses: actions/cache@v4
@@ -275,16 +269,13 @@ jobs:
                       node_modules
                       apps/**/node_modules
                       packages/**/node_modules
+                      apps/doc/.source
                   key: bun-deps-${{ github.run_id }}-${{ runner.os }}
 
             - name: 📦 Install dependencies (fallback)
               if: steps.restore-shared-deps.outputs.cache-hit != 'true'
               run: |
                 bun install --frozen-lockfile
-
-            - name: 📚 Run docs postinstall (generate sources)
-              run: |
-                bun --bun --cwd=./apps/doc run postinstall
 
             - name: 💾 Restore declarative routes cache
               uses: actions/cache@v4
@@ -382,16 +373,13 @@ jobs:
                       node_modules
                       apps/**/node_modules
                       packages/**/node_modules
+                      apps/doc/.source
                   key: bun-deps-${{ github.run_id }}-${{ runner.os }}
 
             - name: 📦 Install dependencies (fallback)
               if: steps.restore-shared-deps.outputs.cache-hit != 'true'
               run: |
                 bun install --frozen-lockfile
-
-            - name: 📚 Run docs postinstall (generate sources)
-              run: |
-                bun --bun --cwd=./apps/doc run postinstall
 
             - name: 💾 Restore declarative routes cache
               uses: actions/cache@v4
