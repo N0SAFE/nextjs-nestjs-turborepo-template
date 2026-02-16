@@ -1,17 +1,16 @@
 ---
 title: Docker Compose
-description: Run the full stack locally and in production using Docker Compose.
+description: Service topology, compose variants, and operational commands.
 order: 10
 ---
 
+<DocMeta source=".docs/guides/DOCKER-BUILD-STRATEGIES.md" scope="supplemental" />
+
 This page explains how to work with the provided Docker Compose files for both development and production, without repeating the build strategy or deployment specifics. For deeper context, see:
 
-- Docker Build Strategies → /docs/docker-build-strategies
-- Production Deployment → /docs/production-deployment
-- Development (Web only): `docker-compose.web.yml`
-- Production (both): `docker-compose.prod.yml`
-- Production (API): `docker-compose.api.prod.yml`
-- Production (Web): `docker-compose.web.prod.yml`
+- [Docker Build Strategies](/docs/docker/docker-build-strategies)
+- [Production Deployment](/docs/deployment/production-deployment)
+- [Project Isolation](/docs/tooling/project-isolation)
 
 ## Quick start (development)
 
@@ -47,7 +46,7 @@ You can run API and Web separately. The Web dev file connects to an external API
 
 ## Production with Compose
 
-You can run production using the prod files, or deploy to your platform (see Render page). The prod files split API and Web so they can be hosted independently.
+You can run production-like stacks locally using the `prod` scripts, or deploy to a platform (see Render docs). API and web can be run independently.
 
 ```bash
 # API (prod)
@@ -64,9 +63,7 @@ You can run production using the prod files, or deploy to your platform (see Ren
  bun run start            # uses docker-compose.prod.yml
 ```
 
-Environment files:
-- API prod: copy `.env.api.prod.example` → `.env` and edit values.
-- Web prod: copy `.env.web.prod.example` → `.env` and edit values.
+Environment files are generated from templates via `bun run init`; keep them synchronized with deployment targets.
 
 ## Environment variables
 
@@ -78,6 +75,8 @@ Common keys used by Compose services (examples):
 
 See the Environment Template System → /docs/environment-template-system for a guided way to generate `.env`.
 
+See [Environment Template System](/docs/tooling/environment-template-system) for guided env generation and validation.
+
 ## Project isolation (multiple instances)
 
 To avoid name collisions when running multiple copies on the same machine, set a project prefix in `.env`:
@@ -87,6 +86,7 @@ COMPOSE_PROJECT_NAME=my-project
 ```
 
 All container, network, and volume names will be prefixed. See Project Isolation → /docs/project-isolation.
+All container, network, and volume names will be prefixed. See [Project Isolation](/docs/tooling/project-isolation).
 
 ## Useful commands
 
@@ -118,3 +118,21 @@ All container, network, and volume names will be prefixed. See Project Isolation
 - Build-time vs Runtime build options are explained in Docker Build Strategies.
 - For local dev: prefer `docker-compose.yml` (and the API/Web splits for focused work).
 - For self-hosted prod: choose `docker-compose.prod.yml` or the split API/Web prod files to deploy separately.
+
+## Related docs
+
+- [Docker Build Strategies](/docs/docker/docker-build-strategies)
+- [Production Deployment](/docs/deployment/production-deployment)
+- [Render Deployment](/docs/deployment/render-deployment)
+- [Project Isolation](/docs/tooling/project-isolation)
+
+## Compose hygiene checklist
+
+<DocChecklist
+	items={[
+		{ label: 'Ports and URLs aligned with .env', done: false },
+		{ label: 'Service names stable across compose variants', done: false },
+		{ label: 'Volume strategy understood before reset', done: false },
+		{ label: 'Logs checked before restarting all services', done: false },
+	]}
+/>

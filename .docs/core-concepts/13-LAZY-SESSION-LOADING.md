@@ -257,4 +257,4 @@ A: No! Better Auth still caches sessions client-side. This just prevents fetchin
 
 - [11-ORPC-CLIENT-HOOKS-PATTERN.md](./11-ORPC-CLIENT-HOOKS-PATTERN.md) - API client hooks
 - [12-DECLARATIVE-ROUTING-PATTERN.md](./12-DECLARATIVE-ROUTING-PATTERN.md) - Type-safe routing
-- [DEVELOPMENT-WORKFLOW.md](../.docs/guides/DEVELOPMENT-WORKFLOW.md) - Dev Auth Token Mode
+- [DEVELOPMENT-WORKFLOW.md](../guides/DEVELOPMENT-WORKFLOW.md) - Dev Auth Token Mode

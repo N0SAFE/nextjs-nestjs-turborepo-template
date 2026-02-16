@@ -1,13 +1,44 @@
 ---
 title: Docker Build Strategies
-description: Build-time vs runtime compilation trade-offs.
+description: Build and runtime strategies for development, production-like, and production environments.
 order: 11
 ---
 
-From `docs/DOCKER-BUILD-STRATEGIES.md`.
+<DocMeta source=".docs/guides/DOCKER-BUILD-STRATEGIES.md" scope="canonical" />
 
-- Development: docker-compose.yml (hot reload)
-- Web-only or API-only compose files for partial dev
-- Production:
-  - Build-time Dockerfile (faster startup, larger image)
-  - Runtime Dockerfile (slower startup, flexible)
+## Environment modes
+
+- **Dev**: fast feedback, mounted sources, watch mode.
+- **Prod-like**: closer to production constraints for verification.
+- **Prod**: minimal runtime footprint and stricter startup behavior.
+
+## Build principles
+
+1. Keep layers deterministic and cache-friendly.
+2. Separate dependency installation from app copy where possible.
+3. Minimize final image runtime surface.
+4. Keep environment handling explicit and reproducible.
+
+## Common commands
+
+```bash
+bun run dev
+bun run prod
+bun run docker:build
+```
+
+## Troubleshooting focus
+
+- Cache invalidation issues between image layers
+- Environment mismatch between host and container
+- Resource constraints (memory/CPU) causing build instability
+
+<DocCallout title="Operational tip" tone="warning">
+Treat Docker Compose files as environment contracts: changing service names/ports without synchronized docs and env updates causes cascading runtime failures.
+</DocCallout>
+
+## Related docs
+
+- [Docker Compose](/docs/docker/docker-compose)
+- [Production Deployment](/docs/deployment/production-deployment)
+- [Environment Template System](/docs/tooling/environment-template-system)

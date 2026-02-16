@@ -278,7 +278,7 @@ bun run lint
 
 **Workflow**:
 ```bash
-# 1. Update schema in apps/api/src/db/drizzle/schema/
+# 1. Update schema in apps/api/src/config/drizzle/schema/
 # 2. Generate migration
 bun run api -- db:generate
 

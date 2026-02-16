@@ -49,7 +49,7 @@ export function useCheckEmail(email: string, options?: { enabled?: boolean }) {
  * Get user count statistics
  */
 export function useUserCount() {
-  return useQuery(userEndpoints.count.queryOptions());
+  return useQuery(userEndpoints.count.queryOptions({ input: { query: {} } }));
 }
 
 // ============================================================================

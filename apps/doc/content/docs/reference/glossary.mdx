@@ -4,4 +4,35 @@ description: Common terms used in this monorepo.
 order: 90
 ---
 
-Key project terms and abbreviations collected from `docs/GLOSSARY.md`.
+<DocMeta source=".docs/reference/GLOSSARY.md" scope="canonical" />
+
+## Core terms
+
+- **ORPC**: Contract-first, type-safe API system used across API and web.
+- **Contract**: Shared procedure definition in `packages/contracts/api`.
+- **Declarative Routing**: Generated, typed route helpers based on `page.info.ts` metadata.
+- **Domain hooks**: Web-layer hooks grouping fetch/cache logic by feature domain.
+- **Docker-first development**: Preferred local execution model through compose stacks.
+- **Catalog dependencies**: Workspace-level version catalog used for dependency consistency.
+
+## Architecture terms
+
+- **Service-Adapter pattern**: API pattern where controllers orchestrate, services hold business logic, and adapters map entities to contract shapes.
+- **Internal package**: Shared workspace package imported as `@repo/*`.
+- **Workspace graph**: Turbo task dependency graph across apps/packages.
+- **Boundary rule**: Keep contracts in shared packages, implementation in API, and data orchestration in web hooks.
+- **Auth guard chain**: Request protection flow combining authentication and role/permission checks.
+
+## Operational terms
+
+- **Prod-like**: Environment approximating production constraints locally.
+- **Quality gate**: Repository-wide `bun run check` validation pipeline.
+- **Canonical docs**: Maintained documentation under the docs app content hierarchy.
+- **Project isolation**: Compose namespace strategy (`COMPOSE_PROJECT_NAME`) to avoid container/network collisions.
+- **Migration lifecycle**: Schema update, migration generation, migration application, and optional seeding.
+
+## Related docs
+
+- [Architecture Overview](/docs/architecture/architecture)
+- [Internal Packages & Monorepo Model](/docs/architecture/internal-packages-monorepo)
+- [Styleguide](/docs/reference/styleguide)

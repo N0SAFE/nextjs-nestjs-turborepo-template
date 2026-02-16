@@ -519,7 +519,7 @@ All plugin methods automatically use the headers provided to `getAll()` or `crea
 
 - [Better Auth Integration Pattern](../core-concepts/07-BETTER-AUTH-INTEGRATION.md)
 - [ORPC Implementation Pattern](../core-concepts/09-ORPC-IMPLEMENTATION-PATTERN.md)
-- [Permission System](../../packages/utils/auth/src/permissions/README.md)
+- [Permission System](../../packages/utils/auth/src/permissions/docs/README.md)
 
 ---
 

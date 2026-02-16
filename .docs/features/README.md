@@ -30,4 +30,4 @@ Learn about specific features and how to use them.
 2. Reference Core Concept: [Copilot Workflow](../core-concepts/COPILOT-WORKFLOW-DIAGRAM.md)
 
 ## Last Updated
-2025-10-16
+2026-02-13

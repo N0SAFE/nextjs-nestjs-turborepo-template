@@ -2,6 +2,11 @@
 
 > Proposed architecture to consolidate hooks, query configs, query keys, and timing in domain-focused folders
 
+> **Note (current repo reality):** This document includes proposal-style design material. For canonical current import/path mappings and actively maintained operational docs, consult:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md)
+> - [`.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`](../.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md)
+
 ## Current Structure Problems
 
 ### Current Layout
@@ -105,7 +110,7 @@ ORPC contracts automatically generate queryKeys via `contract.queryOptions()`. W
 
 ```typescript
 // domains/user/config.ts
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 import { STALE_TIME, GC_TIME, RETRY_CONFIG } from '@/domains/shared/config'
 
 export const userEndpoints = {
@@ -216,7 +221,7 @@ export type EndpointConfig = ORPCEndpoint | CustomEndpoint
  */
 
 import { orpcEndpoint } from '@/domains/shared/helpers'
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 import { STALE_TIME, GC_TIME, RETRY_CONFIG } from '@/domains/shared/config'
 
 /**
@@ -389,7 +394,7 @@ export const userMutations = {
 
 import { defineInvalidations } from '@repo/orpc-utils/hooks'
 import { appContract } from '@repo/api-contracts'
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 import { STALE_TIME, GC_TIME } from '../shared/config'
 
 // ============================================================================
@@ -507,7 +512,7 @@ export interface UserFilters {
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 import { userEndpoints } from './config'
 import { userKeys } from './queries'
 import type { UserListFilters, UserFormData } from '@/types/user'
@@ -1195,7 +1200,7 @@ export function orpcEndpoint<
 /**
  * Usage Example - ORPC endpoint
  */
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 
 const userListEndpoint = orpcEndpoint({
   contract: orpc.user.list,
@@ -1311,7 +1316,7 @@ Here's how a complete domain looks using the factory functions:
 ```typescript
 // domains/user/endpoints.ts
 import { orpcEndpoint } from '@/domains/shared/endpoint-factory'
-import { orpc } from '@/lib/orpc-client'
+import { orpc } from '@/lib/orpc'
 import { STALE_TIME, GC_TIME, RETRY_CONFIG } from '@/domains/shared/config'
 
 /**

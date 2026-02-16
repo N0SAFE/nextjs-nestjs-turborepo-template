@@ -1,14 +1,74 @@
 ---
 title: ORPC Type-Safe API
-description: Shared contracts, implementations, and generated clients.
+description: Contract-first API lifecycle across shared package, API implementation, and web consumption.
 order: 6
 ---
 
-From `docs/ORPC-TYPE-CONTRACTS.md`.
+<DocMeta source=".docs/features/ORPC-TYPE-CONTRACTS.md" scope="canonical" />
 
-- Contracts in `packages/api-contracts`
-- Implement in `apps/api` with NestJS
-- Generate clients/hooks: `bun run web -- generate`
-- Usage: `api.users.getProfile.useQuery()` and `orpcClient.users.getProfile()`
+## Canonical locations
 
-Benefits: compile-time safety, autocompletion, easy refactors.
+- Contracts: `packages/contracts/api`
+- API implementation: `apps/api`
+- Web ORPC entrypoint: `apps/web/src/lib/orpc`
+
+## Lifecycle
+
+1. Define or update contract procedure shape.
+2. Implement corresponding API handler.
+3. Ensure web domain hook uses the updated contract endpoint.
+4. Run compile/test checks.
+
+## API-side implementation pattern
+
+- Use `@Implement(...)` and `implement(...).handler(...)` where applicable.
+- Keep controllers thin and business logic in services.
+
+## Web-side consumption pattern
+
+- Use domain hooks built on ORPC query/mutation options.
+- Keep cache invalidation explicit and centralized by domain.
+
+## Query and mutation ergonomics
+
+In this repo, web usage is standardized around TanStack integration helpers:
+
+- `queryOptions(...)` for reads
+- `mutationOptions(...)` for writes
+
+Typical pattern in domain hooks:
+
+1. build endpoint object,
+2. expose typed hooks,
+3. centralize invalidation after successful mutations.
+
+This keeps components thin while preserving contract-level type safety.
+
+## Builder/query utilities (shared)
+
+The ORPC utility package includes reusable query building blocks (pagination, sorting, filtering/search).
+Prefer those shared utilities for list/search endpoints instead of custom ad-hoc query parameter shapes.
+
+## Contract-first implementation checklist
+
+1. Define/adjust contract shape in `packages/contracts/api`.
+2. Implement handler in API controller with `@Implement(...)`.
+3. Keep business logic in services (not controllers).
+4. Adapt entity output to contract shape.
+5. Consume via web domain hooks with query/mutation options.
+6. Validate with repository checks.
+
+<DocCallout title="Anti-pattern to avoid" tone="warning">
+Do not bypass domain hooks with scattered per-component networking logic. It breaks consistency and weakens cache strategy.
+</DocCallout>
+
+<DocCallout title="Implementation rule" tone="info">
+Treat contracts as the source of truth for API shapes. If contract changes, API and web must be updated in the same workstream.
+</DocCallout>
+
+## Related docs
+
+- [Development Workflow](/docs/dev/development-workflow)
+- [Declarative Routing Workflow](/docs/dev/routing)
+- [Database Lifecycle](/docs/dev/database-lifecycle)
+- [Testing](/docs/testing/testing)

@@ -420,5 +420,5 @@ const mockAuth = {
 
 For questions or issues with migration:
 - Review the [Better Auth Plugin Utilities documentation](../features/BETTER-AUTH-PLUGIN-UTILITIES.md)
-- Check the [examples directory](../../apps/api/src/core/modules/auth/plugin-utils/examples/)
+- Check the implementation in `apps/api/src/core/modules/auth/plugin-utils/`
 - Open an issue in the repository

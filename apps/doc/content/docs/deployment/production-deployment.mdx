@@ -1,12 +1,70 @@
 ---
 title: Production Deployment
-description: Compose files and environment for production.
+description: Compose-based production and prod-like deployment model for API, web, and docs services.
 order: 20
 ---
 
-From `docs/PRODUCTION-DEPLOYMENT.md`.
+<DocMeta source=".docs/guides/PRODUCTION-DEPLOYMENT.md" scope="canonical" />
 
-- API: `docker-compose.api.prod.yml`
-- Web: `docker-compose.web.prod.yml`
-- Configure `.env` variants accordingly
-- Logs & lifecycle commands documented in root scripts
+## Deployment topology in this repository
+
+Primary compose sets live under `docker/compose/`:
+
+- Full stack: `docker-compose.prod.yml`
+- Prod-like local workflow: `docker-compose.prod-like.yml`
+- Split services:
+	- API: `api/docker-compose.api.prod.yml`, `api/docker-compose.api.prod-like.yml`
+	- Web: `web/docker-compose.web.prod.yml`, `web/docker-compose.web.prod-like.yml`
+	- Docs: `doc/docker-compose.doc.prod.yml`, `doc/docker-compose.doc.prod-like.yml`
+
+## Recommended release sequence
+
+1. Validate env and configs.
+2. Build/start API first.
+3. Validate API health and auth-critical endpoints.
+4. Start web (and docs if needed).
+5. Run smoke checks for login, routing, and core flows.
+
+## Root scripts you should use
+
+- Full stack production compose:
+	- `bun run start`
+- Prod-like local stack:
+	- `bun run prod`
+	- `bun run prod:down`
+- Split prod-like:
+	- `bun run prod:api`, `bun run prod:api:down`, `bun run prod:logs:api`
+	- `bun run prod:web`, `bun run prod:web:down`, `bun run prod:logs:web`
+
+## Environment and readiness checks
+
+Before rollout:
+
+```bash
+bun run check-env
+bun run check-env:api
+bun run check-env:web
+bun run check-env:doc
+```
+
+Before merge/release branch handoff:
+
+```bash
+bun run check
+```
+
+<DocCallout title="Release safety" tone="warning">
+Never treat a successful container start as a complete release check. Always validate API health, web routing, auth flow, and core critical paths.
+</DocCallout>
+
+## Rollback posture
+
+- Keep previous known-good image/tag available.
+- Roll back API and web independently when possible.
+- Re-run smoke tests after rollback confirmation.
+
+## Related docs
+
+- [Docker Compose](/docs/docker/docker-compose)
+- [Docker Build Strategies](/docs/docker/docker-build-strategies)
+- [Render Deployment](/docs/deployment/render-deployment)

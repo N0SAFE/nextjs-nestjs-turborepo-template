@@ -73,6 +73,7 @@ export const testConfig = (options: BaseConfigOptions = {}) => {
                 "no-unused-vars": "off",
                 "@typescript-eslint/unbound-method": "off",
                 "@typescript-eslint/unified-signatures": "off",
+                "@typescript-eslint/no-deprecated": "off",
             },
         },
     ]);

@@ -129,7 +129,7 @@ To test the updated configuration:
 ⚠️ **Important**: These changes introduce breaking changes:
 
 1. **Database**: Migration from MySQL to PostgreSQL requires data migration
-2. **API Endpoints**: Complete API structure change from Directus REST/GraphQL to tRPC
+2. **API Endpoints**: Complete API structure change from Directus REST/GraphQL to ORPC
 3. **Authentication**: Migration from Directus auth to Better Auth
 4. **Environment Variables**: Many environment variables have changed names/formats
 

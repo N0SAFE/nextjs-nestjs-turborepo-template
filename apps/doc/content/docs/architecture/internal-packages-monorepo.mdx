@@ -1,0 +1,66 @@
+---
+title: Internal Packages & Monorepo Model
+description: How @repo/* packages map to workspace paths, dependency flow, and safe cross-package change workflow.
+order: 4
+---
+
+<DocMeta source=".docs/concepts/internal-packages.md, .docs/concepts/monorepo.md" scope="canonical" />
+
+## The two names model
+
+- **Physical path**: where code lives (example: `packages/contracts/api`).
+- **Import name**: what apps import (example: `@repo/api-contracts`).
+
+Both are expected and intentionally different.
+
+## Workspace structure
+
+- `apps/*`: runtime products (`api`, `web`, `doc`)
+- `packages/contracts/*`: shared contract definitions
+- `packages/utils/*`: shared runtime/tooling helpers
+- `packages/ui/*`: shared UI library
+- `packages/configs/*`: shared lint/type/test/tooling configuration
+- `packages/bin/*`: internal CLIs used by scripts
+
+## High-value package examples
+
+- `@repo/api-contracts` → `packages/contracts/api`
+- `@repo/auth` → `packages/utils/auth`
+- `@repo/orpc-utils` → `packages/utils/orpc`
+- `@repo/declarative-routing` → `packages/utils/declarative-routing`
+- `@repo/ui` → `packages/ui/base`
+- `@repo/env` → `packages/utils/env`
+
+## Dependency model
+
+- Internal dependencies use workspace references (commonly `"*"`).
+- Turborepo computes the task graph and rebuilds impacted dependents.
+- Cross-package changes should always be validated from repository root.
+
+## Change workflow for shared packages
+
+1. Update the internal package API (exports/types/contracts).
+2. Update dependents (`apps/*` and/or `packages/*`).
+3. Validate with root checks:
+
+```bash
+bun run check
+```
+
+4. Keep docs aligned in the same change set.
+
+<DocCallout title="Boundary reminder" tone="info">
+Avoid deep imports into package internals. Prefer stable public exports from each package `exports` map.
+</DocCallout>
+
+## Common pitfalls
+
+- Confusing import names and physical paths in docs/examples.
+- Introducing app-specific behavior into shared packages without clear boundaries.
+- Skipping root-level validation after changing shared packages.
+
+## Related docs
+
+- [Architecture Overview](/docs/architecture/architecture)
+- [Tech Stack](/docs/architecture/tech-stack)
+- [ORPC Type-Safe API](/docs/dev/orpc)

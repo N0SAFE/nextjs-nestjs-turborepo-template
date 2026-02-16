@@ -8,19 +8,13 @@ In NextJS applications, Declarative Routes also handles API routes, so you'll ha
 
 # Route List
 
-Here are the routes of the application:
+Routes are generated from `src/app/**/page.info.ts` and `src/app/**/route.info.ts`.
 
-| Route                           | Verb | Route Name                   | Using It                            |
-| ------------------------------- | ---- | ---------------------------- | ----------------------------------- |
-| `/(app)/showcase`               | -    | `Appshowcase`                | `<Appshowcase.Link>`                |
-| `/api/auth/[...nextauth]`       | -    | `Apiauthnextauth`            | `<Apiauthnextauth.Link>`            |
-| `/auth/login`                   | -    | `Authlogin`                  | `<Authlogin.Link>`                  |
-| `/auth/me`                      | -    | `Authme`                     | `<Authme.Link>`                     |
-| `/middleware/error/env`         | -    | `Middlewareerrorenv`         | `<Middlewareerrorenv.Link>`         |
-| `/middleware/error/healthCheck` | -    | `MiddlewareerrorhealthCheck` | `<MiddlewareerrorhealthCheck.Link>` |
-| `/`                             | -    | `Home`                       | `<Home.Link>`                       |
+- Source of truth for generated exports: `src/routes/index.ts`
+- Route metadata source: `src/app/**/page.info.ts`
+- API route metadata source: `src/app/**/route.info.ts`
 
-To use the routes, you can import them from `@/routes` and use them in your code.
+To use routes, import from `@/routes` and use the generated route objects/helpers.
 
 # Using the routes in your application
 
@@ -103,24 +97,11 @@ You can also run the build command in watch mode using `bun --bun dr:build:watch
 
 # Finishing your setup
 
-Post setup there are some additional tasks that you need to complete to completely typesafe your routes. We've compiled a handy check list so you can keep track of your progress.
+After initial setup:
 
-- [ ] `/(app)/showcase/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/(app)/showcase` to `<Appshowcase.Link>`
-- [ ] `/api/auth/[...nextauth]/route.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/api/auth/[...nextauth]` to `<Apiauthnextauth.Link>`
-- [ ] Convert `params` typing in `/api/auth/[...nextauth]/route.ts` to `z.infer<>`
-- [ ] `/auth/login/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/auth/login` to `<Authlogin.Link>`
-- [ ] `/auth/me/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/auth/me` to `<Authme.Link>`
-- [ ] `/middleware/error/env/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/middleware/error/env` to `<Middlewareerrorenv.Link>`
-- [ ] `/middleware/error/healthCheck/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/middleware/error/healthCheck` to `<MiddlewareerrorhealthCheck.Link>`
-- [ ] `/page.info.ts`: Add search typing to if the page supports search paramaters
-- [ ] Convert `Link` components for `/` to `<Home.Link>`
-      Once you've got that done you can remove this section.
+1. Ensure each page route has a corresponding `page.info.ts` with accurate `params`/`search` schemas.
+2. Run `bun run web -- dr:build` after route structure or route metadata changes.
+3. Prefer generated `@/routes` helpers over hardcoded links/paths.
 
 # Why is `makeRoute` copied into the `@/routes` module?
 

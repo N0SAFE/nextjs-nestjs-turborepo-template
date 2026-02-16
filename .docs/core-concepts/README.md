@@ -1,6 +1,6 @@
 # Core Concepts
 
-> **Last Updated**: 2025-10-14  
+> **Last Updated**: 2026-02-13  
 > **Status**: 🔴 MANDATORY - MUST BE FOLLOWED AT ALL TIMES
 
 ## Overview
@@ -14,8 +14,8 @@ This directory contains the **CORE CONCEPTS** of this project - the fundamental 
 ### 1. Be Aware of Core Concepts and Read What's Needed
 
 AI assistants MUST:
-1. **Know that `docs/core-concepts/` exists** and contains fundamental patterns
-2. **Read `docs/core-concepts/README.md`** (this file) to see what concepts exist
+1. **Know that `.docs/core-concepts/` exists** and contains fundamental patterns
+2. **Read `.docs/core-concepts/README.md`** (this file) to see what concepts exist
 3. **Read relevant core concept files** for the current task
 4. **Don't re-read familiar concepts** you've already applied successfully
 
@@ -70,7 +70,7 @@ If a user request conflicts with a core concept:
 ⚠️ Core concept conflict detected:
 
 Your request suggests accessing DatabaseService directly in the controller.
-This violates: docs/core-concepts/02-SERVICE-ADAPTER-PATTERN.md
+This violates: .docs/core-concepts/02-SERVICE-ADAPTER-PATTERN.md
 
 The core concept requires:
 - Controllers use Service layer
@@ -219,5 +219,5 @@ docs/
 
 If unclear about:
 - **Whether something is a core concept**: Ask in the project
-- **How to implement a pattern**: Check detailed docs in `docs/concepts/` and `docs/architecture/`
+- **How to implement a pattern**: Check detailed docs in `.docs/concepts/` and `.docs/reference/`
 - **Conflict with core concept**: Request user approval before proceeding

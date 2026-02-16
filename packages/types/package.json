@@ -21,7 +21,7 @@
     "devDependencies": {
         "eslint": "catalog:linting",
         "@eslint/eslintrc": "^3.3.3",
-        "@eslint/js": "^9.8.0",
+        "@eslint/js": "catalog:linting",
         "@repo/config-eslint": "*",
         "@repo/config-prettier": "*",
         "@repo/config-typescript": "*",

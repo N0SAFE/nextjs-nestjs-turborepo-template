@@ -41,10 +41,10 @@ Unlike traditional REST APIs where frontend and backend types can drift apart:
 
 ### File Organization
 
-Contracts are organized in `packages/api-contracts/` with this structure:
+Contracts are organized in `packages/contracts/api/` with this structure:
 
 ```
-packages/api-contracts/
+packages/contracts/api/
 ├── index.ts                    # Main app contract (aggregates all modules)
 ├── common/
 │   └── pagination.ts           # Shared schemas (pagination, sorting, etc.)
@@ -63,7 +63,7 @@ packages/api-contracts/
         └── index.ts            # Health check contract
 ```
 
-### Main App Contract (packages/api-contracts/index.ts)
+### Main App Contract (packages/contracts/api/index.ts)
 
 The main contract aggregates all feature modules:
 
@@ -87,7 +87,7 @@ export type AppContract = typeof appContract;
 Each feature uses `.tag().prefix().router()` to organize endpoints:
 
 ```typescript
-// packages/api-contracts/modules/capsule/index.ts
+// packages/contracts/api/modules/capsule/index.ts
 import { oc } from '@orpc/contract';
 import { listWeeklyContract } from './list-weekly';
 import { getByIdContract } from './get-by-id';
@@ -114,7 +114,7 @@ export const capsuleContract = oc
 Each endpoint is defined with `oc.route()`:
 
 ```typescript
-// packages/api-contracts/modules/user/list.ts
+// packages/contracts/api/modules/user/list.ts
 import { oc } from '@orpc/contract';
 import { z } from 'zod';
 import { paginationSchema, sortSchema } from '../../common/pagination';
@@ -256,12 +256,12 @@ export class CapsuleController {
 
 ## API Implementation Components
 
-### 1. Contract Definition (packages/api-contracts/modules/*/...)
+### 1. Contract Definition (packages/contracts/api/modules/*/...)
 
 Complete example with all patterns:
 
 ```typescript
-// packages/api-contracts/modules/capsule/list.ts
+// packages/contracts/api/modules/capsule/list.ts
 import { oc } from '@orpc/contract';
 import { z } from 'zod';
 import { paginationSchema, sortSchema } from '../../common/pagination';
@@ -774,7 +774,7 @@ const capsule = await orpc.capsule.update({ id, data });
 Create a new endpoint contract in the appropriate module:
 
 ```typescript
-// packages/api-contracts/modules/capsule/publish.ts
+// packages/contracts/api/modules/capsule/publish.ts
 import { oc } from '@orpc/contract';
 import { z } from 'zod';
 
@@ -801,7 +801,7 @@ export const publishContract = oc
 Add to module router:
 
 ```typescript
-// packages/api-contracts/modules/capsule/index.ts
+// packages/contracts/api/modules/capsule/index.ts
 import { publishContract } from './publish';
 
 export const capsuleContract = oc
@@ -897,7 +897,7 @@ function PublishButton({ capsuleId }: { capsuleId: string }) {
 
 This example shows the full flow from contract to frontend usage.
 
-### 1. Contract (packages/api-contracts/modules/capsule/update.ts)
+### 1. Contract (packages/contracts/api/modules/capsule/update.ts)
 
 ```typescript
 import { oc } from '@orpc/contract';
@@ -1298,14 +1298,14 @@ Violations must be refactored immediately.
 ## Additional Resources
 
 **Live Code Examples:**
-- **Contract Organization**: `packages/api-contracts/index.ts` and `packages/api-contracts/modules/`
+- **Contract Organization**: `packages/contracts/api/index.ts` and `packages/contracts/api/modules/`
 - **Controller Implementation**: `apps/api/src/modules/capsule/controllers/capsule.controller.ts`
 - **Frontend Usage**: `apps/web/src/components/devtools/TanStackDevTools.tsx` (production queryOptions example)
 - **ORPC Client Setup**: `apps/web/src/lib/orpc/index.ts`
 
 **Key Files to Reference:**
 - `apps/web/package.json` - See `generate` script (openapi + sitemap, NOT hooks)
-- `packages/api-contracts/common/pagination.ts` - Shared schemas for pagination/sorting
+- `packages/contracts/api/common/pagination.ts` - Shared schemas for pagination/sorting
 - `apps/api/src/core/types/request.type.ts` - UserRequest type definition
 
 **Documentation:**

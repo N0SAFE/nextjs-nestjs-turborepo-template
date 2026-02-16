@@ -1,11 +1,69 @@
 ---
 title: Testing
-description: Monorepo testing with Vitest and merged coverage.
+description: Practical test workflow for the Bun + Turbo monorepo with Vitest and quality gates.
 order: 30
 ---
 
-From `docs/TESTING.md`.
+<DocMeta source=".docs/features/TESTING.md" scope="canonical" />
 
-- Run tests: `bun run test`
-- Coverage: `bun run test:coverage` produces merged report at `coverage/report/index.html`
-- Structure: per-app/package vitest configs
+## What to run day-to-day
+
+Use root scripts from repository root:
+
+```bash
+bun run test
+bun run test:watch
+bun run test:ui
+bun run test:coverage
+```
+
+`test` delegates to Turbo, so package/app tests run in workspace-aware order.
+
+## Merge gate (mandatory)
+
+```bash
+bun run check
+```
+
+This is the main repository quality gate (`compile + lint + test + type-check`).
+
+## Scope-focused testing
+
+When iterating on one target, filter test runs:
+
+```bash
+bun run test --filter=web
+bun run test --filter=api
+bun run test --filter=@repo/ui
+```
+
+## Coverage workflow
+
+For local confidence:
+
+- `bun run test:coverage` to collect coverage
+- `bun run coverage:report` to render consolidated report artifacts when needed
+
+Treat coverage as a signal, not the only target: behavior-critical paths and integration boundaries matter more than headline percentage.
+
+## What to prioritize in this repo
+
+1. **API auth and permission boundaries** (guards, middleware, plugin utils)
+2. **ORPC contract-driven behavior** (input/output and invalidation assumptions)
+3. **Web domain hooks and query state behavior**
+4. **Shared packages used by multiple apps**
+
+<DocCallout title="High-signal testing rule" tone="info">
+Prefer tests that validate contracts, permission boundaries, and edge behavior over tests tightly coupled to implementation details.
+</DocCallout>
+
+## PR readiness checklist
+
+<DocChecklist
+	items={[
+		{ label: 'New behavior covered by tests in the owning package/app', done: false },
+		{ label: 'Regression path covered for the bug being fixed', done: false },
+		{ label: 'bun run check passes locally', done: false },
+		{ label: 'No skipped tests left without explicit reason', done: false },
+	]}
+/>

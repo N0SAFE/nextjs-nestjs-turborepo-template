@@ -1,0 +1,74 @@
+---
+title: Service-Adapter Pattern in API
+description: Mandatory backend layering rules for controllers, services, repositories, and adapters.
+order: 8
+---
+
+<DocMeta source=".docs/core-concepts/02-SERVICE-ADAPTER-PATTERN.md" scope="canonical" />
+
+## Why this pattern exists
+
+The API layer uses strict separation of concerns to prevent business logic drift:
+
+- Controller: endpoint orchestration
+- Service: business rules
+- Repository: DB access
+- Adapter: entity → contract transformation
+
+## Mandatory rules
+
+### Controllers
+
+- Must use service + adapter.
+- Must not inject `DatabaseService`.
+- Must not contain business logic.
+
+### Services
+
+- Own domain business logic and validation.
+- Call repositories from their domain.
+- Return entities (or domain objects), not transport contracts.
+
+### Repositories
+
+- Only layer with direct DB operations.
+- No business policy decisions.
+
+### Adapters
+
+- Pure transformation to contract output.
+- No side effects and no DB calls.
+
+## Repository ownership rule
+
+Cross-domain code must call another **service**, not another domain’s repository.
+
+- ✅ `ServiceA → ServiceB`
+- ❌ `ServiceA → RepositoryB`
+
+This avoids bypassing business invariants in domain B.
+
+## Practical controller flow
+
+1. ORPC handler receives validated input.
+2. Controller calls service method.
+3. Service executes business logic and repository access.
+4. Controller returns adapter-mapped contract shape.
+
+## Smell detector
+
+Refactor immediately if a controller:
+
+- imports DB schema/table types,
+- builds SQL/Drizzle queries,
+- maps entities manually inline,
+- repeats response transform logic across handlers.
+
+<DocCallout title="Code review gate" tone="warning">
+Any new controller using direct database access should be considered architecture regression and blocked in review.
+</DocCallout>
+
+## Related docs
+
+- [ORPC Type-Safe API](/docs/dev/orpc)
+- [Auth Access Control with Better Auth](/docs/dev/auth-access-control)

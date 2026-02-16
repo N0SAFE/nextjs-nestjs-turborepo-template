@@ -9,29 +9,39 @@
     "start": "next start -p 3020",
     "postinstall": "fumadocs-mdx",
     "lint": "eslint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "dr:build": "npx declarative-routing build",
+    "dr:build:watch": "npx declarative-routing build --watch",
+    "openapi": "npm run openapi:yaml && npm run openapi:html",
+    "openapi:yaml": "ts-node ./src/routes/openapi.ts",
+    "openapi:html": "npx @redocly/cli build-docs openapi-docs.yml"
   },
   "dependencies": {
     "fumadocs-core": "catalog:doc",
     "fumadocs-mdx": "catalog:doc",
     "fumadocs-ui": "catalog:doc",
     "lucide-react": "catalog:ui",
+    "mermaid": "^11.12.0",
     "next": "catalog:next",
+    "query-string": "^9.3.1",
     "react": "catalog:react",
-    "react-dom": "catalog:react"
+    "react-dom": "catalog:react",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.4.1",
+    "@eslint/eslintrc": "catalog:linting",
     "@repo/config-eslint": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
     "@types/node": "catalog:build",
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
+    "eslint": "catalog:linting",
+    "eslint-config-next": "catalog:next",
     "postcss": "catalog:styling",
     "tailwindcss": "catalog:styling",
     "typescript": "catalog:build",
-    "eslint-config-next": "catalog:next",
-    "eslint": "catalog:linting",
-    "@eslint/eslintrc": "catalog:linting"
+    "yaml": "^2.8.2"
   }
 }

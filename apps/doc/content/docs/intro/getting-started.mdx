@@ -1,42 +1,53 @@
 ---
 title: Getting Started
-description: Quick start guide for local development with Docker-first workflow.
+description: End-to-end onboarding for local development, validation, and first contribution.
 order: 1
 ---
 
-This guide condenses and replaces the markdown in `docs/GETTING-STARTED.md`.
+<DocMeta source=".docs/guides/GETTING-STARTED.md" scope="canonical" />
+
+<DocCallout title="Docker-first expectation" tone="info">
+The standard development path in this repository is container-first for consistent runtime behavior across machines.
+</DocCallout>
 
 ## Prerequisites
 
-- Bun 1.2.14+
-- Node.js 20+
-- Docker + Compose
+- Bun `>= 1.3.1`
+- Node.js `20+`
+- Docker + Compose plugin
 - Git
+- A valid `.env` generated from repository templates
 
-## Initialize
+## Initialize project context
 
-1. Clone your repo
-2. Run the initialization wizard to generate a validated `.env`:
+1. Clone the repository.
+2. Generate environment variables from templates:
 
 ```bash
 bun run init
 ```
 
-3. Install deps:
+3. Install workspace dependencies:
 
 ```bash
 bun install
 ```
 
-## Start Dev
+4. Optionally verify environment contract:
 
-- Full stack:
+```bash
+bun run check-env
+```
+
+## Start development
+
+- Full stack (API + web + infra):
 
 ```bash
 bun run dev
 ```
 
-- API only / Web only:
+- Focused stack variants:
 
 ```bash
 bun run dev:api
@@ -49,3 +60,37 @@ bun run dev:web
 - API: http://localhost:3001 (health: /health)
 - DB: Postgres 5432
 - Cache: Redis 6379
+
+## First validation cycle
+
+Before opening a PR, run the baseline quality gate:
+
+```bash
+bun run check
+```
+
+You can also run focused checks:
+
+```bash
+bun run test
+bun run lint
+bun run build
+```
+
+## First-day workflow checklist
+
+<DocChecklist
+	items={[
+		{ label: 'Generate .env from template', done: false },
+		{ label: 'Install dependencies', done: false },
+		{ label: 'Start full stack', done: false },
+		{ label: 'Open web and API health URLs', done: false },
+		{ label: 'Run full validation gate', done: false },
+	]}
+/>
+
+## Next reading
+
+- [Architecture Overview](/docs/architecture/architecture)
+- [Development Workflow](/docs/dev/development-workflow)
+- [ORPC Type-Safe API Workflow](/docs/dev/orpc)

@@ -1,0 +1,67 @@
+---
+title: Auth Access Control with Better Auth
+description: Authentication, role/permission enforcement, and plugin utility usage in the API.
+order: 9
+---
+
+<DocMeta source=".docs/core-concepts/07-BETTER-AUTH-INTEGRATION.md, .docs/features/BETTER-AUTH-PLUGIN-UTILITIES.md" scope="canonical" />
+
+## Core rule
+
+Auth entity operations must go through `AuthService.api` (or typed plugin utilities built on top of it), not direct table mutation.
+
+## Guard and decorator model
+
+Default flow:
+
+1. `AuthGuard` resolves session and user.
+2. `RoleGuard` enforces role/permission metadata.
+3. ORPC/Nest handler receives user context via decorators.
+
+Use decorators to make intent explicit:
+
+- Public/optional access: `@Public()`, `@Optional()`
+- Identity extraction: `@Session()`, `@AuthenticatedUser()`, `@UserRoles()`
+- Authorization: `@RequireRole(...)`, `@RequireAllRoles(...)`, `@RequirePermissions(...)`
+
+## Role + permission strategy
+
+- Use role checks for broad access tiers.
+- Use permission checks for fine-grained actions.
+- Prefer centralized permission definitions (shared config) over inline ad-hoc objects.
+
+## Plugin utilities (admin + organization)
+
+Use plugin utilities where available to reduce boilerplate header passing and keep auth operations consistent.
+
+Expected benefits:
+
+- less repeated request-header plumbing,
+- clearer access-control semantics,
+- better type inference for plugin actions.
+
+## Anti-patterns (forbidden)
+
+- direct inserts/updates/deletes on auth-managed tables,
+- bypassing guard/decorator flow with manual request parsing,
+- role/permission logic duplicated in controllers.
+
+<DocCallout title="Important" tone="warning">
+When you need user/org/admin auth mutations, route them through Better Auth APIs and plugin wrappers; never handcraft DB writes for auth tables.
+</DocCallout>
+
+## Suggested endpoint checklist
+
+<DocChecklist
+	items={[
+		{ label: 'Route has explicit auth intent (public/optional/restricted)', done: false },
+		{ label: 'Session/user extracted via decorators, not raw request parsing', done: false },
+		{ label: 'Authorization uses role/permission decorators or middleware', done: false },
+		{ label: 'Auth mutations go through AuthService.api or plugin utilities', done: false },
+	]}
+/>
+
+## Related docs
+
+- [Service-Adapter Pattern in API](/docs/dev/api-service-adapter)
+- [ORPC Type-Safe API](/docs/dev/orpc)

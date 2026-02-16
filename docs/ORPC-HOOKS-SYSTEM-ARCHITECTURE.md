@@ -1,5 +1,11 @@
 # ORPC Hooks System Architecture
 
+> **Note (current repo reality):** this document is a detailed architectural reference and may include design-level context. For canonical current imports/paths and day-to-day implementation docs, see:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md)
+> - [`.docs/examples/API-USAGE-EXAMPLES.md`](../.docs/examples/API-USAGE-EXAMPLES.md)
+> - [`.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`](../.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md)
+
 > **Document Type**: Master Architectural Reference  
 > **Package**: `@repo/orpc-utils/hooks`  
 > **Last Updated**: 2025-01-XX  

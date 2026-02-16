@@ -1,11 +1,45 @@
 ---
 title: Technology Stack
-description: Technologies and rationale.
+description: Primary technologies, grouped by runtime concern and usage intent.
 order: 3
 ---
 
-Condensed from `docs/TECH-STACK.md`.
-- Frontend: Next.js 15, React 19, Tailwind 4, Shadcn, Zustand, React Query 5, Zod 4
-- Backend: NestJS 10, ORPC 1.7.8, Better Auth 1.3.4, Drizzle 0.39, PostgreSQL 16, Redis
-- Tooling: Turbo 2, Docker, ESLint/Prettier, Vitest 3
-Why: SSG/SSR performance, type-safety end-to-end, containerized dev/prod, strong DX.
+<DocMeta source=".docs/reference/TECH-STACK.md" scope="canonical" />
+
+## Frontend
+
+- Next.js 16.x (App Router)
+- React 19
+- Tailwind CSS + shared UI package (`@repo/ui`)
+- TanStack Query for client cache orchestration
+
+## Backend
+
+- NestJS 11
+- ORPC 1.13.x (contracts + transport + integration)
+- Better Auth 1.4.x
+- Drizzle ORM + PostgreSQL
+
+## Tooling and platform
+
+- Bun workspaces + Turborepo task orchestration
+- Docker Compose for local and production-like stacks
+- Vitest for testing
+- ESLint/TypeScript shared configs via internal packages
+
+## Why this stack
+
+1. **Type continuity** from contracts to UI hooks.
+2. **Fast local iteration** with Bun + Turbo + Docker.
+3. **Clear boundary model** between shared packages and app implementations.
+4. **Scalable deployment model** with separate API/web containers.
+
+<DocCallout title="Version policy" tone="info">
+Prefer workspace catalog versions for consistency; avoid ad-hoc dependency drifts between apps/packages.
+</DocCallout>
+
+## Related docs
+
+- [Architecture Overview](/docs/architecture/architecture)
+- [Development Workflow](/docs/dev/development-workflow)
+- [Production Deployment](/docs/deployment/production-deployment)

@@ -1,11 +1,65 @@
 ---
 title: Render Deployment
-description: Deploy via render.yaml blueprint.
+description: Practical Render deployment approach for API, web, and docs using this monorepo’s Docker assets.
 order: 21
 ---
 
-From `docs/RENDER-DEPLOYMENT.md`.
+<DocMeta source=".docs/guides/RENDER-DEPLOYMENT.md" />
 
-- Use blueprint (detects render.yaml)
-- Build-time compile avoids port-scan timeout
-- Configure env via fromService references
+## Service split (recommended)
+
+- API service
+- Web service
+- Docs service (optional but recommended)
+- Managed Postgres/Redis (or equivalent)
+
+## Important repo-state note
+
+Treat Render setup as **explicit service configuration** (Dockerfile + env per service).
+
+- Do not assume turnkey blueprint automation unless your branch includes a verified Render blueprint file.
+- Always verify file paths and env names against current repository state.
+
+## Docker assets to reference
+
+- API: `docker/builder/api/Dockerfile.api.prod`
+- Web: `docker/builder/web/Dockerfile.web.build-time.prod`
+- Docs: `docker/builder/doc/Dockerfile.doc.build-time.prod`
+
+## Render-oriented sequence (safe)
+
+1. Provision services and environment variables.
+2. Configure build/start commands per service.
+3. Configure inter-service URLs (`NEXT_PUBLIC_API_URL`, app/doc URLs, auth origins).
+4. Deploy API first, then web.
+5. Deploy docs service.
+6. Run end-to-end smoke checks.
+
+## Common pitfalls
+
+- Misaligned public URL variables between API and web
+- Missing auth callback/redirect URL updates
+- Mismatch between declared Dockerfile path and actual repository structure
+
+<DocChecklist
+	items={[
+		{ label: 'All required env vars are configured', done: false },
+		{ label: 'API health endpoint responds', done: false },
+		{ label: 'Web can reach API with correct base URL', done: false },
+		{ label: 'Docs app deploys and serves latest content', done: false },
+		{ label: 'Auth sign-in/sign-out flow verified', done: false },
+	]}
+/>
+
+## Validation commands before platform deploy
+
+```bash
+bun run check
+cd apps/doc && bun run lint && bun run type-check && bun run build
+```
+
+## Related docs
+
+- [Production Deployment](/docs/deployment/production-deployment)
+- [Environment Template System](/docs/tooling/environment-template-system)
+- [Docker Build Strategies](/docs/docker/docker-build-strategies)

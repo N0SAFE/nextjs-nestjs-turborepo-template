@@ -1,0 +1,58 @@
+---
+title: CORS Configuration
+description: Origin configuration model, environment variables, and fast troubleshooting workflow.
+order: 12
+---
+
+<DocMeta source=".docs/guides/CORS-CONFIGURATION.md" scope="canonical" />
+
+## What this project expects
+
+The API accepts requests from configured web origins, with normalization and environment-aware behavior.
+
+Primary environment inputs:
+
+- `NEXT_PUBLIC_APP_URL` (browser-facing app URL)
+- `APP_URL` (internal/container-facing app URL when needed)
+- `TRUSTED_ORIGINS` (additional comma-separated origins)
+
+## Common failures
+
+### 1) Trailing slash mismatch
+
+- Prefer `http://localhost:3000`
+- Avoid `http://localhost:3000/`
+
+### 2) Wrong protocol/port
+
+- Origin in browser must match allowed origin exactly (`http` vs `https`, and port).
+
+### 3) Production strictness
+
+- Localhost fallbacks are development-only convenience.
+- Production must explicitly list trusted origins.
+
+## Fast troubleshooting sequence
+
+1. Inspect browser request `Origin` header.
+2. Compare with configured env values.
+3. Check API logs for rejected-origin messages.
+4. Verify app/API ports in compose and env templates.
+5. Restart API after env changes.
+
+## Operational checklist
+
+<DocChecklist
+	items={[
+		{ label: 'NEXT_PUBLIC_APP_URL has no trailing slash', done: false },
+		{ label: 'Protocol and port match real browser origin', done: false },
+		{ label: 'TRUSTED_ORIGINS includes all production frontends', done: false },
+		{ label: 'API restarted after env update', done: false },
+	]}
+/>
+
+## Related docs
+
+- [Docker Compose](/docs/docker/docker-compose)
+- [Docker Build Strategies](/docs/docker/docker-build-strategies)
+- [Production Deployment](/docs/deployment/production-deployment)

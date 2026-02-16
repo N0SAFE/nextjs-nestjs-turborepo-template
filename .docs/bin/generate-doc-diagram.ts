@@ -196,13 +196,13 @@ Examples:
   bun run generate-doc-diagram.ts
 
   # Start from main docs README
-  bun run generate-doc-diagram.ts --start docs/README.md
+  bun run generate-doc-diagram.ts --start .docs/README.md
 
   # Limited depth for overview (2 levels)
-  bun run generate-doc-diagram.ts --start docs/README.md --depth 2
+  bun run generate-doc-diagram.ts --start .docs/README.md --depth 2
 
   # Save to file
-  bun run generate-doc-diagram.ts --start docs/README.md > doc-structure.mermaid
+  bun run generate-doc-diagram.ts --start .docs/README.md > doc-structure.mermaid
 
 Output:
   Valid Mermaid flowchart diagram code that can be:

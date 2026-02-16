@@ -124,9 +124,9 @@ nextjs-nestjs-turborepo-template/
 │   └── web/              # NextJS frontend application with declarative routing
 ├── packages/             # Shared packages
 │   ├── ui/               # Shared UI components (Shadcn)
-│   ├── api-contracts/    # ORPC API contracts for type safety
+│   ├── contracts/api/    # ORPC API contracts for type safety (`@repo/api-contracts`)
 │   └── ...               # Other shared packages
-└── docs/                 # Documentation
+└── .docs/                # Main documentation hub
 ```
 
 For a more detailed understanding of the project structure, refer to [Architecture Overview](../reference/ARCHITECTURE.md).
@@ -174,11 +174,11 @@ After setup, you may want to:
    - Set up custom user roles and permissions
 
 3. **Set Up Data Models**:
-   - Create database schemas using Drizzle ORM in `apps/api/src/db/drizzle/schema/`
+   - Create database schemas using Drizzle ORM in `apps/api/src/config/drizzle/schema/`
    - Generate and run migrations with `bun run api -- db:generate`
 
 4. **Define API Contracts**:
-   - Create ORPC procedures in `packages/api-contracts/`
+   - Create ORPC procedures in `packages/contracts/api/`
    - Implement API endpoints in `apps/api/src/`
 
 5. **Customize UI**:
@@ -192,7 +192,7 @@ Once you have your environment set up, check out these guides:
 - Docs hub: ../README.md
 - Development Workflow: ./DEVELOPMENT-WORKFLOW.md
 - Architecture Overview: ../reference/ARCHITECTURE.md
-- Technology Stack: ./TECH-STACK.md
+- Technology Stack: ../reference/TECH-STACK.md
 - Production Deployment: ./PRODUCTION-DEPLOYMENT.md
 
 ## Troubleshooting

@@ -70,7 +70,7 @@ bun run web -- dev:open
 ### 1. API Development with NestJS
 
 1. Create or modify API endpoints in `apps/api/src`
-2. Update ORPC contracts in `packages/api-contracts/`
+2. Update ORPC contracts in `packages/contracts/api/`
 3. Use the package manager to install dependencies:
    ```bash
    cd apps/api
@@ -123,15 +123,17 @@ Access data from NestJS API using the ORPC client:
 
 ```typescript
 // In client components
-import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { orpc } from '@/lib/orpc';
 
-// Use generated hooks
-const { data, isLoading } = api.users.getProfile.useQuery();
+const { data, isLoading } = useQuery(
+   orpc.user.findById.queryOptions({ input: { params: { id: '123' } } })
+);
 
-// In server components  
-import { orpcClient } from '@/lib/orpc-client';
+// In server components
+import { orpc } from '@/lib/orpc';
 
-const userData = await orpcClient.users.getProfile();
+const userData = await orpc.user.findById.call({ params: { id: '123' } });
 ```
 
 #### Authentication
@@ -274,10 +276,10 @@ bun run api -- install dependency-name
 
 ```bash
 # Update all dependencies
-npm update
+bun update
 
 # Update specific dependency
-npm update package-name
+bun update package-name
 ```
 
 ## Troubleshooting

@@ -4,11 +4,64 @@ description: Declarative routing system for Next.js App Router.
 order: 5
 ---
 
-Condensed from `apps/web/src/routes/README.md`.
+<DocMeta source=".docs/core-concepts/12-DECLARATIVE-ROUTING-PATTERN.md" scope="canonical" />
 
-- Define `page.info.ts` next to pages
-- Generate routes: `bun run web -- dr:build` (or `:watch`)
-- Use `<Home.Link>` etc., not raw href strings
-- Hooks: `usePush`, `useParams`, `useSearchParams`
+## How it works
 
-See also: Development Workflow → Route Changes.
+1. Each route page owns a `page.info.ts` descriptor.
+2. The declarative routing generator builds typed route artifacts.
+3. UI code consumes generated links/helpers instead of raw string paths.
+
+## Required command
+
+```bash
+bun run web -- dr:build
+```
+
+Use watch mode when iterating heavily on route trees:
+
+```bash
+bun run web -- dr:build:watch
+```
+
+## Rules
+
+- Avoid hardcoded `href` strings when a generated route helper exists.
+- Regenerate route artifacts after any route structure change.
+- Keep route metadata descriptive and stable for maintainability.
+
+## Practical implementation sequence
+
+1. Add or update route UI files.
+2. Define/update matching `page.info.ts` metadata.
+3. Run route generation.
+4. Replace raw path usage with typed route helpers.
+5. Run checks to catch param/search typing drift.
+
+## Troubleshooting
+
+### Generated helpers missing
+
+- Re-run route generation.
+- Ensure `page.info.ts` exists in the target route segment.
+- Restart the web dev process if stale artifacts persist.
+
+### Type mismatch after route edits
+
+- Update helper call sites for changed params/search shapes.
+- Verify optional vs required route parameters.
+- Run repository type checks after route refactors.
+
+## Guardrails
+
+- Keep routing logic declarative and typed.
+- Avoid mixing legacy string paths with generated helpers in the same feature.
+
+<DocCallout title="Why this matters" tone="info">
+Declarative routing enforces compile-time navigation safety and prevents subtle path drift between pages, links, and route params.
+</DocCallout>
+
+## Related docs
+
+- [Development Workflow](/docs/dev/development-workflow)
+- [ORPC Type-Safe API](/docs/dev/orpc)

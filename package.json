@@ -9,25 +9,25 @@
         "catalogs": {
             "build": {
                 "typescript": "^5.8.3",
-                "rimraf": "^6.0.1",
-                "@types/node": "^24.10.8",
+                "rimraf": "^6.1.3",
+                "@types/node": "^25.2.3",
                 "vite": "^7.2.6",
                 "chokidar": "^5.0.0",
                 "@parcel/watcher": "^2.5.4"
             },
             "dev": {
-                "dotenv": "^17.2.3",
+                "dotenv": "^17.3.1",
                 "dotenv-cli": "^11.0.0",
                 "dotenv-expand": "^12.0.3",
                 "wait-port": "^1.1.0",
-                "wait-on": "^9.0.1",
+                "wait-on": "^9.0.4",
                 "concurrently": "^9.2.0",
                 "cross-env": "^10.1.0"
             },
             "linting": {
-                "eslint": "^9",
+                "eslint": "^9.0.0",
                 "@eslint/eslintrc": "^3.3.3",
-                "@eslint/js": "^9.7.0",
+                "@eslint/js": "^9.0.0",
                 "prettier": "^3.8.0",
                 "prettier-plugin-tailwindcss": "^0.7.1"
             },
@@ -63,7 +63,7 @@
             },
             "styling": {
                 "tailwindcss": "^4",
-                "tailwind-merge": "^3.3.1",
+                "tailwind-merge": "^3.4.1",
                 "@tailwindcss/postcss": "^4",
                 "tailwind-variants": "^3.1.1",
                 "tailwindcss-animate": "^1.0.7",
@@ -77,12 +77,12 @@
                 "@testing-library/jest-dom": "^6.6.3",
                 "@testing-library/react": "^16.1.0",
                 "@testing-library/user-event": "^14.5.2",
-                "jsdom": "^27.0.1",
+                "jsdom": "^28.1.0",
                 "@vitejs/plugin-react": "^5.1.0",
                 "@vitest/coverage-istanbul": "^4.0.17"
             },
             "ui": {
-                "lucide-react": "^0.562.0",
+                "lucide-react": "^0.564.0",
                 "radix-ui": "^1.4.3",
                 "framer-motion": "^12.26.2",
                 "class-variance-authority": "^0.7.0",
@@ -106,15 +106,15 @@
                 "@types/circular-json": "^0.4.0",
                 "circular-json": "^0.5.9",
                 "yaml": "^2.8.2",
-                "@asteasolutions/zod-to-openapi": "^8.0.0",
+                "@asteasolutions/zod-to-openapi": "^8.4.1",
                 "@n0safe/envcli": "^1.0.2",
-                "@antfu/ni": "^27.0.1",
+                "@antfu/ni": "^28.2.0",
                 "diff": "^8.0.3",
                 "@types/diff": "^8.0.0",
                 "execa": "^9.6.1",
                 "fs-extra": "^11.2.0",
                 "@types/fs-extra": "^11.0.4",
-                "glob": "^13.0.0",
+                "glob": "^13.0.3",
                 "handlebars": "^4.7.8",
                 "kleur": "^4.1.5",
                 "log-symbols": "^7.0.1",
@@ -131,16 +131,16 @@
                 "@types/bcrypt": "^6.0.0"
             },
             "orpc": {
-                "@orpc/openapi-client": "1.13.4",
-                "@orpc/client": "1.13.4",
-                "@orpc/contract": "1.13.4",
-                "@orpc/tanstack-query": "1.13.4",
-                "@orpc/nest": "1.13.4",
-                "@orpc/openapi": "1.13.4",
-                "@orpc/server": "1.13.4",
-                "@orpc/shared": "1.13.4",
-                "@orpc/zod": "1.13.4",
-                "@orpc/json-schema": "1.13.4"
+                "@orpc/openapi-client": "1.13.5",
+                "@orpc/client": "1.13.5",
+                "@orpc/contract": "1.13.5",
+                "@orpc/tanstack-query": "1.13.5",
+                "@orpc/nest": "1.13.5",
+                "@orpc/openapi": "1.13.5",
+                "@orpc/server": "1.13.5",
+                "@orpc/shared": "1.13.5",
+                "@orpc/zod": "1.13.5",
+                "@orpc/json-schema": "1.13.5"
             },
             "api:nest": {
                 "@nestjs/cli": "^11.0.15",
@@ -155,7 +155,7 @@
                 "reflect-metadata": "^0.2.2",
                 "rxjs": "^7.8.1",
                 "@types/express": "^5.0.5",
-                "@scalar/nestjs-api-reference": "^1.0.16",
+                "@scalar/nestjs-api-reference": "^1.0.24",
                 "express": "^5.1.0",
                 "express-list-routes": "^1.3.1",
                 "nest-commander": "^3.19.1",
@@ -175,8 +175,8 @@
                 "nuqs": "^2.7.3"
             },
             "doc": {
-                "fumadocs-ui": "^16.4.7",
-                "fumadocs-core": "^16.4.7",
+                "fumadocs-ui": "^16.6.2",
+                "fumadocs-core": "^16.6.2",
                 "fumadocs-mdx": "^14.2.5",
                 "@types/mdx": "^2.0.13"
             }
@@ -280,7 +280,7 @@
         "@n0safe/trycli": "^1.0.4",
         "@repo/config-vitest": "*",
         "@repo/env": "*",
-        "@types/bun": "1.3.6",
+        "@types/bun": "1.3.9",
         "@vitest/coverage-v8": "catalog:testing",
         "concurrently": "catalog:dev",
         "cross-env": "^10.1.0",
@@ -288,7 +288,7 @@
         "knip": "^5.81.0",
         "nyc": "^17.1.0",
         "rimraf": "catalog:build",
-        "turbo": "2.7.4",
+        "turbo": "2.8.9",
         "vite": "catalog:build",
         "vitest": "catalog:testing"
     },

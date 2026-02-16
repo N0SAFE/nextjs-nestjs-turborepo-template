@@ -1,0 +1,75 @@
+---
+title: Client Data Layer (Hooks + Cache)
+description: Domain-oriented ORPC hook usage, query key strategy, and invalidation rules for the web app.
+order: 7
+---
+
+<DocMeta source="docs/UNIFIED-HOOK-PATTERN.md, docs/ORPC-HOOKS-SYSTEM-ARCHITECTURE.md, docs/QUERY-KEY-INVALIDATION-DESIGN.md" scope="supplemental" />
+
+## Purpose
+
+The web app’s data access layer is a **hook layer**, not component-level networking.
+
+Use this rule:
+
+1. Component calls domain hook.
+2. Domain hook calls ORPC query/mutation options.
+3. Mutation invalidates explicit query keys.
+
+This keeps cache behavior predictable and testable.
+
+## Required layering
+
+- **UI components**: never call ORPC endpoints directly.
+- **Domain hooks**: own query/mutation composition and invalidation.
+- **ORPC client**: imported from `apps/web/src/lib/orpc`.
+
+<DocCallout title="Hard rule" tone="warning">
+Do not mix ad-hoc `useQuery` calls in components with domain hook behavior for the same feature. That creates cache divergence.
+</DocCallout>
+
+## Query key conventions
+
+Use hierarchical keys by domain:
+
+- Domain base (`all`)
+- Operation key (`list`, `detail`, `count`, etc.)
+- Input-scoped key (when needed)
+
+Practical invalidation strategy:
+
+- **create**: invalidate `list` and `count`
+- **update**: invalidate `detail(id)` and `list`
+- **delete**: remove `detail(id)`, invalidate `list` + `count`
+
+## Mutation-side invalidation checklist
+
+<DocChecklist
+	items={[
+		{ label: 'Invalidate list-level queries after creates/deletes', done: false },
+		{ label: 'Invalidate item-level queries after updates', done: false },
+		{ label: 'Prefer exported key factories over hardcoded arrays', done: false },
+		{ label: 'Keep invalidation logic in hook layer (not components)', done: false },
+	]}
+/>
+
+## Recommended hook API shape
+
+For each domain, expose:
+
+- Query hooks (`useListX`, `useXDetail`, `useXCount`)
+- Mutation hooks (`useCreateX`, `useUpdateX`, `useDeleteX`)
+- Optional composition hook for admin pages (`useXManagement`)
+- Exported query key factories for manual operations
+
+## Performance guidance
+
+- Prefer stable query keys and controlled invalidation over broad wildcard invalidation.
+- Use prefetch for anticipated transitions (hover/open/details).
+- Tune `staleTime` by volatility (session/permissions shorter; static lists longer).
+
+## Related docs
+
+- [ORPC Type-Safe API](/docs/dev/orpc)
+- [Service-Adapter Pattern in API](/docs/dev/api-service-adapter)
+- [Testing](/docs/testing/testing)

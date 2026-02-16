@@ -1,5 +1,10 @@
 # AuthService Registry Caching Architecture
 
+> **Note (current repo reality):** this is a focused deep-dive architecture note. For canonical import/path mappings and active authentication references, see:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/concepts/authentication.md`](../.docs/concepts/authentication.md)
+> - [`.docs/features/BETTER-AUTH-PLUGIN-UTILITIES.md`](../.docs/features/BETTER-AUTH-PLUGIN-UTILITIES.md)
+
 ## Overview
 
 The `AuthService` implements an optimized registry caching strategy that separates static configuration from dynamic request-specific injection. The plugin registry is built **once per auth configuration** and reused across all requests, while request headers are injected dynamically per-request.

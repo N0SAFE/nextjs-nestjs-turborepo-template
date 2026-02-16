@@ -1,5 +1,10 @@
 # Unified Hook Pattern - ORPC + Better Auth
 
+> **Note (current repo reality):** this is a supplemental deep dive. For canonical current imports/paths and operational references, see:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md)
+> - [`.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md`](../.docs/core-concepts/11-ORPC-CLIENT-HOOKS-PATTERN.md)
+
 ## Overview
 
 This document describes the unified hook pattern used across the codebase for both ORPC-generated hooks and Better Auth hooks. The goal is to provide a consistent API for query key management and cache invalidation regardless of the hook source.

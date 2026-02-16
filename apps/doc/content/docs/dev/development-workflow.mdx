@@ -1,28 +1,48 @@
 ---
 title: Development Workflow
-description: Day-to-day tasks and best practices.
+description: Daily engineering workflow from local run to validation and merge readiness.
 order: 4
 ---
 
-From `docs/DEVELOPMENT-WORKFLOW.md`.
+<DocMeta source=".docs/guides/DEVELOPMENT-WORKFLOW.md" scope="canonical" />
 
-## Start
+## Start the stack
 
 ```bash
 bun run dev
 ```
 
-## API
+## Core loop
 
-- Change contracts in `packages/api-contracts`
-- Implement in `apps/api`
-- DB: `bun run api -- db:generate|push|migrate|seed` 
+1. Update contracts first (if API surface changes).
+2. Implement API behavior.
+3. Regenerate route/client artifacts when required.
+4. Update web domain hooks and UI consumers.
+5. Run validation gate before pushing.
 
-## Web
+## API workflow
 
-- Pages in `apps/web/src/app`, with `page.info.ts` for routes
-- Run `bun run web -- dr:build` after route changes
-- Use ORPC client hooks
+- Contracts: `packages/contracts/api`
+- Implementation: `apps/api`
+- Drizzle actions:
+
+```bash
+bun run api -- db:generate
+bun run api -- db:push
+bun run api -- db:migrate
+bun run api -- db:seed
+```
+
+## Web workflow
+
+- Use `page.info.ts` for declarative routing definitions.
+- Regenerate routes after route changes:
+
+```bash
+bun run web -- dr:build
+```
+
+- Keep API consumption in domain hooks; avoid ad-hoc raw fetch in UI components.
 
 ## Testing
 
@@ -30,3 +50,18 @@ bun run dev
 bun run test
 bun run test:coverage
 ```
+
+## Final validation
+
+```bash
+bun run check
+```
+
+<DocChecklist
+	items={[
+		{ label: 'Contracts updated before implementation when needed', done: false },
+		{ label: 'Routes regenerated after route changes', done: false },
+		{ label: 'All tests and lint pass', done: false },
+		{ label: 'Documentation updated with behavior changes', done: false },
+	]}
+/>

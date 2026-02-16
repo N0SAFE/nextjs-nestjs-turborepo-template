@@ -741,7 +741,7 @@ async function publishAppFlow() {
 async function publishAllFlow() {
   console.log(pc.cyan('\n📦 Publishing all packages and apps...\n'))
   
-  // TODO: Implement batch publishing
+  // Placeholder: batch publishing flow can be added later
   console.log(pc.yellow('⚠️  Not implemented yet'))
 }
 

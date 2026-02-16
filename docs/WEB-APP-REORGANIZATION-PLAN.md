@@ -1,4 +1,10 @@
 # Web App Reorganization Plan
+
+> **Note (current repo reality):** this document is a planning artifact. For canonical current architecture, import/path mappings, and active workflows, see:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/reference/ARCHITECTURE.md`](../.docs/reference/ARCHITECTURE.md)
+> - [`.docs/guides/DEVELOPMENT-WORKFLOW.md`](../.docs/guides/DEVELOPMENT-WORKFLOW.md)
+
 **Date:** 2025-12-27  
 **Scope:** `apps/web/src` organization audit and improvements
 

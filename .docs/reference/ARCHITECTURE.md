@@ -17,15 +17,15 @@ nextjs-nestjs-turborepo-template/
 │   └── web/                   # NextJS frontend application
 ├── packages/                  # Shared packages
 │   ├── bin/                   # CLI tools and scripts
-│   ├── api-contracts/         # ORPC type-safe API contracts
-│   ├── eslint-config/         # Shared ESLint configurations
-│   ├── prettier-config/       # Shared Prettier configurations  
-│   ├── tailwind-config/       # Shared Tailwind CSS configurations
-│   ├── tsconfig/              # Shared TypeScript configurations
+│   ├── contracts/             # Shared contract packages (including ORPC contracts)
+│   ├── configs/               # Shared ESLint/Prettier/Tailwind/TypeScript/Vitest configs
 │   ├── types/                 # Shared TypeScript type definitions
-│   └── ui/                    # Shared UI component library with Shadcn UI
+│   ├── ui/                    # Shared UI component library with Shadcn UI
+│   └── utils/                 # Shared utilities (auth, env, logger, ORPC helpers)
 └── docs/                      # Documentation
 ```
+
+For exact import-name ↔ physical-path mappings, use the canonical reference: [Canonical Paths & Imports](./CANONICAL-PATHS-AND-IMPORTS.md).
 
 ## Component Architecture
 

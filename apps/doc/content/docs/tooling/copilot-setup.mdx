@@ -1,11 +1,30 @@
 ---
-title: Copilot Agent Setup
-description: Pre-configured environment and workflows for the AI coding agent.
-order: 80
+title: Copilot Setup
+description: AI-assisted development setup, guardrails, and repository-aligned usage patterns.
+order: 14
 ---
 
-From `docs/COPILOT-SETUP.md`.
+<DocMeta source=".docs/features/COPILOT-SETUP.md" scope="canonical" />
 
-- Tools: Node/Bun/Turbo/Docker, Postgres/Redis
-- Commands ready: dev/build/test/lint/format
-- CI workflow for environment bootstrap
+## Goals
+
+- Keep AI assistance aligned with repository architecture and patterns.
+- Reduce repeated context loading through clear documentation entry points.
+- Enforce practical constraints for safer code edits.
+
+## Baseline expectations
+
+- Follow repository AGENTS instructions and local scope overrides.
+- Prefer existing contracts/patterns over introducing ad-hoc designs.
+- Update documentation in the same PR for behavior changes.
+
+## Good usage pattern
+
+1. Read relevant docs before implementing.
+2. Confirm existing patterns in target scope.
+3. Make small verifiable changes.
+4. Run checks and summarize outcomes.
+
+<DocCallout title="Guardrail" tone="warning">
+AI assistance should accelerate decisions, not bypass architecture boundaries.
+</DocCallout>

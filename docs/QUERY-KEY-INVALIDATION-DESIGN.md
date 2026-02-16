@@ -4,6 +4,11 @@
 > **Date**: 2026-01-09  
 > **Purpose**: Define architecture for type-safe, query-key-based cache invalidation
 
+> **Note (current repo reality):** this is a design-oriented deep dive. For current canonical imports/paths and day-to-day implementation references, see:
+> - [`.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md`](../.docs/reference/CANONICAL-PATHS-AND-IMPORTS.md)
+> - [`.docs/features/ORPC-TYPE-CONTRACTS.md`](../.docs/features/ORPC-TYPE-CONTRACTS.md)
+> - [`.docs/examples/API-USAGE-EXAMPLES.md`](../.docs/examples/API-USAGE-EXAMPLES.md)
+
 ## Overview
 
 This document defines a new invalidation system where:
@@ -254,7 +259,7 @@ function UserList() {
     // Prefetch user details
     queryClient.prefetchQuery({
       queryKey: userHooks.keys.findById({ id: userId }),
-      queryFn: () => orpcClient.user.findById({ id: userId })
+      queryFn: () => orpc.user.findById.call({ params: { id: userId } })
     })
   }
 }

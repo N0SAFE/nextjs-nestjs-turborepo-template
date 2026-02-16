@@ -1,11 +1,66 @@
 ---
 title: Project Isolation
-description: Run multiple instances without Docker name conflicts.
+description: Avoid local collisions when running multiple project instances in parallel.
 order: 13
 ---
 
-From `docs/PROJECT-ISOLATION.md`.
+<DocMeta source=".docs/planning/PROJECT-ISOLATION.md" scope="canonical" />
 
-- Set `COMPOSE_PROJECT_NAME` in `.env`
-- All containers/networks/volumes get prefixed
-- Use descriptive, short, lowercase-with-hyphens names
+## Core approach
+
+Set a unique project namespace in `.env`:
+
+```bash
+COMPOSE_PROJECT_NAME=my-project-instance
+```
+
+Docker resources (containers/networks/volumes) are automatically prefixed, which prevents collisions between simultaneous stacks.
+
+## Naming guidance
+
+- Use short, descriptive, kebab-case names.
+- Keep names stable across a given feature branch lifespan.
+- Avoid generic names shared by teammates.
+
+## Typical isolated stack workflow
+
+1. Set `COMPOSE_PROJECT_NAME` in your `.env`.
+2. Start your stack (`bun run dev`, or scoped `dev:api` / `dev:web`).
+3. Verify container names are prefixed with your project namespace.
+4. Use isolated logs for debugging.
+
+Useful commands:
+
+```bash
+bun run dev
+bun run dev:api
+bun run dev:web
+bun run dev:api:logs
+bun run dev:web:logs
+```
+
+## Conflict resolution
+
+When another stack already uses your ports/resources:
+
+- choose a new `COMPOSE_PROJECT_NAME`,
+- confirm host port mappings in your env/config,
+- restart only the affected service stack.
+
+<DocCallout title="Tip" tone="info">
+Project isolation prevents most container/network name collisions, but host port collisions can still occur if multiple stacks expose the same host port.
+</DocCallout>
+
+<DocChecklist
+	items={[
+		{ label: 'COMPOSE_PROJECT_NAME set before starting stack', done: false },
+		{ label: 'Ports verified to avoid host conflicts', done: false },
+		{ label: 'Logs inspected per isolated stack', done: false },
+		{ label: 'Only needed stack restarted after conflict fix', done: false },
+	]}
+/>
+
+## Related docs
+
+- [Getting Started](/docs/intro/getting-started)
+- [Docker Compose Topology](/docs/docker/docker-compose)

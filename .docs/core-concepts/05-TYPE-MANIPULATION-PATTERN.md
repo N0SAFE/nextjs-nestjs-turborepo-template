@@ -16,14 +16,14 @@ This project emphasizes TypeScript's type inference capabilities to reduce dupli
 
 ## Type Definition Hierarchy
 
-1. **Contracts** (Source of Truth): `packages/api-contracts/index.ts`
+1. **Contracts** (Source of Truth): `packages/contracts/api/index.ts`
 2. **Inferred Types**: Extract from contracts using TypeScript utilities
 3. **Custom Types**: Only when inference + logic is needed
 
 ## ✅ CORRECT: Infer from Contracts
 
 ```typescript
-// packages/api-contracts/index.ts
+// packages/contracts/api/index.ts
 export const projectContract = router({
   getById: procedure
     .input(z.object({ id: z.string() }))

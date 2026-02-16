@@ -1,79 +1,76 @@
-# Documentation Home
+# Documentation Hub
 
-Welcome to the documentation for this Next.js + NestJS monorepo template. This hub gives you a clear, consistent starting point and links to focused guides for each part of the stack.
+> **Last Updated**: 2026-02-13
 
-> Use case this docs set is optimized for
->
-> Docker-first SaaS app: develop locally with Docker, build end-to-end types with ORPC and declarative routing, and deploy to Render for production.
->
-> Audience: Full‑stack developers starting a new project from this template.
->
-> Out of scope: Non-Render cloud specifics, legacy CMS guides.
+Central entrypoint for project documentation.
 
-## How to use these docs
+This repository has two complementary documentation spaces:
 
-- Start with Overview and Quick Start if you're new
-- Jump to Concepts to understand how core systems work
-- Use Guides for day-to-day development and deployment
-- Check Reference for commands, environment, and glossary
+- **`.docs/`**: canonical operational and architectural documentation
+- **`docs/`**: supplemental deep-dive design notes and focused architecture writeups
 
-All docs follow the conventions in Docs Style Guide to stay consistent and avoid repetition.
+## Recommended reading path
 
-## 🧭 Opinionated journey (recommended order)
+1. [Getting Started](./guides/GETTING-STARTED.md)
+2. [Architecture](./reference/ARCHITECTURE.md)
+3. [Tech Stack](./reference/TECH-STACK.md)
+4. [Environment Template System](./features/ENVIRONMENT-TEMPLATE-SYSTEM.md)
+5. [Development Workflow](./guides/DEVELOPMENT-WORKFLOW.md)
+6. [ORPC Type Contracts](./features/ORPC-TYPE-CONTRACTS.md)
+7. [Testing](./features/TESTING.md)
+8. Deployment guides:
+   - [Production Deployment](./guides/PRODUCTION-DEPLOYMENT.md)
+   - [Render Deployment](./guides/RENDER-DEPLOYMENT.md)
 
-1. Bootstrap your environment: ./GETTING-STARTED.md
-2. Understand the system: ./ARCHITECTURE.md and ./TECH-STACK.md
-3. Configure env via the template system: ./ENVIRONMENT-TEMPLATE-SYSTEM.md
-4. Daily dev with Docker, routes, and ORPC: ./DEVELOPMENT-WORKFLOW.md and ./ORPC-TYPE-CONTRACTS.md
-5. Build and test confidently: ./TESTING.md
-6. Choose build strategy for prod: ./DOCKER-BUILD-STRATEGIES.md
-7. Deploy to production:
-	- Generic Docker Compose: ./PRODUCTION-DEPLOYMENT.md
-	- Render PaaS: ./RENDER-DEPLOYMENT.md
-8. Optional multi-project isolation on one machine: ./PROJECT-ISOLATION.md
+## Main sections
 
-You can still jump directly to any topic below.
+### Core concepts (mandatory patterns)
 
-## Overview
+- [Core Concepts Index](./core-concepts/README.md)
 
-- Architecture overview: ./ARCHITECTURE.md
-- Technology stack: ./TECH-STACK.md
-- Getting started: ./GETTING-STARTED.md
-- Development workflow: ./DEVELOPMENT-WORKFLOW.md
+### Concepts (system explanations)
 
-## Concepts (How it works)
+- [Concepts Index](./concepts/README.md)
 
-- End-to-end types with ORPC: ./concepts/orpc.md
-- Declarative routing in Next.js: ./concepts/declarative-routing.md
-- Authentication with Better Auth: ./concepts/authentication.md
-- Database with Drizzle ORM: ./concepts/database.md
-- Monorepo with Turborepo: ./concepts/monorepo.md
+### Guides (how-to)
 
-## Guides (Do this)
+- [Guides Index](./guides/README.md)
+- [Getting Started](./guides/GETTING-STARTED.md)
+- [Development Workflow](./guides/DEVELOPMENT-WORKFLOW.md)
+- [Docker Build Strategies](./guides/DOCKER-BUILD-STRATEGIES.md)
+- [Production Deployment](./guides/PRODUCTION-DEPLOYMENT.md)
+- [Render Deployment](./guides/RENDER-DEPLOYMENT.md)
 
-- Pull Request Template: ./guides/PULL-REQUEST-TEMPLATE-GUIDE.md
-- Testing: ./features/TESTING.md
-- Production deployment: ./guides/PRODUCTION-DEPLOYMENT.md
-- Render deployment: ./guides/RENDER-DEPLOYMENT.md
-- Docker build strategies: ./guides/DOCKER-BUILD-STRATEGIES.md
-- Memory optimization (Docker): ./guides/MEMORY-OPTIMIZATION.md
-- Project isolation (multiple projects on one machine): ./planning/PROJECT-ISOLATION.md
-- CORS configuration and troubleshooting: ./guides/CORS-CONFIGURATION.md
+### Features (system-focused)
 
-## Reference
+- [Features Index](./features/README.md)
+- [ORPC Type-Safe Contracts](./features/ORPC-TYPE-CONTRACTS.md)
+- [Testing](./features/TESTING.md)
+- [Environment Template System](./features/ENVIRONMENT-TEMPLATE-SYSTEM.md)
+- [Copilot Setup](./features/COPILOT-SETUP.md)
 
-- Environment template system: ./ENVIRONMENT-TEMPLATE-SYSTEM.md
-- ORPC contracts (reference): ./ORPC-TYPE-CONTRACTS.md
-- Docs style guide: ./STYLEGUIDE.md
-- Glossary: ./GLOSSARY.md
+### Reference
 
-## Archived/Legacy
+- [Reference Index](./reference/README.md)
+- [Canonical Paths & Imports](./reference/CANONICAL-PATHS-AND-IMPORTS.md)
+- [Architecture](./reference/ARCHITECTURE.md)
+- [Tech Stack](./reference/TECH-STACK.md)
+- [Glossary](./reference/GLOSSARY.md)
 
-The following historical documents are preserved for context but are not part of the active workflow:
+### Planning
 
-- Docker migration summary (Directus → NestJS): ../DOCKER-MIGRATION-SUMMARY.md
-- Testing implementation and success summaries: ./TESTING-IMPLEMENTATION-SUMMARY.md, ./TESTING-SUCCESS-SUMMARY.md
+- [Planning Index](./planning/README.md)
 
-## Contributing to docs
+### Deprecated / historical
 
-Please follow ./STYLEGUIDE.md. When a topic already exists, link to it rather than duplicating content. If you must diverge, add only the delta and reference the primary source.
+- [Deprecated Index](./deprecated/README.md)
+
+## Documentation quality rules
+
+- Keep one primary source per topic
+- Link instead of duplicating
+- Ensure command examples match `package.json` scripts
+- Keep relative links valid
+- Update index files when adding new docs
+
+For style conventions, see [STYLEGUIDE.md](./STYLEGUIDE.md).

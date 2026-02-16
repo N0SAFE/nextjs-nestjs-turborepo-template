@@ -23,4 +23,4 @@ If you need an archived document:
 3. Review git history: `git log --follow docs/deprecated/<filename>`
 
 ## Last Updated
-2025-10-16
+2026-02-13

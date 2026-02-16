@@ -1,18 +1,126 @@
 ---
 title: Documentation Hub
-description: Centralized docs for the Next.js + NestJS Turborepo template, powered by Fumadocs.
+description: Focused entrypoint to the docs that matter most for daily development and operations.
 order: 0
 ---
 
-Welcome to the documentation hub. Use the sidebar to explore.
+<DocMeta source="apps/doc/content/docs" scope="canonical" />
 
-- Getting Started → /docs/getting-started
-- Architecture → /docs/architecture
-- Tech Stack → /docs/tech-stack
-- Development Workflow → /docs/development-workflow
-- Docker Build Strategies → /docs/docker-build-strategies
-- Docker Compose → /docs/docker-compose
-- Production Deployment → /docs/production-deployment
-- Render Deployment → /docs/render-deployment
-- Environment Template System → /docs/environment-template-system
-- Testing → /docs/testing
+<DocCallout title="Relevance-first docs" tone="success">
+This docs app is curated to prioritize practical workflows, architecture clarity, and operational guidance.
+</DocCallout>
+
+## Start with what matters
+
+<DocCardGrid>
+	<DocCard
+		title="Getting Started"
+		href="/docs/intro/getting-started"
+		description="Environment setup, first run, and core commands."
+		badge="Onboarding"
+	/>
+	<DocCard
+		title="Architecture"
+		href="/docs/architecture/architecture"
+		description="System boundaries, data flow, auth flow, and ownership rules."
+		badge="Core"
+	/>
+	<DocCard
+		title="Development Workflow"
+		href="/docs/dev/development-workflow"
+		description="Day-to-day loop from implementation to validation."
+		badge="Daily"
+	/>
+	<DocCard
+		title="ORPC Workflow"
+		href="/docs/dev/orpc"
+		description="How contracts, API implementation, and web hooks fit together."
+		badge="API"
+	/>
+	<DocCard
+		title="Declarative Routing"
+		href="/docs/dev/routing"
+		description="Typed routes and generation workflow for the web app."
+		badge="Web"
+	/>
+	<DocCard
+		title="Production Deployment"
+		href="/docs/deployment/production-deployment"
+		description="Production runtime configuration and deployment sequence."
+		badge="Ops"
+	/>
+</DocCardGrid>
+
+## Recommended learning flow
+
+<DocStepFlow
+	steps={[
+		{
+			title: 'Boot locally',
+			description: 'Set up env files and start the stack with the documented root scripts.',
+		},
+		{
+			title: 'Understand boundaries',
+			description: 'Read architecture and tech stack to align on package and app responsibilities.',
+		},
+		{
+			title: 'Implement with patterns',
+			description: 'Follow ORPC + routing workflows before writing feature code in web/api apps.',
+		},
+		{
+			title: 'Validate before merge',
+			description: 'Run lint, type-check, tests, and full check gate from repository root.',
+		},
+	]}
+/>
+
+## Readiness checklist
+
+<DocChecklist
+	items={[
+		{ label: 'Local environment and services can boot cleanly', done: false },
+		{ label: 'Architecture boundaries are understood', done: false },
+		{ label: 'Feature workflow follows ORPC + routing patterns', done: false },
+		{ label: 'Validation gate passes before pushing', done: false },
+	]}
+/>
+
+## Full navigation
+
+- **Intro**
+	- [Getting Started](/docs/intro/getting-started)
+- **Architecture**
+	- [Architecture Overview](/docs/architecture/architecture)
+	- [Tech Stack](/docs/architecture/tech-stack)
+	- [Internal Packages & Monorepo Model](/docs/architecture/internal-packages-monorepo)
+- **Development**
+	- [Development Workflow](/docs/dev/development-workflow)
+	- [ORPC Type-Safe API Workflow](/docs/dev/orpc)
+	- [Declarative Routing Workflow](/docs/dev/routing)
+	- [Database Lifecycle](/docs/dev/database-lifecycle)
+	- [Client Data Layer (Hooks + Cache)](/docs/dev/client-data-layer)
+	- [Service-Adapter Pattern in API](/docs/dev/api-service-adapter)
+	- [Auth Access Control with Better Auth](/docs/dev/auth-access-control)
+- **Docker**
+	- [Docker Build Strategies](/docs/docker/docker-build-strategies)
+	- [Docker Compose Topology](/docs/docker/docker-compose)
+	- [CORS Configuration](/docs/docker/cors-configuration)
+- **Deployment**
+	- [Production Deployment](/docs/deployment/production-deployment)
+	- [Render Deployment](/docs/deployment/render-deployment)
+- **Tooling & Ops**
+	- [Environment Template System](/docs/tooling/environment-template-system)
+	- [Copilot Setup](/docs/tooling/copilot-setup)
+	- [Project Isolation](/docs/tooling/project-isolation)
+- **Quality**
+	- [Testing](/docs/testing/testing)
+- **Reference**
+	- [Glossary](/docs/reference/glossary)
+	- [Styleguide](/docs/reference/styleguide)
+
+## Documentation principles
+
+1. Prefer canonical import names over physical paths in examples.
+2. Keep commands runnable from repository root unless otherwise stated.
+3. Link across sections instead of duplicating the same explanation.
+4. Update docs in the same change set as behavior changes.

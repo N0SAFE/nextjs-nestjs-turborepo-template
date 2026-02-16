@@ -214,16 +214,16 @@ Options:
 
 Examples:
   # Analyze single file
-  bun run check-doc-links.ts --file docs/README.md
+  bun run check-doc-links.ts --file .docs/README.md
 
   # Follow links 2 levels deep
-  bun run check-doc-links.ts --file docs/README.md --depth 2
+  bun run check-doc-links.ts --file .docs/README.md --depth 2
 
   # Filter specific patterns
-  bun run check-doc-links.ts --file docs/README.md --filter "ARCHITECTURE*.md"
+  bun run check-doc-links.ts --file .docs/README.md --filter "ARCHITECTURE*.md"
 
   # Show detailed information with link counts
-  bun run check-doc-links.ts --file docs/README.md --verbose
+  bun run check-doc-links.ts --file .docs/README.md --verbose
 
 Output:
   - List of all linked documentation files

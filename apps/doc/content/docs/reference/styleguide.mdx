@@ -1,11 +1,28 @@
 ---
 title: Styleguide
-description: Coding standards and conventions.
+description: Documentation and engineering style rules expected for contributions.
 order: 40
 ---
 
-Summarized from `docs/STYLEGUIDE.md`.
+<DocMeta source=".docs/STYLEGUIDE.md" scope="canonical" />
 
-- Conventional commits
-- Shared ESLint/Prettier configs
-- Consistent TypeScript and folder structures
+## Code style expectations
+
+- Use shared lint and formatting configs from internal config packages.
+- Prefer explicit typing at public boundaries.
+- Keep feature logic in domain/service layers, not mixed into UI scaffolding.
+
+## Documentation style expectations
+
+- Keep docs task-oriented and verifiable.
+- Prefer linking over duplicating long explanations.
+- Update related docs when behavior or commands change.
+
+## Commit style
+
+- Use conventional commit prefixes with meaningful scopes.
+- Keep changes focused and coherent per commit.
+
+<DocCallout title="Consistency rule" tone="info">
+A small, consistent pattern repeated everywhere beats many clever one-off patterns.
+</DocCallout>

@@ -1,0 +1,74 @@
+---
+title: Database Lifecycle
+description: Drizzle/PostgreSQL ownership, migration flow, and seeding behavior across dev and production entrypoints.
+order: 7
+---
+
+<DocMeta source=".docs/concepts/database.md" scope="canonical" />
+
+## Ownership boundary
+
+- Database access is API-owned (`apps/api`).
+- Web consumes data through ORPC contracts and domain hooks.
+- Schema and migration lifecycle stays centralized in API tooling.
+
+## Canonical locations
+
+- Schema: `apps/api/src/config/drizzle/schema`
+- API DB scripts: `apps/api/package.json` (`db:*`)
+- Dev entrypoint orchestration: `apps/api/scripts/entrypoint.dev.ts`
+- Prod entrypoint orchestration: `apps/api/scripts/entrypoint.prod.ts`
+
+## Core commands
+
+```bash
+bun run api -- db:generate
+bun run api -- db:push
+bun run api -- db:migrate
+bun run api -- db:seed
+bun run api -- db:studio
+```
+
+## Runtime order (important)
+
+### Development entrypoint
+
+`entrypoint.dev.ts` runs in this sequence:
+
+1. validate environment,
+2. run diagnostics,
+3. run migrations,
+4. create default admin,
+5. run seeding,
+6. start API processes.
+
+### Production entrypoint
+
+- Migrations run unless `SKIP_MIGRATIONS=true`.
+- Seeding is opt-in and only runs when `ENABLE_SEEDING=true`.
+- Failed migration/seed steps are logged and handled intentionally by entrypoint logic.
+
+<DocCallout title="Critical rule" tone="warning">
+Never perform direct DB access from web code. Keep persistence rules in API services/repositories and expose them through contracts.
+</DocCallout>
+
+## Practical workflow
+
+1. Update schema in `apps/api/src/config/drizzle/schema`.
+2. Generate migration (`db:generate`).
+3. Apply migration (`db:migrate` or `db:push` per environment).
+4. Update service/repository logic.
+5. Update contracts/hooks if response shape changed.
+6. Run repository validation (`bun run check`).
+
+## Common pitfalls
+
+- Editing schema and forgetting migration generation.
+- Seeding non-deterministic data that breaks repeatability.
+- Coupling contract DTOs to DB implementation details.
+
+## Related docs
+
+- [Development Workflow](/docs/dev/development-workflow)
+- [ORPC Type-Safe API](/docs/dev/orpc)
+- [Production Deployment](/docs/deployment/production-deployment)

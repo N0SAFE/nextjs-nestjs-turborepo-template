@@ -1,12 +1,75 @@
 ---
 title: Environment Template System
-description: Interactive .env generation with validation.
+description: "`.env.template`-driven initialization, validation, and operational workflow for all apps."
 order: 12
 ---
 
-From `docs/ENVIRONMENT-TEMPLATE-SYSTEM.md`.
+<DocMeta source=".docs/features/ENVIRONMENT-TEMPLATE-SYSTEM.md" scope="canonical" />
 
-- Template syntax: `KEY={{type|param=value}}`
-- Field types: string, number, boolean, select, multiselect, url, date
-- Common params: label, description, optional, default
-- Run: `bun run init`
+## Why it exists
+
+This repository uses a template engine (`scripts/init.ts`) to make env setup consistent and validated.
+
+Goals:
+
+- reduce onboarding errors,
+- generate secure defaults where needed,
+- keep API/web/docs env values coherent.
+
+## Primary commands
+
+```bash
+bun run init
+bun run check-env
+bun run check-env:api
+bun run check-env:web
+bun run check-env:doc
+```
+
+`init` reads `.env.template` and interactively writes `.env`.
+
+## Template syntax
+
+- Pattern: `KEY={{type|param=value|...}}`
+
+Supported field families include:
+
+- `string`, `number`, `boolean`
+- `select`, `multiselect`
+- `url`, `date`, `json`
+
+The initializer enforces validation constraints directly from template parameters.
+
+## Built-in capabilities worth using
+
+- generated secrets (`generate=random`, with configurable length),
+- field-level constraints (regex/length/range/date bounds),
+- grouping for better interactive UX,
+- transformer-based derivation (e.g., URL-derived values),
+- optional non-exported/system values.
+
+## Practical guidance
+
+- Commit templates, never secrets.
+- Keep labels/descriptions explicit; future-you is also a user.
+- Prefer deriving correlated values to avoid drift.
+- Run `check-env` in CI and before local deploy runs.
+
+## Typical workflow
+
+1. Edit `.env.template` for new variable(s).
+2. Run `bun run init` to regenerate local `.env`.
+3. Run `bun run check-env:*` for impacted targets.
+4. Validate with `bun run check`.
+
+## Common mistakes
+
+- Adding runtime-required variables only in `.env` and not in template.
+- Forgetting to update descriptions/defaults when behavior changes.
+- Skipping `check-env` before running Docker stacks.
+
+## Related docs
+
+- [Development Workflow](/docs/dev/development-workflow)
+- [Docker Compose](/docs/docker/docker-compose)
+- [Production Deployment](/docs/deployment/production-deployment)
