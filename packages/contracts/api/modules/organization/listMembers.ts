@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { 
+  createFilterConfig,
   standard,
   type ComputeInputSchema,
 } from "@repo/orpc-utils";
@@ -26,9 +27,8 @@ const sortingFieldsArray = ["createdAt", "role"] as const;
 // Create standard operations builder
 const memberOps = standard.zod(memberSchema, "member");
 
-// Create list members contract using fluent builder
-const listMembersBuilder = memberOps
-  .listBuilder()
+// Create reusable list config using fluent builder
+const listMembersConfigSchemas = createFilterConfig(memberOps)
   .withPagination({
     defaultLimit: 20,
     maxLimit: 100,
@@ -45,10 +45,10 @@ const listMembersBuilder = memberOps
       schema: memberSchema.shape.role,
       operators: ["eq"] as const,
     },
-  });
+  })
+  .buildConfig();
 
-export const organizationListMembersContract = listMembersBuilder.build();
+export const organizationListMembersContract = memberOps.list(listMembersConfigSchemas).build();
 
 // Infer input type
-type ListMembersConfig = typeof listMembersBuilder extends { queryBuilder: { config: infer C } } ? C : never;
-export type OrganizationListMembersInput = ComputeInputSchema<ListMembersConfig>;
+export type OrganizationListMembersInput = ComputeInputSchema<typeof listMembersConfigSchemas>;

@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {
+  createFilterConfig,
   standard,
   createPaginationConfigSchema,
   createSortingConfigSchema,
@@ -38,8 +39,7 @@ const testOps = standard.zod(testEntitySchema, "testEntity");
 /**
  * List test entities with pagination, sorting, and filtering
  */
-const listBuilder = testOps
-  .listBuilder()
+const listConfigSchemas = createFilterConfig(testOps)
   .withPagination({
     defaultLimit: 10,
     maxLimit: 50,
@@ -67,12 +67,12 @@ const listBuilder = testOps
       schema: testEntitySchema.shape.createdAt,
       operators: ["gt", "gte", "lt", "lte", "between"] as const,
     },
-  });
+  })
+  .buildConfig();
 
-export const testEntityListContract = listBuilder.build();
-type ListConfig = typeof listBuilder extends { queryBuilder: { config: infer C } } ? C : never;
-export type TestEntityListInput = ComputeInputSchema<ListConfig>;
-export type TestEntityListOutput = ComputeOutputSchema<ListConfig, typeof testEntitySchema>;
+export const testEntityListContract = testOps.list(listConfigSchemas).build();
+export type TestEntityListInput = ComputeInputSchema<typeof listConfigSchemas>;
+export type TestEntityListOutput = ComputeOutputSchema<typeof listConfigSchemas, typeof testEntitySchema>;
 
 /**
  * Find a single test entity by ID

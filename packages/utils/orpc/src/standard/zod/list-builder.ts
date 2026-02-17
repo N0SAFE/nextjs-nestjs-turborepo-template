@@ -9,8 +9,7 @@
  * const userOps = standard.zod(userSchema, 'user');
  *
  * // Build list operation with fluent API
- * const userListContract = userOps
- *   .listBuilder()
+ * const userListContract = createFilterConfig(userOps)
  *   .withPagination({ defaultLimit: 20, maxLimit: 100, includeOffset: true })
  *   .withSorting(['name', 'email', 'createdAt'], {
  *     defaultField: 'createdAt',
@@ -21,20 +20,23 @@
  *     email: z.string().email()
  *   })
  *   .withSearch(['name', 'email'])
- *   .build();
+ *   .buildConfig();
+ *
+ * const userListContract = userOps.list(userListConfig).build();
  *
  * // Export query schemas for reuse
- * export const userListSchemas = userOps
- *   .listBuilder()
+ * export const userListSchemas = createFilterConfig(userOps)
  *   .withPagination({ defaultLimit: 20 })
  *   .withSorting(['name', 'email'])
- *   .getSchemas();
+ *   .buildConfig();
  * ```
  */
 
 import * as z from "zod";
+import type { AnySchema } from "@orpc/contract";
 import type { ZodEntitySchema } from "./standard-operations";
 import type { ZodStandardOperations } from "./standard-operations";
+import type { RouteBuilder } from "../../builder/route-builder";
 import {
     createQueryBuilder,
     createPaginationConfigSchema,
@@ -247,7 +249,16 @@ export class ListOperationBuilder<
     /**
      * Get the built query configuration schemas for type computation and reuse.
      */
-    getSchemas() {
+    getSchemas(): TConfig {
+        return this.buildConfig();
+    }
+
+    /**
+     * Build only the list config (without building the route).
+     *
+     * Useful when you want to pass config to `ops.list(config)`.
+     */
+    buildConfig(): TConfig {
         return this.queryBuilder.getConfig();
     }
 
@@ -257,10 +268,8 @@ export class ListOperationBuilder<
      * Returns a fully built ORPC contract (not a RouteBuilder).
      * Use this directly in router definitions.
      */
-    build() {
-        // Use buildListRoute() which takes QueryBuilder<TConfig> directly,
-        // preserving exact TConfig through the chain (avoids list() overload widening)
-        return this.operations.buildListRoute(this.queryBuilder).build();
+    build(): ReturnType<RouteBuilder<AnySchema, AnySchema, "GET", TEntity>["build"]> {
+        return this.operations.list(this.buildConfig()).build();
     }
 
     /**
@@ -277,3 +286,27 @@ export class ListOperationBuilder<
         return this.queryBuilder.buildOutputSchema(this._entitySchema);
     }
 }
+
+/**
+ * Create a fluent list config builder from standard operations.
+ *
+ * @example
+ * ```ts
+ * const listConfig = createListConfig(userOps)
+ *   .withFiltering({ email: userSchema.shape.email })
+ *   .withPagination({ defaultLimit: 20, maxLimit: 100, includeOffset: true })
+ *   .buildConfig();
+ *
+ * const listContract = userOps.list(listConfig).build();
+ * ```
+ */
+export function createListConfig<TEntity extends ZodEntitySchema>(
+    operations: ZodStandardOperations<TEntity, string, z.ZodType>,
+) {
+    return new ListOperationBuilder(operations, operations.getEntitySchema());
+}
+
+/**
+ * Backward-compatible alias with a filtering-first naming.
+ */
+export const createFilterConfig = createListConfig;

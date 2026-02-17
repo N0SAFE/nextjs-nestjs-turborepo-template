@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { 
+  createFilterConfig,
   standard,
   type ComputeInputSchema,
 } from "@repo/orpc-utils";
@@ -17,9 +18,8 @@ const organizationSchema = z.object({
 // Create standard operations builder
 const organizationOps = standard.zod(organizationSchema, "organization");
 
-// Use the fluent list builder API
-const organizationListAllBuilder = organizationOps
-  .listBuilder()
+// Build reusable list config with fluent API
+const organizationListAllConfig = createFilterConfig(organizationOps)
   .withPagination({
     defaultLimit: 20,
     maxLimit: 100,
@@ -43,13 +43,14 @@ const organizationListAllBuilder = organizationOps
       schema: organizationSchema.shape.createdAt,
       operators: ["gt", "gte", "lt", "lte", "between"] as const,
     },
-  });
+  })
+  .buildConfig();
 
 // Export reusable query configuration schemas
-export const organizationListAllConfigSchemas = organizationListAllBuilder.getSchemas();
+export const organizationListAllConfigSchemas = organizationListAllConfig;
 
 // Build the list contract
-export const organizationListAllContract = organizationListAllBuilder.build();
+export const organizationListAllContract = organizationOps.list(organizationListAllConfig).build();
 
 // Export input type helper - computed from the config
 export type OrganizationListAllInput = ComputeInputSchema<typeof organizationListAllConfigSchemas>;

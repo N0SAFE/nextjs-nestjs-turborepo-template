@@ -68,7 +68,7 @@ export {
 };
 
 // Re-export list builder
-export { ListOperationBuilder, type BuilderFilterField } from "./zod/list-builder";
+export { ListOperationBuilder, createListConfig, createFilterConfig, type BuilderFilterField } from "./zod/list-builder";
 
 // Re-export base types
 export {

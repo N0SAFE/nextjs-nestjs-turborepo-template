@@ -253,6 +253,30 @@ const sortableList = userOps.list({
 // }
 ```
 
+### Example 4.1: Config-First List Builder (`createFilterConfig`)
+
+```typescript
+import { createFilterConfig, standard } from "@repo/orpc-utils";
+
+const userOps = standard.zod(userSchema, "user");
+
+const userListConfig = createFilterConfig(userOps)
+  .withFiltering({
+    email: { schema: userSchema.shape.email, operators: ["eq", "like", "ilike"] as const },
+    createdAt: { schema: userSchema.shape.createdAt, operators: ["gt", "gte", "lt", "lte", "between"] as const },
+  })
+  .withPagination({ defaultLimit: 20, maxLimit: 100, includeOffset: true })
+  .withSorting(["createdAt", "name", "email"] as const, {
+    defaultField: "createdAt",
+    defaultDirection: "desc",
+  })
+  .buildConfig();
+
+const userListContract = userOps.list(userListConfig).build();
+```
+
+Use this pattern when you want to keep list query configuration reusable and pass it explicitly to `list(config)`.
+
 ### Example 5: Search Functionality
 
 ```typescript

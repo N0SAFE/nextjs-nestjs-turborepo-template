@@ -10,6 +10,8 @@ export {
     createZodStandardOperations,
     BaseStandardOperations,
     ListOperationBuilder,
+    createListConfig,
+    createFilterConfig,
     type ZodEntitySchema,
     type ZodEntityOperationOptions,
     type EntityOperationOptions,

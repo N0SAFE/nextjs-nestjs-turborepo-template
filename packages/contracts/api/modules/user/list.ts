@@ -1,13 +1,12 @@
 import * as z from "zod";
-import { standard, type ComputeInputSchema } from "@repo/orpc-utils";
+import { createFilterConfig, standard, type ComputeInputSchema } from "@repo/orpc-utils";
 import { userSchema } from "@repo/api-contracts/common/user";
 
 // Create standard operations builder for users
 const userOps = standard.zod(userSchema, "user");
 
-// Use the fluent list builder API
-const userListBuilder = userOps
-    .listBuilder()
+// Build reusable list config with fluent API
+const userListConfig = createFilterConfig(userOps)
     .withPagination({
         defaultLimit: 20,
         maxLimit: 100,
@@ -32,13 +31,14 @@ const userListBuilder = userOps
             schema: userSchema.shape.createdAt,
             operators: ["gt", "gte", "lt", "lte", "between"] as const,
         },
-    });
+    })
+    .buildConfig();
 
 // Export reusable query configuration schemas
-export const userListConfigSchemas = userListBuilder.getSchemas();
+export const userListConfigSchemas = userListConfig;
 
 // Build the list contract
-export const userListContract = userListBuilder.build();
+export const userListContract = userOps.list(userListConfig).build();
 
 // Export input type helper - computed from the config
 export type UserListInput = ComputeInputSchema<typeof userListConfigSchemas>;
