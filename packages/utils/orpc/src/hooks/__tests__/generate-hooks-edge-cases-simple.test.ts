@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod/v4';
 import { createRouterHooks } from '../generate-hooks';
-import { RouteBuilder } from '../../builder/route-builder';
+import { RouteBuilder } from '../../builder/core/route-builder';
 
 describe('Hook Generation - Edge Cases & Error Handling', () => {
   // Mock query client for tests

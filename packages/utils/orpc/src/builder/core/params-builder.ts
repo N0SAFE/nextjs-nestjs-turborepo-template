@@ -3,7 +3,7 @@
  * Uses Standard Schema instead of Zod
  */
 
-import type { AnySchema } from "./types";
+import type { AnySchema } from "../../shared/types";
 
 /**
  * Schema shape type imported for PathParamBuilderWithExisting

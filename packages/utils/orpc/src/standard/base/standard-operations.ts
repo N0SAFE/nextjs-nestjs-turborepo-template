@@ -15,9 +15,9 @@
  */
 
 import type { AnySchema } from "@orpc/contract";
-import { RouteBuilder } from "../../builder/route-builder";
+import { RouteBuilder } from "../../builder/core/route-builder";
 import type { EntitySchema, SchemaWithConfig } from "./types";
-import type { VoidSchema } from "../../builder/standard-schema-helpers";
+import type { VoidSchema } from "../../shared/standard-schema-helpers";
 import type { UUIDSchema } from "./types";
 import type { FieldFilterConfig } from "./utils";
 

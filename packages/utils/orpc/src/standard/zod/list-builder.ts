@@ -36,7 +36,7 @@ import * as z from "zod";
 import type { AnySchema } from "@orpc/contract";
 import type { ZodEntitySchema } from "./standard-operations";
 import type { ZodStandardOperations } from "./standard-operations";
-import type { RouteBuilder } from "../../builder/route-builder";
+import type { RouteBuilder } from "../../builder/core/route-builder";
 import {
     createQueryBuilder,
     createPaginationConfigSchema,

@@ -31,7 +31,7 @@ import {
     type ComputeOutputSchema,
     type QueryBuilder,
 } from "./utils";
-import { RouteBuilder } from "../../builder/route-builder";
+import { RouteBuilder } from "../../builder/core/route-builder";
 
 /**
  * Zod entity schema type - requires ZodObject for schema manipulation
@@ -732,15 +732,15 @@ export class ZodStandardOperations<
             .output(outputSchema);
     }
 
-    check<TFieldName extends string, TFieldSchema extends z.ZodType = z.ZodString>(fieldName: TFieldName, fieldSchema?: TFieldSchema) {
-        const schema = (fieldSchema ?? this.entitySchema.shape[fieldName] ?? z.string()) as TFieldSchema;
+    check<TFieldName extends keyof TEntity['shape'], TFieldSchema extends z.ZodType = z.ZodString>(fieldName: TFieldName, fieldSchema?: TFieldSchema) {
+        const schema = fieldSchema ?? (this.entitySchema.shape as TEntity['shape'])[fieldName] ?? z.string();
 
         return this.createBuilder({
             method: "GET",
-            summary: `Check ${this.entityName} ${fieldName}`,
-            description: `Check if a ${this.entityName} exists with the given ${fieldName}`,
+            summary: `Check ${this.entityName} ${String(fieldName)}`,
+            description: `Check if a ${this.entityName} exists with the given ${String(fieldName)}`,
         })
-            .path(`/check/${fieldName}`)
+            .path(`/check/${String(fieldName)}`)
             .input(z.object({ [fieldName]: schema }) as z.ZodObject<Record<TFieldName, TFieldSchema>>)
             .output(
                 z.object({
@@ -1167,7 +1167,7 @@ export class ZodStandardOperations<
             .input((b) => b.params((p) => p`/${p(idFieldName, idSchema)}/streaming`));
         
         // Type assertion needed: streamed outputs don't perfectly infer through output() overloads
-        return builder.output(b => b.body.streamed(this.entitySchema));
+        return builder.output(b => b.streamed(this.entitySchema));
     }
 
     streamingList(options?: (ZodListOperationOptions & { path?: HTTPPath }) | (BaseListPlainOptions & { path?: HTTPPath })) {
@@ -1193,7 +1193,7 @@ export class ZodStandardOperations<
                 .path(streamPath)
                 .input(z.object({ query: inputSchema.optional() }));
             
-            return builder.output((b) => b.body.streamed(outputSchema));
+            return builder.output((b) => b.streamed(outputSchema));
         };
 
         if (!listOptions) {
@@ -1254,7 +1254,7 @@ export class ZodStandardOperations<
             .path("/search/streaming")
             .input(z.object({ query: inputSchema.optional() }));
         
-        return builder.output(b => b.body.streamed(outputSchema));
+        return builder.output(b => b.streamed(outputSchema));
     }
 
     streamedInput<TChunkSchema extends z.ZodType = TEntity>(options?: { chunkSchema?: TChunkSchema; path?: HTTPPath; outputSchema?: z.ZodType }) {
@@ -1293,7 +1293,7 @@ export class ZodStandardOperations<
             .input((i) => i.body.streamed(inputChunkSchema));
         
         // Type assertion needed: streamed outputs don't perfectly infer through output() overloads
-        return builder.output(b => b.body.streamed(outputChunkSchema));
+        return builder.output(b => b.streamed(outputChunkSchema));
     }
 
     bidirectional<TInputChunk extends z.ZodType = TEntity, TOutputChunk extends z.ZodType = TEntity>(options?: { inputChunkSchema?: TInputChunk; outputChunkSchema?: TOutputChunk; path?: HTTPPath }) {

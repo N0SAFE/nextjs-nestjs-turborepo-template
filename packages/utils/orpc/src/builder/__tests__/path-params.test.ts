@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod/v4';
-import { RouteBuilder } from '../route-builder';
+import { RouteBuilder } from '../core/route-builder';
 
 describe('PathParams - Template Literal API', () => {
   describe('Basic path param creation', () => {

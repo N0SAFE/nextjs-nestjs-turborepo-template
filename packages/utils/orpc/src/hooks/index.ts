@@ -51,7 +51,7 @@ export {
 export {
   type ExtractRouteMethod,
   type HasRouteMethodMeta
-} from '../builder/mount-method';
+} from '../shared/route-method-meta';
 
 // Cache invalidation utilities
 export {

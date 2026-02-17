@@ -11,6 +11,7 @@
 import * as React from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { RouterHooks } from './generate-hooks';
+import { getOptionalHook, type MutationResult, type QueryResult } from './composite/shared';
 
 /**
  * Configuration for composite hooks
@@ -67,27 +68,13 @@ export function createCompositeHooks<TRouter extends object>(
     const queryClient = compositeOptions.useQueryClient();
     
     // Try to find list, create, update, delete hooks
-    const listHook = (baseHooks as Record<string, unknown>).useList as ((opts: unknown) => unknown) | undefined;
-    const createHook = (baseHooks as Record<string, unknown>).useCreate as (() => unknown) | undefined;
-    const updateHook = (baseHooks as Record<string, unknown>).useUpdate as (() => unknown) | undefined;
-    const deleteHook = (baseHooks as Record<string, unknown>).useDelete as (() => unknown) | undefined;
-    
-    type QueryResult = { 
-      data?: { data?: unknown[]; meta?: unknown };
-      isLoading?: boolean;
-      isFetching?: boolean;
-      error?: Error | null;
-      refetch?: () => void;
-    };
-    
-    type MutationResult = {
-      mutate?: (vars: unknown) => void;
-      mutateAsync?: (vars: unknown) => Promise<unknown>;
-      isPending?: boolean;
-      error?: Error | null;
-    };
-    
-    const listQuery = listHook?.(options?.pagination) as QueryResult | undefined;
+    const hooksRecord = baseHooks as Record<string, unknown>;
+    const listHook = getOptionalHook<(opts: unknown) => unknown>(hooksRecord, 'useList');
+    const createHook = getOptionalHook<() => unknown>(hooksRecord, 'useCreate');
+    const updateHook = getOptionalHook<() => unknown>(hooksRecord, 'useUpdate');
+    const deleteHook = getOptionalHook<() => unknown>(hooksRecord, 'useDelete');
+
+    const listQuery = listHook?.(options?.pagination) as QueryResult<{ data?: unknown[]; meta?: unknown }> | undefined;
     const createMutation = createHook?.() as MutationResult | undefined;
     const updateMutation = updateHook?.() as MutationResult | undefined;
     const deleteMutation = deleteHook?.() as MutationResult | undefined;
@@ -160,24 +147,18 @@ export function createCompositeHooks<TRouter extends object>(
     const [page, setPage] = React.useState(1);
     const pageSize = options?.pageSize ?? compositeOptions.defaultPageSize ?? 20;
     
-    const listHook = (baseHooks as Record<string, unknown>).useList as ((opts: unknown) => unknown) | undefined;
-    const countHook = (baseHooks as Record<string, unknown>).useCount as (() => unknown) | undefined;
-    
-    type QueryResult = { 
-      data?: { data?: unknown[]; meta?: unknown; count?: number };
-      isLoading?: boolean;
-      isFetching?: boolean;
-      error?: Error | null;
-    };
+    const hooksRecord = baseHooks as Record<string, unknown>;
+    const listHook = getOptionalHook<(opts: unknown) => unknown>(hooksRecord, 'useList');
+    const countHook = getOptionalHook<() => unknown>(hooksRecord, 'useCount');
     
     const listQuery = listHook?.({
       limit: pageSize,
       offset: (page - 1) * pageSize,
       ...options?.filter as Record<string, unknown>,
       ...options?.sort as Record<string, unknown>
-    }) as QueryResult | undefined;
+    }) as QueryResult<{ data?: unknown[]; meta?: unknown; count?: number }> | undefined;
     
-    const countQuery = countHook?.() as QueryResult | undefined;
+    const countQuery = countHook?.() as QueryResult<{ count?: number }> | undefined;
     
     const totalPages = countQuery?.data?.count 
       ? Math.ceil(countQuery.data.count / pageSize)
@@ -229,23 +210,9 @@ export function createCompositeHooks<TRouter extends object>(
    * ```
    */
   function useFormData(id: string) {
-    const findByIdHook = (baseHooks as Record<string, unknown>).useFindById as ((id: string) => unknown) | undefined;
-    const updateHook = (baseHooks as Record<string, unknown>).useUpdate as (() => unknown) | undefined;
-    
-    type QueryResult = { 
-      data?: unknown;
-      isLoading?: boolean;
-      error?: Error | null;
-      refetch?: () => void;
-    };
-    
-    type MutationResult = {
-      mutate?: (vars: unknown) => void;
-      mutateAsync?: (vars: unknown) => Promise<unknown>;
-      isPending?: boolean;
-      error?: Error | null;
-      reset?: () => void;
-    };
+    const hooksRecord = baseHooks as Record<string, unknown>;
+    const findByIdHook = getOptionalHook<(value: string) => unknown>(hooksRecord, 'useFindById');
+    const updateHook = getOptionalHook<() => unknown>(hooksRecord, 'useUpdate');
     
     const query = findByIdHook?.(id) as QueryResult | undefined;
     const mutation = updateHook?.() as MutationResult | undefined;
@@ -291,21 +258,17 @@ export function createCompositeHooks<TRouter extends object>(
     const [offset, setOffset] = React.useState(0);
     const pageSize = options?.pageSize ?? compositeOptions.defaultPageSize ?? 20;
     
-    const listHook = (baseHooks as Record<string, unknown>).useList as ((opts: unknown) => unknown) | undefined;
-    
-    type QueryResult = { 
-      data?: { data?: unknown[]; meta?: { hasMore?: boolean } };
-      isLoading?: boolean;
-      isFetching?: boolean;
-      error?: Error | null;
-    };
+    const listHook = getOptionalHook<(opts: unknown) => unknown>(
+      baseHooks as Record<string, unknown>,
+      'useList'
+    );
     
     const query = listHook?.({
       limit: pageSize,
       offset,
       ...options?.filter as Record<string, unknown>,
       ...options?.sort as Record<string, unknown>
-    }) as QueryResult | undefined;
+    }) as QueryResult<{ data?: unknown[]; meta?: { hasMore?: boolean } }> | undefined;
     
     // Accumulate items
     React.useEffect(() => {
@@ -353,14 +316,12 @@ export function createCompositeHooks<TRouter extends object>(
    */
   function useSelection() {
     const [selected, setSelected] = React.useState<Set<string>>(new Set());
-    const deleteHook = (baseHooks as Record<string, unknown>).useDelete as (() => unknown) | undefined;
+    const deleteHook = getOptionalHook<() => unknown>(
+      baseHooks as Record<string, unknown>,
+      'useDelete'
+    );
     
-    type MutationResult = {
-      mutateAsync?: (vars: { id: string }) => Promise<unknown>;
-      isPending?: boolean;
-    };
-    
-    const deleteMutation = deleteHook?.() as MutationResult | undefined;
+    const deleteMutation = deleteHook?.() as MutationResult<{ id: string }> | undefined;
     
     return {
       selected: Array.from(selected),

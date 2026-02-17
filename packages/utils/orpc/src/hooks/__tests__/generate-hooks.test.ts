@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ROUTE_METHOD_META_KEY } from '../../builder/mount-method';
+import { ROUTE_METHOD_META_KEY } from '../../shared/route-method-meta';
 import type { HTTPMethod } from '@orpc/contract';
 
 const reactQueryMocks = vi.hoisted(() => {

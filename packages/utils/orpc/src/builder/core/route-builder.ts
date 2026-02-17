@@ -5,12 +5,12 @@
  */
 
 import { oc } from "@orpc/contract";
-import type { HTTPPath, AnySchema } from "./types";
+import type { HTTPPath, AnySchema } from "../../shared/types";
 import type { 
     RouteMetadata, 
     HTTPMethod, 
     ErrorMap,
-} from "./types";
+} from "../../shared/types";
 import type { 
     SchemaShape, 
     ObjectSchema, 
@@ -18,21 +18,18 @@ import type {
     VoidSchema,
     NeverSchema,
     ShouldBeOptional,
-} from "./standard-schema-helpers";
+} from "../../shared/standard-schema-helpers";
 import {
     voidSchema,
+    emptyObjectSchema,
     objectSchema,
     optionalSchema,
     literalSchema,
-} from "./standard-schema-helpers";
-import { DetailedInputBuilder } from "./input-builder";
-import {
-    DetailedOutputBuilder,
-    createDetailedOutputBuilder,
-} from "./output-builder";
-import type { DetailedOutputUnionResult } from "./output-builder";
-import type { ExtractErrorsFromBuilders } from "./error-builder";
-import { error, type ErrorDefinitionBuilder } from "./error-builder";
+} from "../../shared/standard-schema-helpers";
+import { type DetailedInputBuilderSchema } from "../input/builder";
+import { InputSchemaProxy } from "../input/proxy";
+import { createOutputSchemaProxy, type OutputSchemaProxy, type OutputSchemaProxySchema } from "../output/proxy";
+import { error, type ErrorDefinitionBuilder, type ExtractErrorsFromBuilders } from "./error-builder";
 
 // ============================================================================
 // DETAILED INPUT TYPE (for requests: params, query, body, headers)
@@ -216,23 +213,6 @@ type DetectDetailedOutputStructure<T> =
             : T
         : T;
 
-/**
- * Convert a single DetailedOutputBuilder's generic parameters to a DetailedOutput type.
- * Used by the union output overload to compute a TypeScript-level union of DetailedOutput
- * types from the array of builders passed to union().
- */
-type BuilderToDetailedOutput<T> = T extends DetailedOutputBuilder<
-    AnySchema,
-    infer TBody extends AnySchema,
-    infer THeaders extends SchemaShape,
-    infer TStatus extends number,
-    string | undefined,
-    string | undefined,
-    AnySchema
->
-    ? DetailedOutput<TStatus, ObjectSchema<THeaders>, TBody>
-    : never;
-
 type CurrentDetailedInputParts<TInput> =
     TInput extends ObjectSchema<infer Shape>
         ? Shape extends {
@@ -248,16 +228,16 @@ type CurrentDetailedInputParts<TInput> =
                 headers: H;
             }
             : {
-                params: VoidSchema;
-                query: VoidSchema;
-                body: VoidSchema;
-                headers: VoidSchema;
+                params: ObjectSchema<Record<never, never>>;
+                query: ObjectSchema<Record<never, never>>;
+                body: TInput;
+                headers: ObjectSchema<Record<never, never>>;
             }
         : {
-            params: VoidSchema;
-            query: VoidSchema;
-            body: VoidSchema;
-            headers: VoidSchema;
+            params: ObjectSchema<Record<never, never>>;
+            query: ObjectSchema<Record<never, never>>;
+            body: TInput;
+            headers: ObjectSchema<Record<never, never>>;
         };
 
 type CurrentInputParams<TInput> = CurrentDetailedInputParts<TInput>["params"];
@@ -342,12 +322,16 @@ export class RouteBuilder<
             input?: TInput;
             output?: TOutput;
             method?: TMethod;
+            path?: HTTPPath;
             entitySchema?: TEntitySchema;
             errors?: TErrors;
             metadata?: RouteMetadata
         }
     ) {
-        this._metadata = defaults?.metadata ?? {};
+        this._metadata = {
+            ...(defaults?.metadata ?? {}),
+            ...(defaults?.path && !defaults.metadata?.path ? { path: defaults.path } : {}),
+        };
         // Default to void schema (simple mode)
         this._input = defaults?.input ?? (voidSchema() as unknown as TInput);
         this._output = (defaults?.output ?? voidSchema() as unknown as TOutput);
@@ -375,10 +359,6 @@ export class RouteBuilder<
 
         const outputCallable = this.output.bind(this) as RouteBuilder<TInput, TOutput, TMethod, TEntitySchema, TErrors>["output"] & {
             entitySchema?: TEntitySchema;
-            omit?: (fields: readonly string[]) => { getRouteBuilder: () => RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>; build: () => ReturnType<RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>["build"]>; readonly entitySchema: TEntitySchema | undefined };
-            pick?: (fields: readonly string[]) => { getRouteBuilder: () => RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>; build: () => ReturnType<RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>["build"]>; readonly entitySchema: TEntitySchema | undefined };
-            partial?: () => { getRouteBuilder: () => RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>; build: () => ReturnType<RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>["build"]>; readonly entitySchema: TEntitySchema | undefined };
-            extend?: (shape: Record<string, unknown>) => { getRouteBuilder: () => RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>; build: () => ReturnType<RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>["build"]>; readonly entitySchema: TEntitySchema | undefined };
         };
 
         Object.defineProperty(outputCallable, "entitySchema", {
@@ -389,60 +369,8 @@ export class RouteBuilder<
             configurable: true,
         });
 
-        outputCallable.omit = (fields) =>
-            this._legacyOutputModifier((schema) => {
-                if (typeof schema === "object" && "omit" in schema && typeof (schema as { omit?: unknown }).omit === "function") {
-                    const omitRecord = Object.fromEntries(fields.map((field) => [field, true])) as Record<string, true>;
-                    return (schema as { omit: (arg: Record<string, true>) => AnySchema }).omit(omitRecord);
-                }
-                return schema;
-            });
-
-        outputCallable.pick = (fields) =>
-            this._legacyOutputModifier((schema) => {
-                if (typeof schema === "object" && "pick" in schema && typeof (schema as { pick?: unknown }).pick === "function") {
-                    const pickRecord = Object.fromEntries(fields.map((field) => [field, true])) as Record<string, true>;
-                    return (schema as { pick: (arg: Record<string, true>) => AnySchema }).pick(pickRecord);
-                }
-                return schema;
-            });
-
-        outputCallable.partial = () =>
-            this._legacyOutputModifier((schema) => {
-                if (typeof schema === "object" && "partial" in schema && typeof (schema as { partial?: unknown }).partial === "function") {
-                    return (schema as { partial: () => AnySchema }).partial();
-                }
-                return schema;
-            });
-
-        outputCallable.extend = (shape) =>
-            this._legacyOutputModifier((schema) => {
-                if (typeof schema === "object" && "extend" in schema && typeof (schema as { extend?: unknown }).extend === "function") {
-                    return (schema as { extend: (arg: Record<string, unknown>) => AnySchema }).extend(shape);
-                }
-                return schema;
-            });
-
         (this as unknown as { input: typeof inputCallable }).input = inputCallable;
         (this as unknown as { output: typeof outputCallable }).output = outputCallable;
-    }
-
-    private _legacyOutputModifier(
-        modifier: (schema: AnySchema) => AnySchema,
-    ): {
-        getRouteBuilder: () => RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>;
-        build: () => ReturnType<RouteBuilder<AnySchema | DetailedInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>["build"]>;
-        readonly entitySchema: TEntitySchema | undefined;
-    } {
-        const routeBuilder = this.output(modifier(this._output as AnySchema));
-
-        return {
-            getRouteBuilder: () => routeBuilder,
-            build: () => routeBuilder.build(),
-            get entitySchema() {
-                return routeBuilder.getEntitySchema();
-            },
-        };
     }
 
     // ============================================================================
@@ -613,27 +541,27 @@ export class RouteBuilder<
      * ```
      */
     input<TNewInput extends AnySchema>(
-        builder: (b: DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => TNewInput
+        builder: (b: InputSchemaProxy<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => TNewInput
     ): RouteBuilder<TNewInput, TOutput, TMethod, TEntitySchema, TErrors>;
     input<TParams extends AnySchema, TQuery extends AnySchema, TBody extends AnySchema, THeaders extends AnySchema>(
-        builder: (b: DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => DetailedInputBuilder<TParams, TQuery, TBody, THeaders, TEntitySchema>
-    ): RouteBuilder<DetailedInput<TParams, TQuery, TBody, THeaders>, TOutput, TMethod, TEntitySchema, TErrors>;
+        builder: (b: InputSchemaProxy<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => InputSchemaProxy<TParams, TQuery, TBody, THeaders, TEntitySchema>
+    ): RouteBuilder<DetailedInputBuilderSchema<TParams, TQuery, TBody, THeaders>, TOutput, TMethod, TEntitySchema, TErrors>;
     input<TNewInput extends AnySchema>(
         schema: TNewInput
     ): RouteBuilder<TNewInput, TOutput, TMethod, TEntitySchema, TErrors>;
     input<TNewInput extends AnySchema>(
-        schemaOrBuilder: TNewInput | ((b: DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => TNewInput | DetailedInputBuilder<AnySchema, AnySchema, AnySchema, AnySchema, TEntitySchema>)
+        schemaOrBuilder: TNewInput | ((b: InputSchemaProxy<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>) => TNewInput | InputSchemaProxy<AnySchema, AnySchema, AnySchema, AnySchema, TEntitySchema>)
     ): RouteBuilder<AnySchema | DetailedInput, TOutput, TMethod, TEntitySchema, TErrors> {
         // Callback mode
         if (typeof schemaOrBuilder === "function") {
-            // Build the DetailedInputBuilder from existing input parts
+            // Build the input proxy from existing input parts
             const detailedBuilder = this._createInputBuilder();
             const result = schemaOrBuilder(detailedBuilder);
             
-            // Check if result is a DetailedInputBuilder (has _build method)
+            // Check if result is an InputSchemaProxy (has _build method)
             if (typeof result === 'object' && '_build' in result && typeof result._build === 'function') {
                 const builder = result;
-                const inputSchema = builder._build();
+                const inputSchema = builder.schema;
                 
                 // Extract pending path if set by template literal params
                 const pendingPath = builder._pendingPath;
@@ -654,7 +582,7 @@ export class RouteBuilder<
             // Schema mode - callback returned a schema directly
             return new RouteBuilder({
                 metadata: this._metadata,
-                input: result as AnySchema,
+                input: result as TNewInput,
                 output: this._output,
                 method: this._method,
                 entitySchema: this._entitySchema,
@@ -693,31 +621,31 @@ export class RouteBuilder<
      * .output(b => b.union([b.body(schema1).status(200), b.body(schema2).status(201)]))
      * ```
      */
-    output<
-        const TBuilders extends readonly DetailedOutputBuilder<AnySchema, AnySchema, SchemaShape, number, string | undefined, string | undefined, AnySchema>[]
-    >(
-        builder: (b: DetailedOutputBuilder<AnySchema, AnySchema, Record<never, never>, 200, undefined, undefined, TEntitySchema>) => DetailedOutputUnionResult<TBuilders>
-    ): RouteBuilder<TInput, BuilderToDetailedOutput<TBuilders[number]>, TMethod, TEntitySchema, TErrors>;
-    output<TResultBody extends AnySchema, TResultHeaders extends SchemaShape, TResultStatus extends number, TDescription extends string | undefined, TBrand extends string | undefined, TReturnEntitySchema extends AnySchema = AnySchema>(
-        builder: (b: DetailedOutputBuilder<AnySchema, AnySchema, Record<never, never>, 200, undefined, undefined, TEntitySchema>) => DetailedOutputBuilder<AnySchema, TResultBody, TResultHeaders, TResultStatus, TDescription, TBrand, TReturnEntitySchema>
-    ): RouteBuilder<TInput, DetailedOutput<TResultStatus, ObjectSchema<TResultHeaders>, TResultBody>, TMethod, TEntitySchema, TErrors>;
     output<TNewOutput extends AnySchema>(
-        builder: (b: DetailedOutputBuilder<AnySchema, AnySchema, Record<never, never>, 200, undefined, undefined, TEntitySchema>) => TNewOutput
+        builder: (
+            b: OutputSchemaProxy<TOutput, TMethod, TEntitySchema, TErrors>,
+        ) => TNewOutput,
     ): RouteBuilder<TInput, DetectDetailedOutputStructure<TNewOutput>, TMethod, TEntitySchema, TErrors>;
+    output<TProxyOutput extends AnySchema | DetailedOutput>(
+        builder: (
+            b: OutputSchemaProxy<TOutput, TMethod, TEntitySchema, TErrors>,
+        ) => OutputSchemaProxy<TProxyOutput, TMethod, TEntitySchema, TErrors>,
+    ): RouteBuilder<TInput, OutputSchemaProxySchema<TProxyOutput>, TMethod, TEntitySchema, TErrors>;
     output<TNewOutput extends AnySchema>(
         schema: TNewOutput
     ): RouteBuilder<TInput, DetectDetailedOutputStructure<TNewOutput>, TMethod, TEntitySchema, TErrors>;
     output<TNewOutput extends AnySchema>(
-        schemaOrBuilder: TNewOutput | ((b: DetailedOutputBuilder<AnySchema, AnySchema, Record<never, never>, 200, undefined, undefined, TEntitySchema>) => TNewOutput | DetailedOutputBuilder<AnySchema, AnySchema, SchemaShape, number, string | undefined, string | undefined, AnySchema>)
+        schemaOrBuilder: TNewOutput | ((b: OutputSchemaProxy<TOutput, TMethod, TEntitySchema, TErrors>) => TNewOutput | OutputSchemaProxy<AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors>)
     ): RouteBuilder<TInput, AnySchema | DetailedOutput, TMethod, TEntitySchema, TErrors> {
         // Callback mode
         if (typeof schemaOrBuilder === "function") {
-            const builder = createDetailedOutputBuilder<AnySchema, TEntitySchema>(voidSchema(), this._entitySchema);
-            const result = schemaOrBuilder(builder);
+            const proxy = createOutputSchemaProxy(this as unknown as RouteBuilder<AnySchema, TOutput, TMethod, TEntitySchema, TErrors>);
+            const result = schemaOrBuilder(proxy);
             
-            // Check if result is a DetailedOutputBuilder (has _build method)
+            // Check if result is a proxy/builder (has _build method)
             if (typeof result === 'object' && '_build' in result && typeof result._build === 'function') {
-                const outputSchema = result._build();
+                const proxyLike = result as { _build: () => AnySchema; schema?: AnySchema };
+                const outputSchema = proxyLike.schema ?? proxyLike._build();
                 return new RouteBuilder({
                     metadata: this._metadata,
                     input: this._input,
@@ -732,7 +660,7 @@ export class RouteBuilder<
             return new RouteBuilder({
                 metadata: this._metadata,
                 input: this._input,
-                output: result as AnySchema,
+                output: result as TNewOutput,
                 method: this._method,
                 entitySchema: this._entitySchema,
                 errors: this._errors
@@ -754,11 +682,11 @@ export class RouteBuilder<
      * @internal Create a DetailedInputBuilder from the existing _input state.
      * Extracts existing params/query/body/headers if _input is a DetailedInput.
      */
-    private _createInputBuilder(): DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema> {
-        let existingParams = voidSchema() as CurrentInputParams<TInput>;
-        let existingQuery = voidSchema() as CurrentInputQuery<TInput>;
-        let existingBody = voidSchema() as CurrentInputBody<TInput>;
-        let existingHeaders = voidSchema() as CurrentInputHeaders<TInput>;
+    private _createInputBuilder(): InputSchemaProxy<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema> {
+        let existingParams = emptyObjectSchema() as CurrentInputParams<TInput>;
+        let existingQuery = emptyObjectSchema() as CurrentInputQuery<TInput>;
+        let existingBody = this._input as CurrentInputBody<TInput>;
+        let existingHeaders = emptyObjectSchema() as CurrentInputHeaders<TInput>;
         
         if (typeof this._input === 'object' && '~standard' in this._input) {
             const inputShape = (this._input as unknown as Record<symbol, SchemaShape>)[Symbol.for("standard-schema:shape")];
@@ -800,7 +728,7 @@ export class RouteBuilder<
             }
         }
         
-        return new DetailedInputBuilder(
+        return new InputSchemaProxy(
             existingParams,
             existingQuery,
             existingBody,

@@ -1,13 +1,11 @@
 // V2 Builder exports (primary)
-export { RouteBuilder, route } from "./route-builder";
-export { DetailedInputBuilder, createDetailedInputBuilder } from "./input-builder";
-export { DetailedOutputBuilder, createDetailedOutputBuilder } from "./output-builder";
-export { ErrorDefinitionBuilder, error } from "./error-builder";
-export { createPathParamBuilder, type PathParam, type PathParamBuilder, type PathParamBuilderWithExisting } from "./path-params";
-export * from "./types";
-export * from "./standard-schema-helpers";
-
-// Kept from V1 (no V2 replacements)
-export * from "./base-config";
-export * from "./schema-builder";
-export * from "./mount-method";
+export { RouteBuilder, route } from "./core/route-builder";
+export { DetailedInputBuilder, createDetailedInputBuilder } from "./input/builder";
+export { InputSchemaProxy, type InputSchemaProxySchema } from "./input/proxy";
+export { DetailedOutputBuilder } from "./output/builder";
+export { OutputSchemaProxy, type OutputSchemaProxySchema } from "./output/proxy";
+export { ErrorDefinitionBuilder, error } from "./core/error-builder";
+export { createPathParamBuilder, type PathParam, type PathParamBuilder, type PathParamBuilderWithExisting } from "./core/params-builder";
+export * from "../shared/types";
+export * from "../shared/standard-schema-helpers";
+export * from "../shared/route-method-meta";
