@@ -318,7 +318,7 @@ export class QueryBuilder<TConfig extends QueryConfig = QueryConfig> {
    * The returned schema shape is computed at the type level using ComputeInputSchema<TConfig>
    * and cast at runtime to preserve proper types through ORPC contracts.
    */
-  buildInputSchema(): z.ZodType<ComputeInputSchema<TConfig>> {
+  buildInputSchema(): z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>> {
     const schemas: z.ZodType[] = [];
 
     // Add pagination (disabled if explicitly set to undefined)
@@ -352,12 +352,12 @@ export class QueryBuilder<TConfig extends QueryConfig = QueryConfig> {
 
     // Merge all schemas
     if (schemas.length === 0) {
-      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
+      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>;
     }
 
     const [firstSchema, ...restSchemas] = schemas;
     if (!firstSchema) {
-      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
+      return z.object({}) as unknown as z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>;
     }
     
     // Merge schemas at runtime, but preserve the type-level computed shape
@@ -368,7 +368,7 @@ export class QueryBuilder<TConfig extends QueryConfig = QueryConfig> {
       (acc, schema) => acc.extend((schema as unknown as z.ZodObject).shape), 
       firstAsObject
     );
-    return mergedSchema as unknown as z.ZodType<ComputeInputSchema<TConfig>>;
+    return mergedSchema as unknown as z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>>;
   }
 
   /**

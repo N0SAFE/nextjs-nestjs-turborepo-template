@@ -53,9 +53,21 @@ type NormalizeDetailedInputField<T extends AnySchema> =
 type IsVoidLikeDetailedField<T extends AnySchema> =
     T extends VoidSchema | NeverSchema
         ? true
+        : ShouldBeOptional<T> extends true
+            ? true
+        : T extends ObjectSchema<infer S extends SchemaShape>
+            ? keyof S extends never
+                ? true
+                : false
         : T extends OptionalSchema<infer I extends AnySchema>
             ? I extends VoidSchema | NeverSchema
                 ? true
+                : ShouldBeOptional<I> extends true
+                    ? true
+                : I extends ObjectSchema<infer S extends SchemaShape>
+                    ? keyof S extends never
+                        ? true
+                        : false
                 : false
             : false;
 
@@ -180,9 +192,8 @@ export type IsDetailedOutput<T> = T extends { readonly [DetailedOutputBrand]: tr
 export type RemoveDetailedOutputBrand<T> = T extends DetailedOutput<infer S, infer H, infer B>
     ? ObjectSchema<{
         status: ReturnType<typeof literalSchema<S>>;
-        headers: H;
-        body: B;
-    }>
+    } & (IsVoidLikeDetailedField<H> extends true ? Record<never, never> : { headers: H })
+      & (IsVoidLikeDetailedField<B> extends true ? Record<never, never> : { body: B })>
     : T;
 
 /**
@@ -742,11 +753,11 @@ export class RouteBuilder<
      * @internal Create a DetailedInputBuilder from the existing _input state.
      * Extracts existing params/query/body/headers if _input is a DetailedInput.
      */
-    private _createInputBuilder(): DetailedInputBuilder<AnySchema, AnySchema, AnySchema, AnySchema, TEntitySchema> {
-        let existingParams: AnySchema = voidSchema();
-        let existingQuery: AnySchema = voidSchema();
-        let existingBody: AnySchema = voidSchema();
-        let existingHeaders: AnySchema = voidSchema();
+    private _createInputBuilder(): DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema> {
+        let existingParams = voidSchema() as CurrentInputParams<TInput>;
+        let existingQuery = voidSchema() as CurrentInputQuery<TInput>;
+        let existingBody = voidSchema() as CurrentInputBody<TInput>;
+        let existingHeaders = voidSchema() as CurrentInputHeaders<TInput>;
         
         if (typeof this._input === 'object' && '~standard' in this._input) {
             const inputShape = (this._input as unknown as Record<symbol, SchemaShape>)[Symbol.for("standard-schema:shape")];
@@ -781,10 +792,10 @@ export class RouteBuilder<
                 const extractedQuery = unwrapAndExtract(queryField);
                 const extractedHeaders = unwrapAndExtract(headersField);
                 
-                if (extractedParams) existingParams = extractedParams;
-                if (extractedQuery) existingQuery = extractedQuery;
-                if (bodyField) existingBody = bodyField;
-                if (extractedHeaders) existingHeaders = extractedHeaders;
+                if (extractedParams) existingParams = extractedParams as CurrentInputParams<TInput>;
+                if (extractedQuery) existingQuery = extractedQuery as CurrentInputQuery<TInput>;
+                if (bodyField) existingBody = bodyField as CurrentInputBody<TInput>;
+                if (extractedHeaders) existingHeaders = extractedHeaders as CurrentInputHeaders<TInput>;
             }
         }
         
@@ -894,9 +905,27 @@ export class RouteBuilder<
         const cleanOutput = (typeof this._output === 'object' && DetailedOutputBrand in this._output)
             ? (this._output as unknown as RemoveDetailedOutputBrand<TOutput>)
             : (this._output as RemoveDetailedOutputBrand<TOutput>);
+
+        // Remove detailed brand symbols at runtime so downstream consumers
+        // (hooks/clients) don't keep enforcing detailed request/response wrappers.
+        const inputForContract = (typeof this._input === 'object' && this._input !== null && DetailedInputBrand in this._input)
+            ? (() => {
+                const clone = { ...(this._input as object) } as Record<PropertyKey, unknown>;
+                delete clone[DetailedInputBrand];
+                return clone as unknown as RemoveDetailedInputBrand<TInput>;
+            })()
+            : cleanInput;
+
+        const outputForContract = (typeof this._output === 'object' && this._output !== null && DetailedOutputBrand in this._output)
+            ? (() => {
+                const clone = { ...(this._output as object) } as Record<PropertyKey, unknown>;
+                delete clone[DetailedOutputBrand];
+                return clone as unknown as RemoveDetailedOutputBrand<TOutput>;
+            })()
+            : cleanOutput;
         
         // Create the ORPC contract
-        const contractWithOutput = oc.input(cleanInput).output(cleanOutput);
+        const contractWithOutput = oc.input(inputForContract).output(outputForContract);
 
         // Always include method from RouteBuilder state in final route metadata.
         // RouteBuilder stores method in `_method`, while `_metadata` may only contain

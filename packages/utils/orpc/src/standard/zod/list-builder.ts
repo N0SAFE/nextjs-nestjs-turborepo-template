@@ -275,7 +275,7 @@ export class ListOperationBuilder<
     /**
      * Build the input Zod schema (for type extraction or reuse).
      */
-    buildInputSchema(): z.ZodType<ComputeInputSchema<TConfig>> {
+    buildInputSchema(): z.ZodType<ComputeInputSchema<TConfig>, ComputeInputSchema<TConfig>> {
         return this.queryBuilder.buildInputSchema();
     }
 
