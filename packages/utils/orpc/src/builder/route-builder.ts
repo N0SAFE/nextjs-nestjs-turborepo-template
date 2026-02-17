@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-dynamic-delete */
 /**
  * Main RouteBuilder class for route-builder-v2
  * Provides fluent API for creating ORPC contracts with Standard Schema
@@ -627,7 +628,7 @@ export class RouteBuilder<
         if (typeof schemaOrBuilder === "function") {
             // Build the DetailedInputBuilder from existing input parts
             const detailedBuilder = this._createInputBuilder();
-            const result = schemaOrBuilder(detailedBuilder as DetailedInputBuilder<CurrentInputParams<TInput>, CurrentInputQuery<TInput>, CurrentInputBody<TInput>, CurrentInputHeaders<TInput>, TEntitySchema>);
+            const result = schemaOrBuilder(detailedBuilder);
             
             // Check if result is a DetailedInputBuilder (has _build method)
             if (typeof result === 'object' && '_build' in result && typeof result._build === 'function') {
@@ -908,7 +909,7 @@ export class RouteBuilder<
 
         // Remove detailed brand symbols at runtime so downstream consumers
         // (hooks/clients) don't keep enforcing detailed request/response wrappers.
-        const inputForContract = (typeof this._input === 'object' && this._input !== null && DetailedInputBrand in this._input)
+        const inputForContract = (typeof this._input === 'object' && DetailedInputBrand in this._input)
             ? (() => {
                 const clone = { ...(this._input as object) } as Record<PropertyKey, unknown>;
                 delete clone[DetailedInputBrand];
@@ -916,7 +917,7 @@ export class RouteBuilder<
             })()
             : cleanInput;
 
-        const outputForContract = (typeof this._output === 'object' && this._output !== null && DetailedOutputBrand in this._output)
+        const outputForContract = (typeof this._output === 'object' && DetailedOutputBrand in this._output)
             ? (() => {
                 const clone = { ...(this._output as object) } as Record<PropertyKey, unknown>;
                 delete clone[DetailedOutputBrand];
