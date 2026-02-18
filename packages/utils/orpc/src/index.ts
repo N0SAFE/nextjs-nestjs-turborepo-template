@@ -30,3 +30,4 @@ export type {
 // Convenience re-exports for most common use cases
 export { RouteBuilder, route } from "./builder/core/route-builder";
 export { QueryBuilder, createQueryBuilder, createListQuery, createSearchQuery, createAdvancedQuery } from "./query";
+export type { InferInputSchema, InferOutputSchema, AnyContractBuilder, AnyContractProcedureOrBuilder } from "./utils/type-helpers";

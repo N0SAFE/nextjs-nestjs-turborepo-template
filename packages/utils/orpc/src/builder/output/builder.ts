@@ -17,7 +17,7 @@ import { eventIterator } from "@orpc/contract";
 import { DetailedOutputBrand, type DetailedOutput } from "../core/route-builder";
 import type { AnySchema, HTTPMethod, ErrorMap, UnionTuple } from "../../shared/types";
 import type { ObjectSchema, LiteralSchema, VoidSchema, SchemaShape } from "../../shared/standard-schema-helpers";
-import { objectSchema, voidSchema, literalSchema, unionSchema, emptyObjectSchema, getSchemaShape } from "../../shared/standard-schema-helpers";
+import { objectSchema, voidSchema, literalSchema, unionSchema, emptyObjectSchema, getSchemaShape, optionalSchema } from "../../shared/standard-schema-helpers";
 import { ProxyBuilderBase } from "../core/proxy-builder.base";
 import type { OutputSchemaProxy } from "./proxy";
 
@@ -85,10 +85,10 @@ export abstract class DetailedOutputBuilder<
     /**
      * Entity schema hook delegated to proxy layer (RouteBuilder context).
      */
-    protected abstract _getEntitySchema(): TEntitySchema | undefined;
+    protected abstract _getEntitySchema(): TEntitySchema;
 
     /** Access entity schema from route context. */
-    get entitySchema(): TEntitySchema | undefined {
+    get entitySchema(): TEntitySchema {
         return this._getEntitySchema();
     }
 
@@ -166,9 +166,11 @@ export abstract class DetailedOutputBuilder<
         headers: THeaders,
         body: TBody,
     ): DetailedOutput<TStatus, THeaders, TBody> {
+        const headersShape = getSchemaShape(headers);
+        const headersField = Object.keys(headersShape).length === 0 ? optionalSchema(headers) : headers;
         const shape = {
             status: literalSchema(status),
-            headers,
+            headers: headersField,
             body,
         };
         const schema = objectSchema(shape);

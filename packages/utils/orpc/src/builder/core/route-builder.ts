@@ -227,6 +227,23 @@ type CurrentDetailedInputParts<TInput> =
                 body: B;
                 headers: H;
             }
+            : (
+                "params" extends keyof Shape
+                    ? true
+                    : "query" extends keyof Shape
+                        ? true
+                        : "body" extends keyof Shape
+                            ? true
+                            : "headers" extends keyof Shape
+                                ? true
+                                : false
+            ) extends true
+                ? {
+                    params: Shape extends { params: infer P extends AnySchema } ? P : ObjectSchema<Record<never, never>>;
+                    query: Shape extends { query: infer Q extends AnySchema } ? Q : ObjectSchema<Record<never, never>>;
+                    body: Shape extends { body: infer B extends AnySchema } ? B : ObjectSchema<Record<never, never>>;
+                    headers: Shape extends { headers: infer H extends AnySchema } ? H : ObjectSchema<Record<never, never>>;
+                }
             : {
                 params: ObjectSchema<Record<never, never>>;
                 query: ObjectSchema<Record<never, never>>;
@@ -274,6 +291,14 @@ export type IsDetailed<T> = IsDetailedInput<T>;
  */
 export type RemoveDetailedBrand<T> = RemoveDetailedInputBrand<T>;
 
+/**
+ * Concrete runtime value for entity schema carried by RouteBuilder.
+ *
+ * The default generic (`VoidSchema`) means “no entity provided”, but remains
+ * a concrete schema value (not `undefined`) so type signatures stay precise.
+ */
+export type RouteEntitySchemaValue<TEntitySchema extends AnySchema> = TEntitySchema;
+
 
 
 // ============================================================================
@@ -314,7 +339,7 @@ export class RouteBuilder<
     private _input: TInput;
     private _output: TOutput;
     private _method: TMethod;
-    private _entitySchema?: TEntitySchema;
+    private _entitySchema: RouteEntitySchemaValue<TEntitySchema>;
     private _errors: TErrors;
 
     constructor(
@@ -323,7 +348,7 @@ export class RouteBuilder<
             output?: TOutput;
             method?: TMethod;
             path?: HTTPPath;
-            entitySchema?: TEntitySchema;
+            entitySchema?: RouteEntitySchemaValue<TEntitySchema>;
             errors?: TErrors;
             metadata?: RouteMetadata
         }
@@ -336,7 +361,7 @@ export class RouteBuilder<
         this._input = defaults?.input ?? (voidSchema() as unknown as TInput);
         this._output = (defaults?.output ?? voidSchema() as unknown as TOutput);
         this._method = defaults?.method ?? ("GET" as TMethod);
-        this._entitySchema = defaults?.entitySchema;
+        this._entitySchema = (defaults?.entitySchema ?? voidSchema()) as RouteEntitySchemaValue<TEntitySchema>;
         this._errors = (defaults?.errors ?? {}) as TErrors;
 
         this._attachLegacyAccessors();
@@ -346,7 +371,7 @@ export class RouteBuilder<
         const getEntitySchema = () => this.getEntitySchema();
 
         const inputCallable = this.input.bind(this) as RouteBuilder<TInput, TOutput, TMethod, TEntitySchema, TErrors>["input"] & {
-            entitySchema?: TEntitySchema;
+            entitySchema: RouteEntitySchemaValue<TEntitySchema>;
         };
 
         Object.defineProperty(inputCallable, "entitySchema", {
@@ -358,7 +383,7 @@ export class RouteBuilder<
         });
 
         const outputCallable = this.output.bind(this) as RouteBuilder<TInput, TOutput, TMethod, TEntitySchema, TErrors>["output"] & {
-            entitySchema?: TEntitySchema;
+            entitySchema: RouteEntitySchemaValue<TEntitySchema>;
         };
 
         Object.defineProperty(outputCallable, "entitySchema", {
@@ -503,7 +528,7 @@ export class RouteBuilder<
     /**
      * Get the entity schema
      */
-    getEntitySchema(): TEntitySchema | undefined {
+    getEntitySchema(): RouteEntitySchemaValue<TEntitySchema> {
         return this._entitySchema;
     }
 
@@ -691,6 +716,18 @@ export class RouteBuilder<
         if (typeof this._input === 'object' && '~standard' in this._input) {
             const inputShape = (this._input as unknown as Record<symbol, SchemaShape>)[Symbol.for("standard-schema:shape")];
             if (inputShape && typeof inputShape === 'object') {
+                const hasDetailedKeys =
+                    'params' in inputShape ||
+                    'query' in inputShape ||
+                    'body' in inputShape ||
+                    'headers' in inputShape;
+
+                // If the schema already uses any detailed keys, treat it as structured input.
+                // This prevents non-detailed wrappers like { query: ... } from being copied into body.
+                if (hasDetailedKeys) {
+                    existingBody = emptyObjectSchema() as CurrentInputBody<TInput>;
+                }
+
                 const paramsField = (inputShape as Record<string, AnySchema>).params;
                 const queryField = (inputShape as Record<string, AnySchema>).query;
                 const bodyField = (inputShape as Record<string, AnySchema>).body;

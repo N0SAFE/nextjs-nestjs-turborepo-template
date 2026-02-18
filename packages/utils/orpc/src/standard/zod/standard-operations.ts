@@ -32,6 +32,7 @@ import {
     type QueryBuilder,
 } from "./utils";
 import { RouteBuilder } from "../../builder/core/route-builder";
+import type { VoidSchema } from "../../shared/standard-schema-helpers";
 
 /**
  * Zod entity schema type - requires ZodObject for schema manipulation
@@ -126,6 +127,18 @@ export class ZodStandardOperations<
     }
 
     /**
+     * Build an omit record from a set of keys, filtering out any keys that don't
+     * exist in the entity schema. Zod v4 throws at runtime when `.omit()` is
+     * called with a key that is absent from the object shape.
+     */
+    private buildOmitRecord(keys: Set<string>): Record<string, true> {
+        const schemaShape = this.entitySchema.shape as Record<string, unknown>;
+        return Object.fromEntries(
+            [...keys].filter((k) => k in schemaShape).map((k) => [k, true])
+        ) as Record<string, true>;
+    }
+
+    /**
      * Helper to check if a schema has config
      */
     private isConfigSchema(value: unknown): value is ZodConfigSchema<unknown> {
@@ -215,6 +228,16 @@ export class ZodStandardOperations<
         return builder;
     }
 
+    /** Build query builder from a ZodListOperationOptions config (used internally by streamingList etc.) */
+    private buildZodQueryBuilderFromConfig(options: ZodListOperationOptions): QueryBuilder<QueryConfig> {
+        return createQueryBuilder({
+            pagination: options.pagination,
+            sorting: options.sorting,
+            filtering: options.filtering,
+            search: options.search,
+        });
+    }
+
     // ==================== CRUD Operations ====================
 
     read<TIdFieldName extends string = TIdField, TIdSch extends z.ZodType = TIdSchema>(options?: { idSchema?: TIdSch; idFieldName?: TIdFieldName }) {
@@ -244,9 +267,7 @@ export class ZodStandardOperations<
                 ...((options?.omitFields ?? []) as string[]),
             ]);
 
-            const omitRecord = Object.fromEntries([...omitKeys].map((k) => [k, true])) as Record<string, true>;
-
-            return this.entitySchema.omit(omitRecord);
+            return this.entitySchema.omit(this.buildOmitRecord(omitKeys));
         })();
 
         return this.createBuilder({
@@ -277,9 +298,7 @@ export class ZodStandardOperations<
         } else {
             const omitKeys = new Set<string>([...(this.hasTimestamps ? ["createdAt", "updatedAt"] : []), ...(this.hasSoftDelete ? ["deletedAt"] : []), ...(options.omitFields as string[])]);
 
-            const omitRecord = Object.fromEntries([...omitKeys].map((k) => [k, true])) as Record<string, true>;
-
-            bodySchema = this.entitySchema.omit(omitRecord);
+            bodySchema = this.entitySchema.omit(this.buildOmitRecord(omitKeys));
         }
 
         return this.createBuilder({
@@ -312,9 +331,7 @@ export class ZodStandardOperations<
                 ...((options?.omitFields ?? []) as string[]),
             ]);
 
-            const omitRecord = Object.fromEntries([...omitKeys].map((k) => [k, true])) as Record<string, true>;
-
-            bodySchema = this.entitySchema.omit(omitRecord).partial();
+            bodySchema = this.entitySchema.omit(this.buildOmitRecord(omitKeys)).partial();
         }
 
         return this.createBuilder({
@@ -347,7 +364,8 @@ export class ZodStandardOperations<
     // ==================== List Operations ====================
 
     /**
-     * List operation with config-based query builder (preserves exact types)
+     * List operation with config-based query builder (preserves exact types).
+     * Use createFilterConfig() to build the config with pagination, sorting, and filtering.
      */
     list<TConfig extends ZodListOperationOptions>(options: TConfig): RouteBuilder<
         ObjectSchema<{
@@ -362,126 +380,40 @@ export class ZodStandardOperations<
     >;
 
     /**
-     * List operation with no options (uses default pagination)
+     * Bare list operation with no query parameters.
+     * Output is { data: Entity[] } with no pagination metadata.
+     * Use createFilterConfig() if you need pagination, sorting, or filtering.
      */
     list(): RouteBuilder<
-        ObjectSchema<{
-            query: z.ZodOptional<z.ZodObject<{
-                limit: z.ZodOptional<z.ZodNumber>;
-                offset: z.ZodOptional<z.ZodNumber>;
-            }>>;
-        }>,
-        z.ZodObject<{
-            data: z.ZodArray<TEntity>;
-            meta: z.ZodObject<{
-                total: z.ZodNumber;
-                limit: z.ZodNumber;
-                offset: z.ZodNumber;
-                hasMore: z.ZodBoolean;
-            }>;
-        }>,
+        VoidSchema,
+        z.ZodObject<{ data: z.ZodArray<TEntity> }>,
         "GET",
         TEntity
     >;
 
-    /**
-     * List operation with plain options (loosely typed)
-     */
-    list(options: BaseListPlainOptions): RouteBuilder<
-        ObjectSchema<{
-            query: AnySchema;
-        }>,
-        z.ZodType,
-        "GET",
-        TEntity
-    >;
-
-    list(options?: ZodListOperationOptions | BaseListPlainOptions): RouteBuilder<
-        ObjectSchema<{
-            query: AnySchema;
-        }>,
+    list(options?: ZodListOperationOptions): RouteBuilder<
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        any,
         z.ZodType,
         "GET",
         TEntity
     > {
         if (!options) {
-            const queryBuilder = this.buildZodQueryBuilder();
-            const inputSchema = queryBuilder.buildInputSchema();
-            const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
-
             return this.createBuilder({
                 method: "GET",
                 summary: `List ${this.entityName}s`,
-                description: `Retrieve a paginated list of ${this.entityName}s with optional filtering and sorting`,
+                description: `Retrieve a list of ${this.entityName}s`,
             })
                 .path("/")
-                .input(z.object({ query: inputSchema.optional() }))
-                .output(outputSchema) as unknown as RouteBuilder<
-                    ObjectSchema<{
-                        query: z.ZodOptional<z.ZodObject<{
-                            limit: z.ZodOptional<z.ZodNumber>;
-                            offset: z.ZodOptional<z.ZodNumber>;
-                        }>>;
-                    }>,
-                    z.ZodObject<{
-                        data: z.ZodArray<TEntity>;
-                        meta: z.ZodObject<{
-                            total: z.ZodNumber;
-                            limit: z.ZodNumber;
-                            offset: z.ZodNumber;
-                            hasMore: z.ZodBoolean;
-                        }>;
-                    }>,
+                .output(z.object({ data: z.array(this.entitySchema) })) as unknown as RouteBuilder<
+                    VoidSchema,
+                    z.ZodObject<{ data: z.ZodArray<TEntity> }>,
                     "GET",
                     TEntity
                 >;
         }
 
-        if (this.isQueryConfig(options)) {
-            const queryBuilder = this.buildZodQueryBuilder(options);
-            const inputSchema = queryBuilder.buildInputSchema();
-            const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
-
-            return this.createBuilder({
-                method: "GET",
-                summary: `List ${this.entityName}s`,
-                description: `Retrieve a paginated list of ${this.entityName}s with optional filtering and sorting`,
-            })
-                .path("/")
-                .input(z.object({ query: inputSchema.optional() }))
-                .output(outputSchema) as unknown as RouteBuilder<
-                    ObjectSchema<{
-                        query: AnySchema;
-                    }>,
-                    z.ZodType,
-                    "GET",
-                    TEntity
-                >;
-        }
-
-        if (this.isPlainListOptions(options)) {
-            const queryBuilder = this.buildZodQueryBuilder(options);
-            const inputSchema = queryBuilder.buildInputSchema();
-            const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
-
-            return this.createBuilder({
-                method: "GET",
-                summary: `List ${this.entityName}s`,
-                description: `Retrieve a paginated list of ${this.entityName}s with optional filtering and sorting`,
-            })
-                .path("/")
-                .input(z.object({ query: inputSchema.optional() }))
-                .output(outputSchema) as unknown as RouteBuilder<
-                    ObjectSchema<{
-                        query: AnySchema;
-                    }>,
-                    z.ZodType,
-                    "GET",
-                    TEntity
-                >;
-        }
-
-        const queryBuilder = this.buildZodQueryBuilder();
+        const queryBuilder = this.buildZodQueryBuilderFromConfig(options);
         const inputSchema = queryBuilder.buildInputSchema();
         const outputSchema = queryBuilder.buildOutputSchema(this.entitySchema);
 
@@ -493,9 +425,7 @@ export class ZodStandardOperations<
             .path("/")
             .input(z.object({ query: inputSchema.optional() }))
             .output(outputSchema) as unknown as RouteBuilder<
-                ObjectSchema<{
-                    query: AnySchema;
-                }>,
+                ObjectSchema<{ query: AnySchema }>,
                 z.ZodType,
                 "GET",
                 TEntity
@@ -511,9 +441,7 @@ export class ZodStandardOperations<
 
         if (options?.itemSchema) {
             itemSchema = options.itemSchema;
-        } else if (!options?.omitFields || options.omitFields.length === 0) {
-            itemSchema = this.entitySchema;
-        } else {
+        } else if (options?.omitFields && options.omitFields.length > 0) {
             const omitKeys = new Set<string>([
                 this.idField,
                 ...(this.hasTimestamps ? ["createdAt", "updatedAt"] : []),
@@ -521,9 +449,16 @@ export class ZodStandardOperations<
                 ...(options.omitFields as string[]),
             ]);
 
-            const omitRecord = Object.fromEntries([...omitKeys].map((k) => [k, true])) as Record<string, true>;
+            itemSchema = this.entitySchema.omit(this.buildOmitRecord(omitKeys));
+        } else {
+            // Default: omit id and timestamps (same behaviour as create())
+            const defaultOmitKeys = new Set<string>([
+                this.idField,
+                ...(this.hasTimestamps ? ["createdAt", "updatedAt"] : []),
+                ...(this.hasSoftDelete ? ["deletedAt"] : []),
+            ]);
 
-            itemSchema = this.entitySchema.omit(omitRecord);
+            itemSchema = this.entitySchema.omit(this.buildOmitRecord(defaultOmitKeys));
         }
 
         return this.createBuilder({
@@ -800,9 +735,7 @@ export class ZodStandardOperations<
                 ...(options.omitFields as string[]),
             ]);
 
-            const omitRecord = Object.fromEntries([...omitKeys].map((k) => [k, true])) as Record<string, true>;
-
-            bodySchema = this.entitySchema.omit(omitRecord);
+            bodySchema = this.entitySchema.omit(this.buildOmitRecord(omitKeys));
         }
 
         return this.createBuilder({

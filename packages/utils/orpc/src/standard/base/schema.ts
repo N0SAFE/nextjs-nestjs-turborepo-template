@@ -13,7 +13,6 @@ import type {
     DateSchema,
     EnumSchema,
     LiteralSchema,
-    NeverSchema,
     NullableSchema,
     NumberSchema,
     ObjectSchema,
@@ -25,10 +24,16 @@ import type {
     TupleSchema,
     UUIDSchema,
     UnionSchema,
-    VoidSchema,
     InferSchemaOutput,
 } from "./types";
 import { SHAPE_SYMBOL } from "./types";
+import { voidSchema as _voidSchema, neverSchema } from "../../shared/standard-schema-helpers";
+
+/**
+ * Re-exported from shared — single canonical implementation
+ */
+export function voidSchema() { return _voidSchema(); }
+export function never() { return neverSchema(); }
 
 const VENDOR = "standard-schema-v2";
 
@@ -215,34 +220,6 @@ export function enumeration<T extends readonly [string, ...string[]]>(values: T)
         },
         _values: values,
         _enum: true,
-    };
-}
-
-/**
- * Create a void schema
- */
-export function voidSchema(): VoidSchema {
-    return {
-        "~standard": {
-            version: 1,
-            vendor: VENDOR,
-            validate: () => ({ value: undefined }),
-        },
-        _void: true,
-    };
-}
-
-/**
- * Create a never schema
- */
-export function never(): NeverSchema {
-    return {
-        "~standard": {
-            version: 1,
-            vendor: VENDOR,
-            validate: () => ({ issues: [{ message: "This schema cannot be satisfied", path: [] }] }),
-        },
-        _never: true,
     };
 }
 

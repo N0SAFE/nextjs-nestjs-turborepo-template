@@ -56,12 +56,20 @@ describe('RouteBuilder - Regression Coverage', () => {
       const entitySchema = z.object({ id: z.string(), name: z.string() });
       const builder = new RouteBuilder().entity(entitySchema);
       const runtimeBuilder = builder as unknown as {
-        input: { entitySchema?: unknown };
-        output: { entitySchema?: unknown };
+        input: { entitySchema: unknown };
+        output: { entitySchema: unknown };
       };
 
       expect(runtimeBuilder.input.entitySchema).toBe(entitySchema);
       expect(runtimeBuilder.output.entitySchema).toBe(entitySchema);
+    });
+
+    it('uses a concrete default entity schema when none is provided', () => {
+      const builder = new RouteBuilder();
+
+      expect(builder.getEntitySchema()).toBeDefined();
+      expect((builder as unknown as { input: { entitySchema: unknown } }).input.entitySchema).toBeDefined();
+      expect((builder as unknown as { output: { entitySchema: unknown } }).output.entitySchema).toBeDefined();
     });
   });
 

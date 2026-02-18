@@ -47,7 +47,7 @@ export class OutputSchemaProxy<
     }
 
     /** Expose entity schema from route context. */
-    protected _getEntitySchema(): TEntitySchema | undefined {
+    protected _getEntitySchema(): TEntitySchema {
         return this._routeBuilder.getEntitySchema();
     }
 }

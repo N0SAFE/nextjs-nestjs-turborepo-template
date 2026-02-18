@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod/v4';
 import { standard } from '../zod/standard-operations';
+import { voidSchema } from '../../shared/standard-schema-helpers';
 
 describe('StandardOperations - Additional Coverage', () => {
   const entitySchema = z.object({
@@ -15,12 +16,13 @@ describe('StandardOperations - Additional Coverage', () => {
   });
 
   describe('List Operation - Advanced Filtering', () => {
-    it('should handle list with complex search combinations', () => {
+    it('should handle list with no options — bare list, no input schema', () => {
       const ops = standard.zod(entitySchema, 'user');
       const contract = ops.list().build();
 
       expect(contract).toBeDefined();
-      expect(contract['~orpc'].inputSchema).toBeDefined();
+      // Bare list() has VoidSchema as input (no pagination, no filters)
+      expect(JSON.stringify(contract['~orpc'].inputSchema)).toBe(JSON.stringify(voidSchema()));
     });
 
     it('should handle list with query extensions', () => {
@@ -30,6 +32,37 @@ describe('StandardOperations - Additional Coverage', () => {
         .build();
 
       expect(extended['~orpc'].inputSchema).toBeDefined();
+    });
+
+    it('can chain .input() on bare list() to add params and query', () => {
+      const ops = standard.zod(entitySchema, 'user');
+      const contract = ops
+        .list()
+        .input((b) =>
+          b
+            .params((p) => p`/${p('orgId', z.string())}`)
+            .query(
+              z.object({
+                prefix: z.string().optional(),
+              }),
+            ),
+        )
+        .build();
+
+      type Input = z.infer<NonNullable<typeof contract['~orpc']['inputSchema']>>;
+      const _inputCheck: Input = {
+        params: { orgId: 'org-1' },
+        query: { prefix: 'docs/' },
+      };
+      void _inputCheck;
+
+      const inputSchema = contract['~orpc'].inputSchema;
+      const shape = (inputSchema as unknown as Record<symbol, Record<string, unknown> | undefined>)[Symbol.for('standard-schema:shape')] ?? {};
+      expect(shape.params).toBeDefined();
+      expect(shape.query).toBeDefined();
+      // body is present in the shape as optional-void (not required)
+      const bodyInner = (shape.body as { _inner?: unknown })._inner;
+      expect(JSON.stringify(bodyInner)).toBe(JSON.stringify(voidSchema()));
     });
   });
 

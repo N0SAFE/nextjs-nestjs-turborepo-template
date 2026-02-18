@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod/v4';
 import { standard } from '../zod/standard-operations';
+import { createFilterConfig } from '../zod/list-builder';
 
 describe('Standard Operations - Advanced Edge Cases', () => {
   const userSchema = z.object({
@@ -64,29 +65,25 @@ describe('Standard Operations - Advanced Edge Cases', () => {
       }).not.toThrow();
     });
 
-    it('should handle list operations with pagination', () => {
+    it('should handle list operations with pagination via createFilterConfig', () => {
       const operations = standard.zod(userSchema, 'user');
+      const config = createFilterConfig(operations)
+        .withPagination({ defaultLimit: 20, maxLimit: 200, includeOffset: true })
+        .buildConfig();
 
       expect(() => {
-        operations.list({
-          pagination: {
-            defaultLimit: 20,
-            maxLimit: 200,
-            includeOffset: true,
-          }
-        }).build();
+        operations.list(config).build();
       }).not.toThrow();
     });
 
-    it('should handle list operations with sorting', () => {
+    it('should handle list operations with sorting via createFilterConfig', () => {
       const operations = standard.zod(userSchema, 'user');
+      const config = createFilterConfig(operations)
+        .withSorting(['name', 'email', 'createdAt'] as const)
+        .buildConfig();
 
       expect(() => {
-        operations.list({
-          sorting: {
-            fields: ['name', 'email', 'createdAt'], // Correct API: fields not allowedFields
-          }
-        }).build();
+        operations.list(config).build();
       }).not.toThrow();
     });
   });

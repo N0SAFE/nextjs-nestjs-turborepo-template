@@ -163,7 +163,7 @@ export function createPaginationSchema<TConfig extends Partial<PaginationConfig>
     }
 
     const shape: Record<string, z.ZodType> = {
-        limit: z.coerce.number().int().min(1).max(paginationConfig.maxLimit ?? 100),
+        limit: z.coerce.number().int().min(1).max(paginationConfig.maxLimit ?? 100).default(paginationConfig.defaultLimit ?? 10),
     };
 
     if (paginationConfig.includeOffset) {

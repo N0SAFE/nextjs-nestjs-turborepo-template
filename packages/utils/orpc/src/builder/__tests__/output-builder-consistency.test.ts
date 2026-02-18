@@ -123,7 +123,7 @@ describe('Output Builder API Consistency', () => {
       const route2 = new RouteBuilder({ method: 'POST', path: '/users' })
         .input(builder => builder
           .body(bodySchema)  // First set the schema
-          .body(b => b.schema(s => s.pick({ name: true, email: true })))  // Then modify it with builder callback
+          .body(b => b.schema.pick({ name: true, email: true }))  // Then modify it with builder callback
         )
         .build();
 

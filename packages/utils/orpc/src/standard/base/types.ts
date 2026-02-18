@@ -11,6 +11,7 @@ import type { AnySchema, HTTPMethod, HTTPPath } from "@orpc/contract";
  */
 export type { AnySchema, HTTPMethod, HTTPPath } from "@orpc/contract";
 export type { StandardSchemaV1 } from "@standard-schema/spec";
+export type { VoidSchema, NeverSchema } from "../../shared/standard-schema-helpers";
 
 /**
  * Schema shape type - represents an object where each key maps to a schema
@@ -124,20 +125,6 @@ export type RecordSchema<TKey extends AnySchema, TValue extends AnySchema> = Sta
     readonly _keySchema: TKey;
     readonly _valueSchema: TValue;
     readonly _record: true;
-};
-
-/**
- * Void schema type - a schema that represents undefined
- */
-export type VoidSchema = StandardSchemaV1<void, void> & {
-    readonly _void: true;
-};
-
-/**
- * Never schema type - a schema that represents never (always fails validation)
- */
-export type NeverSchema = StandardSchemaV1<never, never> & {
-    readonly _never: true;
 };
 
 /**

@@ -15,75 +15,86 @@ import { ProxyBuilderBase } from "../core/proxy-builder.base";
 import { s } from "../../standard/base/schema";
 
 /**
- * Query builder - provides schema modification methods for query parameters
+ * Query builder - exposes current query schema and entity schema for direct chaining
  */
 export class QueryBuilder<TQuery extends AnySchema, TParams extends AnySchema, TBody extends AnySchema, THeaders extends AnySchema, TEntitySchema extends AnySchema> {
     constructor(
         private _parent: DetailedInputBuilder<TParams, TQuery, TBody, THeaders, TEntitySchema>,
         private _schema: TQuery,
+        private _entitySchema: TEntitySchema,
     ) {}
 
-    /**
-     * Modify the query schema
-     */
-    schema<TNewQuery extends AnySchema>(modifier: (schema: TQuery) => TNewQuery): DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema> {
-        const newSchema = modifier(this._schema);
-        return new DetailedInputBuilder(this._parent.$params, newSchema, this._parent.$body, this._parent.$headers, this._parent.$entitySchema, this._parent._pendingPath);
+    /** Current query schema — chain Zod methods directly: `q.schema.extend({ ... })` */
+    get schema(): TQuery {
+        return this._schema;
+    }
+
+    /** Entity schema — use as the basis for the query: `q.entitySchema.pick([...])` */
+    get entitySchema(): TEntitySchema {
+        return this._entitySchema;
     }
 }
 
 /**
- * Params builder - provides schema modification methods for path parameters
- * Note: Params are typically defined by pathWithParams, this can only modify them
+ * Params builder - exposes current params schema and entity schema for direct chaining
  */
 export class ParamsBuilder<TParams extends AnySchema, TQuery extends AnySchema, TBody extends AnySchema, THeaders extends AnySchema, TEntitySchema extends AnySchema> {
     constructor(
         private _parent: DetailedInputBuilder<TParams, TQuery, TBody, THeaders, TEntitySchema>,
         private _schema: TParams,
+        private _entitySchema: TEntitySchema,
     ) {}
 
-    /**
-     * Modify the params schema
-     */
-    schema<TNewParams extends AnySchema>(modifier: (schema: TParams) => TNewParams): DetailedInputBuilder<TNewParams, TQuery, TBody, THeaders, TEntitySchema> {
-        const newSchema = modifier(this._schema);
-        return new DetailedInputBuilder(newSchema, this._parent.$query, this._parent.$body, this._parent.$headers, this._parent.$entitySchema, this._parent._pendingPath);
+    /** Current params schema — chain methods directly: `p.schema.extend({ ... })` */
+    get schema(): TParams {
+        return this._schema;
+    }
+
+    /** Entity schema */
+    get entitySchema(): TEntitySchema {
+        return this._entitySchema;
     }
 }
 
 /**
- * Body builder - provides schema modification methods for request body
+ * Body builder - exposes current body schema and entity schema for direct chaining
  */
 export class BodyBuilder<TBody extends AnySchema, TParams extends AnySchema, TQuery extends AnySchema, THeaders extends AnySchema, TEntitySchema extends AnySchema> {
     constructor(
         private _parent: DetailedInputBuilder<TParams, TQuery, TBody, THeaders, TEntitySchema>,
         private _schema: TBody,
+        private _entitySchema: TEntitySchema,
     ) {}
 
-    /**
-     * Modify the body schema
-     */
-    schema<TNewBody extends AnySchema>(modifier: (schema: TBody) => TNewBody): DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema> {
-        const newSchema = modifier(this._schema);
-        return new DetailedInputBuilder(this._parent.$params, this._parent.$query, newSchema, this._parent.$headers, this._parent.$entitySchema, this._parent._pendingPath);
+    /** Current body schema — chain Zod methods directly: `b.schema.extend({ ... })` */
+    get schema(): TBody {
+        return this._schema;
+    }
+
+    /** Entity schema — use as the basis for the body: `b.entitySchema.omit({ id: true })` */
+    get entitySchema(): TEntitySchema {
+        return this._entitySchema;
     }
 }
 
 /**
- * Headers builder - provides schema modification methods for request headers
+ * Headers builder - exposes current headers schema and entity schema for direct chaining
  */
 export class HeadersBuilder<THeaders extends AnySchema, TParams extends AnySchema, TQuery extends AnySchema, TBody extends AnySchema, TEntitySchema extends AnySchema> {
     constructor(
         private _parent: DetailedInputBuilder<TParams, TQuery, TBody, THeaders, TEntitySchema>,
         private _schema: THeaders,
+        private _entitySchema: TEntitySchema,
     ) {}
 
-    /**
-     * Modify the headers schema
-     */
-    schema<TNewHeaders extends AnySchema>(modifier: (schema: THeaders) => TNewHeaders): DetailedInputBuilder<TParams, TQuery, TBody, TNewHeaders, TEntitySchema> {
-        const newSchema = modifier(this._schema);
-        return new DetailedInputBuilder(this._parent.$params, this._parent.$query, this._parent.$body, newSchema, this._parent.$entitySchema, this._parent._pendingPath);
+    /** Current headers schema — chain methods directly: `h.schema.extend({ ... })` */
+    get schema(): THeaders {
+        return this._schema;
+    }
+
+    /** Entity schema */
+    get entitySchema(): TEntitySchema {
+        return this._entitySchema;
     }
 }
 
@@ -207,7 +218,7 @@ export class DetailedInputBuilder<
         // Create callable that handles both schema and builder callback
         type BodyCallable = {
             <TNewBody extends AnySchema>(
-                builder: (b: BodyBuilder<TBody, TParams, TQuery, THeaders, TEntitySchema>) => DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema>,
+                factory: (b: BodyBuilder<TBody, TParams, TQuery, THeaders, TEntitySchema>) => TNewBody,
             ): DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema>;
             <TNewBody extends AnySchema>(schema: TNewBody): DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema>;
             streamed: <TYieldIn, TYieldOut, TReturnIn = unknown, TReturnOut = unknown>(
@@ -217,12 +228,13 @@ export class DetailedInputBuilder<
         };
 
         const callable = (<TNewBody extends AnySchema>(
-            schemaOrBuilder: TNewBody | ((b: BodyBuilder<TBody, TParams, TQuery, THeaders, TEntitySchema>) => DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema>),
+            schemaOrFactory: TNewBody | ((b: BodyBuilder<TBody, TParams, TQuery, THeaders, TEntitySchema>) => TNewBody),
         ): DetailedInputBuilder<TParams, TQuery, TNewBody, THeaders, TEntitySchema> => {
-            if (typeof schemaOrBuilder === "function") {
-                return schemaOrBuilder(new BodyBuilder(this, this.$body));
+            if (typeof schemaOrFactory === "function") {
+                const newSchema = schemaOrFactory(new BodyBuilder(this, this.$body, this.$entitySchema));
+                return new DetailedInputBuilder(this.$params, this.$query, newSchema, this.$headers, this.$entitySchema, this._pendingPath);
             }
-            return new DetailedInputBuilder(this.$params, this.$query, schemaOrBuilder, this.$headers, this.$entitySchema, this._pendingPath);
+            return new DetailedInputBuilder(this.$params, this.$query, schemaOrFactory, this.$headers, this.$entitySchema, this._pendingPath);
         }) as BodyCallable;
 
         // Add streamed method
@@ -247,16 +259,17 @@ export class DetailedInputBuilder<
      * ```
      */
     query<TNewQuery extends AnySchema>(
-        builder: (q: QueryBuilder<TQuery, TParams, TBody, THeaders, TEntitySchema>) => DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema>,
+        factory: (q: QueryBuilder<TQuery, TParams, TBody, THeaders, TEntitySchema>) => TNewQuery,
     ): DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema>;
     query<TNewQuery extends AnySchema>(schema: TNewQuery): DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema>;
     query<TNewQuery extends AnySchema>(
-        schemaOrBuilder: TNewQuery | ((q: QueryBuilder<TQuery, TParams, TBody, THeaders, TEntitySchema>) => DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema>),
+        schemaOrFactory: TNewQuery | ((q: QueryBuilder<TQuery, TParams, TBody, THeaders, TEntitySchema>) => TNewQuery),
     ): DetailedInputBuilder<TParams, TNewQuery, TBody, THeaders, TEntitySchema> {
-        if (typeof schemaOrBuilder === "function") {
-            return schemaOrBuilder(new QueryBuilder(this, this.$query));
+        if (typeof schemaOrFactory === "function") {
+            const newSchema = schemaOrFactory(new QueryBuilder(this, this.$query, this.$entitySchema));
+            return new DetailedInputBuilder(this.$params, newSchema, this.$body, this.$headers, this.$entitySchema, this._pendingPath);
         }
-        return new DetailedInputBuilder(this.$params, schemaOrBuilder, this.$body, this.$headers, this.$entitySchema, this._pendingPath);
+        return new DetailedInputBuilder(this.$params, schemaOrFactory, this.$body, this.$headers, this.$entitySchema, this._pendingPath);
     }
 
     /**
@@ -446,25 +459,26 @@ export class DetailedInputBuilder<
      * ```
      */
     headers<TNewHeaders extends AnySchema>(
-        builder: (h: HeadersBuilder<THeaders, TParams, TQuery, TBody, TEntitySchema>) => DetailedInputBuilder<TParams, TQuery, TBody, TNewHeaders, TEntitySchema>,
+        factory: (h: HeadersBuilder<THeaders, TParams, TQuery, TBody, TEntitySchema>) => TNewHeaders,
     ): DetailedInputBuilder<TParams, TQuery, TBody, TNewHeaders, TEntitySchema>;
     headers<TNewHeaders extends AnySchema>(schema: TNewHeaders): DetailedInputBuilder<TParams, TQuery, TBody, TNewHeaders, TEntitySchema>;
     headers<TNewShape extends SchemaShape>(shape: TNewShape): DetailedInputBuilder<TParams, TQuery, TBody, ObjectSchema<TNewShape>, TEntitySchema>;
-    headers(schemaOrBuilderOrShape: unknown): DetailedInputBuilder<TParams, TQuery, TBody, AnySchema, TEntitySchema> {
-        if (typeof schemaOrBuilderOrShape === "function") {
-            // Builder callback
-            const callbackFn = schemaOrBuilderOrShape as (h: HeadersBuilder<THeaders, TParams, TQuery, TBody, TEntitySchema>) => DetailedInputBuilder<TParams, TQuery, TBody, AnySchema, TEntitySchema>;
-            return callbackFn(new HeadersBuilder(this, this.$headers));
+    headers(schemaOrFactoryOrShape: unknown): DetailedInputBuilder<TParams, TQuery, TBody, AnySchema, TEntitySchema> {
+        if (typeof schemaOrFactoryOrShape === "function") {
+            // Schema factory callback
+            const factoryFn = schemaOrFactoryOrShape as (h: HeadersBuilder<THeaders, TParams, TQuery, TBody, TEntitySchema>) => AnySchema;
+            const newSchema = factoryFn(new HeadersBuilder(this, this.$headers, this.$entitySchema));
+            return new DetailedInputBuilder(this.$params, this.$query, this.$body, newSchema, this.$entitySchema, this._pendingPath);
         }
 
         // Check if it's a raw shape (object without ~standard property)
-        if (typeof schemaOrBuilderOrShape === "object" && schemaOrBuilderOrShape !== null && !("~standard" in schemaOrBuilderOrShape)) {
-            const schema = s.object(schemaOrBuilderOrShape as SchemaShape);
+        if (typeof schemaOrFactoryOrShape === "object" && schemaOrFactoryOrShape !== null && !("~standard" in schemaOrFactoryOrShape)) {
+            const schema = s.object(schemaOrFactoryOrShape as SchemaShape);
             return new DetailedInputBuilder(this.$params, this.$query, this.$body, schema, this.$entitySchema, this._pendingPath);
         }
 
         // Direct schema
-        return new DetailedInputBuilder(this.$params, this.$query, this.$body, schemaOrBuilderOrShape as AnySchema, this.$entitySchema, this._pendingPath);
+        return new DetailedInputBuilder(this.$params, this.$query, this.$body, schemaOrFactoryOrShape as AnySchema, this.$entitySchema, this._pendingPath);
     }
 
     /**
@@ -580,9 +594,30 @@ export class DetailedInputBuilder<
 }
 
 /**
+ * Check if a single field schema is optional (accepts undefined).
+ * Works with our custom OptionalSchema, Zod's isOptional(), and any Standard Schema.
+ */
+function isFieldOptional(field: AnySchema): boolean {
+    // Our custom OptionalSchema marker
+    if ("_inner" in field) return true;
+    // Zod (and compatible libraries) expose isOptional()
+    if ("isOptional" in field && typeof (field as { isOptional?: unknown }).isOptional === "function") {
+        return (field as { isOptional: () => boolean }).isOptional();
+    }
+    // Universal fallback: validate undefined — if it succeeds, the field accepts undefined
+    try {
+        const result = (field as { "~standard": { validate: (v: unknown) => unknown } })["~standard"].validate(undefined) as Record<string, unknown>;
+        return "value" in result;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Check if a schema should be optional in the detailed input
  * A schema is optional if:
  * - It's void or never
+ * - It's an empty object schema (no fields configured)
  * - It's an object where ALL properties are optional
  */
 function shouldBeOptional(schema: AnySchema): boolean {
@@ -594,23 +629,28 @@ function shouldBeOptional(schema: AnySchema): boolean {
         }
     }
 
-    // Check for object schema
     if (typeof schema === "object") {
         const shapeSymbol = Symbol.for("standard-schema:shape");
+
+        // Resolve shape from our internal schemas (SHAPE_SYMBOL) or Zod/external schemas (.shape)
+        let shape: Record<string, AnySchema> | null = null;
         if (shapeSymbol in schema) {
-            const shape = (schema as unknown as Record<symbol, Record<string, AnySchema>>)[shapeSymbol];
-            if (!shape) return false;
+            shape = ((schema as unknown as Record<symbol, Record<string, AnySchema>>)[shapeSymbol]) ?? null;
+        } else if (
+            "~standard" in schema &&
+            "shape" in schema &&
+            typeof (schema as { shape?: unknown }).shape === "object" &&
+            (schema as { shape: object | null }).shape !== null
+        ) {
+            shape = (schema as { shape: Record<string, AnySchema> }).shape;
+        }
 
+        if (shape !== null) {
             const keys = Object.keys(shape);
-
-            // Empty object - never optionalized by shape emptiness alone
-            if (keys.length === 0) return false;
-
-            // All fields optional - make the whole thing optional
-            return keys.every((key) => {
-                const field = shape[key];
-                return typeof field === "object" && "_inner" in field; // OptionalSchema marker
-            });
+            // Empty object schema means nothing was configured — treat as optional
+            if (keys.length === 0) return true;
+            // All fields optional — make the whole container optional
+            return keys.every((key) => { const f = shape[key]; return f !== undefined && isFieldOptional(f); });
         }
     }
 

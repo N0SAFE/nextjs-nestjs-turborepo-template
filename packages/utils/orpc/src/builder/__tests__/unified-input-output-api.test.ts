@@ -35,7 +35,7 @@ describe('Unified Input/Output API', () => {
       const route = new RouteBuilder({ method: 'POST', path: '/users' })
         .input(builder => builder
           .body(userSchema.omit({ id: true }))
-          .query(q => q.schema(() => z.object({ limit: z.number() })))
+          .query(z.object({ limit: z.number() }))
         )
         .build();
 
@@ -46,8 +46,8 @@ describe('Unified Input/Output API', () => {
     it('supports chaining multiple input calls with builder callbacks', () => {
       const route = new RouteBuilder({ method: 'POST', path: '/users' })
         .input(builder => builder.body(userSchema))
-        .input(builder => builder.body(b => b.schema(s => s.omit({ password: true }))))
-        .input(builder => builder.query(q => q.schema(() => z.object({ limit: z.number() }))))
+        .input(builder => builder.body(b => b.schema.omit({ password: true })))
+        .input(builder => builder.query(z.object({ limit: z.number() })))
         .build();
 
       expect(route).toBeDefined();
@@ -58,7 +58,7 @@ describe('Unified Input/Output API', () => {
       const route = new RouteBuilder({ method: 'POST', path: '/users' })
         .input(userSchema)  // Direct schema first
         .input(b => b.schema.omit({ password: true }))  // Then property chaining
-        .input(builder => builder.body(b => b.schema(s => s.omit({ createdAt: true }))))  // Then builder callback
+        .input(builder => builder.body(b => b.schema.omit({ createdAt: true })))  // Then builder callback
         .build();
 
       expect(route).toBeDefined();
@@ -183,11 +183,11 @@ describe('Unified Input/Output API', () => {
 
     it('list route with query parameters', () => {
       const listRoute = new RouteBuilder({ method: 'GET', path: '/users' })
-        .input(builder => builder.query(q => q.schema(() => z.object({
+        .input(builder => builder.query(z.object({
           page: z.number().default(1),
           limit: z.number().default(10),
           search: z.string().optional(),
-        }))))
+        })))
         .output(z.object({
           users: z.array(userSchema.omit({ password: true })),
           total: z.number(),

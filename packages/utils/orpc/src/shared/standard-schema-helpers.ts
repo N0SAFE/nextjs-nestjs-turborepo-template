@@ -152,7 +152,8 @@ export type AllKeysOptional<T> = T extends object
  * Helper type to check if a schema should be optional in detailed input
  * A schema is optional if:
  * - undefined, never
- * - all fields are optional
+ * - empty object schema (no fields configured)
+ * - all fields are optional (including Zod schemas)
  */
 export type ShouldBeOptional<T> =
     [T] extends [undefined] ? true :
@@ -160,8 +161,12 @@ export type ShouldBeOptional<T> =
     T extends VoidSchema ? true :
     T extends NeverSchema ? true :
     T extends ObjectSchema<infer Shape> ?
-        [keyof Shape] extends [never] ? false :
+        [keyof Shape] extends [never] ? true :
         AllKeysOptional<InferSchemaOutput<T>> :
+    T extends StandardSchemaV1<unknown, infer O> ?
+        O extends object ?
+            AllKeysOptional<O> :
+        false :
     false;
 
 /**
