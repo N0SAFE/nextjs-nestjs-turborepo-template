@@ -1,5 +1,6 @@
 import type { Role } from "better-auth/plugins/access";
 import { createAccessControl } from "better-auth/plugins/access";
+import type { ZodType, infer as ZodInfer } from "zod/v4";
 import { BaseConfig } from "./shared/base-config";
 import { StatementsConfig } from "./statements/statements-config";
 import { RolesConfig } from "./roles/roles-config";
@@ -103,10 +104,11 @@ export type RolesAsRoleObjects<TRoles extends Record<string, Record<string, read
 export class ResourceBuilder<
   TStatement extends Record<string, readonly string[]>,
   TResource extends string,
-  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>
+  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>,
+  TMetaShape extends ZodType | undefined = undefined
 > {
   constructor(
-    private builder: PermissionBuilder<TStatement, TRoles>,
+    private builder: PermissionBuilder<TStatement, TRoles, TMetaShape>,
     private resourceName: TResource
   ) {}
 
@@ -119,13 +121,38 @@ export class ResourceBuilder<
     actions: TActions
   ): PermissionBuilder<
     MergeRecords<TStatement, Record<TResource, TActions>>,
-    TRoles
+    TRoles,
+    TMetaShape
   > {
     this.builder._statement[this.resourceName] = actions;
     return this.builder as unknown as PermissionBuilder<
       MergeRecords<TStatement, Record<TResource, TActions>>,
-      TRoles
+      TRoles,
+      TMetaShape
     >;
+  }
+}
+
+/**
+ * Intermediate builder returned after allPermissions()/permissions() when a metaShape is defined.
+ * Forces the caller to call .meta() before getting back to PermissionBuilder.
+ */
+export class RoleBuilderWithMeta<
+  TStatement extends Record<string, readonly string[]>,
+  TRoles extends Record<string, Record<string, readonly string[]>>,
+  TRoleName extends string,
+  TNextRoles extends Record<string, Record<string, readonly string[]>>,
+  TMetaShape extends ZodType
+> {
+  constructor(
+    private builder: PermissionBuilder<TStatement, TRoles, TMetaShape>,
+    private roleName: TRoleName
+  ) {}
+
+  /** Attach metadata to this role. Required when a metaShape is defined. */
+  meta(data: ZodInfer<TMetaShape>): PermissionBuilder<TStatement, TNextRoles, TMetaShape> {
+    this.builder._roleMeta[this.roleName] = data;
+    return this.builder as unknown as PermissionBuilder<TStatement, TNextRoles, TMetaShape>;
   }
 }
 
@@ -135,18 +162,17 @@ export class ResourceBuilder<
 export class RoleBuilder<
   TStatement extends Record<string, readonly string[]>,
   TRoles extends Record<string, Record<string, readonly string[]>>,
-  TRoleName extends string = string
+  TRoleName extends string = string,
+  TMetaShape extends ZodType | undefined = undefined
 > {
   constructor(
-    private builder: PermissionBuilder<TStatement, TRoles>,
+    private builder: PermissionBuilder<TStatement, TRoles, TMetaShape>,
     private roleName: TRoleName,
     private ac: ReturnType<typeof createAccessControl<TStatement>>
   ) {}
 
   /**
    * Define permissions for the current role
-   * @param permissions - Partial permission object with resources and their actions
-   * @returns The parent PermissionBuilder for method chaining
    */
   permissions<
     const TPermissions extends {
@@ -154,38 +180,96 @@ export class RoleBuilder<
     }
   >(
     permissions: TPermissions
-  ): PermissionBuilder<TStatement, MergeRecords<TRoles, Record<typeof this.roleName, RequiredPermissions<TPermissions>>>> {
+  ): TMetaShape extends ZodType
+    ? RoleBuilderWithMeta<TStatement, TRoles, TRoleName, MergeRecords<TRoles, Record<TRoleName, RequiredPermissions<TPermissions>>>, TMetaShape>
+    : PermissionBuilder<TStatement, MergeRecords<TRoles, Record<TRoleName, RequiredPermissions<TPermissions>>>, TMetaShape> {
     // @ts-expect-error - Type manipulation for builder pattern
     this.builder._roles[this.roleName] = this.ac.newRole(permissions);
-    return this.builder as unknown as PermissionBuilder<
-      TStatement,
-      MergeRecords<TRoles, Record<typeof this.roleName, RequiredPermissions<TPermissions>>>
-    >;
+    if (this.builder._metaShape !== undefined) {
+      return new RoleBuilderWithMeta(this.builder as unknown as PermissionBuilder<TStatement, TRoles, ZodType>, this.roleName) as never;
+    }
+    return this.builder as never;
   }
 
   /**
    * Give this role all permissions from the statement
-   * @returns The parent PermissionBuilder for method chaining
    */
-  allPermissions(): PermissionBuilder<TStatement, MergeRecords<TRoles, Record<typeof this.roleName, TStatement>>> {
-    // @ts-expect-error - Type manipulation for builder pattern
-    this.builder._roles[this.roleName] = this.ac.newRole(this.builder._statement);
-    return this.builder as unknown as PermissionBuilder<
-      TStatement,
-      MergeRecords<TRoles, Record<typeof this.roleName, TStatement>>
-    >;
+  allPermissions(): TMetaShape extends ZodType
+    ? RoleBuilderWithMeta<TStatement, TRoles, TRoleName, MergeRecords<TRoles, Record<TRoleName, TStatement>>, TMetaShape>
+    : PermissionBuilder<TStatement, MergeRecords<TRoles, Record<TRoleName, TStatement>>, TMetaShape> {
+    this.builder._roles[this.roleName] = this.ac.newRole(this.builder._statement as never);
+    if (this.builder._metaShape !== undefined) {
+      return new RoleBuilderWithMeta(this.builder as unknown as PermissionBuilder<TStatement, TRoles, ZodType>, this.roleName) as never;
+    }
+    return this.builder as never;
   }
 }
 
 /**
+ * A mini builder returned inside the roles() factory when metaShape is defined.
+ * Calling .meta() finalises the entry and allows TypeScript to enforce it.
+ */
+export class InlineRoleEntry<
+  TMetaShape extends ZodType
+> {
+  /** @internal */
+  __permissions: Record<string, readonly string[]>;
+  /** @internal */
+  __meta?: ZodInfer<TMetaShape>;
+
+  constructor(permissions: Record<string, readonly string[]>) {
+    this.__permissions = permissions;
+  }
+
+  meta(data: ZodInfer<TMetaShape>): this & { __meta: ZodInfer<TMetaShape> } {
+    this.__meta = data;
+    return this as this & { __meta: ZodInfer<TMetaShape> };
+  }
+}
+
+/**
+ * Type returned by the `permissions` helper inside `roles()` factory.
+ * When metaShape is set the helper returns an InlineRoleEntry that forces .meta();
+ * otherwise it returns a plain permissions record.
+ */
+type PermissionsHelper<
+  TStatement extends Record<string, readonly string[]>,
+  TMetaShape extends ZodType | undefined
+> = <
+  const TPermissions extends {
+    [K in keyof TStatement]?: readonly (TStatement[K][number])[];
+  }
+>(permissions: TPermissions) => TMetaShape extends ZodType
+  ? InlineRoleEntry<TMetaShape>
+  : TPermissions;
+
+/**
+ * Extract the raw permissions record from a roles factory entry
+ * (handles both plain objects and InlineRoleEntry instances)
+ */
+type ExtractPermissions<T> = T extends InlineRoleEntry<ZodType>
+  ? T["__permissions"]
+  : T;
+
+/**
+ * Map a roles factory result to its raw permissions, preserving role names
+ */
+type ExtractRolePermissions<TNewRoles extends Record<string, unknown>> = {
+  [K in keyof TNewRoles]: ExtractPermissions<TNewRoles[K]>
+};
+
+/**
  * Main Permission Builder class
- * 
+ *
  * Provides a fluent API for building permission statements and roles
  * with full type safety and autocomplete support.
+ *
+ * Pass `{ metaShape: z.object({...}) }` to the constructor to require `.meta()` on every role.
  */
 export class PermissionBuilder<
   TStatement extends Record<string, readonly string[]> = Record<string, never>,
-  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>
+  TRoles extends Record<string, Record<string, readonly string[]>> = Record<string, never>,
+  TMetaShape extends ZodType | undefined = undefined
 > extends BaseConfig<{
   statementsConfig: StatementsConfig<TStatement>;
   rolesConfig: RolesConfig<TRoles>;
@@ -199,13 +283,20 @@ export class PermissionBuilder<
   
   /** @internal */
   _roles: Record<string, unknown> = {};
+
+  /** @internal */
+  _roleMeta: Record<string, unknown> = {};
+
+  /** @internal */
+  _metaShape: TMetaShape;
   
   private _ac?: ReturnType<typeof createAccessControl<TStatement>>;
   private _statementsConfig?: StatementsConfig<TStatement>;
   private _rolesConfig?: RolesConfig<TRoles>;
 
-  constructor() {
+  constructor(options?: { metaShape?: TMetaShape }) {
     super({} as never); // Will be properly initialized in build()
+    this._metaShape = (options?.metaShape ?? undefined) as TMetaShape;
   }
 
   /**
@@ -222,7 +313,7 @@ export class PermissionBuilder<
   >(
     defaultRoles: TDefaultRoles
   ): PermissionBuilder<TStatement, TRoles> {
-    const builder = new PermissionBuilder<TStatement, TRoles>();
+    const builder = new PermissionBuilder<TStatement, TRoles, undefined>();
     
     // Extract and merge all statements from all roles
     const allStatements: Record<string, readonly string[]> = {};
@@ -249,8 +340,8 @@ export class PermissionBuilder<
    */
   resource<TResource extends string>(
     name: TResource
-  ): ResourceBuilder<TStatement, TResource, TRoles> {
-    return new ResourceBuilder(this, name);
+  ): ResourceBuilder<TStatement, TResource, TRoles, TMetaShape> {
+    return new ResourceBuilder(this, name) as unknown as ResourceBuilder<TStatement, TResource, TRoles, TMetaShape>;
   }
 
   /**
@@ -266,7 +357,7 @@ export class PermissionBuilder<
         actions: TActions
       ) => TActions;
     }) => TResources
-  ): PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles> {
+  ): PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles, TMetaShape> {
     // Create helpers object with identity actions function
     const helpers = {
       actions: <const TActions extends readonly string[]>(
@@ -277,12 +368,12 @@ export class PermissionBuilder<
     // Get resource definitions from factory
     const resourceDefinitions = resourcesFactory(helpers);
     
-    // Use ResourceBuilder for each resource
+    // Directly assign to _statement (bypass ResourceBuilder to avoid generic issues)
     for (const [resourceName, actions] of Object.entries(resourceDefinitions)) {
-      new ResourceBuilder(this, resourceName).actions(actions);
+      this._statement[resourceName] = actions;
     }
     
-    return this as unknown as PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles>;
+    return this as unknown as PermissionBuilder<MergeRecords<TStatement, TResources>, TRoles, TMetaShape>;
   }
 
   /**
@@ -292,9 +383,9 @@ export class PermissionBuilder<
    */
   role<const TRole extends string>(
     name: TRole
-  ): RoleBuilder<TStatement, TRoles, TRole> {
+  ): RoleBuilder<TStatement, TRoles, TRole, TMetaShape> {
     this._ac ??= createAccessControl(this._statement as TStatement);
-    return new RoleBuilder<TStatement, TRoles, TRole>(this, name, this._ac);
+    return new RoleBuilder<TStatement, TRoles, TRole, TMetaShape>(this as unknown as PermissionBuilder<TStatement, TRoles, TMetaShape>, name, this._ac);
   }
 
   /**
@@ -303,25 +394,28 @@ export class PermissionBuilder<
    * @returns The PermissionBuilder for method chaining
    */
   roles<
-    const TNewRoles extends Record<string, Record<string, readonly string[]>>
+    const TNewRoles extends Record<string, TMetaShape extends ZodType ? InlineRoleEntry<TMetaShape> : Record<string, readonly string[]>>
   >(
     rolesFactory: (helpers: {
       statement: TStatement;
-      permissions: <
-        const TPermissions extends {
-          [K in keyof TStatement]?: readonly (TStatement[K][number])[];
-        }
-      >(permissions: TPermissions) => TPermissions;
+      permissions: PermissionsHelper<TStatement, TMetaShape>;
     }) => TNewRoles
-  ): PermissionBuilder<TStatement, MergeRecords<TRoles, TNewRoles>> {
-    // Create helpers object with statement and identity permissions function
+  ): PermissionBuilder<TStatement, MergeRecords<TRoles, ExtractRolePermissions<TNewRoles>>, TMetaShape> {
+    // Create the permissions helper
+    const permissionsHelper = <
+      const TPermissions extends {
+        [K in keyof TStatement]?: readonly (TStatement[K][number])[];
+      }
+    >(permissions: TPermissions) => {
+      if (this._metaShape !== undefined) {
+        return new InlineRoleEntry<ZodType>(permissions as Record<string, readonly string[]>);
+      }
+      return permissions;
+    };
+
     const helpers = {
       statement: this._statement as TStatement,
-      permissions: <
-        const TPermissions extends {
-          [K in keyof TStatement]?: readonly (TStatement[K][number])[];
-        }
-      >(permissions: TPermissions): TPermissions => permissions
+      permissions: permissionsHelper as unknown as PermissionsHelper<TStatement, TMetaShape>,
     };
     
     // Get role definitions from factory
@@ -330,12 +424,19 @@ export class PermissionBuilder<
     // Initialize access control if not already created
     this._ac ??= createAccessControl(this._statement as TStatement);
     
-    // Create RoleBuilder for each role and call permissions
-    for (const [roleName, perms] of Object.entries(roleDefinitions)) {
-      new RoleBuilder(this, roleName, this._ac).permissions(perms);
+    // Process each role — extract permissions and optional meta
+    for (const [roleName, entry] of Object.entries(roleDefinitions)) {
+      if (entry instanceof InlineRoleEntry) {
+        this._roles[roleName] = this._ac.newRole(entry.__permissions as never);
+        if (entry.__meta !== undefined) {
+          this._roleMeta[roleName] = entry.__meta;
+        }
+      } else {
+        this._roles[roleName] = this._ac.newRole(entry as never);
+      }
     }
     
-    return this as unknown as PermissionBuilder<TStatement, MergeRecords<TRoles, TNewRoles>>;
+    return this as unknown as PermissionBuilder<TStatement, MergeRecords<TRoles, ExtractRolePermissions<TNewRoles>>, TMetaShape>;
   }
 
   /**
@@ -346,17 +447,27 @@ export class PermissionBuilder<
     this._ac = createAccessControl(this._statement as TStatement);
     this._statementsConfig = new StatementsConfig(this._statement as TStatement);
     this._rolesConfig = new RolesConfig(this._roles as TRoles);
-    const schemas = createSchemas(this);
+    const schemas = createSchemas(this as unknown as PermissionBuilder<TStatement, TRoles>);
 
-    return {
+    const result: {
+      statementsConfig: StatementsConfig<TStatement>;
+      rolesConfig: RolesConfig<TRoles>;
+      statement: TStatement;
+      ac: ReturnType<typeof createAccessControl<TStatement>>;
+      roles: RolesAsRoleObjects<TRoles>;
+      schemas: ReturnType<typeof createSchemas<TStatement, TRoles>>;
+      roleMeta: TMetaShape extends ZodType ? Record<keyof TRoles, ZodInfer<TMetaShape>> : undefined;
+    } = {
       statementsConfig: this._statementsConfig,
       rolesConfig: this._rolesConfig,
       statement: this._statement as TStatement,
-       
       ac: this._ac,
       roles: this._roles as RolesAsRoleObjects<TRoles>,
       schemas,
+      roleMeta: (this._metaShape !== undefined ? this._roleMeta : undefined) as TMetaShape extends ZodType ? Record<keyof TRoles, ZodInfer<TMetaShape>> : undefined,
     };
+
+    return result;
   }
 
   /**
@@ -392,6 +503,13 @@ export class PermissionBuilder<
    */
   getRoles(): RolesAsRoleObjects<TRoles> {
     return this._roles as RolesAsRoleObjects<TRoles>;
+  }
+
+  /**
+   * Get the meta data for all roles (only available when metaShape is defined)
+   */
+  getRoleMeta(): TMetaShape extends ZodType ? Record<keyof TRoles, ZodInfer<TMetaShape>> : undefined {
+    return (this._metaShape !== undefined ? this._roleMeta : undefined) as TMetaShape extends ZodType ? Record<keyof TRoles, ZodInfer<TMetaShape>> : undefined;
   }
 
   /**
