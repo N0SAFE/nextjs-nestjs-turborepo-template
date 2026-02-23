@@ -109,6 +109,7 @@
       "devDependencies": {
         "@eslint/eslintrc": "catalog:linting",
         "@repo/config-eslint": "*",
+        "@repo/config-prettier": "*",
         "@tailwindcss/postcss": "catalog:styling",
         "@types/mdx": "catalog:doc",
         "@types/node": "catalog:build",
@@ -239,6 +240,7 @@
         "zod": "catalog:utils",
       },
       "devDependencies": {
+        "@repo/config-prettier": "*",
         "@repo/config-vitest": "*",
         "@types/diff": "catalog:utils",
         "@types/fs-extra": "catalog:utils",
@@ -260,6 +262,7 @@
         "commander": "catalog:utils",
       },
       "devDependencies": {
+        "@repo/config-prettier": "*",
         "@repo/config-vitest": "*",
         "@types/node": "catalog:build",
         "vitest": "catalog:testing",
@@ -272,6 +275,7 @@
         "@darraghor/eslint-plugin-nestjs-typed": "^7.1.22",
         "@eslint/compat": "^2.0.1",
         "@eslint/js": "catalog:linting",
+        "@repo/config-prettier": "*",
         "@repo/config-vitest": "*",
         "@tanstack/eslint-plugin-query": "catalog:tanstack",
         "@typescript-eslint/eslint-plugin": "^8.53.0",
@@ -311,6 +315,7 @@
       "name": "@repo/config-tailwind",
       "version": "0.0.0",
       "devDependencies": {
+        "@repo/config-prettier": "*",
         "@repo/config-typescript": "*",
         "@repo/config-vitest": "*",
         "tailwind-variants": "catalog:styling",
@@ -323,6 +328,7 @@
       "name": "@repo/config-typescript",
       "version": "0.0.0",
       "devDependencies": {
+        "@repo/config-prettier": "*",
         "@repo/config-vitest": "*",
         "vitest": "catalog:testing",
       },
@@ -353,6 +359,7 @@
       },
       "devDependencies": {
         "@repo/config-eslint": "*",
+        "@repo/config-prettier": "*",
         "@repo/config-typescript": "*",
         "@types/node": "catalog:build",
         "chokidar": "catalog:build",
@@ -498,6 +505,7 @@
       "devDependencies": {
         "@repo/auth": "*",
         "@repo/config-eslint": "*",
+        "@repo/config-prettier": "*",
         "@repo/config-typescript": "*",
         "@types/nprogress": "^0.2.3",
         "@types/react": "catalog:react",
@@ -530,6 +538,7 @@
         "zod": "catalog:utils",
       },
       "devDependencies": {
+        "@repo/config-prettier": "*",
         "@repo/config-typescript": "*",
         "@vitest/coverage-v8": "catalog:testing",
         "typescript": "catalog:build",
