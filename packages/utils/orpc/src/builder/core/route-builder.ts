@@ -51,8 +51,6 @@ type NormalizeDetailedInputField<T extends AnySchema> =
 type IsVoidLikeDetailedField<T extends AnySchema> =
     T extends VoidSchema | NeverSchema
         ? true
-        : ShouldBeOptional<T> extends true
-            ? true
         : T extends ObjectSchema<infer S extends SchemaShape>
             ? keyof S extends never
                 ? true
@@ -60,8 +58,6 @@ type IsVoidLikeDetailedField<T extends AnySchema> =
         : T extends OptionalSchema<infer I extends AnySchema>
             ? I extends VoidSchema | NeverSchema
                 ? true
-                : ShouldBeOptional<I> extends true
-                    ? true
                 : I extends ObjectSchema<infer S extends SchemaShape>
                     ? keyof S extends never
                         ? true
