@@ -3,7 +3,9 @@
 import { build } from "bun";
 import path from "path";
 
-let chokidar: any = null;
+type ChokidarModule = typeof import("chokidar");
+
+let chokidar: ChokidarModule | null = null;
 try {
   chokidar = await import('chokidar');
 } catch {
@@ -45,7 +47,9 @@ async function buildContracts() {
 
   if (!result.success) {
     console.error("Build failed:");
-    result.logs.forEach((log) => console.error(log));
+    result.logs.forEach((log) => {
+      console.error(log);
+    });
     process.exit(1);
   }
 
@@ -54,7 +58,7 @@ async function buildContracts() {
 }
 
 // Setup file watcher
-async function setupWatcher() {
+function setupWatcher() {
   if (!chokidar) {
     console.error('❌ chokidar not available - watch mode requires: bun add -d chokidar');
     process.exit(1);
@@ -85,16 +89,22 @@ async function setupWatcher() {
     isBuilding = true;
     try {
       await buildContracts();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('❌ Build failed:', error);
     } finally {
       isBuilding = false;
     }
   };
 
-  watcher.on('change', rebuild);
-  watcher.on('add', rebuild);
-  watcher.on('unlink', rebuild);
+  watcher.on('change', () => {
+    void rebuild();
+  });
+  watcher.on('add', () => {
+    void rebuild();
+  });
+  watcher.on('unlink', () => {
+    void rebuild();
+  });
 
   console.log('✅ Watcher ready. Press Ctrl+C to stop.');
 }
@@ -102,13 +112,15 @@ async function setupWatcher() {
 buildContracts()
   .then(() => {
     if (watch) {
-      setupWatcher().catch((error) => {
+      try {
+        setupWatcher();
+      } catch (error: unknown) {
         console.error("Watcher error:", error);
         process.exit(1);
-      });
+      }
     }
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error("Build error:", error);
     process.exit(1);
   });

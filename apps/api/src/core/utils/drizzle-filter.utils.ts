@@ -8,10 +8,19 @@
  * ```typescript
  * return listBuilder(input.filter)
  *     .filter({
+ *         // Classic style — destructure operator/value manually
  *         email: ({ operator, value }) => {
  *             switch (operator) {
  *                 case "eq":   return eq(user.email, value);
  *                 case "like": return like(user.email, `%${value}%`);
+ *             }
+ *         },
+ *         // Modern style — use `entry.common` helpers (value is bound from context)
+ *         name: (entry) => {
+ *             switch (entry.operator) {
+ *                 case "eq":    return entry.common.eq(user.name);
+ *                 case "like":  return entry.common.like(user.name);
+ *                 case "ilike": return entry.common.ilike(user.name);
  *             }
  *         },
  *     })
@@ -22,7 +31,7 @@
  *     .execute(db, user);
  * ```
  */
-import { and, or, asc, desc, count, type AnyColumn, type SQL, type InferSelectModel } from "drizzle-orm";
+import { and, or, asc, desc, count, eq, ne, like, ilike, gt, gte, lt, lte, type AnyColumn, type SQL, type InferSelectModel } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { Database } from "@/core/modules/database/services/database.service";
 
@@ -36,12 +45,76 @@ export interface FilterWithLogical {
 }
 
 /**
+ * Pre-bound Drizzle operator helpers that close over the current filter entry's `value`.
+ * Call with just the column — the value is injected automatically from the filter context.
+ *
+ * @example
+ * ```typescript
+ * name: (entry) => {
+ *   switch (entry.operator) {
+ *     case 'eq':    return entry.common.eq(table.name);
+ *     case 'like':  return entry.common.like(table.name);
+ *     case 'ilike': return entry.common.ilike(table.name);
+ *   }
+ * }
+ * ```
+ */
+export interface CommonOperators {
+    /** `eq(column, value)` */
+    eq(column: AnyColumn): SQL;
+    /** `ne(column, value)` */
+    neq(column: AnyColumn): SQL;
+    /** `like(column, '%value%')` */
+    like(column: AnyColumn): SQL;
+    /** `ilike(column, '%value%')` */
+    ilike(column: AnyColumn): SQL;
+    /** `like(column, 'value%')` */
+    startsWith(column: AnyColumn): SQL;
+    /** `like(column, '%value')` */
+    endsWith(column: AnyColumn): SQL;
+    /** `gt(column, value)` */
+    gt(column: AnyColumn): SQL;
+    /** `gte(column, value)` */
+    gte(column: AnyColumn): SQL;
+    /** `lt(column, value)` */
+    lt(column: AnyColumn): SQL;
+    /** `lte(column, value)` */
+    lte(column: AnyColumn): SQL;
+    /** `and(gte(column, value[0]), lte(column, value[1]))` — value must be a `[from, to]` tuple */
+    between(column: AnyColumn): SQL;
+}
+
+function createCommonOperators(value: unknown): CommonOperators {
+    return {
+        eq:         (col) => eq(col, value),
+        neq:        (col) => ne(col, value),
+        like:       (col) => like(col, `%${String(value)}%`),
+        ilike:      (col) => ilike(col, `%${String(value)}%`),
+        startsWith: (col) => like(col, `${String(value)}%`),
+        endsWith:   (col) => like(col, `%${String(value)}`),
+        gt:         (col) => gt(col, value),
+        gte:        (col) => gte(col, value),
+        lt:         (col) => lt(col, value),
+        lte:        (col) => lte(col, value),
+        between:    (col) => {
+            const [from, to] = value as [unknown, unknown];
+            const condition = and(gte(col, from), lte(col, to));
+            if (!condition) {
+                throw new Error("[IllogicalState] condition should never be falsy since it returns a SQL object and as in input two separate conditions");
+            }
+            return condition;
+        },
+    };
+}
+
+/**
  * Per-field resolver map. Each key maps to a function that receives
- * the fully-typed { operator, value } discriminated union entry for that field.
+ * the fully-typed { operator, value } discriminated union entry for that field,
+ * enriched with a `common` helper object for concise column-only calls.
  */
 export type FilterResolvers<TFilter> = {
     [K in Exclude<keyof TFilter, "_and" | "_or">]?: (
-        entry: NonNullable<TFilter[K]>,
+        entry: NonNullable<TFilter[K]> & { common: CommonOperators },
     ) => SQL | undefined;
 };
 
@@ -63,7 +136,9 @@ function resolveFilter<TFilter extends Record<string, unknown>>(
     for (const [key, resolver] of resolverEntries) {
         const entry = filterRecord[key];
         if (entry != null) {
-            parts.push(resolver(entry as never));
+            const entryValue = (entry as Record<string, unknown>).value;
+            const enriched = Object.assign({}, entry as object, { common: createCommonOperators(entryValue) });
+            parts.push(resolver(enriched as never));
         }
     }
 

@@ -10,5 +10,5 @@ export const userFindByIdContract = userOps
   .output(b => b.entitySchema.nullable())
   .build()
   
-  type i = typeof userFindByIdContract['~orpc']["inputSchema"];
-  type o = typeof userFindByIdContract['~orpc']["outputSchema"];
+// type i = typeof userFindByIdContract['~orpc']["inputSchema"];
+// type o = typeof userFindByIdContract['~orpc']["outputSchema"];

@@ -16,4 +16,13 @@ export class OrganizationController {
         return await this.organizationService.listAll(input.query);
       });
   }
+
+  @Implement(appContract.organization.admin.listMembers)
+  listMembers() {
+    return implement(appContract.organization.admin.listMembers)
+      .use(requireAuth())
+      .handler(async ({ input }) => {
+        return await this.organizationService.listMembers(input.query);
+      });
+  }
 }

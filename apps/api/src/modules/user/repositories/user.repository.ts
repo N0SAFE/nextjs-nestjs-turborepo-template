@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { DatabaseService } from "../../../core/modules/database/services/database.service";
 import { user } from "@/config/drizzle/schema/auth";
-import { eq, like, and, count, gte, lte, gt, lt, ilike } from "drizzle-orm";
+import { eq, and, count, gte, lte, gt, lt } from "drizzle-orm";
 import { listBuilder } from "@/core/utils/drizzle-filter.utils";
 import { randomUUID } from "crypto";
 import type {
@@ -106,30 +106,22 @@ export class UserRepository {
     async findMany(input: GetUsersInput) {
         const result = await listBuilder(input.filter)
             .filter({
-                id: ({ operator, value }) => {
-                    switch (operator) {
-                        case "eq": return eq(user.id, value);
+                id: (entry) => entry.common.eq(user.id),
+                name: (entry) => {
+                    switch (entry.operator) {
+                        case "eq":    return entry.common.eq(user.name);
+                        case "like":  return entry.common.like(user.name);
+                        case "ilike": return entry.common.ilike(user.name);
                     }
                 },
-                name: ({ operator, value }) => {
-                    switch (operator) {
-                        case "eq":    return eq(user.name, value);
-                        case "like":  return like(user.name, `%${value}%`);
-                        case "ilike": return ilike(user.name, `%${value}%`);
+                email: (entry) => {
+                    switch (entry.operator) {
+                        case "eq":    return entry.common.eq(user.email);
+                        case "like":  return entry.common.like(user.email);
+                        case "ilike": return entry.common.ilike(user.email);
                     }
                 },
-                email: ({ operator, value }) => {
-                    switch (operator) {
-                        case "eq":    return eq(user.email, value);
-                        case "like":  return like(user.email, `%${value}%`);
-                        case "ilike": return ilike(user.email, `%${value}%`);
-                    }
-                },
-                emailVerified: ({ operator, value }) => {
-                    switch (operator) {
-                        case "eq": return eq(user.emailVerified, value);
-                    }
-                },
+                emailVerified: (entry) => entry.common.eq(user.emailVerified),
                 createdAt: ({ operator, value }) => {
                     switch (operator) {
                         case "gt":  return gt(user.createdAt, new Date(value));

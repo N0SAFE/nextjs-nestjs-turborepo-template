@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { like, and, gte, gt, lte, lt, eq, ilike } from 'drizzle-orm';
+import { and, asc, eq, SQL } from 'drizzle-orm';
 import { listBuilder } from '@/core/utils/drizzle-filter.utils';
 import type { OrganizationListAllInput } from '@repo/api-contracts/modules/organization/listAll';
+import type { OrganizationListMembersInput } from '@repo/api-contracts/modules/organization/listMembers';
 import { DatabaseService } from '@/core/modules/database/services/database.service';
-import { organization } from '@/config/drizzle/schema/auth';
+import { organization, member, user } from '@/config/drizzle/schema/auth';
 
 @Injectable()
 export class OrganizationRepository {
@@ -16,38 +17,28 @@ export class OrganizationRepository {
   async listAll(input: OrganizationListAllInput) {
     return listBuilder(input.filter)
       .filter({
-        id: (entry) => {
-          switch (entry.operator) {
-            case 'eq': return eq(organization.id, entry.value);
-          }
-        },
+        id: (entry) => entry.common.eq(organization.id),
         name: (entry) => {
           switch (entry.operator) {
-            case 'eq':    return eq(organization.name, entry.value);
-            case 'like':  return like(organization.name, `%${entry.value}%`);
-            case 'ilike': return ilike(organization.name, `%${entry.value}%`);
+            case 'eq':    return entry.common.eq(organization.name);
+            case 'like':  return entry.common.like(organization.name);
+            case 'ilike': return entry.common.ilike(organization.name);
           }
         },
         slug: (entry) => {
           switch (entry.operator) {
-            case 'eq':    return eq(organization.slug, entry.value);
-            case 'like':  return like(organization.slug, `%${entry.value}%`);
-            case 'ilike': return ilike(organization.slug, `%${entry.value}%`);
+            case 'eq':    return entry.common.eq(organization.slug);
+            case 'like':  return entry.common.like(organization.slug);
+            case 'ilike': return entry.common.ilike(organization.slug);
           }
         },
         createdAt: (entry) => {
           switch (entry.operator) {
-            case 'gt':  return gt(organization.createdAt, new Date(entry.value));
-            case 'gte': return gte(organization.createdAt, new Date(entry.value));
-            case 'lt':  return lt(organization.createdAt, new Date(entry.value));
-            case 'lte': return lte(organization.createdAt, new Date(entry.value));
-            case 'between': {
-              const [from, to] = entry.value;
-              return and(
-                gte(organization.createdAt, new Date(from)),
-                lte(organization.createdAt, new Date(to))
-              );
-            }
+            case 'gt':  return entry.common.gt(organization.createdAt);
+            case 'gte': return entry.common.gte(organization.createdAt);
+            case 'lt':  return entry.common.lt(organization.createdAt);
+            case 'lte': return entry.common.lte(organization.createdAt);
+            case 'between': return entry.common.between(organization.createdAt);
           }
         },
       })
@@ -58,5 +49,58 @@ export class OrganizationRepository {
       }, organization.createdAt)
       .pagination({ limit: input.limit, offset: input.offset })
       .execute(this.databaseService.db, organization);
+  }
+
+  /**
+   * List members of an organization with pagination and filtering
+   */
+  async listMembers(input: OrganizationListMembersInput) {
+    const db = this.databaseService.db;
+    const limit = input.limit;
+    const offset = input.offset;
+    const orgIdFilter = input.filter?.organizationId;
+
+    const conditions: SQL[] = [];
+    if (orgIdFilter?.operator === 'eq') {
+      conditions.push(eq(member.organizationId, orgIdFilter.value));
+    }
+
+    const roleFilter = input.filter?.role;
+    if (roleFilter?.operator === 'eq') {
+      conditions.push(eq(member.role, roleFilter.value));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const rows = await db
+      .select({
+        id: member.id,
+        organizationId: member.organizationId,
+        userId: member.userId,
+        role: member.role,
+        createdAt: member.createdAt,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        },
+      })
+      .from(member)
+      .leftJoin(user, eq(member.userId, user.id))
+      .where(whereClause)
+      .orderBy(asc(member.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: rows,
+      meta: {
+        total: rows.length,
+        limit,
+        offset,
+        hasMore: rows.length === limit,
+      },
+    };
   }
 }
