@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod/v4';
 import { RouteBuilder, route } from '../core/route-builder';
+import type { InferSchemaInput } from '../../shared/types';
 
 const SHAPE_SYMBOL = Symbol.for('standard-schema:shape');
 
@@ -74,6 +75,25 @@ describe('RouteBuilder - Regression Coverage', () => {
   });
 
   describe('build-time schema normalization', () => {
+    it('preserves body key in inferred input when body fields are all optional', () => {
+      const contract = new RouteBuilder({ method: 'POST' })
+        .input((b) =>
+          b
+            .params((p) => p`/deployments/${p('id', z.uuid())}/cancel`)
+            .body(z.object({ reason: z.string().optional() }))
+        )
+        .output(z.object({ success: z.boolean() }))
+        .build();
+
+      expect(contract['~orpc'].inputSchema).toBeDefined();
+
+      type Input = InferSchemaInput<NonNullable<typeof contract['~orpc']['inputSchema']>>;
+
+      expectTypeOf<Input>().toHaveProperty('params');
+      expectTypeOf<Input>().toHaveProperty('body');
+      expectTypeOf<Input['body']>().toMatchTypeOf<{ reason?: string | undefined } | undefined>();
+    });
+
     it('compacts detailed input by removing void-like fields', () => {
       const contract = new RouteBuilder({ method: 'POST' })
         .input((b) =>

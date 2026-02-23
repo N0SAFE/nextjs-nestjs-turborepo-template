@@ -37,12 +37,10 @@ import type {
   OrganizationResource,
 } from '../permissions'
 import {
-  hasPlatformPermission,
-  hasOrganizationPermission,
-  isPlatformRoleAtLeast,
-  isOrganizationRoleAtLeast,
-  platformRoleConfig,
-  organizationRoleConfig,
+  platformRolesConfig,
+  organizationRolesConfig,
+  PLATFORM_ROLES,
+  ORGANIZATION_ROLES,
 } from '../permissions'
 
 // ============================================================================
@@ -191,7 +189,9 @@ export function createPermissionHooks({
 
     const platformRoleLevel = useMemo(() => {
       if (!user?.role) return 0
-      return platformRoleConfig[user.role].level
+      // Level derived from position in PLATFORM_ROLES array (higher index = higher privilege)
+      const idx = (PLATFORM_ROLES as readonly string[]).indexOf(user.role)
+      return idx === -1 ? 0 : idx + 1
     }, [user])
 
     // Platform role checks
@@ -212,7 +212,9 @@ export function createPermissionHooks({
     const isPlatformAdmin = useMemo(() => {
       return (): boolean => {
         if (!user?.role) return false
-        return isPlatformRoleAtLeast(user.role, 'admin')
+        const userIdx = (PLATFORM_ROLES as readonly string[]).indexOf(user.role)
+        const adminIdx = (PLATFORM_ROLES as readonly string[]).indexOf('admin')
+        return userIdx >= adminIdx && adminIdx !== -1
       }
     }, [user])
 
@@ -227,7 +229,8 @@ export function createPermissionHooks({
     const canPlatform = useMemo(() => {
       return (resource: PlatformResource, action: string): boolean => {
         if (!user?.role) return false
-        return hasPlatformPermission(user.role, resource, action)
+        if (user.role === 'superAdmin') return true
+        return platformRolesConfig.hasPermission(user.role, resource, action)
       }
     }, [user])
 
@@ -236,7 +239,7 @@ export function createPermissionHooks({
         const role = user?.role
         if (!role) return false
         return permissions.some(({ resource, action }) => 
-          hasPlatformPermission(role, resource, action)
+          (role === 'superAdmin') || platformRolesConfig.hasPermission(role, resource, action)
         )
       }
     }, [user])
@@ -246,7 +249,7 @@ export function createPermissionHooks({
         const role = user?.role
         if (!role) return false
         return permissions.every(({ resource, action }) => 
-          hasPlatformPermission(role, resource, action)
+          (role === 'superAdmin') || platformRolesConfig.hasPermission(role, resource, action)
         )
       }
     }, [user])
@@ -308,7 +311,9 @@ export function createPermissionHooks({
 
     const organizationRoleLevel = useMemo(() => {
       if (!role) return 0
-      return organizationRoleConfig[role].level
+      // Level derived from position in ORGANIZATION_ROLES array (higher index = higher privilege)
+      const idx = (ORGANIZATION_ROLES as readonly string[]).indexOf(role)
+      return idx === -1 ? 0 : idx + 1
     }, [role])
 
     // Organization role checks
@@ -336,7 +341,9 @@ export function createPermissionHooks({
     const isOrganizationAdmin = useMemo(() => {
       return (): boolean => {
         if (!role) return false
-        return isOrganizationRoleAtLeast(role, 'admin')
+        const roleIdx = (ORGANIZATION_ROLES as readonly string[]).indexOf(role)
+        const adminIdx = (ORGANIZATION_ROLES as readonly string[]).indexOf('admin')
+        return roleIdx >= adminIdx && adminIdx !== -1
       }
     }, [role])
 
@@ -344,7 +351,8 @@ export function createPermissionHooks({
     const canOrganization = useMemo(() => {
       return (resource: OrganizationResource, action: string): boolean => {
         if (!role) return false
-        return hasOrganizationPermission(role, resource, action)
+        if (role === 'owner') return true
+        return organizationRolesConfig.hasPermission(role, resource, action)
       }
     }, [role])
 
@@ -353,7 +361,7 @@ export function createPermissionHooks({
         const r = role
         if (!r) return false
         return permissions.some(({ resource, action }) => 
-          hasOrganizationPermission(r, resource, action)
+          (r === 'owner') || organizationRolesConfig.hasPermission(r, resource, action)
         )
       }
     }, [role])
@@ -363,7 +371,7 @@ export function createPermissionHooks({
         const r = role
         if (!r) return false
         return permissions.every(({ resource, action }) => 
-          hasOrganizationPermission(r, resource, action)
+          (r === 'owner') || organizationRolesConfig.hasPermission(r, resource, action)
         )
       }
     }, [role])
@@ -446,6 +454,6 @@ export {
   type OrganizationResource,
   PLATFORM_ROLES,
   ORGANIZATION_ROLES,
-  platformRoleConfig,
-  organizationRoleConfig,
+  platformRoleMeta,
+  organizationRoleMeta,
 } from '../permissions'

@@ -16,6 +16,8 @@ export {
     platformAc,
     platformRoles,
     platformSchemas,
+    platformRoleMeta,
+    platformRolesConfig,
 } from "./config";
 
 // Platform builder (for generic plugin type inference)
@@ -25,7 +27,6 @@ export { platformBuilder } from "./config";
 export {
     PLATFORM_ROLES,
     type PlatformRole,
-    platformRoleConfig,
 } from "./config";
 
 // Platform resources
@@ -46,6 +47,8 @@ export {
     organizationAc,
     organizationRoles,
     organizationSchemas,
+    organizationRoleMeta,
+    organizationRolesConfig,
 } from "./config";
 
 // Organization builder (for generic plugin type inference)
@@ -55,7 +58,6 @@ export { organizationBuilder } from "./config";
 export {
     ORGANIZATION_ROLES,
     type OrganizationRole,
-    organizationRoleConfig,
 } from "./config";
 
 // Organization resources
@@ -63,19 +65,6 @@ export {
     ORGANIZATION_RESOURCES,
     type OrganizationResource,
     type OrganizationActionsForResource,
-} from "./config";
-
-// ============================================================================
-// PERMISSION CHECK HELPERS
-// ============================================================================
-
-export {
-    hasPlatformPermission,
-    hasOrganizationPermission,
-    getPlatformRolePermissions,
-    getOrganizationRolePermissions,
-    isPlatformRoleAtLeast,
-    isOrganizationRoleAtLeast,
 } from "./config";
 
 // ============================================================================

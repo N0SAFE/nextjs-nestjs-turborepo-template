@@ -157,6 +157,7 @@ export const {
     roles: platformRoles, 
     schemas: platformSchemas,
     rolesConfig: platformRolesConfig,
+    roleMeta: platformRoleMeta,
 } = platformPermissionConfig;
 
 // ============================================================================
@@ -219,6 +220,7 @@ export const {
     roles: organizationRoles, 
     schemas: organizationSchemas,
     rolesConfig: organizationRolesConfig,
+    roleMeta: organizationRoleMeta,
 } = organizationPermissionConfig;
 
 
