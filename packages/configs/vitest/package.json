@@ -34,6 +34,9 @@
   "scripts": {
     "build": "tsc",
     "compile": "tsc",
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
     "test": "echo 'vitest-config package ready'"

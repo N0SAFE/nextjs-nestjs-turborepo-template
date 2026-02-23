@@ -8,6 +8,9 @@
     "dev": "next dev -p 3020",
     "start": "next start -p 3020",
     "postinstall": "fumadocs-mdx",
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "lint": "eslint",
     "type-check": "tsc --noEmit"
   },
@@ -24,6 +27,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "catalog:linting",
     "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
     "@tailwindcss/postcss": "catalog:styling",
     "@types/mdx": "catalog:doc",
     "@types/node": "catalog:build",

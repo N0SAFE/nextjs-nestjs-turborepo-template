@@ -15,6 +15,9 @@
     "prepublish": "bun run build",
     "dev": "bun --bun scripts/build.ts --watch",
     "build": "bun --bun scripts/build.ts",
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -33,6 +36,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@repo/config-prettier": "*",
     "@repo/config-vitest": "*",
     "@types/diff": "catalog:utils",
     "@types/fs-extra": "catalog:utils",

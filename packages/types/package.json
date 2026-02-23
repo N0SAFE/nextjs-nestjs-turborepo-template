@@ -12,6 +12,9 @@
         }
     },
     "scripts": {
+        "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+        "format": "bun run prettify",
+        "format:check": "prettier . --check --no-error-on-unmatched-pattern",
         "lint": "eslint \"**/*.ts*\"",
         "type-check": "tsc --noEmit",
         "test": "vitest run",

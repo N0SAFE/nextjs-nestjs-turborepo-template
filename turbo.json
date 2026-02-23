@@ -98,6 +98,9 @@
         "prettify": {
             "dependsOn": ["^lint", "@repo/config-prettier#build"]
         },
+        "format:check": {
+            "dependsOn": ["^lint", "@repo/config-prettier#build"]
+        },
         "clean": {
             "cache": false
         },

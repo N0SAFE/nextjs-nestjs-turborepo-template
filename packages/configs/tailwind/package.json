@@ -5,12 +5,16 @@
   "main": "index.mts",
   "types": "index.mts",
   "scripts": {
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@repo/config-prettier": "*",
     "@repo/config-typescript": "*",
     "@repo/config-vitest": "*",
     "tailwind-variants": "catalog:styling",

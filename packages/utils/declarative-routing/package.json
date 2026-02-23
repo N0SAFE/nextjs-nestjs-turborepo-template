@@ -20,6 +20,9 @@
     "./layout-wrappers/server": "./src/layout-wrappers/server.tsx"
   },
   "scripts": {
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "lint": "eslint . --fix",
     "type-check": "tsc --noEmit"
   },
@@ -45,6 +48,7 @@
   "devDependencies": {
     "@repo/auth": "*",
     "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
     "@repo/config-typescript": "*",
     "@types/nprogress": "^0.2.3",
     "@types/react": "catalog:react",

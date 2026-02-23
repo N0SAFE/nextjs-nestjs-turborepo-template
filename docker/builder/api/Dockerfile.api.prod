@@ -6,15 +6,15 @@
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
 # ===================================
-FROM oven/bun:1.3.3-alpine AS base
+FROM oven/bun:1.3.9-alpine AS base
 ENV NODE_ENV=production
 
 # Install system dependencies and Node.js
 # jq is needed to parse package.json exports in runner stage
 RUN apk add --no-cache libc6-compat tar nodejs jq
 
-# Install Turbo globally with cache mount
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+# Install global tools with cache mount
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2 node-gyp
 WORKDIR /app
 
 # ===================================

@@ -6,7 +6,7 @@
 # ===================================
 # Stage 1: Base - System dependencies
 # ===================================
-FROM oven/bun:1.3.3-alpine AS base
+FROM oven/bun:1.3.9-alpine AS base
 
 # Install system dependencies in single layer
 RUN apk add --no-cache curl wget bash git python3 make g++ tar libc6-compat
@@ -20,7 +20,7 @@ RUN ln -sf /usr/local/bin/node /usr/bin/node && \
     ln -sf /usr/local/bin/npx /usr/bin/npx
 
 # Install global tools with cache mount
-RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2 @nestjs/cli
+RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2 @nestjs/cli node-gyp
 
 WORKDIR /app
 

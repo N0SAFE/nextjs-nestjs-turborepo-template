@@ -23,6 +23,9 @@
     "scripts": {
         "build": "bun scripts/build.ts",
         "compile": "bun x cross-env COMPILE_MODE=true bun run build",
+        "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+        "format": "bun run prettify",
+        "format:check": "prettier . --check --no-error-on-unmatched-pattern",
         "clean": "rimraf dist",
         "type-check": "tsc --noEmit"
     },

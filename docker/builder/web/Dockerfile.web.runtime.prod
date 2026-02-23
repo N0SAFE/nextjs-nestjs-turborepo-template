@@ -8,15 +8,15 @@
 # ===================================
 # Stage 1: Base - Install global dependencies and set environment
 # ===================================
-FROM oven/bun:1.3.3-alpine AS base
+FROM oven/bun:1.3.9-alpine AS base
 ENV NODE_ENV=production
 
 # Install system dependencies
 # jq is needed to parse package.json exports in runner stage
 RUN apk add --no-cache libc6-compat dumb-init tar jq
 
-# Install Turbo globally with cache mount
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2
+# Install global tools with cache mount
+RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2 node-gyp
 WORKDIR /app
 
 # ===================================
@@ -119,7 +119,7 @@ COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
 
 # Build declarative-routing CLI first (required by web's generate task)
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
-  bun turbo run build --filter=@repo-bin/declarative-routing
+  bun turbo run build --filter=@repo/cli-declarative-routing
 
 # Generate routes (build happens at runtime for this dockerfile)
 RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \

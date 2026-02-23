@@ -5,7 +5,9 @@
   "scripts": {
     " ": " ",
     "echo": "envcli echo $:{NEXT_PUBLIC_API_URL}/health",
-    "prettify": "bun x prettier . --write --no-error-on-unmatched-pattern",
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "dev": "bun --bun scripts/entrypoint.dev.ts",
     "prod": "bun --bun scripts/entrypoint.prod.ts",
     "dev:docker": "envcli cross-env NODE_OPTIONS='--inspect' next dev -H 0.0.0.0 -p $:{NEXT_PUBLIC_APP_PORT} --turbopack",

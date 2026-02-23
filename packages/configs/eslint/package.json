@@ -37,12 +37,16 @@
         }
     },
     "scripts": {
+        "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+        "format": "bun run prettify",
+        "format:check": "prettier . --check --no-error-on-unmatched-pattern",
         "type-check": "tsc --noEmit"
     },
     "devDependencies": {
         "@darraghor/eslint-plugin-nestjs-typed": "^7.1.22",
         "@eslint/compat": "^2.0.1",
         "@eslint/js": "catalog:linting",
+        "@repo/config-prettier": "*",
         "@repo/config-vitest": "*",
         "@tanstack/eslint-plugin-query": "catalog:tanstack",
         "@typescript-eslint/eslint-plugin": "^8.53.0",

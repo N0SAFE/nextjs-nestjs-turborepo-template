@@ -46,7 +46,7 @@ flowchart TB
 Common system dependencies for all subsequent stages.
 
 ```dockerfile
-FROM oven/bun:1.3.3-alpine AS base
+FROM oven/bun:1.3.9-alpine AS base
 RUN apk add --no-cache libc6-compat curl bash python3 make g++ gcc musl-dev tar
 RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2
 WORKDIR /app

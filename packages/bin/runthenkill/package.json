@@ -7,6 +7,9 @@
     "runthenkill": "./index.ts"
   },
   "scripts": {
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -19,6 +22,7 @@
     "commander": "catalog:utils"
   },
   "devDependencies": {
+    "@repo/config-prettier": "*",
     "@repo/config-vitest": "*",
     "vitest": "catalog:testing",
     "@types/node": "catalog:build"
