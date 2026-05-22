@@ -35,7 +35,7 @@ ENV AUTH_SECRET=$AUTH_SECRET
 RUN apk add --no-cache libc6-compat dumb-init tar jq
 
 # Install global tools with cache mount
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2 node-gyp
+RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked bun install -g turbo@^2 node-gyp
 WORKDIR /app
 
 # ===================================
@@ -48,7 +48,7 @@ WORKDIR /app
 # turbo prune needs source files to include them in out/full/
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/turbo \
+RUN --mount=type=cache,target=/root/.cache/turbo,sharing=locked \
   turbo prune doc --docker
 
 # ===================================
@@ -87,7 +87,7 @@ COPY --from=pruner /app/bun.lock ./bun.lock
 # Copy config files needed by postinstall (source.config.ts for fumadocs)
 COPY --from=config-copier /app/ /app/
 # Use bun install instead of bun ci (pruned structure may not match lockfile exactly)
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked --mount=type=cache,target=/root/.cache,sharing=locked \
   bun install --frozen-lockfile || bun install
 
 # ===================================
@@ -151,19 +151,20 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
         cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
-# Copy turbo cache directories
-COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
+# Ensure turbo cache directories exist (optional host cache dirs may be absent)
+RUN mkdir -p /app/.turbo /app/apps/doc/.turbo && \
+    chmod -R a+w /app/.turbo /app/apps/doc/.turbo
 
 # Run fumadocs-mdx postinstall to generate .source files
 # (postinstall doesn't run in installer stage because source.config.ts isn't there yet)
 RUN cd apps/doc && bun run postinstall
 
 # Generate routes
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked --mount=type=cache,target=/root/.cache,sharing=locked \
   bun turbo run generate --filter=doc... --remote-only
 
 # Build the doc app
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked --mount=type=cache,target=/root/.cache,sharing=locked \
   bun turbo run build --filter=doc... --remote-only
 
 # ===================================

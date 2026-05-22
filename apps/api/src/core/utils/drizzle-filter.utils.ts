@@ -31,7 +31,24 @@
  *     .execute(db, user);
  * ```
  */
-import { and, or, asc, desc, count, eq, ne, like, ilike, gt, gte, lt, lte, type AnyColumn, type SQL, type InferSelectModel } from "drizzle-orm";
+import {
+  and,
+  or,
+  asc,
+  desc,
+  count,
+  eq,
+  ne,
+  like,
+  ilike,
+  gt,
+  gte,
+  lt,
+  lte,
+  type AnyColumn,
+  type SQL,
+  type InferSelectModel,
+} from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { Database } from "@/core/modules/database/services/database.service";
 
@@ -40,8 +57,8 @@ import type { Database } from "@/core/modules/database/services/database.service
  * Uses F-bounded polymorphism to preserve the concrete filter type through recursion.
  */
 export interface FilterWithLogical {
-    _and?: unknown;
-    _or?: unknown;
+  _and?: unknown;
+  _or?: unknown;
 }
 
 /**
@@ -60,51 +77,53 @@ export interface FilterWithLogical {
  * ```
  */
 export interface CommonOperators {
-    /** `eq(column, value)` */
-    eq(column: AnyColumn): SQL;
-    /** `ne(column, value)` */
-    neq(column: AnyColumn): SQL;
-    /** `like(column, '%value%')` */
-    like(column: AnyColumn): SQL;
-    /** `ilike(column, '%value%')` */
-    ilike(column: AnyColumn): SQL;
-    /** `like(column, 'value%')` */
-    startsWith(column: AnyColumn): SQL;
-    /** `like(column, '%value')` */
-    endsWith(column: AnyColumn): SQL;
-    /** `gt(column, value)` */
-    gt(column: AnyColumn): SQL;
-    /** `gte(column, value)` */
-    gte(column: AnyColumn): SQL;
-    /** `lt(column, value)` */
-    lt(column: AnyColumn): SQL;
-    /** `lte(column, value)` */
-    lte(column: AnyColumn): SQL;
-    /** `and(gte(column, value[0]), lte(column, value[1]))` — value must be a `[from, to]` tuple */
-    between(column: AnyColumn): SQL;
+  /** `eq(column, value)` */
+  eq(column: AnyColumn): SQL;
+  /** `ne(column, value)` */
+  neq(column: AnyColumn): SQL;
+  /** `like(column, '%value%')` */
+  like(column: AnyColumn): SQL;
+  /** `ilike(column, '%value%')` */
+  ilike(column: AnyColumn): SQL;
+  /** `like(column, 'value%')` */
+  startsWith(column: AnyColumn): SQL;
+  /** `like(column, '%value')` */
+  endsWith(column: AnyColumn): SQL;
+  /** `gt(column, value)` */
+  gt(column: AnyColumn): SQL;
+  /** `gte(column, value)` */
+  gte(column: AnyColumn): SQL;
+  /** `lt(column, value)` */
+  lt(column: AnyColumn): SQL;
+  /** `lte(column, value)` */
+  lte(column: AnyColumn): SQL;
+  /** `and(gte(column, value[0]), lte(column, value[1]))` — value must be a `[from, to]` tuple */
+  between(column: AnyColumn): SQL;
 }
 
 function createCommonOperators(value: unknown): CommonOperators {
-    return {
-        eq:         (col) => eq(col, value),
-        neq:        (col) => ne(col, value),
-        like:       (col) => like(col, `%${String(value)}%`),
-        ilike:      (col) => ilike(col, `%${String(value)}%`),
-        startsWith: (col) => like(col, `${String(value)}%`),
-        endsWith:   (col) => like(col, `%${String(value)}`),
-        gt:         (col) => gt(col, value),
-        gte:        (col) => gte(col, value),
-        lt:         (col) => lt(col, value),
-        lte:        (col) => lte(col, value),
-        between:    (col) => {
-            const [from, to] = value as [unknown, unknown];
-            const condition = and(gte(col, from), lte(col, to));
-            if (!condition) {
-                throw new Error("[IllogicalState] condition should never be falsy since it returns a SQL object and as in input two separate conditions");
-            }
-            return condition;
-        },
-    };
+  return {
+    eq: (col) => eq(col, value),
+    neq: (col) => ne(col, value),
+    like: (col) => like(col, `%${String(value)}%`),
+    ilike: (col) => ilike(col, `%${String(value)}%`),
+    startsWith: (col) => like(col, `${String(value)}%`),
+    endsWith: (col) => like(col, `%${String(value)}`),
+    gt: (col) => gt(col, value),
+    gte: (col) => gte(col, value),
+    lt: (col) => lt(col, value),
+    lte: (col) => lte(col, value),
+    between: (col) => {
+      const [from, to] = value as [unknown, unknown];
+      const condition = and(gte(col, from), lte(col, to));
+      if (!condition) {
+        throw new Error(
+          "[IllogicalState] condition should never be falsy since it returns a SQL object and as in input two separate conditions",
+        );
+      }
+      return condition;
+    },
+  };
 }
 
 /**
@@ -113,9 +132,9 @@ function createCommonOperators(value: unknown): CommonOperators {
  * enriched with a `common` helper object for concise column-only calls.
  */
 export type FilterResolvers<TFilter> = {
-    [K in Exclude<keyof TFilter, "_and" | "_or">]?: (
-        entry: NonNullable<TFilter[K]> & { common: CommonOperators },
-    ) => SQL | undefined;
+  [K in Exclude<keyof TFilter, "_and" | "_or">]?: (
+    entry: NonNullable<TFilter[K]> & { common: CommonOperators },
+  ) => SQL | undefined;
 };
 
 // ---------------------------------------------------------------------------
@@ -123,64 +142,69 @@ export type FilterResolvers<TFilter> = {
 // ---------------------------------------------------------------------------
 
 function resolveFilter<TFilter extends Record<string, unknown>>(
-    filter: TFilter | undefined | null,
-    resolvers: FilterResolvers<TFilter>,
-    maxDepth = 10,
+  filter: TFilter | undefined | null,
+  resolvers: FilterResolvers<TFilter>,
+  maxDepth = 10,
 ): SQL | undefined {
-    if (!filter || maxDepth <= 0) return undefined;
+  if (!filter || maxDepth <= 0) return undefined;
 
-    const parts: (SQL | undefined)[] = [];
+  const parts: (SQL | undefined)[] = [];
 
-    const resolverEntries = Object.entries(resolvers) as [string, (entry: never) => SQL | undefined][];
-    const filterRecord = filter as Record<string, unknown>;
-    for (const [key, resolver] of resolverEntries) {
-        const entry = filterRecord[key];
-        if (entry != null) {
-            const entryValue = (entry as Record<string, unknown>).value;
-            const enriched = Object.assign({}, entry as object, { common: createCommonOperators(entryValue) });
-            parts.push(resolver(enriched as never));
-        }
+  const resolverEntries = Object.entries(resolvers) as [
+    string,
+    (entry: never) => SQL | undefined,
+  ][];
+  const filterRecord = filter as Record<string, unknown>;
+  for (const [key, resolver] of resolverEntries) {
+    const entry = filterRecord[key];
+    if (entry != null) {
+      const entryValue = (entry as Record<string, unknown>).value;
+      const enriched = Object.assign({}, entry as object, {
+        common: createCommonOperators(entryValue),
+      });
+      parts.push(resolver(enriched as never));
     }
+  }
 
-    const logicalFilter = filter as FilterWithLogical;
-    const andGroup: unknown = logicalFilter._and;
-    if (Array.isArray(andGroup)) {
-        const andParts = andGroup
-            .map((child) => resolveFilter(child as TFilter, resolvers, maxDepth - 1))
-            .filter((x): x is SQL => x !== undefined);
-        if (andParts.length > 0) {
-            parts.push(andParts.length === 1 ? andParts[0] : and(...andParts));
-        }
+  const logicalFilter = filter as FilterWithLogical;
+  const andGroup: unknown = logicalFilter._and;
+  if (Array.isArray(andGroup)) {
+    const andParts = andGroup
+      .map((child) => resolveFilter(child as TFilter, resolvers, maxDepth - 1))
+      .filter((x): x is SQL => x !== undefined);
+    if (andParts.length > 0) {
+      parts.push(andParts.length === 1 ? andParts[0] : and(...andParts));
     }
+  }
 
-    const orGroup: unknown = logicalFilter._or;
-    if (Array.isArray(orGroup)) {
-        const orParts = orGroup
-            .map((child) => resolveFilter(child as TFilter, resolvers, maxDepth - 1))
-            .filter((x): x is SQL => x !== undefined);
-        if (orParts.length > 0) {
-            parts.push(orParts.length === 1 ? orParts[0] : or(...orParts));
-        }
+  const orGroup: unknown = logicalFilter._or;
+  if (Array.isArray(orGroup)) {
+    const orParts = orGroup
+      .map((child) => resolveFilter(child as TFilter, resolvers, maxDepth - 1))
+      .filter((x): x is SQL => x !== undefined);
+    if (orParts.length > 0) {
+      parts.push(orParts.length === 1 ? orParts[0] : or(...orParts));
     }
+  }
 
-    const defined = parts.filter((x): x is SQL => x !== undefined);
-    if (defined.length === 0) return undefined;
-    if (defined.length === 1) return defined[0];
-    return and(...defined);
+  const defined = parts.filter((x): x is SQL => x !== undefined);
+  if (defined.length === 0) return undefined;
+  if (defined.length === 1) return defined[0];
+  return and(...defined);
 }
 
 function resolveSort<TField extends string>(
-    sortBy: TField | undefined,
-    sortDirection: "asc" | "desc" | undefined,
-    columns: Record<TField, AnyColumn>,
-    defaultColumn: AnyColumn,
+  sortBy: TField | undefined,
+  sortDirection: "asc" | "desc" | undefined,
+  columns: Record<TField, AnyColumn>,
+  defaultColumn: AnyColumn,
 ): SQL {
-    const dirFn = sortDirection === "asc" ? asc : desc;
-    if (!sortBy) return dirFn(defaultColumn);
-    if (!(sortBy in columns)) {
-        throw new Error(`Unsupported sort field: ${sortBy}`);
-    }
-    return dirFn(columns[sortBy]);
+  const dirFn = sortDirection === "asc" ? asc : desc;
+  if (!sortBy) return dirFn(defaultColumn);
+  if (!(sortBy in columns)) {
+    throw new Error(`Unsupported sort field: ${sortBy}`);
+  }
+  return dirFn(columns[sortBy]);
 }
 
 /**
@@ -193,41 +217,64 @@ function resolveSort<TField extends string>(
 type FromParam = Parameters<ReturnType<Database["select"]>["from"]>[0];
 
 interface DynamicCapableQuery {
-    $dynamic?: () => DynamicCapableQuery;
+  $dynamic?: () => DynamicCapableQuery;
 }
 
-interface QueryChain<TResult> extends DynamicCapableQuery, PromiseLike<TResult> {
-    where(condition: SQL): QueryChain<TResult>;
-    orderBy(order: SQL): QueryChain<TResult>;
-    limit(limit: number): QueryChain<TResult>;
-    offset(offset: number): QueryChain<TResult>;
+interface QueryChain<TResult>
+  extends DynamicCapableQuery, PromiseLike<TResult> {
+  where(condition: SQL): QueryChain<TResult>;
+  orderBy(order: SQL): QueryChain<TResult>;
+  limit(limit: number): QueryChain<TResult>;
+  offset(offset: number): QueryChain<TResult>;
 }
 
-function ensureDynamic<TQuery extends DynamicCapableQuery>(query: TQuery): TQuery {
-    if (typeof query.$dynamic === "function") {
-        return query.$dynamic() as TQuery;
-    }
-    return query;
+function ensureDynamic<TQuery extends DynamicCapableQuery>(
+  query: TQuery,
+): TQuery {
+  if (typeof query.$dynamic === "function") {
+    return query.$dynamic() as TQuery;
+  }
+  return query;
 }
 
 /**
  * Pagination input types - supports offset, cursor, and page-based pagination
  */
 export type PaginationInput =
-    | { limit: number; offset: number; page?: never; cursor?: never }         // offset-based
-    | { limit: number; page: number; pageSize?: number; offset?: never; cursor?: never }  // page-based  
-    | { limit: number; cursor?: string; offset?: never; page?: never }        // cursor-based
-    | { limit: number; offset: number; page: number; cursor?: never };        // combined offset+page
+  | { limit: number; offset: number; page?: never; cursor?: never } // offset-based
+  | {
+      limit: number;
+      page: number;
+      pageSize?: number;
+      offset?: never;
+      cursor?: never;
+    } // page-based
+  | { limit: number; cursor?: string; offset?: never; page?: never } // cursor-based
+  | { limit: number; offset: number; page: number; cursor?: never }; // combined offset+page
 
 /**
  * Pagination metadata output - varies based on input type
  */
-export type PaginationMeta<TInput extends PaginationInput> = 
-    TInput extends { page: number }
-        ? { total: number; limit: number; offset: number; page: number; pageSize: number; totalPages: number; hasMore: boolean }
-        : TInput extends { cursor?: string }
-            ? { limit: number; hasMore: boolean; nextCursor?: string | null; prevCursor?: string | null }
-            : { total: number; limit: number; offset: number; hasMore: boolean };
+export type PaginationMeta<TInput extends PaginationInput> = TInput extends {
+  page: number;
+}
+  ? {
+      total: number;
+      limit: number;
+      offset: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+      hasMore: boolean;
+    }
+  : TInput extends { cursor?: string }
+    ? {
+        limit: number;
+        hasMore: boolean;
+        nextCursor?: string | null;
+        prevCursor?: string | null;
+      }
+    : { total: number; limit: number; offset: number; hasMore: boolean };
 
 // ---------------------------------------------------------------------------
 // Builder
@@ -240,170 +287,189 @@ export type PaginationMeta<TInput extends PaginationInput> =
  * to run both data + count queries in parallel and get `{ data, meta }`.
  */
 export function listBuilder<TFilter extends Record<string, unknown>>(
-    filterData: TFilter | undefined | null,
+  filterData: TFilter | undefined | null,
 ) {
-    let _where: SQL | undefined;
-    let _orderBy: SQL | undefined;
-    let _pagination: PaginationInput | undefined;
+  let _where: SQL | undefined;
+  let _orderBy: SQL | undefined;
+  let _pagination: PaginationInput | undefined;
 
-    const self = {
-        /**
-         * Resolve filter fields via per-field resolver map.
-         * Supports recursive _and/_or nesting automatically.
-         */
-        filter(resolvers: FilterResolvers<TFilter>) {
-            _where = resolveFilter(filterData, resolvers);
-            return self;
-        },
+  const self = {
+    /**
+     * Resolve filter fields via per-field resolver map.
+     * Supports recursive _and/_or nesting automatically.
+     */
+    filter(resolvers: FilterResolvers<TFilter>) {
+      _where = resolveFilter(filterData, resolvers);
+      return self;
+    },
 
-        /**
-         * Set ORDER BY from sortBy/sortDirection + column map.
-         */
-        order<TField extends string>(
-            sortBy: TField | undefined,
-            sortDirection: "asc" | "desc" | undefined,
-            columns: Record<TField, AnyColumn>,
-            defaultColumn: AnyColumn,
-        ) {
-            _orderBy = resolveSort(sortBy, sortDirection, columns, defaultColumn);
-            return self;
-        },
+    /**
+     * Set ORDER BY from sortBy/sortDirection + column map.
+     */
+    order<TField extends string>(
+      sortBy: TField | undefined,
+      sortDirection: "asc" | "desc" | undefined,
+      columns: Record<TField, AnyColumn>,
+      defaultColumn: AnyColumn,
+    ) {
+      _orderBy = resolveSort(sortBy, sortDirection, columns, defaultColumn);
+      return self;
+    },
 
-        /**
-         * Set pagination - supports offset, page, or cursor-based pagination.
-         * The input type determines the metadata format returned by execute().
-         */
-        pagination<TInput extends PaginationInput>(config: TInput) {
-            _pagination = config;
-            return self as Omit<typeof self, "execute"> & {
-                execute<TTable extends PgTable>(
-                    db: Database,
-                    table: TTable,
-                ): Promise<{
-                    data: InferSelectModel<TTable>[];
-                    meta: PaginationMeta<TInput>;
-                }>;
-            };
-        },
-
-        /**
-         * Execute both data + count queries in parallel.
-         * Returns `{ data, meta }` where meta format depends on pagination type.
-         */
-        async execute<TTable extends PgTable>(
-            db: Database,
-            table: TTable,
+    /**
+     * Set pagination - supports offset, page, or cursor-based pagination.
+     * The input type determines the metadata format returned by execute().
+     */
+    pagination<TInput extends PaginationInput>(config: TInput) {
+      _pagination = config;
+      return self as Omit<typeof self, "execute"> & {
+        execute<TTable extends PgTable>(
+          db: Database,
+          table: TTable,
         ): Promise<{
-            data: InferSelectModel<TTable>[];
-            meta: PaginationMeta<PaginationInput>;
-        }> {
-            if (!_pagination) {
-                throw new Error("pagination() must be called before execute()");
-            }
+          data: InferSelectModel<TTable>[];
+          meta: PaginationMeta<TInput>;
+        }>;
+      };
+    },
 
-            const from = table as unknown as FromParam;
+    /**
+     * Execute both data + count queries in parallel.
+     * Returns `{ data, meta }` where meta format depends on pagination type.
+     */
+    async execute<TTable extends PgTable>(
+      db: Database,
+      table: TTable,
+    ): Promise<{
+      data: InferSelectModel<TTable>[];
+      meta: PaginationMeta<PaginationInput>;
+    }> {
+      if (!_pagination) {
+        throw new Error("pagination() must be called before execute()");
+      }
 
-            // Calculate limit and offset based on pagination type
-            let limit: number;
-            let offset: number;
-            let cursorValue: string | undefined;
-            const input = _pagination;
+      const from = table as unknown as FromParam;
 
-            if ("cursor" in input && input.cursor !== undefined) {
-                // Cursor-based pagination
-                limit = input.limit;
-                cursorValue = input.cursor;
-                // Decode cursor to get offset (simple base64 offset encoding)
-                try {
-                    offset = parseInt(Buffer.from(cursorValue, "base64").toString("utf-8"), 10);
-                    if (isNaN(offset) || offset < 0) offset = 0;
-                } catch {
-                    offset = 0;
-                }
-            } else if ("page" in input && input.page !== undefined) {
-                // Page-based pagination
-                const pageSize = ("pageSize" in input && input.pageSize) ? input.pageSize : input.limit;
-                limit = pageSize;
-                offset = (input.page - 1) * pageSize;
-            } else {
-                // Offset-based pagination (default)
-                limit = input.limit;
-                offset = ("offset" in input && input.offset) ? input.offset : 0;
-            }
+      // Calculate limit and offset based on pagination type
+      let limit: number;
+      let offset: number;
+      let cursorValue: string | undefined;
+      const input = _pagination;
 
-            // Build queries
-            let dataQ = ensureDynamic(db.select().from(from) as unknown as QueryChain<InferSelectModel<TTable>[]>);
-            let countQ = ensureDynamic(db.select({ count: count() }).from(from) as unknown as QueryChain<{ count: number }[]>);
+      if ("cursor" in input && input.cursor !== undefined) {
+        // Cursor-based pagination
+        limit = input.limit;
+        cursorValue = input.cursor;
+        // Decode cursor to get offset (simple base64 offset encoding)
+        try {
+          offset = parseInt(
+            Buffer.from(cursorValue, "base64").toString("utf-8"),
+            10,
+          );
+          if (isNaN(offset) || offset < 0) offset = 0;
+        } catch {
+          offset = 0;
+        }
+      } else if ("page" in input && input.page !== undefined) {
+        // Page-based pagination
+        const pageSize =
+          "pageSize" in input && input.pageSize ? input.pageSize : input.limit;
+        limit = pageSize;
+        offset = (input.page - 1) * pageSize;
+      } else {
+        // Offset-based pagination (default)
+        limit = input.limit;
+        offset = "offset" in input && input.offset ? input.offset : 0;
+      }
 
-            if (_where) {
-                dataQ = dataQ.where(_where);
-                countQ = countQ.where(_where);
-            }
+      // Build queries
+      let dataQ = ensureDynamic(
+        db.select().from(from) as unknown as QueryChain<
+          InferSelectModel<TTable>[]
+        >,
+      );
+      let countQ = ensureDynamic(
+        db.select({ count: count() }).from(from) as unknown as QueryChain<
+          { count: number }[]
+        >,
+      );
 
-            if (_orderBy) {
-                dataQ = dataQ.orderBy(_orderBy);
-            }
+      if (_where) {
+        dataQ = dataQ.where(_where);
+        countQ = countQ.where(_where);
+      }
 
-            dataQ = dataQ.limit(limit).offset(offset);
+      if (_orderBy) {
+        dataQ = dataQ.orderBy(_orderBy);
+      }
 
-            // Execute queries
-            const isCursorBased = "cursor" in _pagination && _pagination.cursor !== undefined;
-            const [data, totalResult] = await Promise.all([
-                dataQ,
-                isCursorBased ? Promise.resolve([{ count: 0 }]) : countQ, // Skip count for cursor-based
-            ]);
+      dataQ = dataQ.limit(limit).offset(offset);
 
-            const total = totalResult[0]?.count ?? 0;
-            const hasMore = data.length === limit;
+      // Execute queries
+      const isCursorBased =
+        "cursor" in _pagination && _pagination.cursor !== undefined;
+      const [data, totalResult] = await Promise.all([
+        dataQ,
+        isCursorBased ? Promise.resolve([{ count: 0 }]) : countQ, // Skip count for cursor-based
+      ]);
 
-            // Build metadata based on pagination type
-            if ("cursor" in _pagination) {
-                // Cursor-based pagination metadata
-                const nextOffset = offset + limit;
-                const prevOffset = Math.max(0, offset - limit);
+      const total = totalResult[0]?.count ?? 0;
+      const hasMore = data.length === limit;
 
-                return {
-                    data: data as InferSelectModel<TTable>[],
-                    meta: {
-                        limit,
-                        hasMore,
-                        nextCursor: hasMore ? Buffer.from(nextOffset.toString()).toString("base64") : null,
-                        prevCursor: offset > 0 ? Buffer.from(prevOffset.toString()).toString("base64") : null,
-                    } as PaginationMeta<typeof _pagination>,
-                };
-            } else if ("page" in _pagination && _pagination.page !== undefined) {
-                // Page-based pagination metadata
-                const input = _pagination;
-                const pageSize = ("pageSize" in input && input.pageSize) ? input.pageSize : input.limit;
-                const page = input.page;
-                const totalPages = Math.ceil(total / pageSize);
+      // Build metadata based on pagination type
+      if ("cursor" in _pagination) {
+        // Cursor-based pagination metadata
+        const nextOffset = offset + limit;
+        const prevOffset = Math.max(0, offset - limit);
 
-                return {
-                    data: data as InferSelectModel<TTable>[],
-                    meta: {
-                        total,
-                        limit,
-                        offset,
-                        page,
-                        pageSize,
-                        totalPages,
-                        hasMore: page < totalPages,
-                    } as PaginationMeta<typeof _pagination>,
-                };
-            } else {
-                // Offset-based pagination metadata
-                return {
-                    data: data as InferSelectModel<TTable>[],
-                    meta: {
-                        total,
-                        limit,
-                        offset,
-                        hasMore: offset + limit < total,
-                    } as PaginationMeta<typeof _pagination>,
-                };
-            }
-        },
-    };
+        return {
+          data: data as InferSelectModel<TTable>[],
+          meta: {
+            limit,
+            hasMore,
+            nextCursor: hasMore
+              ? Buffer.from(nextOffset.toString()).toString("base64")
+              : null,
+            prevCursor:
+              offset > 0
+                ? Buffer.from(prevOffset.toString()).toString("base64")
+                : null,
+          } as PaginationMeta<typeof _pagination>,
+        };
+      } else if ("page" in _pagination && _pagination.page !== undefined) {
+        // Page-based pagination metadata
+        const input = _pagination;
+        const pageSize =
+          "pageSize" in input && input.pageSize ? input.pageSize : input.limit;
+        const page = input.page;
+        const totalPages = Math.ceil(total / pageSize);
 
-    return self;
+        return {
+          data: data as InferSelectModel<TTable>[],
+          meta: {
+            total,
+            limit,
+            offset,
+            page,
+            pageSize,
+            totalPages,
+            hasMore: page < totalPages,
+          } as PaginationMeta<typeof _pagination>,
+        };
+      } else {
+        // Offset-based pagination metadata
+        return {
+          data: data as InferSelectModel<TTable>[],
+          meta: {
+            total,
+            limit,
+            offset,
+            hasMore: offset + limit < total,
+          } as PaginationMeta<typeof _pagination>,
+        };
+      }
+    },
+  };
+
+  return self;
 }

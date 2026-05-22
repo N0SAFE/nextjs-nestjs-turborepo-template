@@ -9,7 +9,12 @@ import { os, ORPCError } from "@orpc/server";
  * Converts headers to web standard Headers.
  * Handles both Node.js IncomingHttpHeaders and web standard Headers.
  */
-function toWebHeaders(headers: Headers | IncomingHttpHeaders | Record<string, string | string[] | undefined>): Headers {
+function toWebHeaders(
+  headers:
+    | Headers
+    | IncomingHttpHeaders
+    | Record<string, string | string[] | undefined>,
+): Headers {
   // If already a Headers object, return it directly
   if (headers instanceof Headers) {
     return headers;
@@ -21,25 +26,27 @@ function toWebHeaders(headers: Headers | IncomingHttpHeaders | Record<string, st
 /**
  * Minimal ORPC context requiring only auth utilities
  * Use this for middlewares that only need auth context (most access control)
- * 
+ *
  * Note: Index signatures (both string and symbol) allow compatibility with ORPC's
  * MergedInitialContext types which require full index signature compatibility.
  */
 export interface ORPCContextWithAuthOnly<TLoggedIn extends boolean = boolean> {
-    auth: ORPCAuthContext<TLoggedIn>;
-    [key: string]: unknown;
-    [key: symbol]: unknown;
+  auth: ORPCAuthContext<TLoggedIn>;
+  [key: string]: unknown;
+  [key: symbol]: unknown;
 }
 
 /**
  * Full ORPC context with request and auth utilities
  * Use this for middlewares that need access to the raw request
- * 
+ *
  * Note: Index signature inherited from ORPCContextWithAuthOnly allows compatibility
  * with Record<string, unknown> constraints in middleware generics
  */
-export interface ORPCContextWithAuth<TLoggedIn extends boolean = boolean> extends ORPCContextWithAuthOnly<TLoggedIn> {
-    request: Request;
+export interface ORPCContextWithAuth<
+  TLoggedIn extends boolean = boolean,
+> extends ORPCContextWithAuthOnly<TLoggedIn> {
+  request: Request;
 }
 
 /**
@@ -47,29 +54,31 @@ export interface ORPCContextWithAuth<TLoggedIn extends boolean = boolean> extend
  * This middleware should be added globally in the ORPC module configuration
  */
 export function createAuthMiddleware(auth: Auth) {
-    console.log('Creating auth middleware');
-    return os.$context<{
-        request: Request;
-    }>().middleware(async (opts) => {
-        // Extract session from request headers
-        // ORPC provides headers as web standard Headers, not Node.js IncomingHttpHeaders
-        const headers = opts.context.request.headers;
-        const webHeaders = toWebHeaders(headers);
-        const session = await auth.api.getSession({
-            headers: webHeaders,
-        });
-        
-        // Create auth utilities with session AND headers for plugin utilities
-        const authUtils = new AuthUtils(session, auth, webHeaders);
+  console.log("Creating auth middleware");
+  return os
+    .$context<{
+      request: Request;
+    }>()
+    .middleware(async (opts) => {
+      // Extract session from request headers
+      // ORPC provides headers as web standard Headers, not Node.js IncomingHttpHeaders
+      const headers = opts.context.request.headers;
+      const webHeaders = toWebHeaders(headers);
+      const session = await auth.api.getSession({
+        headers: webHeaders,
+      });
 
-        // Pass context with auth to next middleware/handler
-        return opts.next({
-            context: {
-                ...opts.context,
-                auth: authUtils,
-            },
-        });
-    })
+      // Create auth utilities with session AND headers for plugin utilities
+      const authUtils = new AuthUtils(session, auth, webHeaders);
+
+      // Pass context with auth to next middleware/handler
+      return opts.next({
+        context: {
+          ...opts.context,
+          auth: authUtils,
+        },
+      });
+    });
 }
 
 /**
@@ -86,12 +95,12 @@ export function createAuthMiddleware(auth: Auth) {
  * ```
  */
 export function publicAccess() {
-    return os
-        .$context<ORPCContextWithAuthOnly>()
-        .middleware(({ context, next }) => {
-            // Simply pass through without any checks
-            return next({ context });
-        });
+  return os
+    .$context<ORPCContextWithAuthOnly>()
+    .middleware(({ context, next }) => {
+      // Simply pass through without any checks
+      return next({ context });
+    });
 }
 
 /**
@@ -113,24 +122,24 @@ export function publicAccess() {
  * ```
  */
 export function requireAuth() {
-    return os
-        .$context<ORPCContextWithAuthOnly>()
-        .middleware(({ context, next }) => {
-            // This throws if not authenticated
-            const authResult = context.auth.requireAuth();
-            
-            // Return narrowed context - auth is now ORPCAuthContext<true>
-            return next({
-                context: {
-                    ...context,
-                    auth: { 
-                        ...context.auth, 
-                        ...authResult,
-                        isLoggedIn: true as const,
-                    } as ORPCAuthContext<true>,
-                },
-            });
-        });
+  return os
+    .$context<ORPCContextWithAuthOnly>()
+    .middleware(({ context, next }) => {
+      // This throws if not authenticated
+      const authResult = context.auth.requireAuth();
+
+      // Return narrowed context - auth is now ORPCAuthContext<true>
+      return next({
+        context: {
+          ...context,
+          auth: {
+            ...context.auth,
+            ...authResult,
+            isLoggedIn: true as const,
+          } as ORPCAuthContext<true>,
+        },
+      });
+    });
 }
 
 /**
@@ -154,17 +163,19 @@ export function requireAuth() {
  * ```
  */
 export function requirePlatformRole(allowedRoles: string[]) {
-    return os
-        .$context<ORPCContextWithAuthOnly<true>>()  // Requires authenticated context
-        .middleware(({ context, next }) => {
-            const userRole = context.auth.user.role;
-            
-            if (!userRole || !allowedRoles.includes(userRole)) {
-                throw new ORPCError('FORBIDDEN', {
-                    message: 'Insufficient permissions. Required role: ' + allowedRoles.join(', '),
-                });
-            }
-            
-            return next({ context });
+  return os
+    .$context<ORPCContextWithAuthOnly<true>>() // Requires authenticated context
+    .middleware(({ context, next }) => {
+      const userRole = context.auth.user.role;
+
+      if (!userRole || !allowedRoles.includes(userRole)) {
+        throw new ORPCError("FORBIDDEN", {
+          message:
+            "Insufficient permissions. Required role: " +
+            allowedRoles.join(", "),
         });
+      }
+
+      return next({ context });
+    });
 }

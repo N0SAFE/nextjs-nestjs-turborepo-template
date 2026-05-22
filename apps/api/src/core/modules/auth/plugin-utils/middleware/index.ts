@@ -74,7 +74,7 @@ export type {
   MembershipCheck,
   OrganizationRoleCheck,
   OrganizationPermissionCheck,
-} from './middleware-check';
+} from "./middleware-check";
 
 export {
   // Base class
@@ -85,38 +85,41 @@ export {
   createAuthError,
   createPermissionError,
   createRoleError,
-} from './middleware-check';
+} from "./middleware-check";
 
 // ============================================================================
 // Middleware Definitions
 // ============================================================================
 
 // Base definition (session checks)
-export type { AuthWithSessionAPI, BaseAuthConstraint } from './base.middleware-definition';
+export type {
+  AuthWithSessionAPI,
+  BaseAuthConstraint,
+} from "./base.middleware-definition";
 export {
   BaseMiddlewareDefinition,
   SessionRequiredCheck,
-} from './base.middleware-definition';
+} from "./base.middleware-definition";
 
 // Admin plugin definition
-export type { AdminAuthConstraint } from './admin.middleware-definition';
+export type { AdminAuthConstraint } from "./admin.middleware-definition";
 export {
   AdminMiddlewareDefinition,
   HasPermissionCheck,
   HasPermissionByRoleCheck,
   HasRoleCheck,
   RequireAdminRoleCheck,
-} from './admin.middleware-definition';
+} from "./admin.middleware-definition";
 
 // Organization plugin definition
-export type { OrganizationAuthConstraint } from './organization.middleware-definition';
+export type { OrganizationAuthConstraint } from "./organization.middleware-definition";
 export {
   OrganizationMiddlewareDefinition,
   HasOrganizationPermissionCheck,
   IsMemberOfCheck,
   HasOrganizationRoleCheck,
   IsOrganizationOwnerCheck,
-} from './organization.middleware-definition';
+} from "./organization.middleware-definition";
 
 // ============================================================================
 // Framework Converters
@@ -143,7 +146,7 @@ export type {
   // ORPC type-safe input resolver types
   OrpcInputResolver,
   OrpcValueOrResolver,
-} from './middleware-converter';
+} from "./middleware-converter";
 
 export {
   // NestJS converters
@@ -165,7 +168,7 @@ export {
   collect,
   extractCheckMetadata,
   extractChecksMetadata,
-} from './middleware-converter';
+} from "./middleware-converter";
 
 // ============================================================================
 // Convenience Factory Functions
@@ -176,16 +179,18 @@ import type {
   AdminPermissionsPlugin,
   OrganizationsPermissionsPlugin,
   InferRolesFromBuilder,
-} from '@repo/auth/permissions/plugins';
-import type { AdminAuthConstraint } from './admin.middleware-definition';
-import type { OrganizationAuthConstraint } from './organization.middleware-definition';
-import { AdminMiddlewareDefinition } from './admin.middleware-definition';
-import { OrganizationMiddlewareDefinition } from './organization.middleware-definition';
+} from "@repo/auth/permissions/plugins";
+import type { AdminAuthConstraint } from "./admin.middleware-definition";
+import type { OrganizationAuthConstraint } from "./organization.middleware-definition";
+import { AdminMiddlewareDefinition } from "./admin.middleware-definition";
+import { OrganizationMiddlewareDefinition } from "./organization.middleware-definition";
 
 /**
  * Options for creating admin middleware definition.
  */
-export interface CreateAdminMiddlewareOptions<TPermissionBuilder extends AnyPermissionBuilder> {
+export interface CreateAdminMiddlewareOptions<
+  TPermissionBuilder extends AnyPermissionBuilder,
+> {
   /**
    * Roles considered as admin roles for requireAdminRole() check.
    * @default ['admin']
@@ -225,7 +230,7 @@ export function createAdminMiddleware<
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
 >(
   plugin: AdminPermissionsPlugin<TPermissionBuilder, TAuth>,
-  options?: CreateAdminMiddlewareOptions<TPermissionBuilder>
+  options?: CreateAdminMiddlewareOptions<TPermissionBuilder>,
 ): AdminMiddlewareDefinition<TPermissionBuilder, TAuth> {
   // Wrap the plugin instance in a factory function
   // This allows using a pre-created plugin with the new factory-based API
@@ -258,7 +263,7 @@ export function createOrganizationMiddleware<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
 >(
-  plugin: OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>
+  plugin: OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>,
 ): OrganizationMiddlewareDefinition<TPermissionBuilder, TAuth> {
   // Wrap the plugin instance in a factory function
   // This allows using a pre-created plugin with the new factory-based API
@@ -275,4 +280,4 @@ export {
   createCompositeOrpcMiddlewareFromChecks,
   type MiddlewareDefinitionLike,
   type OrpcMiddlewareProxy,
-} from './orpc-middleware-proxy';
+} from "./orpc-middleware-proxy";

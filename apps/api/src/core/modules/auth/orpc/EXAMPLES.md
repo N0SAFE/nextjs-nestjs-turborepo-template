@@ -1,12 +1,13 @@
 # ORPC Auth Context Examples
 
 > ⚠️ **DEPRECATED**: This documentation uses legacy `accessControl()` patterns.
-> 
+>
 > **Use plugin-based middlewares instead:**
+>
 > - `adminMiddlewares.requireRole(['admin'])` - Role-based access
 > - `adminMiddlewares.requirePermission({ resource: ['action'] })` - Permission-based access
 > - `organizationMiddlewares.requireRole(['owner', 'admin', 'member'])` - Organization role-based access
-> 
+>
 > See `plugin-factory.ts` and `test.controller.ts` for examples of the new implementation.
 
 This document provides practical examples of using the ORPC auth context layer for common authentication and authorization scenarios.
@@ -45,7 +46,7 @@ export class UserController {
         // User is guaranteed to be authenticated
         const userId = context.auth.user!.id;
         const profile = await this.userService.getProfile(userId);
-        
+
         return profile;
       });
   }
@@ -61,14 +62,14 @@ listContent() {
     .use(publicAccess())
     .handler(async ({ input, context }) => {
       let content = await this.contentService.getPublicContent();
-      
+
       // Add personalized content if user is logged in
       if (context.auth.isLoggedIn) {
         const userId = context.auth.user!.id;
         const personalizedContent = await this.contentService.getPersonalizedContent(userId);
         content = [...content, ...personalizedContent];
       }
-      
+
       return { content };
     });
 }
@@ -106,7 +107,7 @@ createProject() {
       // User must have admin OR manager OR editor role
       const userId = context.auth.user!.id;
       const project = await this.projectService.create(input, userId);
-      
+
       return project;
     });
 }
@@ -122,7 +123,7 @@ resetSystem() {
     .handler(async ({ context }) => {
       // User must have BOTH admin AND superuser roles
       await this.systemService.performReset();
-      
+
       return { success: true };
     });
 }
@@ -146,7 +147,7 @@ deleteProject() {
     .handler(async ({ input, context }) => {
       // User must have project:delete permission
       await this.projectService.delete(input.id);
-      
+
       return { success: true };
     });
 }
@@ -168,7 +169,7 @@ deployProject() {
     .handler(async ({ input, context }) => {
       // User must have all specified permissions
       const result = await this.deploymentService.deploy(input.projectId);
-      
+
       return result;
     });
 }
@@ -195,7 +196,7 @@ manageBilling() {
       // User must have (admin OR billing-manager role)
       // AND all specified permissions
       await this.billingService.update(input);
-      
+
       return { success: true };
     });
 }
@@ -218,7 +219,7 @@ accessAuditLogs() {
       // User must have (admin AND security-officer roles)
       // AND all specified permissions
       const logs = await this.auditService.getLogs(input.filters);
-      
+
       return { logs };
     });
 }
@@ -237,26 +238,26 @@ getArticle() {
     .use(publicAccess())
     .handler(async ({ input, context }) => {
       const article = await this.articleService.getById(input.id);
-      
+
       // Public article data
       const response = {
         title: article.title,
         content: article.publicContent,
         author: article.author,
       };
-      
+
       // Add premium content if user is authenticated with premium access
       if (context.auth.isLoggedIn) {
         const hasPremium = await context.auth.hasPermission({
           subscription: ['premium']
         });
-        
+
         if (hasPremium) {
           response.content = article.fullContent;
           response.premium = true;
         }
       }
-      
+
       return response;
     });
 }
@@ -274,7 +275,7 @@ getStats() {
       const stats = {
         views: await this.analyticsService.getViews(input.resourceId),
       };
-      
+
       // Add detailed stats for authenticated users
       if (context.auth.isLoggedIn) {
         stats.detailedMetrics = await this.analyticsService.getDetailedMetrics(
@@ -282,14 +283,14 @@ getStats() {
           context.auth.user!.id
         );
       }
-      
+
       // Add admin-only insights
       if (context.auth.hasRole('admin')) {
         stats.adminInsights = await this.analyticsService.getAdminInsights(
           input.resourceId
         );
       }
-      
+
       return stats;
     });
 }
@@ -321,9 +322,9 @@ updateResource() {
           resource: ['update']
         });
       }
-      
+
       await this.resourceService.performAction(input.id, input.action);
-      
+
       return { success: true };
     });
 }
@@ -345,9 +346,9 @@ updateSettings() {
       } else {
         // Any authenticated user for basic settings
       }
-      
+
       await this.settingsService.update(input.section, input.values);
-      
+
       return { success: true };
     });
 }
@@ -366,23 +367,23 @@ deleteDocument() {
     .use(requireAuth())
     .handler(async ({ input, context }) => {
       const document = await this.documentService.getById(input.id);
-      
+
       if (!document) {
         throw new NotFoundException('Document not found');
       }
-      
+
       // Check if user is owner OR admin
       const isOwner = document.userId === context.auth.user!.id;
       const isAdmin = context.auth.hasRole('admin');
-      
+
       if (!isOwner && !isAdmin) {
         throw new ForbiddenException(
           'You can only delete your own documents unless you are an admin'
         );
       }
-      
+
       await this.documentService.delete(input.id);
-      
+
       return { success: true };
     });
 }
@@ -397,7 +398,7 @@ updateProfile() {
     .use(requireAuth())
     .handler(async ({ input, context }) => {
       const currentUserId = context.auth.user!.id;
-      
+
       // Users can only update their own profile
       if (input.userId !== currentUserId) {
         // Unless they're an admin
@@ -405,9 +406,9 @@ updateProfile() {
           throw new ForbiddenException('You can only update your own profile');
         }
       }
-      
+
       await this.userService.updateProfile(input.userId, input.data);
-      
+
       return { success: true };
     });
 }
@@ -426,23 +427,23 @@ getOrganizationSettings() {
     .use(requireAuth())
     .handler(async ({ input, context }) => {
       const userId = context.auth.user!.id;
-      
+
       // Verify user is member of organization
       const isMember = await this.organizationService.isMember(
         input.organizationId,
         userId
       );
-      
+
       if (!isMember) {
         throw new ForbiddenException(
           'You are not a member of this organization'
         );
       }
-      
+
       const settings = await this.organizationService.getSettings(
         input.organizationId
       );
-      
+
       return settings;
     });
 }
@@ -457,31 +458,31 @@ updateOrganizationSettings() {
     .use(requireAuth())
     .handler(async ({ input, context }) => {
       const userId = context.auth.user!.id;
-      
+
       // Get user's role in organization
       const memberRole = await this.organizationService.getMemberRole(
         input.organizationId,
         userId
       );
-      
+
       if (!memberRole) {
         throw new ForbiddenException(
           'You are not a member of this organization'
         );
       }
-      
+
       // Only admins and owners can update settings
       if (!['admin', 'owner'].includes(memberRole)) {
         throw new ForbiddenException(
           'Only organization admins and owners can update settings'
         );
       }
-      
+
       await this.organizationService.updateSettings(
         input.organizationId,
         input.settings
       );
-      
+
       return { success: true };
     });
 }
@@ -497,17 +498,17 @@ listTenantData() {
     .handler(async ({ input, context }) => {
       // Get user's tenant ID
       const tenantId = context.auth.user!.tenantId;
-      
+
       if (!tenantId) {
         throw new ForbiddenException('User is not associated with a tenant');
       }
-      
+
       // Ensure data is filtered by tenant
       const data = await this.dataService.listForTenant(
         tenantId,
         input.filters
       );
-      
+
       return { data };
     });
 }
@@ -530,7 +531,7 @@ performCriticalAction() {
     .handler(async ({ input, context }) => {
       const userId = context.auth.user!.id;
       const roles = context.auth.getRoles();
-      
+
       // Log the action with full auth context
       await this.auditService.log({
         action: 'critical_action_performed',
@@ -540,10 +541,10 @@ performCriticalAction() {
         input: input,
         ipAddress: context.request.headers['x-forwarded-for'],
       });
-      
+
       // Perform the action
       const result = await this.criticalService.performAction(input);
-      
+
       // Log completion
       await this.auditService.log({
         action: 'critical_action_completed',
@@ -551,7 +552,7 @@ performCriticalAction() {
         result,
         timestamp: new Date(),
       });
-      
+
       return result;
     });
 }
@@ -566,23 +567,23 @@ expensiveOperation() {
     .use(requireAuth())
     .handler(async ({ input, context }) => {
       const userId = context.auth.user!.id;
-      
+
       // Check rate limit
       const isAllowed = await this.rateLimitService.checkLimit(
         `expensive-op:${userId}`,
         10, // max 10 requests
         3600 // per hour
       );
-      
+
       if (!isAllowed) {
         throw new TooManyRequestsException(
           'Rate limit exceeded. Try again later.'
         );
       }
-      
+
       // Perform operation
       const result = await this.expensiveService.process(input);
-      
+
       return result;
     });
 }
@@ -598,23 +599,23 @@ archiveProject() {
     .use(accessControl({ roles: ['manager', 'admin'] }))
     .handler(async ({ input, context }) => {
       // First check: user must be manager or admin (handled by middleware)
-      
+
       // Second check: verify project ownership or admin
       const project = await this.projectService.getById(input.projectId);
       const isOwner = project.ownerId === context.auth.user!.id;
       const isAdmin = context.auth.hasRole('admin');
-      
+
       if (!isOwner && !isAdmin) {
         throw new ForbiddenException(
           'Only project owner or admin can archive projects'
         );
       }
-      
+
       // Third check: ensure project has no active tasks
       const hasActiveTasks = await this.projectService.hasActiveTasks(
         input.projectId
       );
-      
+
       if (hasActiveTasks) {
         // Only admins can force archive with active tasks
         if (!isAdmin) {
@@ -623,9 +624,9 @@ archiveProject() {
           );
         }
       }
-      
+
       await this.projectService.archive(input.projectId);
-      
+
       return { success: true };
     });
 }
@@ -638,64 +639,66 @@ archiveProject() {
 ### Example 22: Mocking Auth Context
 
 ```typescript
-describe('ProjectController', () => {
+describe("ProjectController", () => {
   let controller: ProjectController;
   let service: ProjectService;
-  
+
   beforeEach(() => {
     // Setup
   });
-  
-  describe('createProject', () => {
-    it('should allow admin to create project', async () => {
+
+  describe("createProject", () => {
+    it("should allow admin to create project", async () => {
       const mockAuth = {
         isLoggedIn: true,
         user: {
-          id: 'user-1',
-          email: 'admin@example.com',
-          role: 'admin',
+          id: "user-1",
+          email: "admin@example.com",
+          role: "admin",
         },
-        session: { /* ... */ },
-        requireAuth: jest.fn(() => ({ user: { id: 'user-1' } })),
-        requireRole: jest.fn(() => ({ user: { id: 'user-1' } })),
-        hasRole: jest.fn((role) => role === 'admin'),
-        getRoles: jest.fn(() => ['admin']),
+        session: {
+          /* ... */
+        },
+        requireAuth: jest.fn(() => ({ user: { id: "user-1" } })),
+        requireRole: jest.fn(() => ({ user: { id: "user-1" } })),
+        hasRole: jest.fn((role) => role === "admin"),
+        getRoles: jest.fn(() => ["admin"]),
         access: jest.fn(() => Promise.resolve(true)),
       };
-      
+
       const context = {
         request: {} as Request,
         auth: mockAuth as any,
       };
-      
+
       const result = await controller.createProject().handler({
-        input: { name: 'Test Project' },
+        input: { name: "Test Project" },
         context,
       } as any);
-      
+
       expect(result).toBeDefined();
-      expect(mockAuth.requireRole).toHaveBeenCalledWith('admin');
+      expect(mockAuth.requireRole).toHaveBeenCalledWith("admin");
     });
-    
-    it('should deny non-admin users', async () => {
+
+    it("should deny non-admin users", async () => {
       const mockAuth = {
         isLoggedIn: true,
-        user: { id: 'user-2', role: 'user' },
+        user: { id: "user-2", role: "user" },
         requireRole: jest.fn(() => {
-          throw new ForbiddenException('Access denied');
+          throw new ForbiddenException("Access denied");
         }),
       };
-      
+
       const context = {
         request: {} as Request,
         auth: mockAuth as any,
       };
-      
+
       await expect(
         controller.createProject().handler({
-          input: { name: 'Test Project' },
+          input: { name: "Test Project" },
           context,
-        } as any)
+        } as any),
       ).rejects.toThrow(ForbiddenException);
     });
   });

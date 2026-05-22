@@ -1,5 +1,9 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { PushRepository, type PushSubscriptionEntity, type UserVapidKeysEntity } from "../repositories/push.repository";
+import {
+  PushRepository,
+  type PushSubscriptionEntity,
+  type UserVapidKeysEntity,
+} from "../repositories/push.repository";
 import * as webpush from "web-push";
 
 export interface SubscribeInput {
@@ -39,7 +43,8 @@ export class PushService {
    */
   async generateUserVapidKeys(userId: string): Promise<UserVapidKeysEntity> {
     // Check if user already has keys
-    const existingKeys = await this.pushRepository.findVapidKeysByUserId(userId);
+    const existingKeys =
+      await this.pushRepository.findVapidKeysByUserId(userId);
     if (existingKeys) {
       this.logger.warn(`User ${userId} already has VAPID keys`);
       return existingKeys;
@@ -51,7 +56,7 @@ export class PushService {
       userId,
       vapidKeys.publicKey,
       vapidKeys.privateKey,
-      `mailto:user-${userId}@notifications.local`
+      `mailto:user-${userId}@notifications.local`,
     );
 
     this.logger.log(`Generated VAPID keys for user ${userId}`);
@@ -74,12 +79,16 @@ export class PushService {
   /**
    * Subscribe a user to push notifications
    */
-  async subscribe(userId: string, input: SubscribeInput): Promise<PushSubscriptionEntity> {
+  async subscribe(
+    userId: string,
+    input: SubscribeInput,
+  ): Promise<PushSubscriptionEntity> {
     // Ensure user has VAPID keys
     await this.getUserPublicKey(userId);
 
     // Check if subscription already exists
-    const existingSubscription = await this.pushRepository.findSubscriptionByEndpoint(input.endpoint);
+    const existingSubscription =
+      await this.pushRepository.findSubscriptionByEndpoint(input.endpoint);
 
     if (existingSubscription) {
       // Update existing subscription
@@ -89,7 +98,7 @@ export class PushService {
         input.keys.p256dh,
         input.keys.auth,
         input.deviceName,
-        input.userAgent
+        input.userAgent,
       );
     } else {
       // Create new subscription
@@ -99,7 +108,7 @@ export class PushService {
         input.keys.p256dh,
         input.keys.auth,
         input.deviceName,
-        input.userAgent
+        input.userAgent,
       );
     }
   }
@@ -108,7 +117,8 @@ export class PushService {
    * Unsubscribe from push notifications
    */
   async unsubscribe(userId: string, endpoint: string): Promise<boolean> {
-    const subscription = await this.pushRepository.findSubscriptionByEndpoint(endpoint);
+    const subscription =
+      await this.pushRepository.findSubscriptionByEndpoint(endpoint);
 
     if (subscription?.userId !== userId) {
       throw new NotFoundException("Subscription not found");
@@ -120,7 +130,9 @@ export class PushService {
   /**
    * Get all active subscriptions for a user
    */
-  async getUserSubscriptions(userId: string): Promise<PushSubscriptionEntity[]> {
+  async getUserSubscriptions(
+    userId: string,
+  ): Promise<PushSubscriptionEntity[]> {
     return await this.pushRepository.findActiveSubscriptionsByUserId(userId);
   }
 
@@ -129,7 +141,7 @@ export class PushService {
    */
   async sendToUser(
     userId: string,
-    payload: NotificationPayload
+    payload: NotificationPayload,
   ): Promise<{
     success: number;
     failed: number;
@@ -150,13 +162,17 @@ export class PushService {
 
     // Send to all user's devices
     const results = await Promise.allSettled(
-      subscriptions.map((sub) => this.sendNotificationToSubscription(sub, payload, userKeys))
+      subscriptions.map((sub) =>
+        this.sendNotificationToSubscription(sub, payload, userKeys),
+      ),
     );
 
     const success = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
-    this.logger.log(`Sent notification to user ${userId}: ${String(success)}/${String(subscriptions.length)} successful`);
+    this.logger.log(
+      `Sent notification to user ${userId}: ${String(success)}/${String(subscriptions.length)} successful`,
+    );
 
     return { success, failed, total: subscriptions.length };
   }
@@ -167,7 +183,7 @@ export class PushService {
   private async sendNotificationToSubscription(
     subscription: PushSubscriptionEntity,
     payload: NotificationPayload,
-    userKeys: UserVapidKeysEntity
+    userKeys: UserVapidKeysEntity,
   ): Promise<void> {
     try {
       const pushSubscription = {
@@ -181,7 +197,11 @@ export class PushService {
       const payloadString = JSON.stringify(payload);
 
       // Set VAPID details for this specific user
-      webpush.setVapidDetails(userKeys.subject ?? "", userKeys.publicKey, userKeys.privateKey);
+      webpush.setVapidDetails(
+        userKeys.subject ?? "",
+        userKeys.publicKey,
+        userKeys.privateKey,
+      );
 
       await webpush.sendNotification(pushSubscription, payloadString);
 
@@ -193,8 +213,10 @@ export class PushService {
       if (!(error instanceof webpush.WebPushError)) {
         throw error;
       }
-      
-      this.logger.error(`Error sending notification to subscription ${subscription.id}: ${error.message}`);
+
+      this.logger.error(
+        `Error sending notification to subscription ${subscription.id}: ${error.message}`,
+      );
 
       // Handle expired or invalid subscriptions
       if (error.statusCode === 410 || error.statusCode === 404) {
@@ -214,7 +236,8 @@ export class PushService {
     activeSubscriptions: number;
     devices: { deviceName: string; lastUsed: Date }[];
   }> {
-    const allSubscriptions = await this.pushRepository.findAllSubscriptionsByUserId(userId);
+    const allSubscriptions =
+      await this.pushRepository.findAllSubscriptionsByUserId(userId);
     const activeSubscriptions = allSubscriptions.filter((s) => s.isActive);
 
     const devices = activeSubscriptions.map((s) => ({

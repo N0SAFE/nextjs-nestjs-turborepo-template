@@ -6,6 +6,7 @@ import {
 import { ContractRouterClient } from "@orpc/contract";
 import { validateEnvPath } from "#/env";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+import { createObservableQueryUtils } from "@repo/orpc-utils";
 import { ContextPlugin } from "./plugins/context-plugin";
 import { MasterTokenPlugin } from "./plugins/masterTokenClient";
 import { CookieHeadersPlugin } from "./plugins/cookie-headers-plugin";
@@ -81,7 +82,7 @@ const baseOrpc = createTanstackQueryUtils(client);
 
 // Enhance with cache operations for type-safe cache manipulation
 // This adds .cache property to all query endpoints with get/set/update/invalidate/remove methods
-export const orpc = addCacheOperations(baseOrpc);
+export const orpc = createObservableQueryUtils(addCacheOperations(baseOrpc));
 
 // Export appContract for type checking and testing
 export { appContract };

@@ -1,16 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { requireAuth, publicAccess } from './middlewares';
-import { AuthUtils, AuthUtilsEmpty } from './auth-utils';
-import type { MiddlewareOptions, MiddlewareOutputFn } from '@orpc/server';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { requireAuth, publicAccess } from "./middlewares";
+import { AuthUtils, AuthUtilsEmpty } from "./auth-utils";
+import type { MiddlewareOptions, MiddlewareOutputFn } from "@orpc/server";
+import type * as PermissionsNamespaceType from "@repo/auth/permissions";
 
 // Mock only validatePermission to avoid dependency on actual permission config
-vi.mock('@repo/auth/permissions', async (importOriginal) => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  const actual = await importOriginal<typeof import('@repo/auth/permissions')>();
-  
+vi.mock("@repo/auth/permissions", async (importOriginal) => {
+   
+  const actual =
+    await importOriginal<typeof PermissionsNamespaceType>();
+
   // Override only validatePermission to always return true
   actual.PermissionChecker.validatePermission = vi.fn().mockReturnValue(true);
-  
+
   return actual;
 });
 
@@ -19,7 +21,7 @@ vi.mock('@repo/auth/permissions', async (importOriginal) => {
  */
 function createMiddlewareOptions(
   context: any,
-  nextFn: any
+  nextFn: any,
 ): MiddlewareOptions<any, any, any, any> {
   return {
     context,
@@ -39,7 +41,7 @@ function createOutputFn(): MiddlewareOutputFn<any> {
   return vi.fn((output) => ({ output, context: {} }));
 }
 
-describe('ORPC Auth Middlewares', () => {
+describe("ORPC Auth Middlewares", () => {
   let mockAuth: any;
   let mockSession: any;
   let mockContext: any;
@@ -53,24 +55,24 @@ describe('ORPC Auth Middlewares', () => {
 
     mockSession = {
       session: {
-        id: 'session-123',
-        userId: 'user-123',
-        expiresAt: new Date('2025-12-31'),
-        token: 'token-123',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test-agent',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
+        id: "session-123",
+        userId: "user-123",
+        expiresAt: new Date("2025-12-31"),
+        token: "token-123",
+        ipAddress: "127.0.0.1",
+        userAgent: "test-agent",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
       },
       user: {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'admin',
+        id: "user-123",
+        email: "test@example.com",
+        name: "Test User",
+        role: "admin",
         emailVerified: true,
         image: null,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
         banned: false,
       },
     };
@@ -81,12 +83,12 @@ describe('ORPC Auth Middlewares', () => {
     };
   });
 
-  describe('requireAuth', () => {
-    it('should return ORPC middleware function', () => {
+  describe("requireAuth", () => {
+    it("should return ORPC middleware function", () => {
       const middleware = requireAuth();
-      
+
       expect(middleware).toBeDefined();
-      expect(typeof middleware).toBe('function');
+      expect(typeof middleware).toBe("function");
     });
   });
 
@@ -94,10 +96,14 @@ describe('ORPC Auth Middlewares', () => {
   // Use adminMiddlewares.requireRole() or adminMiddlewares.requireAccess() instead
   // See plugin-factory.ts for the new implementation
 
-  describe('publicAccess', () => {
-    it('should always pass for authenticated users', async () => {
+  describe("publicAccess", () => {
+    it("should always pass for authenticated users", async () => {
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success', context: {} }));
+      const nextFn = vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve({ output: "success", context: {} }),
+        );
 
       const options = createMiddlewareOptions(mockContext, nextFn);
       await middleware(options, {}, createOutputFn());
@@ -105,13 +111,17 @@ describe('ORPC Auth Middlewares', () => {
       expect(nextFn).toHaveBeenCalled();
     });
 
-    it('should always pass for unauthenticated users', async () => {
+    it("should always pass for unauthenticated users", async () => {
       const unauthContext = {
         ...mockContext,
         auth: new AuthUtilsEmpty(mockAuth),
       };
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'success', context: {} }));
+      const nextFn = vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve({ output: "success", context: {} }),
+        );
 
       const options = createMiddlewareOptions(unauthContext, nextFn);
       await middleware(options, {}, createOutputFn());
@@ -119,12 +129,16 @@ describe('ORPC Auth Middlewares', () => {
       expect(nextFn).toHaveBeenCalled();
     });
 
-    it('should do nothing and just pass through', async () => {
+    it("should do nothing and just pass through", async () => {
       const middleware = publicAccess();
-      const nextFn = vi.fn().mockImplementation(() => Promise.resolve({ output: 'test-output', context: {} }));
+      const nextFn = vi
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve({ output: "test-output", context: {} }),
+        );
 
       const options = createMiddlewareOptions(mockContext, nextFn);
-      await middleware(options, { test: 'data' }, createOutputFn());
+      await middleware(options, { test: "data" }, createOutputFn());
 
       expect(nextFn).toHaveBeenCalled();
     });

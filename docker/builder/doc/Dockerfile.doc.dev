@@ -12,7 +12,7 @@ FROM oven/bun:1.3.9-alpine AS base
 RUN apk add --no-cache libc6-compat curl bash python3 make g++ gcc musl-dev tar
 
 # Install global tools with cache mount
-RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2 node-gyp
+RUN --mount=type=cache,target=/root/.bun,sharing=locked bun install -g turbo@^2 node-gyp
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ WORKDIR /app
 COPY . .
 
 # Run turbo prune to identify which apps/packages are needed for doc
-RUN --mount=type=cache,target=/root/.bun \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
     bun x turbo prune doc --docker
 
 # ===================================
@@ -44,8 +44,8 @@ COPY --from=pruner /app/bun.lock ./bun.lock
 COPY --from=pruner /app/apps/doc/source.config.ts ./apps/doc/source.config.ts
 
 # Install dependencies for pruned workspaces only
-RUN --mount=type=cache,target=/root/.bun \
-    --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
+    --mount=type=cache,target=/root/.cache,sharing=locked \
     bun install --frozen-lockfile || bun install
 
 # ===================================
@@ -115,11 +115,12 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
         cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
-# Copy turbo cache directories
-COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
+# Ensure turbo cache directories exist (optional host cache dirs may be absent)
+RUN mkdir -p /app/.turbo /app/apps/doc/.turbo && \
+    chmod -R a+w /app/.turbo /app/apps/doc/.turbo
 
 # Build doc app dependencies (packages that doc depends on)
-RUN --mount=type=cache,target=/root/.bun \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
     echo "🔨 Building doc dependencies..." && \
     bun x turbo run build --filter=doc... --filter=!doc
 

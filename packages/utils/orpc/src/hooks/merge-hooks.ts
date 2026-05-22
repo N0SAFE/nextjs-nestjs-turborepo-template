@@ -158,9 +158,9 @@ export function mergeHooks<
 
   // Merge all hooks with custom hooks taking precedence
   // Remove queryKeys/keys from individual sources, add unified keys
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const { queryKeys: _queryKeys, ...routerWithoutKeys } = router as TRouter & { queryKeys?: unknown }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const { keys: _keys, ...customWithoutKeys } = custom as TCustom & { keys?: unknown }
   
   // NOTE: The cast through unknown is necessary because:

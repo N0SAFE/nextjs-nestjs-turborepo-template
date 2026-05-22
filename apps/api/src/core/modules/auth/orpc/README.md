@@ -29,6 +29,7 @@ The ORPC auth context layer provides several advantages over decorator-based aut
 ### The Problem with Decorators
 
 **Before (Decorator-based):**
+
 ```typescript
 @RequireRole('admin')
 @Implement(contract)
@@ -40,6 +41,7 @@ handler(@Session() session: Session) {
 ```
 
 **After (Contract-based):**
+
 ```typescript
 @Implement(contract)
 handler() {
@@ -86,7 +88,7 @@ handler() {
       // User is guaranteed to be authenticated here
       const userId = context.auth.user!.id;
       const email = context.auth.user!.email;
-      
+
       // Session is also available
       const sessionId = context.auth.session!.session.id;
     });
@@ -106,7 +108,7 @@ handler() {
         const userId = context.auth.user!.id;
         return { message: `Hello, ${userId}` };
       }
-      
+
       // User is not authenticated
       return { message: 'Hello, guest!' };
     });
@@ -186,11 +188,11 @@ All utilities are available through `context.auth`:
 
 ### Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `isLoggedIn` | `boolean` | Whether user is authenticated |
-| `session` | `UserSession \| null` | Full session object (null if not logged in) |
-| `user` | `User \| null` | User object (null if not logged in) |
+| Property     | Type                  | Description                                 |
+| ------------ | --------------------- | ------------------------------------------- |
+| `isLoggedIn` | `boolean`             | Whether user is authenticated               |
+| `session`    | `UserSession \| null` | Full session object (null if not logged in) |
+| `user`       | `User \| null`        | User object (null if not logged in)         |
 
 ### Methods
 
@@ -208,7 +210,7 @@ const userId = session.user.id;
 Requires user to have ANY of the specified roles. Throws error if not authenticated or missing roles.
 
 ```typescript
-const session = context.auth.requireRole('admin', 'manager');
+const session = context.auth.requireRole("admin", "manager");
 // User has either admin OR manager role
 ```
 
@@ -217,7 +219,7 @@ const session = context.auth.requireRole('admin', 'manager');
 Requires user to have ALL specified roles.
 
 ```typescript
-const session = context.auth.requireAllRoles('admin', 'superuser');
+const session = context.auth.requireAllRoles("admin", "superuser");
 // User has BOTH admin AND superuser roles
 ```
 
@@ -227,8 +229,8 @@ Requires user to have specific permissions.
 
 ```typescript
 await context.auth.requirePermissions({
-  project: ['create', 'delete'],
-  organization: ['manage-members']
+  project: ["create", "delete"],
+  organization: ["manage-members"],
 });
 ```
 
@@ -238,8 +240,8 @@ Non-throwing check for access. Returns `true` if user has access, `false` otherw
 
 ```typescript
 const hasAccess = await context.auth.access({
-  roles: ['admin'],
-  permissions: { project: ['delete'] }
+  roles: ["admin"],
+  permissions: { project: ["delete"] },
 });
 
 if (hasAccess) {
@@ -261,7 +263,7 @@ const roles = context.auth.getRoles();
 Check if user has specific role.
 
 ```typescript
-if (context.auth.hasRole('admin')) {
+if (context.auth.hasRole("admin")) {
   // User is admin
 }
 ```
@@ -272,7 +274,7 @@ Check if user has specific permission.
 
 ```typescript
 const canDelete = await context.auth.hasPermission({
-  project: ['delete']
+  project: ["delete"],
 });
 ```
 
@@ -291,6 +293,7 @@ Simplest auth middleware - requires user to be authenticated.
 Flexible middleware for role and permission checking.
 
 **Options:**
+
 - `requireAuth?: boolean` - Whether to require authentication (default: auto-detect from other options)
 - `roles?: RoleName[]` - User must have ANY of these roles
 - `allRoles?: RoleName[]` - User must have ALL of these roles
@@ -336,6 +339,7 @@ Marks endpoint as public - no authentication required.
 ### Step 1: Remove Decorators
 
 **Before:**
+
 ```typescript
 import { Session, RequireRole } from '@/core/modules/auth/decorators/decorators';
 
@@ -350,6 +354,7 @@ handler(@Session() session: Session) {
 ```
 
 **After:**
+
 ```typescript
 import { accessControl } from '@/core/modules/orpc-auth';
 
@@ -369,6 +374,7 @@ handler() {
 Remove all parameter decorators and use `context` instead:
 
 **Before:**
+
 ```typescript
 handler(@Session() session: Session, @UserRoles() roles: RoleName[]) {
   // ...
@@ -376,6 +382,7 @@ handler(@Session() session: Session, @UserRoles() roles: RoleName[]) {
 ```
 
 **After:**
+
 ```typescript
 handler() {
   return implement(contract)
@@ -391,6 +398,7 @@ handler() {
 ### Step 3: Convert Public Endpoints
 
 **Before:**
+
 ```typescript
 @Public()
 @Implement(contract)
@@ -400,6 +408,7 @@ handler() {
 ```
 
 **After:**
+
 ```typescript
 @Implement(contract)
 handler() {
@@ -417,6 +426,7 @@ handler() {
 ### Step 4: Convert Optional Auth
 
 **Before:**
+
 ```typescript
 @Optional()
 @Implement(contract)
@@ -428,6 +438,7 @@ handler(@Session() session?: Session) {
 ```
 
 **After:**
+
 ```typescript
 @Implement(contract)
 handler() {
@@ -444,6 +455,7 @@ handler() {
 ### Step 5: Convert Permission Checks
 
 **Before:**
+
 ```typescript
 @RequirePermissions({ project: ['create'] })
 @Implement(contract)
@@ -453,6 +465,7 @@ handler() {
 ```
 
 **After:**
+
 ```typescript
 @Implement(contract)
 handler() {
@@ -479,11 +492,11 @@ handler() {
       // Check if user is admin OR owns the resource
       const isAdmin = context.auth.hasRole('admin');
       const isOwner = input.userId === context.auth.user!.id;
-      
+
       if (!isAdmin && !isOwner) {
         throw new ForbiddenException('Access denied');
       }
-      
+
       // Proceed with operation
     });
 }
@@ -507,7 +520,7 @@ handler() {
           project: ['update']
         });
       }
-      
+
       // Proceed with operation
     });
 }
@@ -528,7 +541,7 @@ handler() {
           project: ['dangerous-actions']
         });
       }
-      
+
       // Proceed
     });
 }
@@ -543,12 +556,12 @@ handler() {
     .use(publicAccess())
     .handler(async ({ input, context }) => {
       let data = await fetchPublicData();
-      
+
       // Add premium features if user has permission
       if (await context.auth.hasPermission({ premium: ['access'] })) {
         data = enhanceWithPremiumFeatures(data);
       }
-      
+
       return data;
     });
 }
@@ -564,7 +577,7 @@ handler() {
     .handler(async ({ input, context }) => {
       const userId = context.auth.user!.id;
       const roles = context.auth.getRoles();
-      
+
       // Log the action
       await auditLog.record({
         action: 'resource_accessed',
@@ -572,7 +585,7 @@ handler() {
         roles,
         timestamp: new Date(),
       });
-      
+
       // Proceed with operation
     });
 }
@@ -614,8 +627,8 @@ Use `access()` when you want to check without throwing:
 ```typescript
 // ✅ Good - Non-throwing check
 const canDelete = await context.auth.access({
-  roles: ['admin'],
-  permissions: { project: ['delete'] }
+  roles: ["admin"],
+  permissions: { project: ["delete"] },
 });
 
 if (canDelete) {
@@ -639,7 +652,7 @@ if (canDelete) {
 ```typescript
 /**
  * Delete project
- * 
+ *
  * **Auth Requirements:**
  * - Must be authenticated
  * - Must have 'admin' or 'manager' role
@@ -671,7 +684,7 @@ handler() {
       if (!userRole) {
         throw new Error('User has no role assigned');
       }
-      
+
       // Safe to use role methods
       const roles = context.auth.getRoles();
     });
@@ -709,23 +722,25 @@ These are automatically caught by ORPC error handlers and returned as proper HTT
 ### Mocking Auth Context
 
 ```typescript
-describe('MyController', () => {
-  it('should work with authenticated user', async () => {
+describe("MyController", () => {
+  it("should work with authenticated user", async () => {
     const mockAuth = {
       isLoggedIn: true,
-      user: { id: 'user-1', email: 'test@example.com' },
-      session: { /* ... */ },
-      requireAuth: () => ({ user: { id: 'user-1' } }),
-      getRoles: () => ['admin'],
-      hasRole: (role) => role === 'admin',
+      user: { id: "user-1", email: "test@example.com" },
+      session: {
+        /* ... */
+      },
+      requireAuth: () => ({ user: { id: "user-1" } }),
+      getRoles: () => ["admin"],
+      hasRole: (role) => role === "admin",
       // ... other methods
     };
-    
+
     const context = {
       request: mockRequest,
       auth: mockAuth,
     };
-    
+
     // Test your handler
   });
 });

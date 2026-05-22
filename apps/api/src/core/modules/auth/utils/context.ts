@@ -7,10 +7,26 @@ import type { Auth } from "../types/auth";
  * @returns The request object
  */
 export function getRequestFromContext(context: ExecutionContext) {
-	const contextType = context.getType();
-	if (contextType === "ws") {
-		return context.switchToWs().getClient<Request & { session: {session: Auth['$Infer']['Session']['session'] , user?: Auth['$Infer']['Session']['user']} | null; user?: Auth['$Infer']['Session']['user'] }>();
-	}
+  const contextType = context.getType();
+  if (contextType === "ws") {
+    return context.switchToWs().getClient<
+      Request & {
+        session: {
+          session: Auth["$Infer"]["Session"]["session"];
+          user?: Auth["$Infer"]["Session"]["user"];
+        } | null;
+        user?: Auth["$Infer"]["Session"]["user"];
+      }
+    >();
+  }
 
-	return context.switchToHttp().getRequest<Request & { session: {session: Auth['$Infer']['Session']['session'] , user?: Auth['$Infer']['Session']['user']} | null; user?: Auth['$Infer']['Session']['user'] }>();
+  return context.switchToHttp().getRequest<
+    Request & {
+      session: {
+        session: Auth["$Infer"]["Session"]["session"];
+        user?: Auth["$Infer"]["Session"]["user"];
+      } | null;
+      user?: Auth["$Infer"]["Session"]["user"];
+    }
+  >();
 }

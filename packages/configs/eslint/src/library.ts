@@ -9,8 +9,6 @@ const base = (options: BaseConfigOptions = {}) => defineConfig([
     coreBaseFactory(options),
     {
         rules: {
-            "no-unused-vars": "off",
-            "@typescript-eslint/no-unused-vars": ["error"],
             "typescript-eslint/no-namespace": "off",
             "@typescript-eslint/consistent-type-definitions": ["error", "type"],
         },
@@ -21,8 +19,6 @@ const test = (options: BaseConfigOptions = {}) => defineConfig([
     coreTestFactory(options),
     {
         rules: {
-            "no-unused-vars": "off",
-            "@typescript-eslint/no-unused-vars": ["error"],
             "typescript-eslint/no-namespace": "off",
         },
     },

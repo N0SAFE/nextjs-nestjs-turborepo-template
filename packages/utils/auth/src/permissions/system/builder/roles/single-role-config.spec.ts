@@ -131,7 +131,7 @@ describe('RoleConfig', () => {
     const config = new RoleConfig(roleData);
 
     it('should filter resources by predicate', () => {
-      const filtered = config.filter((resource, actions) => 
+      const filtered = config.filter((_resource, actions) => 
         actions.includes('create')
       );
 

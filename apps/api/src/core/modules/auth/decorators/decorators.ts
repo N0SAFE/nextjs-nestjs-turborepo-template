@@ -12,7 +12,7 @@ import { getRequestFromContext } from "../utils/context";
  * When applied, the AuthGuard will not perform authentication checks.
  */
 export const AllowAnonymous = (): CustomDecorator =>
-	SetMetadata("PUBLIC", true);
+  SetMetadata("PUBLIC", true);
 
 /**
  * Marks a route or controller as having optional authentication.
@@ -20,7 +20,7 @@ export const AllowAnonymous = (): CustomDecorator =>
  * even if no session is present.
  */
 export const OptionalAuth = (): CustomDecorator =>
-	SetMetadata("OPTIONAL", true);
+  SetMetadata("OPTIONAL", true);
 
 /**
  * @deprecated Use AllowAnonymous() instead.
@@ -38,16 +38,16 @@ export const Optional = OptionalAuth;
  * Works with both HTTP and GraphQL execution contexts.
  */
 export const Session: ReturnType<typeof createParamDecorator> =
-	createParamDecorator((_data: unknown, context: ExecutionContext): unknown => {
-		const request = getRequestFromContext(context);
-		return request.session;
-	});
+  createParamDecorator((_data: unknown, context: ExecutionContext): unknown => {
+    const request = getRequestFromContext(context);
+    return request.session;
+  });
 /**
  * Represents the context object passed to hooks.
  * This type is derived from the parameters of the createAuthMiddleware function.
  */
 export type AuthHookContext = Parameters<
-	Parameters<typeof createAuthMiddleware>[0]
+  Parameters<typeof createAuthMiddleware>[0]
 >[0];
 
 /**
@@ -55,14 +55,14 @@ export type AuthHookContext = Parameters<
  * @param path - The auth route path that triggers this hook (must start with '/')
  */
 export const BeforeHook = (path?: `/${string}`): CustomDecorator<symbol> =>
-	SetMetadata(BEFORE_HOOK_KEY, path);
+  SetMetadata(BEFORE_HOOK_KEY, path);
 
 /**
  * Registers a method to be executed after a specific auth route is processed.
  * @param path - The auth route path that triggers this hook (must start with '/')
  */
 export const AfterHook = (path?: `/${string}`): CustomDecorator<symbol> =>
-	SetMetadata(AFTER_HOOK_KEY, path);
+  SetMetadata(AFTER_HOOK_KEY, path);
 
 /**
  * Class decorator that marks a provider as containing hook methods.
@@ -83,16 +83,24 @@ export const Hook = (): ClassDecorator => SetMetadata(HOOK_KEY, true);
  * }
  * ```
  */
-export const UserRoles: ReturnType<typeof createParamDecorator> = createParamDecorator((_data: unknown, context: ExecutionContext): RoleName[] => {
-    const request = context.switchToHttp().getRequest<Request & { session: BetterAuthSession & { user?: UserWithRole }; user?: UserWithRole }>();
-    const user = request.user;
+export const UserRoles: ReturnType<typeof createParamDecorator> =
+  createParamDecorator(
+    (_data: unknown, context: ExecutionContext): RoleName[] => {
+      const request = context.switchToHttp().getRequest<
+        Request & {
+          session: BetterAuthSession & { user?: UserWithRole };
+          user?: UserWithRole;
+        }
+      >();
+      const user = request.user;
 
-    if (!user?.role) {
+      if (!user?.role) {
         return [];
-    }
+      }
 
-    return PermissionChecker.getUserRoles(user.role);
-});
+      return PermissionChecker.getUserRoles(user.role);
+    },
+  );
 
 /**
  * Parameter decorator that extracts the current user with their role information.
@@ -107,20 +115,26 @@ export const UserRoles: ReturnType<typeof createParamDecorator> = createParamDec
  * }
  * ```
  */
-export const AuthenticatedUser: ReturnType<typeof createParamDecorator> = createParamDecorator((_data: unknown, context: ExecutionContext) => {
-    const request = context.switchToHttp().getRequest<Request & { session: BetterAuthSession & { user?: UserWithRole }; user?: UserWithRole }>();
+export const AuthenticatedUser: ReturnType<typeof createParamDecorator> =
+  createParamDecorator((_data: unknown, context: ExecutionContext) => {
+    const request = context.switchToHttp().getRequest<
+      Request & {
+        session: BetterAuthSession & { user?: UserWithRole };
+        user?: UserWithRole;
+      }
+    >();
     const session = request.session;
     const user = request.user;
 
     if (!session.user) {
-        return null;
+      return null;
     }
 
     const roles = user?.role ? PermissionChecker.getUserRoles(user.role) : [];
 
     return {
-        ...session.user,
-        role: user?.role ?? null,
-        roles,
+      ...session.user,
+      role: user?.role ?? null,
+      roles,
     };
-});
+  });

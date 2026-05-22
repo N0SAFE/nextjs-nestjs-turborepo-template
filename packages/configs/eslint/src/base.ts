@@ -36,6 +36,16 @@ export const baseConfig = (options: BaseConfigOptions = {}) => {
         },
         {
             rules: {
+                "no-unused-vars": "off",
+                "@typescript-eslint/no-unused-vars": ["error", {
+                    "args": "all",
+                    "argsIgnorePattern": "^_",
+                    "caughtErrors": "all",
+                    "caughtErrorsIgnorePattern": "^_",
+                    "destructuredArrayIgnorePattern": "^_",
+                    "varsIgnorePattern": "^_",
+                    "ignoreRestSiblings": true
+                }],
                 "@typescript-eslint/unified-signatures": "off",
                 "@typescript-eslint/no-unnecessary-type-parameters": "off",
             }
@@ -62,7 +72,16 @@ export const testConfig = (options: BaseConfigOptions = {}) => {
         },
         {
             rules: {
-                "@typescript-eslint/no-unused-vars": ["warn"],
+                "no-unused-vars": "off",
+                "@typescript-eslint/no-unused-vars": ["warn", {
+                    "args": "all",
+                    "argsIgnorePattern": "^_",
+                    "caughtErrors": "all",
+                    "caughtErrorsIgnorePattern": "^_",
+                    "destructuredArrayIgnorePattern": "^_",
+                    "varsIgnorePattern": "^_",
+                    "ignoreRestSiblings": true
+                }],
                 "@typescript-eslint/no-explicit-any": "off",
                 "@typescript-eslint/no-non-null-assertion": "off",
                 "@typescript-eslint/no-unsafe-assignment": "off",
@@ -70,7 +89,6 @@ export const testConfig = (options: BaseConfigOptions = {}) => {
                 "@typescript-eslint/no-unsafe-call": "off",
                 "@typescript-eslint/no-unsafe-argument": "off",
                 "@typescript-eslint/no-unsafe-return": "off",
-                "no-unused-vars": "off",
                 "@typescript-eslint/unbound-method": "off",
                 "@typescript-eslint/unified-signatures": "off",
                 "@typescript-eslint/no-deprecated": "off",

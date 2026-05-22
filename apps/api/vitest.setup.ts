@@ -1,14 +1,14 @@
-import { beforeAll, beforeEach, afterAll, vi } from 'vitest';
-import 'reflect-metadata';
+import { beforeAll, beforeEach, afterAll, vi } from "vitest";
+import "reflect-metadata";
 
 // Set up test environment variables BEFORE any other imports to ensure they're available
 // when modules are loaded and the env schema is validated
-process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/testdb';
-process.env.AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
-process.env.BETTER_AUTH_SECRET = 'test-auth-secret-key-for-testing-only';
-process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3001';
-process.env.API_PORT = '3001';
+process.env.NODE_ENV = "test";
+process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/testdb";
+process.env.AUTH_SECRET = "test-auth-secret-key-for-testing-only";
+process.env.BETTER_AUTH_SECRET = "test-auth-secret-key-for-testing-only";
+process.env.NEXT_PUBLIC_API_URL = "http://localhost:3001";
+process.env.API_PORT = "3001";
 
 // Global test setup for NestJS API
 beforeEach(() => {
@@ -19,10 +19,10 @@ beforeEach(() => {
 // Mock environment variables for testing
 beforeAll(() => {
   // Mock console methods for cleaner test output
-  vi.spyOn(console, 'log').mockImplementation(() => {});
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
-  vi.spyOn(console, 'debug').mockImplementation(() => {});
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.spyOn(console, "debug").mockImplementation(() => {});
 });
 
 afterAll(() => {
@@ -30,7 +30,7 @@ afterAll(() => {
 });
 
 // Mock external dependencies
-vi.mock('better-auth', () => ({
+vi.mock("better-auth", () => ({
   betterAuth: vi.fn(() => ({
     api: {
       signUp: vi.fn(),
@@ -42,22 +42,22 @@ vi.mock('better-auth', () => ({
   })),
 }));
 
-vi.mock('better-auth/adapters/drizzle', () => ({
+vi.mock("better-auth/adapters/drizzle", () => ({
   drizzleAdapter: vi.fn(() => ({})),
 }));
 
 // Mock database connection
-vi.mock('./src/db/database-connection', () => ({
-  DATABASE_CONNECTION: 'DATABASE_CONNECTION',
+vi.mock("./src/db/database-connection", () => ({
+  DATABASE_CONNECTION: "DATABASE_CONNECTION",
 }));
 
 // Mock OS hostname for logger middleware
-vi.mock('os', () => ({
-  hostname: vi.fn(() => 'test-hostname'),
+vi.mock("os", () => ({
+  hostname: vi.fn(() => "test-hostname"),
 }));
 
 // Mock @orpc/nest for controller testing
-vi.mock('@orpc/nest', () => ({
+vi.mock("@orpc/nest", () => ({
   Implement: vi.fn(() => (target: any, propertyKey: string) => {}),
   implement: vi.fn((contract: any) => ({
     handler: vi.fn((handlerFn: Function) => {

@@ -62,7 +62,7 @@ export function useQueryCacheSubscription(): never {
  * The factory itself doesn't throw so code importing it on server compiles.
  */
 export function createUseSession<TData>(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _options: CreateUseSessionOptions<TData>
 ): () => SessionResult<TData> {
     return function useSession(): SessionResult<TData> {

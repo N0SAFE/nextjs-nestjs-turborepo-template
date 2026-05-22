@@ -8,25 +8,28 @@ import {
   type RoleName,
   PermissionChecker,
 } from "@repo/auth/permissions";
-import { MODULE_OPTIONS_TOKEN, type AuthModuleOptions } from "../definitions/auth-module-definition";
+import {
+  MODULE_OPTIONS_TOKEN,
+  type AuthModuleOptions,
+} from "../definitions/auth-module-definition";
 
 /**
  * NestJS guard that handles role and permission-based access control
  * for protected routes using Better Auth admin plugin.
- * 
+ *
  * This guard can work independently or in conjunction with AuthGuard.
  * It checks if the authenticated user has the required roles or permissions.
- * 
+ *
  * **Important behavior**: This guard only enforces restrictions when role/permission
  * requirements are explicitly defined via decorators. If no requirements are found
  * via reflector metadata, the guard allows access regardless of authentication status.
- * 
+ *
  * **Access Control Logic**:
  * - No decorators present → Allow access (authenticated or not)
  * - Decorators present + No authentication → Deny access (401)
  * - Decorators present + Authentication + Valid roles/permissions → Allow access
  * - Decorators present + Authentication + Invalid roles/permissions → Deny access (403)
- * 
+ *
  * Usage:
  * - @RequireRole('admin', 'manager') - requires user to have any of these roles
  * - @RequirePermissions({ project: ['create', 'update'] }) - requires specific permissions
@@ -39,7 +42,7 @@ export class RoleGuard implements CanActivate {
     @Inject(Reflector)
     private readonly reflector: Reflector,
     @Inject(MODULE_OPTIONS_TOKEN)
-		private readonly options: AuthModuleOptions,
+    private readonly options: AuthModuleOptions,
   ) {}
 
   /**
@@ -48,34 +51,43 @@ export class RoleGuard implements CanActivate {
    * @returns True if the request is authorized to proceed, throws an error otherwise
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request & { session: {session: Auth['$Infer']['Session']['session'], user?: Auth['$Infer']['Session']['user']}; user?: Auth['$Infer']['Session']['user'] }>();
-    
+    const request = context.switchToHttp().getRequest<
+      Request & {
+        session: {
+          session: Auth["$Infer"]["Session"]["session"];
+          user?: Auth["$Infer"]["Session"]["user"];
+        };
+        user?: Auth["$Infer"]["Session"]["user"];
+      }
+    >();
+
     // Get session from request (may or may not be set by AuthGuard)
     const session = request.session;
 
     // Check for required roles (user needs ANY of these roles)
-    const requiredRoles = this.reflector.getAllAndOverride<RoleName[] | null>("REQUIRED_ROLES", [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<RoleName[] | null>(
+      "REQUIRED_ROLES",
+      [context.getHandler(), context.getClass()],
+    );
 
     // Check for required all roles (user needs ALL of these roles)
-    const requiredAllRoles = this.reflector.getAllAndOverride<RoleName[] | null>("REQUIRED_ALL_ROLES", [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredAllRoles = this.reflector.getAllAndOverride<
+      RoleName[] | null
+    >("REQUIRED_ALL_ROLES", [context.getHandler(), context.getClass()]);
 
     // Check for required permissions
-    const requiredPermissions = this.reflector.getAllAndOverride<Permission | null>("REQUIRED_PERMISSIONS", [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredPermissions =
+      this.reflector.getAllAndOverride<Permission | null>(
+        "REQUIRED_PERMISSIONS",
+        [context.getHandler(), context.getClass()],
+      );
 
     // If no role or permission requirements are defined via reflector, allow access
     // This means the guard only enforces restrictions when explicitly configured
-    const hasAnyReflectorRequirements = (requiredRoles && requiredRoles.length > 0) ?? 
-                                       (requiredAllRoles && requiredAllRoles.length > 0) ?? 
-                                       requiredPermissions;
+    const hasAnyReflectorRequirements =
+      (requiredRoles && requiredRoles.length > 0) ??
+      (requiredAllRoles && requiredAllRoles.length > 0) ??
+      requiredPermissions;
 
     if (!hasAnyReflectorRequirements) {
       return true;
@@ -94,7 +106,7 @@ export class RoleGuard implements CanActivate {
     // Better Auth stores the role in the user object, but it might be optional
     // We need to access it correctly based on the Better Auth admin plugin schema
     const userRole = user.role;
-    
+
     if (!userRole) {
       throw new APIError(500, {
         code: "INTERNAL_SERVER_ERROR",
@@ -112,28 +124,28 @@ export class RoleGuard implements CanActivate {
 
     if (requiredRoles && requiredRoles.length > 0) {
       const userRoles = PermissionChecker.getUserRoles(userRole);
-      const hasRequiredRole = requiredRoles.some(role => 
-        PermissionChecker.hasRole(userRole, role)
+      const hasRequiredRole = requiredRoles.some((role) =>
+        PermissionChecker.hasRole(userRole, role),
       );
 
       if (!hasRequiredRole) {
         throw new APIError(403, {
           code: "FORBIDDEN",
-          message: `Access denied. Required roles: ${requiredRoles.join(', ')}. User roles: ${userRoles.join(', ')}`,
+          message: `Access denied. Required roles: ${requiredRoles.join(", ")}. User roles: ${userRoles.join(", ")}`,
         });
       }
     }
 
     if (requiredAllRoles && requiredAllRoles.length > 0) {
-      const hasAllRequiredRoles = requiredAllRoles.every(role => 
-        PermissionChecker.hasRole(userRole, role)
+      const hasAllRequiredRoles = requiredAllRoles.every((role) =>
+        PermissionChecker.hasRole(userRole, role),
       );
 
       if (!hasAllRequiredRoles) {
         const userRoles = PermissionChecker.getUserRoles(userRole);
         throw new APIError(403, {
-          code: "FORBIDDEN", 
-          message: `Access denied. All required roles: ${requiredAllRoles.join(', ')}. User roles: ${userRoles.join(', ')}`,
+          code: "FORBIDDEN",
+          message: `Access denied. All required roles: ${requiredAllRoles.join(", ")}. User roles: ${userRoles.join(", ")}`,
         });
       }
     }
@@ -168,7 +180,7 @@ export class RoleGuard implements CanActivate {
           throw error;
         }
 
-        console.error('Permission check failed:', error);
+        console.error("Permission check failed:", error);
         throw new APIError(500, {
           code: "INTERNAL_SERVER_ERROR",
           message: "Permission validation failed",

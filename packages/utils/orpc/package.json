@@ -27,6 +27,7 @@
     "@orpc/tanstack-query": "catalog:orpc",
     "@standard-schema/spec": "^1.1.0",
     "@tanstack/react-query": "catalog:tanstack",
+    "rxjs": "catalog:api:nest",
     "zod": "catalog:utils"
   },
   "devDependencies": {

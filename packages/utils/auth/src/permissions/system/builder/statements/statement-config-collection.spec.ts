@@ -204,7 +204,7 @@ describe('StatementConfigCollection', () => {
     const collection = new StatementConfigCollection(mockStatements);
 
     it('should filter by custom predicate', () => {
-      const filtered = collection.filter((resource, config) => {
+      const filtered = collection.filter((_resource, config) => {
         return config.length > 2;
       });
 
@@ -228,7 +228,7 @@ describe('StatementConfigCollection', () => {
     });
 
     it('should transform to object structure', () => {
-      const transformed = collection.transform((resource, config) => ({
+      const transformed = collection.transform((_resource, config) => ({
         actions: config.all(),
         count: config.length,
       }));

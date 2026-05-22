@@ -13,7 +13,12 @@ import { logger } from "@repo/logger";
  * Converts headers to web standard Headers.
  * Handles both Node.js IncomingHttpHeaders and web standard Headers.
  */
-function toWebHeaders(headers: Headers | IncomingHttpHeaders | Record<string, string | string[] | undefined>): Headers {
+function toWebHeaders(
+  headers:
+    | Headers
+    | IncomingHttpHeaders
+    | Record<string, string | string[] | undefined>,
+): Headers {
   // If already a Headers object, return it directly
   if (headers instanceof Headers) {
     return headers;
@@ -59,9 +64,9 @@ export interface AuthPluginOptions {
  * })
  * ```
  */
-export class AuthPlugin<TContext extends AuthPluginContext>
-  implements StandardHandlerPlugin<TContext>
-{
+export class AuthPlugin<
+  TContext extends AuthPluginContext,
+> implements StandardHandlerPlugin<TContext> {
   readonly order = -100; // Run early to ensure auth context is available to other plugins/middlewares
 
   private readonly auth: Auth;
@@ -81,7 +86,7 @@ export class AuthPlugin<TContext extends AuthPluginContext>
 
       // Extract session from request headers
       let sessionData: UserSession | null = null;
-      
+
       // Get headers from the ORPC request object
       const headers = request.headers;
       const webHeaders = toWebHeaders(headers);
@@ -94,15 +99,18 @@ export class AuthPlugin<TContext extends AuthPluginContext>
 
         // Better Auth's toAuthEndpoints wraps response in { response: Response }
         // We need to extract the actual session data from the Response body
-        if (rawSessionData && typeof rawSessionData === 'object') {
+        if (rawSessionData && typeof rawSessionData === "object") {
           // Check if it's wrapped in { response: Response }
-          if ('response' in rawSessionData && rawSessionData.response instanceof Response) {
+          if (
+            "response" in rawSessionData &&
+            rawSessionData.response instanceof Response
+          ) {
             const response = rawSessionData.response as Response;
             if (response.ok) {
               const body = await response.json().catch(() => null);
               sessionData = body as UserSession | null;
             }
-          } 
+          }
           // Direct Response object
           else if (rawSessionData instanceof Response) {
             if (rawSessionData.ok) {
@@ -111,7 +119,7 @@ export class AuthPlugin<TContext extends AuthPluginContext>
             }
           }
           // Raw session data (ideal case)
-          else if ('session' in rawSessionData && 'user' in rawSessionData) {
+          else if ("session" in rawSessionData && "user" in rawSessionData) {
             sessionData = rawSessionData as UserSession;
           }
         }

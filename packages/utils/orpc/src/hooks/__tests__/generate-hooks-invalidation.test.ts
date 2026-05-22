@@ -59,7 +59,7 @@ describe('Hook Generation - Invalidation Logic', () => {
       createRouterHooks(router, {
         useQueryClient: () => mockQueryClient as never,
         invalidations: {
-          updateUser: (data: unknown, variables: unknown) => ({
+          updateUser: (_data: unknown, variables: unknown) => ({
             getUser: { id: (variables as { id: string }).id },
           }),
         } as never,
@@ -147,7 +147,7 @@ describe('Hook Generation - Invalidation Logic', () => {
       createRouterHooks(router, {
         useQueryClient: () => mockQueryClient as never,
         invalidations: {
-          updateUser: (data: unknown, variables: { id: string }) => ({
+          updateUser: (_data: unknown, variables: { id: string }) => ({
             // Exact scope (with input)
             getUser: { id: variables.id },
           }),

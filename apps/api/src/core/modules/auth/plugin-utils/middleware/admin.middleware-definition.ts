@@ -22,11 +22,11 @@ import type {
   InferRoleNamesFromBuilder,
   ApiMethodsWithAdminPlugin,
   AdminPermissionsPlugin,
-} from '@repo/auth/permissions/plugins';
+} from "@repo/auth/permissions/plugins";
 import {
   BaseMiddlewareDefinition,
   type AuthWithSessionAPI,
-} from './base.middleware-definition';
+} from "./base.middleware-definition";
 import {
   BaseMiddlewareCheck,
   createPermissionError,
@@ -36,7 +36,7 @@ import {
   type MiddlewareErrorCode,
   type ValueOrResolver,
   type PermissionObject,
-} from './middleware-check';
+} from "./middleware-check";
 
 // ============================================================================
 // Type Constraints
@@ -46,8 +46,9 @@ import {
  * Admin plugin API constraint.
  * Extends AuthWithSessionAPI to include admin-specific API methods.
  */
-export type AdminAuthConstraint<TPermissionBuilder extends AnyPermissionBuilder> =
-  ApiMethodsWithAdminPlugin<TPermissionBuilder> & AuthWithSessionAPI;
+export type AdminAuthConstraint<
+  TPermissionBuilder extends AnyPermissionBuilder,
+> = ApiMethodsWithAdminPlugin<TPermissionBuilder> & AuthWithSessionAPI;
 
 /**
  * Plugin factory type for AdminPermissionsPlugin.
@@ -56,7 +57,9 @@ export type AdminAuthConstraint<TPermissionBuilder extends AnyPermissionBuilder>
 export type AdminPluginFactory<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
-> = (context: MiddlewareContext<TAuth>) => AdminPermissionsPlugin<TPermissionBuilder, TAuth>;
+> = (
+  context: MiddlewareContext<TAuth>,
+) => AdminPermissionsPlugin<TPermissionBuilder, TAuth>;
 
 // ============================================================================
 // Admin Permission Check
@@ -70,23 +73,25 @@ export class HasPermissionCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'hasPermission' as const;
-  readonly description = 'Checks if user has the specified permissions';
+  readonly name = "hasPermission" as const;
+  readonly description = "Checks if user has the specified permissions";
   readonly permissions: PermissionObject;
 
   private readonly getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>;
-  private readonly permissionsResolver: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>;
+  private readonly permissionsResolver: ValueOrResolver<
+    InferStatementFromBuilder<TPermissionBuilder>
+  >;
 
   constructor(
     getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>,
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ) {
     super();
     this.getPlugin = getPlugin;
     this.permissionsResolver = permissions;
     // For metadata - resolve static permissions immediately if not a function
     this.permissions =
-      typeof permissions === 'function'
+      typeof permissions === "function"
         ? {}
         : (permissions as unknown as PermissionObject);
   }
@@ -98,16 +103,16 @@ export class HasPermissionCheck<
     // Use plugin's assertCheckPermission which throws PermissionAssertionError
     await plugin.assertCheckPermission(
       permissions,
-      `Missing required permissions: ${JSON.stringify(permissions)}`
+      `Missing required permissions: ${JSON.stringify(permissions)}`,
     );
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'You do not have the required permissions.';
+    return "You do not have the required permissions.";
   }
 }
 
@@ -123,19 +128,23 @@ export class HasPermissionByRoleCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'hasPermissionByRole' as const;
-  readonly description = 'Checks if a role has the specified permissions';
+  readonly name = "hasPermissionByRole" as const;
+  readonly description = "Checks if a role has the specified permissions";
   readonly permissions: PermissionObject;
   readonly role?: string;
 
   private readonly getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>;
-  private readonly roleResolver: ValueOrResolver<InferRoleNamesFromBuilder<TPermissionBuilder>>;
-  private readonly permissionsResolver: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>;
+  private readonly roleResolver: ValueOrResolver<
+    InferRoleNamesFromBuilder<TPermissionBuilder>
+  >;
+  private readonly permissionsResolver: ValueOrResolver<
+    InferStatementFromBuilder<TPermissionBuilder>
+  >;
 
   constructor(
     getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>,
     role: ValueOrResolver<InferRoleNamesFromBuilder<TPermissionBuilder>>,
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ) {
     super();
     this.getPlugin = getPlugin;
@@ -143,10 +152,10 @@ export class HasPermissionByRoleCheck<
     this.permissionsResolver = permissions;
     // For metadata
     this.permissions =
-      typeof permissions === 'function'
+      typeof permissions === "function"
         ? {}
         : (permissions as unknown as PermissionObject);
-    this.role = typeof role === 'function' ? undefined : (role as string);
+    this.role = typeof role === "function" ? undefined : (role as string);
   }
 
   async check(context: MiddlewareContext): Promise<void> {
@@ -159,13 +168,13 @@ export class HasPermissionByRoleCheck<
     if (!hasPermission) {
       throw createPermissionError(
         permissions as unknown as PermissionObject,
-        `Role '${role as string}' does not have permissions: ${JSON.stringify(permissions)}`
+        `Role '${role as string}' does not have permissions: ${JSON.stringify(permissions)}`,
       );
     }
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
@@ -185,24 +194,28 @@ export class HasRoleCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'hasRole' as const;
-  readonly description = 'Checks if user has one of the specified roles';
+  readonly name = "hasRole" as const;
+  readonly description = "Checks if user has one of the specified roles";
   readonly requiredRoles: readonly string[];
-  readonly matchMode: 'any' | 'all' = 'any';
+  readonly matchMode: "any" | "all" = "any";
 
   private readonly getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>;
-  private readonly rolesResolver: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>;
+  private readonly rolesResolver: ValueOrResolver<
+    readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+  >;
 
   constructor(
     getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>,
-    roles: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>
+    roles: ValueOrResolver<
+      readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+    >,
   ) {
     super();
     this.getPlugin = getPlugin;
     this.rolesResolver = roles;
     // For metadata
     this.requiredRoles =
-      typeof roles === 'function' ? [] : (roles as readonly string[]);
+      typeof roles === "function" ? [] : (roles as readonly string[]);
   }
 
   async check(context: MiddlewareContext): Promise<void> {
@@ -212,12 +225,12 @@ export class HasRoleCheck<
     // Use plugin's assertCheckRole which throws RoleAssertionError
     await plugin.assertCheckRole(
       roles as string[],
-      `Required role: ${(roles as readonly string[]).join(' or ')}`
+      `Required role: ${(roles as readonly string[]).join(" or ")}`,
     );
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
@@ -237,17 +250,17 @@ export class RequireAdminRoleCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AdminAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'requireAdminRole' as const;
-  readonly description = 'Requires user to have admin role';
+  readonly name = "requireAdminRole" as const;
+  readonly description = "Requires user to have admin role";
   readonly requiredRoles: readonly string[];
-  readonly matchMode: 'any' | 'all' = 'any';
+  readonly matchMode: "any" | "all" = "any";
 
   private readonly getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>;
   private readonly adminRoles: readonly InferRoleNamesFromBuilder<TPermissionBuilder>[];
 
   constructor(
     getPlugin: AdminPluginFactory<TPermissionBuilder, TAuth>,
-    adminRoles: readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+    adminRoles: readonly InferRoleNamesFromBuilder<TPermissionBuilder>[],
   ) {
     super();
     this.getPlugin = getPlugin;
@@ -261,16 +274,16 @@ export class RequireAdminRoleCheck<
     // Use plugin's assertCheckRole
     await plugin.assertCheckRole(
       this.adminRoles as string[],
-      'Admin access required'
+      "Admin access required",
     );
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'Admin access required.';
+    return "Admin access required.";
   }
 }
 
@@ -322,17 +335,29 @@ export class AdminMiddlewareDefinition<
   /**
    * Get the plugin factory cast to AdminPermissionsPlugin type.
    */
-  protected getAdminPluginFactory(): AdminPluginFactory<TPermissionBuilder, TAuth> {
-    return this.pluginFactory as unknown as AdminPluginFactory<TPermissionBuilder, TAuth>;
+  protected getAdminPluginFactory(): AdminPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  > {
+    return this.pluginFactory as unknown as AdminPluginFactory<
+      TPermissionBuilder,
+      TAuth
+    >;
   }
 
   constructor(
     pluginFactory: AdminPluginFactory<TPermissionBuilder, TAuth>,
-    options?: { adminRoles?: readonly InferRoleNamesFromBuilder<TPermissionBuilder>[] }
+    options?: {
+      adminRoles?: readonly InferRoleNamesFromBuilder<TPermissionBuilder>[];
+    },
   ) {
     super(pluginFactory);
     // Default to 'admin' as the admin role - cast needed for generic constraint
-    this.adminRoles = options?.adminRoles ?? (['admin'] as unknown as readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]);
+    this.adminRoles =
+      options?.adminRoles ??
+      ([
+        "admin",
+      ] as unknown as readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]);
   }
 
   // ==========================================================================
@@ -355,12 +380,9 @@ export class AdminMiddlewareDefinition<
    * ```
    */
   hasPermission(
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ): MiddlewareCheck {
-    return new HasPermissionCheck(
-      this.getAdminPluginFactory(),
-      permissions
-    );
+    return new HasPermissionCheck(this.getAdminPluginFactory(), permissions);
   }
 
   /**
@@ -380,12 +402,12 @@ export class AdminMiddlewareDefinition<
    */
   hasPermissionByRole(
     role: ValueOrResolver<InferRoleNamesFromBuilder<TPermissionBuilder>>,
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ): MiddlewareCheck {
     return new HasPermissionByRoleCheck(
       this.getAdminPluginFactory(),
       role,
-      permissions
+      permissions,
     );
   }
 
@@ -407,12 +429,11 @@ export class AdminMiddlewareDefinition<
    * ```
    */
   hasRole(
-    roles: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>
+    roles: ValueOrResolver<
+      readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+    >,
   ): MiddlewareCheck {
-    return new HasRoleCheck(
-      this.getAdminPluginFactory(),
-      roles
-    );
+    return new HasRoleCheck(this.getAdminPluginFactory(), roles);
   }
 
   /**
@@ -437,7 +458,7 @@ export class AdminMiddlewareDefinition<
   requireAdminRole(): MiddlewareCheck {
     return new RequireAdminRoleCheck(
       this.getAdminPluginFactory(),
-      this.adminRoles
+      this.adminRoles,
     );
   }
 }

@@ -9,22 +9,24 @@ export class EnvService<TSchema extends Record<string, unknown> = Env> {
   private schema: z.ZodType;
   private parsedEnv?: TSchema; // Cache parsed environment - immutable after construction
 
-  constructor(
-    @Optional() private readonly configService?: ConfigService
-  ) {
+  constructor(@Optional() private readonly configService?: ConfigService) {
     this.schema = envSchema;
-    const isTest = process.env.NODE_ENV === 'test';
-    
+    const isTest = process.env.NODE_ENV === "test";
+
     if (!isTest) {
-      this.logger.log(`EnvService constructor called. ConfigService available: ${String(!!this.configService)}`);
+      this.logger.log(
+        `EnvService constructor called. ConfigService available: ${String(!!this.configService)}`,
+      );
     }
     if (this.configService) {
       if (!isTest) {
-        this.logger.log('ConfigService is properly injected');
+        this.logger.log("ConfigService is properly injected");
       }
     } else {
       if (!isTest) {
-        this.logger.warn('ConfigService is NOT injected - will use process.env fallback');
+        this.logger.warn(
+          "ConfigService is NOT injected - will use process.env fallback",
+        );
       }
       // Parse environment once during construction when not using ConfigService
       // Take a snapshot of process.env at construction time (immutable)
@@ -33,7 +35,9 @@ export class EnvService<TSchema extends Record<string, unknown> = Env> {
       } catch {
         // If validation fails, take a direct snapshot of process.env
         if (!isTest) {
-          this.logger.warn('Environment validation failed, using raw process.env snapshot');
+          this.logger.warn(
+            "Environment validation failed, using raw process.env snapshot",
+          );
         }
         this.parsedEnv = { ...process.env } as TSchema;
       }
@@ -65,24 +69,28 @@ export class EnvService<TSchema extends Record<string, unknown> = Env> {
       }
       return undefined as TSchema[T];
     }
-    const ret = this.configService.get<TSchema[T]>(key as string) as unknown as TSchema[T];
-    return ret
+    const ret = this.configService.get<TSchema[T]>(
+      key as string,
+    ) as unknown as TSchema[T];
+    return ret;
   }
 
   /**
    * Create a new EnvService instance with a different environment schema
    * @param schema - Zod schema to validate environment variables against
    * @returns New EnvService instance with the provided schema
-   * 
+   *
    * @example
    * ```typescript
    * import { webEnvSchema, type WebEnv } from '@repo/env';
-   * 
+   *
    * const webEnv = this.envService.use<WebEnv>(webEnvSchema);
    * const apiUrl = webEnv.get('API_URL');
    * ```
    */
-  use<TNewSchema extends Record<string, unknown>>(schema: z.ZodType<TNewSchema>): EnvService<TNewSchema> {
+  use<TNewSchema extends Record<string, unknown>>(
+    schema: z.ZodType<TNewSchema>,
+  ): EnvService<TNewSchema> {
     const instance = new EnvService<TNewSchema>(this.configService);
     instance.setSchema(schema);
     return instance;

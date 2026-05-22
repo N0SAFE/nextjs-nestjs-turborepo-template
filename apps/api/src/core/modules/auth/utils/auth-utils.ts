@@ -1,5 +1,9 @@
 import type { Auth } from "@/auth";
-import { createPluginRegistry, type AdminPluginWrapper, type OrganizationPluginWrapper } from "../plugin-utils/plugin-wrapper-factory";
+import {
+  createPluginRegistry,
+  type AdminPluginWrapper,
+  type OrganizationPluginWrapper,
+} from "../plugin-utils/plugin-wrapper-factory";
 import { ORPCError } from "@orpc/client";
 
 /**
@@ -21,13 +25,13 @@ export type RequestWithSession = Request & {
 /**
  * Global auth utilities class that provides authentication context
  * Used in ORPC handlers via context.auth
- * 
+ *
  * For access control, use plugin-based middlewares:
  * - `adminMiddlewares.requireRole(role)` - Require specific role
  * - `adminMiddlewares.requirePermission(permission)` - Permission-based access
  * - `adminMiddlewares.requireAccess({ roles, permissions })` - Complex access control
  * - `organizationMiddlewares.requireRole(role)` - Organization role-based access
- * 
+ *
  * @example
  * ```ts
  * // In ORPC handler
@@ -48,7 +52,7 @@ export class AuthUtils {
   constructor(
     private readonly _session: UserSession | null,
     private readonly auth: Auth,
-    private readonly headers?: Headers
+    private readonly headers?: Headers,
   ) {
     // Create plugin wrappers using the registry with getAll()
     const registry = createPluginRegistry(auth);
@@ -71,7 +75,7 @@ export class AuthUtils {
 
   /**
    * Access admin plugin utilities with auto-injected headers
-   * 
+   *
    * @example
    * ```typescript
    * // In ORPC handler
@@ -89,7 +93,7 @@ export class AuthUtils {
 
   /**
    * Access organization plugin utilities with auto-injected headers
-   * 
+   *
    * @example
    * ```typescript
    * // In ORPC handler
@@ -106,13 +110,13 @@ export class AuthUtils {
 
   /**
    * Require authentication - throws if user is not logged in
-   * 
+   *
    * Use this for programmatic auth checks after middleware processing,
    * or as a type guard to narrow the session type.
-   * 
+   *
    * @throws ORPCError with UNAUTHORIZED code if not authenticated
    * @returns The authenticated user session (guaranteed non-null)
-   * 
+   *
    * @example
    * ```typescript
    * // Programmatic check in handler
@@ -122,8 +126,8 @@ export class AuthUtils {
    */
   requireAuth(): UserSession {
     if (!this._session) {
-      throw new ORPCError('UNAUTHORIZED', {
-        message: 'Authentication required',
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
       });
     }
     return this._session;
@@ -138,7 +142,7 @@ export class AuthUtilsEmpty {
   readonly isLoggedIn = false;
   readonly session = null;
   readonly user = null;
-  
+
   // Admin and org utilities (available even when not logged in)
   private readonly _admin: AdminPluginWrapper;
   private readonly _org: OrganizationPluginWrapper;
@@ -164,8 +168,8 @@ export class AuthUtilsEmpty {
    * @throws ORPCError with UNAUTHORIZED code
    */
   requireAuth(): never {
-    throw new ORPCError('UNAUTHORIZED', {
-      message: 'Authentication required',
+    throw new ORPCError("UNAUTHORIZED", {
+      message: "Authentication required",
     });
   }
 }

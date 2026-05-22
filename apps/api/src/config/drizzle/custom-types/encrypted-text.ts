@@ -1,5 +1,10 @@
 import { customType } from "drizzle-orm/pg-core";
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  scryptSync,
+} from "crypto";
 import { validateApiEnvPath } from "@repo/env";
 
 // @ts-expect-error process.env.AUTH_SECRET may be undefined but is checked in this function so its not a problem
@@ -11,15 +16,15 @@ const AUTH_SECRET = validateApiEnvPath(process.env.AUTH_SECRET, "AUTH_SECRET");
  * If not provided, we'll generate one (NOT RECOMMENDED for production)
  */
 const ENCRYPTION_KEY = AUTH_SECRET
-    ? Buffer.from(AUTH_SECRET, "hex")
-    : (() => {
-          console.warn(
-              "⚠️  WARNING: ENCRYPTION_KEY not found in environment variables. " +
-                  "Using a temporary key. This is NOT secure for production! " +
-                  "Generate a key with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
-          );
-          return scryptSync("temporary-fallback-key", "salt", 32);
-      })();
+  ? Buffer.from(AUTH_SECRET, "hex")
+  : (() => {
+      console.warn(
+        "⚠️  WARNING: ENCRYPTION_KEY not found in environment variables. " +
+          "Using a temporary key. This is NOT secure for production! " +
+          "Generate a key with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+      );
+      return scryptSync("temporary-fallback-key", "salt", 32);
+    })();
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16; // AES block size
@@ -30,32 +35,32 @@ const SALT_LENGTH = 32; // Salt for key derivation
  * Format: salt:iv:authTag:encryptedData (all hex encoded)
  */
 function encrypt(text: string): string {
-    try {
-        // Generate a random salt for this encryption
-        const salt = randomBytes(SALT_LENGTH);
+  try {
+    // Generate a random salt for this encryption
+    const salt = randomBytes(SALT_LENGTH);
 
-        // Derive a unique key for this encryption using the salt
-        const key = scryptSync(ENCRYPTION_KEY, salt, 32);
+    // Derive a unique key for this encryption using the salt
+    const key = scryptSync(ENCRYPTION_KEY, salt, 32);
 
-        // Generate random IV
-        const iv = randomBytes(IV_LENGTH);
+    // Generate random IV
+    const iv = randomBytes(IV_LENGTH);
 
-        // Create cipher
-        const cipher = createCipheriv(ALGORITHM, key, iv);
+    // Create cipher
+    const cipher = createCipheriv(ALGORITHM, key, iv);
 
-        // Encrypt the text
-        let encrypted = cipher.update(text, "utf8", "hex");
-        encrypted += cipher.final("hex");
+    // Encrypt the text
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
 
-        // Get authentication tag
-        const authTag = cipher.getAuthTag();
+    // Get authentication tag
+    const authTag = cipher.getAuthTag();
 
-        // Combine salt, iv, authTag, and encrypted data
-        return `${salt.toString("hex")}:${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
-    } catch (error) {
-        console.error("Encryption error:", error);
-        throw new Error("Failed to encrypt data");
-    }
+    // Combine salt, iv, authTag, and encrypted data
+    return `${salt.toString("hex")}:${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
+  } catch (error) {
+    console.error("Encryption error:", error);
+    throw new Error("Failed to encrypt data");
+  }
 }
 
 /**
@@ -63,35 +68,41 @@ function encrypt(text: string): string {
  * Expects format: salt:iv:authTag:encryptedData
  */
 function decrypt(encryptedText: string): string {
-    try {
-        // Split the encrypted text into components
-        const parts = encryptedText.split(":");
-        if (parts.length !== 4) {
-            throw new Error("Invalid encrypted data format");
-        }
-
-        const [saltHex, ivHex, authTagHex, encryptedData] = parts as [string, string, string, string];
-
-        // Convert from hex
-        const salt = Buffer.from(saltHex, "hex");
-        const iv = Buffer.from(ivHex, "hex");
-        const authTag = Buffer.from(authTagHex, "hex");
-
-        // Derive the same key using the stored salt
-        const key = scryptSync(ENCRYPTION_KEY, salt, 32);
-
-        // Create decipher
-        const decipher = createDecipheriv(ALGORITHM, key, iv);
-        decipher.setAuthTag(authTag);
-
-        // Decrypt the text
-        const decrypted = decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
-
-        return decrypted;
-    } catch (error) {
-        console.error("Decryption error:", error);
-        throw new Error("Failed to decrypt data");
+  try {
+    // Split the encrypted text into components
+    const parts = encryptedText.split(":");
+    if (parts.length !== 4) {
+      throw new Error("Invalid encrypted data format");
     }
+
+    const [saltHex, ivHex, authTagHex, encryptedData] = parts as [
+      string,
+      string,
+      string,
+      string,
+    ];
+
+    // Convert from hex
+    const salt = Buffer.from(saltHex, "hex");
+    const iv = Buffer.from(ivHex, "hex");
+    const authTag = Buffer.from(authTagHex, "hex");
+
+    // Derive the same key using the stored salt
+    const key = scryptSync(ENCRYPTION_KEY, salt, 32);
+
+    // Create decipher
+    const decipher = createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    // Decrypt the text
+    const decrypted =
+      decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
+
+    return decrypted;
+  } catch (error) {
+    console.error("Decryption error:", error);
+    throw new Error("Failed to decrypt data");
+  }
 }
 
 /**
@@ -112,26 +123,26 @@ function decrypt(encryptedText: string): string {
  * - When selecting: encrypted text from DB → plain text returned to app
  */
 export const encryptedText = customType<{
-    data: string;
-    driverData: string;
-    notNull: boolean;
-    default: false;
+  data: string;
+  driverData: string;
+  notNull: boolean;
+  default: false;
 }>({
-    dataType() {
-        return "text";
-    },
+  dataType() {
+    return "text";
+  },
 
-    // Convert from database to application (decrypt)
-    fromDriver(value: string): string {
-        if (!value) return value;
-        return decrypt(value);
-    },
+  // Convert from database to application (decrypt)
+  fromDriver(value: string): string {
+    if (!value) return value;
+    return decrypt(value);
+  },
 
-    // Convert from application to database (encrypt)
-    toDriver(value: string): string {
-        if (!value) return value;
-        return encrypt(value);
-    },
+  // Convert from application to database (encrypt)
+  toDriver(value: string): string {
+    if (!value) return value;
+    return encrypt(value);
+  },
 });
 
 /**
@@ -151,5 +162,5 @@ import { validateEnv } from '#/env';
  * ```
  */
 export function generateEncryptionKey(): string {
-    return randomBytes(32).toString("hex");
+  return randomBytes(32).toString("hex");
 }

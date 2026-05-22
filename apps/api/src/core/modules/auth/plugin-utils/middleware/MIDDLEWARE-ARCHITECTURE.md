@@ -71,21 +71,21 @@ import {
   createOrganizationMiddleware,
   createNestGuard,
   createOrpcMiddleware,
-} from '@/core/modules/auth/plugin-utils/middleware';
+} from "@/core/modules/auth/plugin-utils/middleware";
 
 // Get your plugin instances (typically from dependency injection)
-const adminPlugin = auth.api.getPlugin('admin');
-const orgPlugin = auth.api.getPlugin('organization');
+const adminPlugin = auth.api.getPlugin("admin");
+const orgPlugin = auth.api.getPlugin("organization");
 
 // Create middleware definitions
 const adminMiddleware = createAdminMiddleware(adminPlugin);
 const orgMiddleware = createOrganizationMiddleware(orgPlugin);
 
 // Use in NestJS controller
-@Controller('users')
+@Controller("users")
 class UsersController {
   @Get()
-  @UseGuards(createNestGuard(adminMiddleware.hasPermission({ user: ['read'] })))
+  @UseGuards(createNestGuard(adminMiddleware.hasPermission({ user: ["read"] })))
   findAll() {
     return this.usersService.findAll();
   }
@@ -93,7 +93,7 @@ class UsersController {
 
 // Use in ORPC router
 const getUsersRoute = os
-  .use(createOrpcMiddleware(adminMiddleware.hasPermission({ user: ['read'] })))
+  .use(createOrpcMiddleware(adminMiddleware.hasPermission({ user: ["read"] })))
   .handler(async () => {
     return await usersService.findAll();
   });
@@ -105,7 +105,7 @@ By default, `requireAdminRole()` uses the default roles from your permission bui
 
 ```typescript
 const adminMiddleware = createAdminMiddleware(adminPlugin, {
-  adminRoles: ['superadmin', 'admin', 'moderator'],
+  adminRoles: ["superadmin", "admin", "moderator"],
 });
 
 // Now requireAdminRole() will accept these roles
@@ -124,10 +124,10 @@ Middleware definitions are type-safe factories that create authorization checks.
 const middleware = new AdminMiddlewareDefinition(adminPlugin);
 
 // Permission-based check
-const canRead = middleware.hasPermission({ user: ['read'] });
+const canRead = middleware.hasPermission({ user: ["read"] });
 
 // Role-based check
-const isAdmin = middleware.hasRole(['admin']);
+const isAdmin = middleware.hasRole(["admin"]);
 
 // Convenience check for admin access
 const requireAdmin = middleware.requireAdminRole();
@@ -143,17 +143,17 @@ const middleware = new OrganizationMiddlewareDefinition(orgPlugin);
 
 // Organization permission check
 const canManageOrg = middleware.hasOrganizationPermission({
-  organization: ['manage'],
+  organization: ["manage"],
 });
 
 // Membership check
-const isMember = middleware.isMemberOf('org-123');
+const isMember = middleware.isMemberOf("org-123");
 
 // Role within organization
-const isOrgAdmin = middleware.hasOrganizationRole('org-123', ['admin']);
+const isOrgAdmin = middleware.hasOrganizationRole("org-123", ["admin"]);
 
 // Owner check
-const isOwner = middleware.isOrganizationOwner('org-123');
+const isOwner = middleware.isOrganizationOwner("org-123");
 ```
 
 ### 2. Middleware Checks
@@ -178,14 +178,14 @@ Checks support both static values and dynamic resolution from context:
 
 ```typescript
 // Static organization ID
-const staticCheck = middleware.isMemberOf('org-123');
+const staticCheck = middleware.isMemberOf("org-123");
 
 // Dynamic from context (request params, body, etc.)
 const dynamicCheck = middleware.isMemberOf((context) => context.params.orgId);
 
 // Dynamic permissions
 const dynamicPermission = middleware.hasPermission((context) => ({
-  [context.resource]: ['read'],
+  [context.resource]: ["read"],
 }));
 ```
 
@@ -321,11 +321,15 @@ const adminMiddleware = createAdminMiddleware(adminPlugin);
 // Define a procedure with auth
 const createUserProcedure = os
   .use(createOrpcMiddleware(adminMiddleware.requireSession()))
-  .use(createOrpcMiddleware(adminMiddleware.hasPermission({ user: ['create'] })))
-  .input(z.object({
-    email: z.string().email(),
-    name: z.string(),
-  }))
+  .use(
+    createOrpcMiddleware(adminMiddleware.hasPermission({ user: ["create"] })),
+  )
+  .input(
+    z.object({
+      email: z.string().email(),
+      name: z.string(),
+    }),
+  )
   .handler(async ({ input, context }) => {
     // context.session is guaranteed to exist
     return await usersService.create(input, context.session.userId);
@@ -383,7 +387,7 @@ MiddlewareAuthError {
 
 // Session required
 MiddlewareAuthError {
-  code: 'UNAUTHORIZED', 
+  code: 'UNAUTHORIZED',
   message: 'Authentication required',
   httpStatus: 401
 }
@@ -399,7 +403,7 @@ MiddlewareAuthError {
 ### Custom Error Handling
 
 ```typescript
-@UseGuards(createNestGuard(adminMiddleware.hasPermission({ user: ['read'] })))
+@UseGuards(createNestGuard(adminMiddleware.hasPermission({ user: ["read"] })))
 @Catch(MiddlewareAuthError)
 class AuthErrorFilter implements ExceptionFilter {
   catch(exception: MiddlewareAuthError, host: ArgumentsHost) {
@@ -417,18 +421,18 @@ class AuthErrorFilter implements ExceptionFilter {
 ### Unit Testing Checks
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from "vitest";
 
-describe('hasPermission check', () => {
-  it('should pass when user has permission', async () => {
+describe("hasPermission check", () => {
+  it("should pass when user has permission", async () => {
     const mockPlugin = {
       assertCheckPermission: vi.fn().mockResolvedValue(undefined),
-      getSession: vi.fn().mockResolvedValue({ userId: 'user-1' }),
+      getSession: vi.fn().mockResolvedValue({ userId: "user-1" }),
     };
-    
+
     const middleware = createAdminMiddleware(mockPlugin);
-    const check = middleware.hasPermission({ user: ['read'] });
-    
+    const check = middleware.hasPermission({ user: ["read"] });
+
     await expect(check.check({ headers: {} })).resolves.toBeUndefined();
     expect(mockPlugin.assertCheckPermission).toHaveBeenCalled();
   });
@@ -438,7 +442,7 @@ describe('hasPermission check', () => {
 ### Integration Testing with Real Plugins
 
 ```typescript
-describe('Admin Authorization Flow', () => {
+describe("Admin Authorization Flow", () => {
   let app: INestApplication;
   let adminPlugin: AdminPermissionsPlugin;
 
@@ -449,27 +453,27 @@ describe('Admin Authorization Flow', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    adminPlugin = moduleRef.get(AuthService).getPlugin('admin');
+    adminPlugin = moduleRef.get(AuthService).getPlugin("admin");
     await app.init();
   });
 
-  it('should allow admin to create users', async () => {
+  it("should allow admin to create users", async () => {
     const token = await getAdminToken();
-    
+
     return request(app.getHttpServer())
-      .post('/users')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ email: 'test@example.com' })
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ email: "test@example.com" })
       .expect(201);
   });
 
-  it('should deny regular user from creating users', async () => {
+  it("should deny regular user from creating users", async () => {
     const token = await getUserToken();
-    
+
     return request(app.getHttpServer())
-      .post('/users')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ email: 'test@example.com' })
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ email: "test@example.com" })
       .expect(403);
   });
 });
@@ -488,7 +492,7 @@ function createAdminMiddleware<TPermissionBuilder, TAuth>(
   plugin: AdminPermissionsPlugin<TPermissionBuilder, TAuth>,
   options?: {
     adminRoles?: readonly InferRolesFromBuilder<TPermissionBuilder>[];
-  }
+  },
 ): AdminMiddlewareDefinition<TPermissionBuilder, TAuth>;
 ```
 
@@ -498,7 +502,7 @@ Creates an OrganizationMiddlewareDefinition from a plugin.
 
 ```typescript
 function createOrganizationMiddleware<TPermissionBuilder, TAuth>(
-  plugin: OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>
+  plugin: OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>,
 ): OrganizationMiddlewareDefinition<TPermissionBuilder, TAuth>;
 ```
 
@@ -511,7 +515,7 @@ Converts a middleware check to a NestJS CanActivate guard.
 ```typescript
 function createNestGuard<TContext, TError extends Error>(
   check: BaseMiddlewareCheck<TContext, TError>,
-  options?: { enableLogging?: boolean }
+  options?: { enableLogging?: boolean },
 ): Type<CanActivate>;
 ```
 
@@ -522,7 +526,7 @@ Creates a composite guard from multiple checks (all must pass).
 ```typescript
 function createCompositeNestGuard<TContext, TError extends Error>(
   checks: BaseMiddlewareCheck<TContext, TError>[],
-  options?: { enableLogging?: boolean }
+  options?: { enableLogging?: boolean },
 ): Type<CanActivate>;
 ```
 
@@ -532,7 +536,7 @@ Converts a middleware check to an ORPC middleware function.
 
 ```typescript
 function createOrpcMiddleware<TContext, TError extends Error>(
-  check: BaseMiddlewareCheck<TContext, TError>
+  check: BaseMiddlewareCheck<TContext, TError>,
 ): ORPCMiddleware;
 ```
 
@@ -542,7 +546,7 @@ Creates a composite ORPC middleware from multiple checks.
 
 ```typescript
 function createCompositeOrpcMiddleware<TContext, TError extends Error>(
-  checks: BaseMiddlewareCheck<TContext, TError>[]
+  checks: BaseMiddlewareCheck<TContext, TError>[],
 ): ORPCMiddleware;
 ```
 
@@ -557,17 +561,17 @@ export {
   PermissionCheckMetadata,
   RoleCheckMetadata,
   OrpcError,
-  
+
   // Definitions
   BaseMiddlewareDefinition,
   AdminMiddlewareDefinition,
   OrganizationMiddlewareDefinition,
-  
+
   // Factory functions
   createAdminMiddleware,
   createOrganizationMiddleware,
   CreateAdminMiddlewareOptions,
-  
+
   // Converters
   createNestGuard,
   createCompositeNestGuard,

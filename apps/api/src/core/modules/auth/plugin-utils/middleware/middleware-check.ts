@@ -13,9 +13,9 @@
 import {
   PermissionAssertionError,
   RoleAssertionError,
-} from '@repo/auth/permissions/plugins';
-import type { InferSessionFromAuth } from '@repo/auth';
-import type { Auth as BetterAuthInstance } from 'better-auth';
+} from "@repo/auth/permissions/plugins";
+import type { InferSessionFromAuth } from "@repo/auth";
+import type { Auth as BetterAuthInstance } from "better-auth";
 
 /**
  * Permission object for error context
@@ -30,7 +30,9 @@ export type PermissionObject = Record<string, string[]>;
  * Default Auth type constraint for Better Auth instances.
  * All auth instances must have the $Infer pattern.
  */
-export interface AuthConstraint { $Infer: BetterAuthInstance['$Infer'] }
+export interface AuthConstraint {
+  $Infer: BetterAuthInstance["$Infer"];
+}
 
 /**
  * Default params type for route parameters.
@@ -50,20 +52,20 @@ export type DefaultBody = unknown;
 /**
  * Context available to middleware checks.
  * Contains request information and resolved parameters.
- * 
+ *
  * The session type is automatically inferred from the TAuth generic,
  * providing full type safety for session.user and session.session properties.
- * 
+ *
  * @template TAuth - Better Auth instance type (for session inference)
  * @template TParams - Route parameters type
  * @template TQuery - Query parameters type
  * @template TBody - Request body type
- * 
+ *
  * @example
  * ```typescript
  * // Default usage (flexible types)
  * const ctx: MiddlewareContext = { headers: new Headers() };
- * 
+ *
  * // Typed usage with your auth instance
  * type MyContext = MiddlewareContext<typeof auth, { organizationId: string }>;
  * const ctx: MyContext = {
@@ -102,7 +104,7 @@ export type AnyMiddlewareContext = MiddlewareContext;
 
 /**
  * Function type for resolving dynamic values from context.
- * 
+ *
  * @template T - The type of value to resolve
  * @template TContext - The context type (defaults to AnyMiddlewareContext)
  */
@@ -113,7 +115,7 @@ export type ContextResolver<
 
 /**
  * Either a static value or a resolver function.
- * 
+ *
  * @template T - The type of value
  * @template TContext - The context type for resolver (defaults to AnyMiddlewareContext)
  */
@@ -126,10 +128,10 @@ export type ValueOrResolver<
  * Error codes for middleware failures
  */
 export type MiddlewareErrorCode =
-  | 'UNAUTHORIZED' // No valid session
-  | 'FORBIDDEN' // Valid session but no permission
-  | 'NOT_FOUND' // Resource not found (e.g., organization)
-  | 'BAD_REQUEST'; // Invalid parameters
+  | "UNAUTHORIZED" // No valid session
+  | "FORBIDDEN" // Valid session but no permission
+  | "NOT_FOUND" // Resource not found (e.g., organization)
+  | "BAD_REQUEST"; // Invalid parameters
 
 /**
  * Result of a boolean check
@@ -147,7 +149,7 @@ export interface CheckResult {
 /**
  * Base middleware check interface.
  * All middleware checks implement this interface.
- * 
+ *
  * @template TContext - Context type for this check (defaults to AnyMiddlewareContext)
  */
 export interface MiddlewareCheck<
@@ -200,7 +202,7 @@ export interface MiddlewareCheck<
 export interface SessionCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'requireSession';
+  readonly name: "requireSession";
 }
 
 /**
@@ -210,7 +212,7 @@ export interface SessionCheck<
 export interface PermissionCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'hasPermission' | 'hasPermissionByRole';
+  readonly name: "hasPermission" | "hasPermissionByRole";
   /** The permissions being checked */
   readonly permissions: PermissionObject;
   /** Optional role context (for hasPermissionByRole) */
@@ -224,11 +226,11 @@ export interface PermissionCheck<
 export interface RoleCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'hasRole' | 'requireAdminRole';
+  readonly name: "hasRole" | "requireAdminRole";
   /** Required roles (user must have at least one) */
   readonly requiredRoles: readonly string[];
   /** Match mode: 'any' (default) or 'all' */
-  readonly matchMode: 'any' | 'all';
+  readonly matchMode: "any" | "all";
 }
 
 /**
@@ -238,7 +240,7 @@ export interface RoleCheck<
 export interface MembershipCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'requireMembership' | 'requireActiveMember';
+  readonly name: "requireMembership" | "requireActiveMember";
   /** Organization ID (static or resolved) */
   readonly organizationId?: string;
   /** Whether this checks active organization from session */
@@ -252,7 +254,7 @@ export interface MembershipCheck<
 export interface OrganizationRoleCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'requireRole';
+  readonly name: "requireRole";
   /** Organization ID (static or resolved) */
   readonly organizationId: string;
   /** Required roles in the organization */
@@ -266,7 +268,7 @@ export interface OrganizationRoleCheck<
 export interface OrganizationPermissionCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
 > extends MiddlewareCheck<TContext> {
-  readonly name: 'hasOrgPermission';
+  readonly name: "hasOrgPermission";
   /** Organization ID (static or resolved) */
   readonly organizationId: string;
   /** The permissions being checked */
@@ -280,13 +282,12 @@ export interface OrganizationPermissionCheck<
 /**
  * Abstract base class for middleware checks.
  * Provides common functionality and enforces the interface contract.
- * 
+ *
  * @template TContext - Context type for this check (defaults to AnyMiddlewareContext)
  */
 export abstract class BaseMiddlewareCheck<
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
-> implements MiddlewareCheck<TContext>
-{
+> implements MiddlewareCheck<TContext> {
   abstract readonly name: string;
   abstract readonly description: string;
 
@@ -324,7 +325,7 @@ export abstract class BaseMiddlewareCheck<
       }
       return {
         success: false,
-        error: 'Unknown error',
+        error: "Unknown error",
         code: this.getErrorCode(),
       };
     }
@@ -350,8 +351,11 @@ export abstract class BaseMiddlewareCheck<
 export async function resolveValue<
   T,
   TContext extends AnyMiddlewareContext = AnyMiddlewareContext,
->(valueOrResolver: ValueOrResolver<T, TContext>, context: TContext): Promise<T> {
-  if (typeof valueOrResolver === 'function') {
+>(
+  valueOrResolver: ValueOrResolver<T, TContext>,
+  context: TContext,
+): Promise<T> {
+  if (typeof valueOrResolver === "function") {
     return (valueOrResolver as ContextResolver<T, TContext>)(context);
   }
   return valueOrResolver;
@@ -361,10 +365,8 @@ export async function resolveValue<
  * Create an authentication error (no valid session).
  */
 export function createAuthError(message?: string): Error {
-  const error = new Error(
-    message ?? 'Authentication required. Please log in.'
-  );
-  (error as Error & { code: string }).code = 'UNAUTHORIZED';
+  const error = new Error(message ?? "Authentication required. Please log in.");
+  (error as Error & { code: string }).code = "UNAUTHORIZED";
   return error;
 }
 
@@ -373,12 +375,12 @@ export function createAuthError(message?: string): Error {
  */
 export function createPermissionError(
   permissions: PermissionObject,
-  message?: string
+  message?: string,
 ): PermissionAssertionError {
   return new PermissionAssertionError({
-    message: message ?? 'You do not have the required permissions.',
+    message: message ?? "You do not have the required permissions.",
     permissions,
-    code: 'FORBIDDEN',
+    code: "FORBIDDEN",
   });
 }
 
@@ -388,12 +390,12 @@ export function createPermissionError(
 export function createRoleError(
   requiredRoles: readonly string[],
   actualRole?: string | null,
-  message?: string
+  message?: string,
 ): RoleAssertionError {
   return new RoleAssertionError({
-    message: message ?? `Required role: ${requiredRoles.join(' or ')}`,
+    message: message ?? `Required role: ${requiredRoles.join(" or ")}`,
     requiredRoles,
     actualRole,
-    code: 'FORBIDDEN',
+    code: "FORBIDDEN",
   });
 }

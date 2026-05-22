@@ -751,9 +751,9 @@ export class PermissionChecker {
    * Note: This is a placeholder - implement based on your role hierarchy.
    */
   static hasHigherPrivilege(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _userRole: RoleName,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _requiredRole: RoleName
   ): boolean {
     return true;
@@ -763,7 +763,7 @@ export class PermissionChecker {
    * Get the privilege level of a role.
    * Note: This is a placeholder - implement based on your role hierarchy.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   static getRoleLevel(_role: RoleName): number {
     return 0;
   }

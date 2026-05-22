@@ -64,7 +64,7 @@ describe('generate-hooks', () => {
       }),
     } as const;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const resolver = vi.fn((_data: unknown, _variables: unknown, _context: unknown) => ({
       list: undefined,
     }));

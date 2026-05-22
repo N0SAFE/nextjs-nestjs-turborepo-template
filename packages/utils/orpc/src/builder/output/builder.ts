@@ -13,13 +13,14 @@
  * - response `union` composition
  */
 
-import { eventIterator } from "@orpc/contract";
+import { eventIterator, type Schema } from "@orpc/contract";
 import { DetailedOutputBrand, type DetailedOutput } from "../core/route-builder";
 import type { AnySchema, HTTPMethod, ErrorMap, UnionTuple } from "../../shared/types";
 import type { ObjectSchema, LiteralSchema, VoidSchema, SchemaShape } from "../../shared/standard-schema-helpers";
 import { objectSchema, voidSchema, literalSchema, unionSchema, emptyObjectSchema, getSchemaShape, optionalSchema } from "../../shared/standard-schema-helpers";
 import { ProxyBuilderBase } from "../core/proxy-builder.base";
 import type { OutputSchemaProxy } from "./proxy";
+import { observable, type Observable } from "../../utils/observable/contract";
 
 /**
  * Extract body schema from output type.
@@ -48,6 +49,11 @@ export type ExtractOutputHeaders<T> =
  */
 export type OutputSchemaProxySchema<TData extends AnySchema | DetailedOutput> =
     TData extends DetailedOutput<infer S, infer H, infer B> ? (S extends 200 ? (H extends ObjectSchema<Record<never, never>> ? B : TData) : TData) : TData;
+
+type ObservableContractSchema<TSchema extends AnySchema> =
+    TSchema extends Schema<infer TIn, infer TOut>
+        ? Schema<Observable<TIn>, Observable<TOut>>
+        : AnySchema;
 
 /**
  * Runtime guard for detailed output mode.
@@ -287,6 +293,28 @@ export abstract class DetailedOutputBuilder<
         const status = detailed ? this._extractStatus() : this._defaultStatus();
         const headers = detailed ? this._extractHeaders() : this._defaultHeaders();
         const built = this._buildDetailedSchema(status, headers, streamedBody);
+        return this._create(built);
+    }
+
+    /**
+     * Wrap body as Observable contract output.
+     */
+    observable<TNewBody extends AnySchema>(
+        schema: TNewBody,
+    ): OutputSchemaProxy<DetailedOutput<ExtractOutputStatus<TData>, ExtractOutputHeaders<TData>, ObservableContractSchema<TNewBody>>, TMethod, TEntitySchema, TErrors>;
+    observable<TNewBody extends AnySchema>(
+        builder: (current: ExtractOutputBody<TData>) => TNewBody,
+    ): OutputSchemaProxy<DetailedOutput<ExtractOutputStatus<TData>, ExtractOutputHeaders<TData>, ObservableContractSchema<TNewBody>>, TMethod, TEntitySchema, TErrors>;
+    observable<TNewBody extends AnySchema>(
+        schemaOrBuilder: TNewBody | ((current: ExtractOutputBody<TData>) => TNewBody),
+    ): OutputSchemaProxy<DetailedOutput<ExtractOutputStatus<TData>, ExtractOutputHeaders<TData>, ObservableContractSchema<TNewBody>>, TMethod, TEntitySchema, TErrors> {
+        const detailed = isDetailedMode(this.$data);
+        const currentBody = detailed ? this._extractBody() : this._defaultBody();
+        const baseSchema = typeof schemaOrBuilder === "function" ? (schemaOrBuilder as (current: ExtractOutputBody<TData>) => TNewBody)(currentBody) : schemaOrBuilder;
+        const observableBody = observable(baseSchema as Schema<unknown, unknown>) as ObservableContractSchema<TNewBody>;
+        const status = detailed ? this._extractStatus() : this._defaultStatus();
+        const headers = detailed ? this._extractHeaders() : this._defaultHeaders();
+        const built = this._buildDetailedSchema(status, headers, observableBody);
         return this._create(built);
     }
 

@@ -14,7 +14,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache libc6-compat tar nodejs jq
 
 # Install global tools with cache mount
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install -g turbo@^2 node-gyp
+RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked bun install -g turbo@^2 node-gyp
 WORKDIR /app
 
 # ===================================
@@ -27,7 +27,7 @@ WORKDIR /app
 COPY . .
 
 # Run turbo prune to identify which apps/packages are needed for api
-RUN --mount=type=cache,target=/root/.cache/turbo \
+RUN --mount=type=cache,target=/root/.cache/turbo,sharing=locked \
   turbo prune api --docker
 
 # ===================================
@@ -45,7 +45,7 @@ COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/bun.lock ./bun.lock
 
 # Install dependencies for pruned workspaces only
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked --mount=type=cache,target=/root/.cache,sharing=locked \
   bun install --frozen-lockfile || bun install
 
 # ===================================
@@ -109,11 +109,12 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
         cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
-# Copy turbo cache directories
-COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
+# Ensure turbo cache directories exist (optional host cache dirs may be absent)
+RUN mkdir -p /app/.turbo /app/apps/api/.turbo && \
+    chmod -R a+w /app/.turbo /app/apps/api/.turbo
 
 # Build the API and its dependencies
-RUN --mount=type=cache,target=/root/.bun --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked --mount=type=cache,target=/root/.cache,sharing=locked \
   bun turbo run build --filter=api... --remote-only
 
 # ===================================

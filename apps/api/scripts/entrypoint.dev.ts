@@ -1,33 +1,33 @@
 #!/usr/bin/env -S bun
 
-import { existsSync } from 'fs'
-import { execSync, spawn } from 'child_process'
-import { validateApiEnv, apiEnvIsValid, validateApiEnvSafe } from '@repo/env'
-import zod from 'zod/v4'
+import { existsSync } from "fs";
+import { execSync, spawn } from "child_process";
+import { validateApiEnv, apiEnvIsValid, validateApiEnvSafe } from "@repo/env";
+import zod from "zod/v4";
 
 interface EntrypointConfig {
-  skipMigrations: boolean
-  diagnosePath: string
-  migrateScript: string
-  seedScript: string
+  skipMigrations: boolean;
+  diagnosePath: string;
+  migrateScript: string;
+  seedScript: string;
 }
 
 /**
  * Validate environment variables at startup
  */
 function validateEnvironment(): void {
-  console.log('🔍 Validating environment variables...')
-  
+  console.log("🔍 Validating environment variables...");
+
   if (!apiEnvIsValid(process.env)) {
-    const result = validateApiEnvSafe(process.env)
-    console.error('❌ Environment validation failed:')
+    const result = validateApiEnvSafe(process.env);
+    console.error("❌ Environment validation failed:");
     if (!result.success) {
-      console.error(zod.prettifyError(result.error))
+      console.error(zod.prettifyError(result.error));
     }
-    process.exit(1)
+    process.exit(1);
   }
-  
-  console.log('✅ Environment validation passed\n')
+
+  console.log("✅ Environment validation passed\n");
 }
 
 /**
@@ -35,17 +35,19 @@ function validateEnvironment(): void {
  */
 function runDiagnostics(config: EntrypointConfig): void {
   if (existsSync(config.diagnosePath)) {
-    console.log('════════════════════════════════════════════════════════')
-    console.log('Running Build Environment Diagnostics...')
-    console.log('════════════════════════════════════════════════════════')
+    console.log("════════════════════════════════════════════════════════");
+    console.log("Running Build Environment Diagnostics...");
+    console.log("════════════════════════════════════════════════════════");
 
     try {
-      execSync(`bun --bun --watch ${config.diagnosePath}`, { stdio: 'inherit' })
+      execSync(`bun --bun --watch ${config.diagnosePath}`, {
+        stdio: "inherit",
+      });
     } catch (error) {
-      console.error('⚠️  Diagnostics failed, continuing...')
+      console.error("⚠️  Diagnostics failed, continuing...");
     }
 
-    console.log('════════════════════════════════════════════════════════')
+    console.log("════════════════════════════════════════════════════════");
   }
 }
 
@@ -54,24 +56,24 @@ function runDiagnostics(config: EntrypointConfig): void {
  */
 function runMigrationsOnly(config: EntrypointConfig): void {
   if (config.skipMigrations) {
-    console.log('⏭️  SKIP_MIGRATIONS set, skipping migrations')
-    return
+    console.log("⏭️  SKIP_MIGRATIONS set, skipping migrations");
+    return;
   }
 
-  const apiPackageJson = 'package.json'
+  const apiPackageJson = "package.json";
 
   if (!existsSync(apiPackageJson)) {
-    console.log('⚠️  package.json missing, skipping migrations')
-    return
+    console.log("⚠️  package.json missing, skipping migrations");
+    return;
   }
 
-  console.log('Found package.json - running migrations')
+  console.log("Found package.json - running migrations");
 
   try {
-    console.log('📦 Running database migrations...')
-    execSync(`bun run ${config.migrateScript}`, { stdio: 'inherit' })
+    console.log("📦 Running database migrations...");
+    execSync(`bun run ${config.migrateScript}`, { stdio: "inherit" });
   } catch (error) {
-    console.error('⚠️  db:migrate failed (continuing)')
+    console.error("⚠️  db:migrate failed (continuing)");
   }
 }
 
@@ -80,15 +82,15 @@ function runMigrationsOnly(config: EntrypointConfig): void {
  */
 function runSeeding(config: EntrypointConfig): void {
   if (config.skipMigrations) {
-    console.log('⏭️  SKIP_MIGRATIONS set, skipping seeding')
-    return
+    console.log("⏭️  SKIP_MIGRATIONS set, skipping seeding");
+    return;
   }
 
   try {
-    console.log('🌱 Running database seeding...')
-    execSync(`bun run ${config.seedScript}`, { stdio: 'inherit' })
+    console.log("🌱 Running database seeding...");
+    execSync(`bun run ${config.seedScript}`, { stdio: "inherit" });
   } catch (error) {
-    console.error('⚠️  db:seed failed (continuing)')
+    console.error("⚠️  db:seed failed (continuing)");
   }
 }
 
@@ -96,18 +98,18 @@ function runSeeding(config: EntrypointConfig): void {
  * Create default admin user if needed
  */
 function createDefaultAdmin(): void {
-  const createAdminScript = 'scripts/create-default-admin.ts'
+  const createAdminScript = "scripts/create-default-admin.ts";
 
   if (!existsSync(createAdminScript)) {
-    console.log('⚠️  create-default-admin script not found, skipping')
-    return
+    console.log("⚠️  create-default-admin script not found, skipping");
+    return;
   }
 
   try {
-    console.log('👤 Creating default admin user if needed...')
-    execSync(`bun --bun ${createAdminScript}`, { stdio: 'inherit' })
+    console.log("👤 Creating default admin user if needed...");
+    execSync(`bun --bun ${createAdminScript}`, { stdio: "inherit" });
   } catch (error) {
-    console.error('⚠️  Failed to create default admin user:', error)
+    console.error("⚠️  Failed to create default admin user:", error);
     // Don't exit - this is not critical
   }
 }
@@ -116,50 +118,54 @@ function createDefaultAdmin(): void {
  * Start API and Drizzle Studio processes concurrently
  */
 function startProcesses(): void {
-  console.log('🚀 Starting API and Drizzle Studio...')
+  console.log("🚀 Starting API and Drizzle Studio...");
 
-  const apiProcess = spawn('bun', ['run', 'start:dev'], {
-    stdio: 'inherit',
+  const apiProcess = spawn("bun", ["run", "start:dev"], {
+    stdio: "inherit",
     shell: true,
-  })
+  });
 
-  const studioProcess = spawn('bun', ['run', 'db:studio', '--host', '0.0.0.0'], {
-    stdio: 'inherit',
-    shell: true,
-  })
+  const studioProcess = spawn(
+    "bun",
+    ["run", "db:studio", "--host", "0.0.0.0"],
+    {
+      stdio: "inherit",
+      shell: true,
+    },
+  );
 
-  let exitRequested = false
+  let exitRequested = false;
 
   const handleExit = (code: number | null) => {
     if (!exitRequested) {
-      exitRequested = true
-      console.log('Process exited, cleaning up...')
-      apiProcess.kill()
-      studioProcess.kill()
-      process.exit(code ?? 1)
+      exitRequested = true;
+      console.log("Process exited, cleaning up...");
+      apiProcess.kill();
+      studioProcess.kill();
+      process.exit(code ?? 1);
     }
-  }
+  };
 
-  apiProcess.on('exit', handleExit)
-  studioProcess.on('exit', handleExit)
+  apiProcess.on("exit", handleExit);
+  studioProcess.on("exit", handleExit);
 
-  process.on('SIGINT', () => {
+  process.on("SIGINT", () => {
     if (!exitRequested) {
-      exitRequested = true
-      console.log('Received SIGINT, shutting down...')
-      apiProcess.kill('SIGINT')
-      studioProcess.kill('SIGINT')
+      exitRequested = true;
+      console.log("Received SIGINT, shutting down...");
+      apiProcess.kill("SIGINT");
+      studioProcess.kill("SIGINT");
     }
-  })
+  });
 
-  process.on('SIGTERM', () => {
+  process.on("SIGTERM", () => {
     if (!exitRequested) {
-      exitRequested = true
-      console.log('Received SIGTERM, shutting down...')
-      apiProcess.kill('SIGTERM')
-      studioProcess.kill('SIGTERM')
+      exitRequested = true;
+      console.log("Received SIGTERM, shutting down...");
+      apiProcess.kill("SIGTERM");
+      studioProcess.kill("SIGTERM");
     }
-  })
+  });
 }
 
 /**
@@ -167,29 +173,29 @@ function startProcesses(): void {
  */
 function main(): void {
   const config: EntrypointConfig = {
-    skipMigrations: process.env.SKIP_MIGRATIONS === 'true',
-    diagnosePath: 'scripts/diagnose-build.ts',
-    migrateScript: 'db:migrate',
-    seedScript: 'db:seed',
-  }
+    skipMigrations: process.env.SKIP_MIGRATIONS === "true",
+    diagnosePath: "scripts/diagnose-build.ts",
+    migrateScript: "db:migrate",
+    seedScript: "db:seed",
+  };
 
-  console.log('🎯 API Development Entrypoint Started\n')
+  console.log("🎯 API Development Entrypoint Started\n");
 
   // Validate environment before starting
-  validateEnvironment()
+  validateEnvironment();
 
-  runDiagnostics(config)
-  
+  runDiagnostics(config);
+
   // Run migrations first (schema must exist before any user creation)
-  runMigrationsOnly(config)
-  
+  runMigrationsOnly(config);
+
   // Create default admin BEFORE seeding so seed can detect existing admin
-  createDefaultAdmin()
-  
+  createDefaultAdmin();
+
   // Run seeding after admin creation
-  runSeeding(config)
-  
-  startProcesses()
+  runSeeding(config);
+
+  startProcesses();
 }
 
-main()
+main();

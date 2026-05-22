@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { and, asc, eq, SQL } from 'drizzle-orm';
-import { listBuilder } from '@/core/utils/drizzle-filter.utils';
-import type { OrganizationListAllInput } from '@repo/api-contracts/modules/organization/listAll';
-import type { OrganizationListMembersInput } from '@repo/api-contracts/modules/organization/listMembers';
-import { DatabaseService } from '@/core/modules/database/services/database.service';
-import { organization, member, user } from '@/config/drizzle/schema/auth';
+import { Injectable } from "@nestjs/common";
+import { and, asc, eq, SQL } from "drizzle-orm";
+import { listBuilder } from "@/core/utils/drizzle-filter.utils";
+import type { OrganizationListAllInput } from "@repo/api-contracts/modules/organization/listAll";
+import type { OrganizationListMembersInput } from "@repo/api-contracts/modules/organization/listMembers";
+import { DatabaseService } from "@/core/modules/database/services/database.service";
+import { organization, member, user } from "@/config/drizzle/schema/auth";
 
 @Injectable()
 export class OrganizationRepository {
@@ -20,33 +20,49 @@ export class OrganizationRepository {
         id: (entry) => entry.common.eq(organization.id),
         name: (entry) => {
           switch (entry.operator) {
-            case 'eq':    return entry.common.eq(organization.name);
-            case 'like':  return entry.common.like(organization.name);
-            case 'ilike': return entry.common.ilike(organization.name);
+            case "eq":
+              return entry.common.eq(organization.name);
+            case "like":
+              return entry.common.like(organization.name);
+            case "ilike":
+              return entry.common.ilike(organization.name);
           }
         },
         slug: (entry) => {
           switch (entry.operator) {
-            case 'eq':    return entry.common.eq(organization.slug);
-            case 'like':  return entry.common.like(organization.slug);
-            case 'ilike': return entry.common.ilike(organization.slug);
+            case "eq":
+              return entry.common.eq(organization.slug);
+            case "like":
+              return entry.common.like(organization.slug);
+            case "ilike":
+              return entry.common.ilike(organization.slug);
           }
         },
         createdAt: (entry) => {
           switch (entry.operator) {
-            case 'gt':  return entry.common.gt(organization.createdAt);
-            case 'gte': return entry.common.gte(organization.createdAt);
-            case 'lt':  return entry.common.lt(organization.createdAt);
-            case 'lte': return entry.common.lte(organization.createdAt);
-            case 'between': return entry.common.between(organization.createdAt);
+            case "gt":
+              return entry.common.gt(organization.createdAt);
+            case "gte":
+              return entry.common.gte(organization.createdAt);
+            case "lt":
+              return entry.common.lt(organization.createdAt);
+            case "lte":
+              return entry.common.lte(organization.createdAt);
+            case "between":
+              return entry.common.between(organization.createdAt);
           }
         },
       })
-      .order(input.sortBy, input.sortDirection, {
-        name: organization.name,
-        slug: organization.slug,
-        createdAt: organization.createdAt,
-      }, organization.createdAt)
+      .order(
+        input.sortBy,
+        input.sortDirection,
+        {
+          name: organization.name,
+          slug: organization.slug,
+          createdAt: organization.createdAt,
+        },
+        organization.createdAt,
+      )
       .pagination({ limit: input.limit, offset: input.offset })
       .execute(this.databaseService.db, organization);
   }
@@ -61,12 +77,12 @@ export class OrganizationRepository {
     const orgIdFilter = input.filter?.organizationId;
 
     const conditions: SQL[] = [];
-    if (orgIdFilter?.operator === 'eq') {
+    if (orgIdFilter?.operator === "eq") {
       conditions.push(eq(member.organizationId, orgIdFilter.value));
     }
 
     const roleFilter = input.filter?.role;
-    if (roleFilter?.operator === 'eq') {
+    if (roleFilter?.operator === "eq") {
       conditions.push(eq(member.role, roleFilter.value));
     }
 

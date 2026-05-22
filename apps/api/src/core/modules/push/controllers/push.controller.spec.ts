@@ -1,10 +1,10 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PushController } from './push.controller';
-import { PushService } from '../services/push.service';
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { PushController } from "./push.controller";
+import { PushService } from "../services/push.service";
 
-describe('PushController', () => {
+describe("PushController", () => {
   let controller: PushController;
   let mockService: any;
 
@@ -34,44 +34,44 @@ describe('PushController', () => {
     vi.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(controller).toBeDefined();
   });
 
-  describe('ORPC implementation methods', () => {
-    it('should have getPublicKey method', () => {
+  describe("ORPC implementation methods", () => {
+    it("should have getPublicKey method", () => {
       expect(controller.getPublicKey).toBeDefined();
-      expect(typeof controller.getPublicKey).toBe('function');
+      expect(typeof controller.getPublicKey).toBe("function");
     });
 
-    it('should have subscribe method', () => {
+    it("should have subscribe method", () => {
       expect(controller.subscribe).toBeDefined();
-      expect(typeof controller.subscribe).toBe('function');
+      expect(typeof controller.subscribe).toBe("function");
     });
 
-    it('should have unsubscribe method', () => {
+    it("should have unsubscribe method", () => {
       expect(controller.unsubscribe).toBeDefined();
-      expect(typeof controller.unsubscribe).toBe('function');
+      expect(typeof controller.unsubscribe).toBe("function");
     });
 
-    it('should have getSubscriptions method', () => {
+    it("should have getSubscriptions method", () => {
       expect(controller.getSubscriptions).toBeDefined();
-      expect(typeof controller.getSubscriptions).toBe('function');
+      expect(typeof controller.getSubscriptions).toBe("function");
     });
 
-    it('should have sendTestNotification method', () => {
+    it("should have sendTestNotification method", () => {
       expect(controller.sendTestNotification).toBeDefined();
-      expect(typeof controller.sendTestNotification).toBe('function');
+      expect(typeof controller.sendTestNotification).toBe("function");
     });
 
-    it('should have getStats method', () => {
+    it("should have getStats method", () => {
       expect(controller.getStats).toBeDefined();
-      expect(typeof controller.getStats).toBe('function');
+      expect(typeof controller.getStats).toBe("function");
     });
   });
 
-  describe('Service injection', () => {
-    it('should inject PushService correctly', () => {
+  describe("Service injection", () => {
+    it("should inject PushService correctly", () => {
       expect(mockService).toBeDefined();
       expect(mockService.getUserPublicKey).toBeDefined();
       expect(mockService.subscribe).toBeDefined();

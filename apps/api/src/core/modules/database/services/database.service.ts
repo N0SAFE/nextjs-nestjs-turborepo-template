@@ -9,51 +9,53 @@ export type Database = NodePgDatabase<typeof schema>;
 
 @Injectable()
 export class DatabaseService {
-    private readonly _db: Database;
+  private readonly _db: Database;
 
-    constructor(@Inject(DATABASE_CONNECTION) _db?: Database) {
-        if (!_db) {
-            throw new Error("Database connection is not initialized");
-        }
-        this._db = _db;
+  constructor(@Inject(DATABASE_CONNECTION) _db?: Database) {
+    if (!_db) {
+      throw new Error("Database connection is not initialized");
     }
+    this._db = _db;
+  }
 
-    /**
-     * Get the Drizzle database instance
-     * This provides direct access to the Drizzle ORM with full schema typing
-     */
-    get db(): Database {
-        return this._db;
+  /**
+   * Get the Drizzle database instance
+   * This provides direct access to the Drizzle ORM with full schema typing
+   */
+  get db(): Database {
+    return this._db;
+  }
+
+  /**
+   * Health check method to verify database connectivity
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      // Simple query to check if database is accessible
+      await this._db.execute("SELECT 1");
+      return true;
+    } catch (error) {
+      logger.error("Database health check failed", { error });
+      return false;
     }
+  }
 
-    /**
-     * Health check method to verify database connectivity
-     */
-    async isHealthy(): Promise<boolean> {
-        try {
-            // Simple query to check if database is accessible
-            await this._db.execute("SELECT 1");
-            return true;
-        } catch (error) {
-            logger.error("Database health check failed", { error });
-            return false;
-        }
-    }
+  /**
+   * Get database connection info (without sensitive data)
+   */
+  getConnectionInfo(): {
+    hasConnection: boolean;
+    databaseUrl: string;
+  } {
+    const connectionString =
+      process.env.DATABASE_URL ??
+      "postgresql://postgres:password@localhost:5432/mydb";
+    // Remove password from the URL for logging
+    const sanitizedUrl = connectionString.replace(/:([^:]+)@/, ":***@");
 
-    /**
-     * Get database connection info (without sensitive data)
-     */
-    getConnectionInfo(): {
-        hasConnection: boolean;
-        databaseUrl: string;
-    } {
-        const connectionString = process.env.DATABASE_URL ?? "postgresql://postgres:password@localhost:5432/mydb";
-        // Remove password from the URL for logging
-        const sanitizedUrl = connectionString.replace(/:([^:]+)@/, ":***@");
-
-        return {
-            hasConnection: !!this._db,
-            databaseUrl: sanitizedUrl,
-        };
-    }
+    return {
+      hasConnection: !!this._db,
+      databaseUrl: sanitizedUrl,
+    };
+  }
 }

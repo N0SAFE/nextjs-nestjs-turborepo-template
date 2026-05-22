@@ -47,7 +47,7 @@ export type FieldFilterConfig = {
  * const config = createFilteringConfigSchema({
  *   name: { schema: z.string(), operators: ["eq", "like", "ilike"] },
  *   price: { schema: z.number(), operators: ["gt", "gte", "lt", "lte", "between"] },
- *   categoryId: z.string().uuid(),
+ *   categoryId: z.uuid(),
  *   inStock: z.boolean()
  * }, {
  *   allowLogicalOperators: true,
@@ -103,7 +103,7 @@ export function createFilteringConfigSchema<
  * const config = createFilteringConfigSchema({
  *   name: { schema: z.string(), operators: ["eq", "like", "ilike"] },
  *   price: { schema: z.number(), operators: ["gt", "gte", "lt", "lte", "between"] },
- *   categoryId: z.string().uuid(),
+ *   categoryId: z.uuid(),
  *   inStock: z.boolean()
  * });
  * const filterSchema = createFilteringSchema(config);

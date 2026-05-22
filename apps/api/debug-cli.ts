@@ -10,19 +10,27 @@ async function test() {
   const app = await NestFactory.createApplicationContext(CLIModule, {
     logger: ["error", "warn"],
   });
-  
+
   console.log("App context created");
-  
+
   try {
     const dbServiceByToken = app.get(DATABASE_SERVICE);
-    console.log("DatabaseService by token:", !!dbServiceByToken, dbServiceByToken?.constructor?.name);
+    console.log(
+      "DatabaseService by token:",
+      !!dbServiceByToken,
+      dbServiceByToken?.constructor?.name,
+    );
   } catch (e: any) {
     console.log("DatabaseService by token ERROR:", e.message);
   }
-  
+
   try {
     const dbServiceByClass = app.get(DatabaseService);
-    console.log("DatabaseService by class:", !!dbServiceByClass, dbServiceByClass?.constructor?.name);
+    console.log(
+      "DatabaseService by class:",
+      !!dbServiceByClass,
+      dbServiceByClass?.constructor?.name,
+    );
   } catch (e: any) {
     console.log("DatabaseService by class ERROR:", e.message);
   }
@@ -31,18 +39,27 @@ async function test() {
     // Use resolve() for scoped providers
     const seedCommand = await app.resolve(SeedCommand);
     console.log("SeedCommand resolved via resolve():", !!seedCommand);
-    console.log("SeedCommand.databaseService:", !!(seedCommand as any).databaseService);
+    console.log(
+      "SeedCommand.databaseService:",
+      !!(seedCommand as any).databaseService,
+    );
     console.log("SeedCommand.authService:", !!(seedCommand as any).authService);
-    console.log("SeedCommand.configService:", !!(seedCommand as any).configService);
-    
+    console.log(
+      "SeedCommand.configService:",
+      !!(seedCommand as any).configService,
+    );
+
     if ((seedCommand as any).databaseService) {
-      console.log("databaseService type:", (seedCommand as any).databaseService.constructor?.name);
+      console.log(
+        "databaseService type:",
+        (seedCommand as any).databaseService.constructor?.name,
+      );
     }
   } catch (e: any) {
     console.log("SeedCommand ERROR:", e.message);
     console.error(e);
   }
-  
+
   await app.close();
 }
 

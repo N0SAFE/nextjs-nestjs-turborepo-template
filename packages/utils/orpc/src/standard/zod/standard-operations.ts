@@ -1106,7 +1106,7 @@ export class ZodStandardOperations<
     streamingList(options?: (ZodListOperationOptions & { path?: HTTPPath }) | (BaseListPlainOptions & { path?: HTTPPath })) {
         const listOptions = options && "path" in options
             ? (() => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                 
                 const { path: _path, ...rest } = options;
                 return Object.keys(rest).length > 0 ? rest : undefined;
             })()

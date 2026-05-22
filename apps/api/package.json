@@ -57,6 +57,7 @@
     "@repo/auth": "*",
     "@repo/env": "*",
     "@repo/logger": "*",
+    "@repo/nestjs-events": "*",
     "@scalar/nestjs-api-reference": "catalog:api:nest",
     "@thallesp/nestjs-better-auth": "catalog:auth",
     "@vitest/coverage-istanbul": "catalog:testing",

@@ -9,20 +9,20 @@
  * @template TAuth - Auth instance type with required API methods
  */
 
-import type { Auth as BetterAuthInstance } from 'better-auth';
+import type { Auth as BetterAuthInstance } from "better-auth";
 import type {
   BasePluginWrapper,
   AnyPermissionBuilder,
   InferStatementFromBuilder,
   InferRolesFromBuilder,
-} from '@repo/auth/permissions/plugins';
+} from "@repo/auth/permissions/plugins";
 import {
   BaseMiddlewareCheck,
   createAuthError,
   type MiddlewareCheck,
   type MiddlewareContext,
   type MiddlewareErrorCode,
-} from './middleware-check';
+} from "./middleware-check";
 
 // ============================================================================
 // Type Constraints
@@ -33,7 +33,7 @@ import {
  * Matches BasePluginWrapper's TAuth constraint exactly.
  */
 export interface BaseAuthConstraint {
-  $Infer: BetterAuthInstance['$Infer'];
+  $Infer: BetterAuthInstance["$Infer"];
 }
 
 /**
@@ -61,13 +61,15 @@ export type InferSession<TAuth extends BaseAuthConstraint> = TAuth extends {
 
 /**
  * Factory function that creates a plugin instance from runtime context.
- * This enables lazy plugin instantiation when checks execute, 
+ * This enables lazy plugin instantiation when checks execute,
  * giving access to runtime headers.
  */
 export type PluginFactory<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends BaseAuthConstraint,
-> = (context: MiddlewareContext) => BasePluginWrapper<TPermissionBuilder, TAuth>;
+> = (
+  context: MiddlewareContext,
+) => BasePluginWrapper<TPermissionBuilder, TAuth>;
 
 // ============================================================================
 // Session Check Implementation
@@ -81,8 +83,8 @@ export class SessionRequiredCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends AuthWithSessionAPI,
 > extends BaseMiddlewareCheck {
-  readonly name = 'requireSession' as const;
-  readonly description = 'Requires a valid authenticated session';
+  readonly name = "requireSession" as const;
+  readonly description = "Requires a valid authenticated session";
 
   private readonly getPlugin: PluginFactory<TPermissionBuilder, TAuth>;
 
@@ -93,7 +95,7 @@ export class SessionRequiredCheck<
 
   async check(context: MiddlewareContext): Promise<void> {
     const plugin = this.getPlugin(context);
-    
+
     // First check if session was pre-loaded in the plugin
     if (plugin.hasSession()) {
       return; // Session exists and is valid
@@ -109,11 +111,11 @@ export class SessionRequiredCheck<
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'UNAUTHORIZED';
+    return "UNAUTHORIZED";
   }
 
   getErrorMessage(): string {
-    return 'Authentication required. Please log in.';
+    return "Authentication required. Please log in.";
   }
 }
 
@@ -137,7 +139,7 @@ export class SessionRequiredCheck<
  * const middlewares = new AdminMiddlewareDefinition(
  *   (context) => registry.create('admin', { headers: context.headers })
  * );
- * 
+ *
  * // When check runs, plugin is created with runtime headers
  * const check = middlewares.hasPermission({ user: ['read'] });
  * await check.check({ headers: request.headers, ... });
@@ -190,7 +192,10 @@ export abstract class BaseMiddlewareDefinition<
    */
   requireSession(): MiddlewareCheck {
     return new SessionRequiredCheck(
-      this.pluginFactory as unknown as PluginFactory<TPermissionBuilder, AuthWithSessionAPI>
+      this.pluginFactory as unknown as PluginFactory<
+        TPermissionBuilder,
+        AuthWithSessionAPI
+      >,
     );
   }
 }
@@ -204,49 +209,44 @@ export abstract class BaseMiddlewareDefinition<
  */
 export type AnyMiddlewareDefinition = BaseMiddlewareDefinition<
   AnyPermissionBuilder,
-  { api: { getSession: (opts: { headers: Headers }) => Promise<unknown> }; $Infer: BetterAuthInstance['$Infer'] }
+  {
+    api: { getSession: (opts: { headers: Headers }) => Promise<unknown> };
+    $Infer: BetterAuthInstance["$Infer"];
+  }
 >;
 
 /**
  * Infer the permission builder type from a middleware definition
  */
-export type InferBuilderFromDefinition<T> = T extends BaseMiddlewareDefinition<
-  infer TBuilder,
-  BaseAuthConstraint
->
-  ? TBuilder
-  : never;
+export type InferBuilderFromDefinition<T> =
+  T extends BaseMiddlewareDefinition<infer TBuilder, BaseAuthConstraint>
+    ? TBuilder
+    : never;
 
 /**
  * Infer the auth type from a middleware definition
  */
-export type InferAuthFromDefinition<T> = T extends BaseMiddlewareDefinition<
-  AnyPermissionBuilder,
-  infer TAuth
->
-  ? TAuth
-  : never;
+export type InferAuthFromDefinition<T> =
+  T extends BaseMiddlewareDefinition<AnyPermissionBuilder, infer TAuth>
+    ? TAuth
+    : never;
 
 /**
  * Infer statement type from a middleware definition (via its builder)
  */
-export type InferStatementFromDefinition<T> = T extends BaseMiddlewareDefinition<
-  infer TBuilder,
-  BaseAuthConstraint
->
-  ? TBuilder extends AnyPermissionBuilder
-    ? InferStatementFromBuilder<TBuilder>
-    : never
-  : never;
+export type InferStatementFromDefinition<T> =
+  T extends BaseMiddlewareDefinition<infer TBuilder, BaseAuthConstraint>
+    ? TBuilder extends AnyPermissionBuilder
+      ? InferStatementFromBuilder<TBuilder>
+      : never
+    : never;
 
 /**
  * Infer roles type from a middleware definition (via its builder)
  */
-export type InferRolesFromDefinition<T> = T extends BaseMiddlewareDefinition<
-  infer TBuilder,
-  BaseAuthConstraint
->
-  ? TBuilder extends AnyPermissionBuilder
-    ? InferRolesFromBuilder<TBuilder>
-    : never
-  : never;
+export type InferRolesFromDefinition<T> =
+  T extends BaseMiddlewareDefinition<infer TBuilder, BaseAuthConstraint>
+    ? TBuilder extends AnyPermissionBuilder
+      ? InferRolesFromBuilder<TBuilder>
+      : never
+    : never;

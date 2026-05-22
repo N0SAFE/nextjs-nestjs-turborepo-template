@@ -9,22 +9,22 @@ import { EnvModule } from "../../../config/env/env.module";
 
 @Global()
 @Module({
-    imports: [EnvModule],
-    providers: [
-        DatabaseService,
-        {
-            provide: DATABASE_CONNECTION,
-            useFactory: (envService: EnvService) => {
-                const pool = new Pool({
-                    connectionString: envService.get('DATABASE_URL')
-                });
-                return drizzle(pool, {
-                    schema: schema
-                });
-            },
-            inject: [EnvService]
-        }
-    ],
-    exports: [DatabaseService, DATABASE_CONNECTION]
+  imports: [EnvModule],
+  providers: [
+    DatabaseService,
+    {
+      provide: DATABASE_CONNECTION,
+      useFactory: (envService: EnvService) => {
+        const pool = new Pool({
+          connectionString: envService.get("DATABASE_URL"),
+        });
+        return drizzle(pool, {
+          schema: schema,
+        });
+      },
+      inject: [EnvService],
+    },
+  ],
+  exports: [DatabaseService, DATABASE_CONNECTION],
 })
 export class DatabaseModule {}

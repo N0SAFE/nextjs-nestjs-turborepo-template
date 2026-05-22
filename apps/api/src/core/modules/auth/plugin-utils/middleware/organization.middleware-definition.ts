@@ -23,11 +23,11 @@ import type {
   InferRoleNamesFromBuilder,
   ApiMethodsWithOrganizationPlugin,
   OrganizationsPermissionsPlugin,
-} from '@repo/auth/permissions/plugins';
+} from "@repo/auth/permissions/plugins";
 import {
   BaseMiddlewareDefinition,
   type AuthWithSessionAPI,
-} from './base.middleware-definition';
+} from "./base.middleware-definition";
 import {
   BaseMiddlewareCheck,
   resolveValue,
@@ -36,7 +36,7 @@ import {
   type MiddlewareErrorCode,
   type ValueOrResolver,
   type PermissionObject,
-} from './middleware-check';
+} from "./middleware-check";
 
 // ============================================================================
 // Type Constraints
@@ -46,8 +46,9 @@ import {
  * Organization plugin API constraint.
  * Extends AuthWithSessionAPI to include organization-specific API methods.
  */
-export type OrganizationAuthConstraint<TPermissionBuilder extends AnyPermissionBuilder> =
-  ApiMethodsWithOrganizationPlugin<TPermissionBuilder> & AuthWithSessionAPI;
+export type OrganizationAuthConstraint<
+  TPermissionBuilder extends AnyPermissionBuilder,
+> = ApiMethodsWithOrganizationPlugin<TPermissionBuilder> & AuthWithSessionAPI;
 
 /**
  * Factory function type for creating organization plugins lazily with context.
@@ -56,7 +57,9 @@ export type OrganizationAuthConstraint<TPermissionBuilder extends AnyPermissionB
 export type OrganizationPluginFactory<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
-> = (context: MiddlewareContext<TAuth>) => OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>;
+> = (
+  context: MiddlewareContext<TAuth>,
+) => OrganizationsPermissionsPlugin<TPermissionBuilder, TAuth>;
 
 /**
  * Member type extracted from listMembers return type.
@@ -87,23 +90,29 @@ export class HasOrganizationPermissionCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'hasOrganizationPermission' as const;
-  readonly description = 'Checks if user has the specified permissions within organization';
+  readonly name = "hasOrganizationPermission" as const;
+  readonly description =
+    "Checks if user has the specified permissions within organization";
   readonly permissions: PermissionObject;
 
-  private readonly getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>;
-  private readonly permissionsResolver: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>;
+  private readonly getPlugin: OrganizationPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  >;
+  private readonly permissionsResolver: ValueOrResolver<
+    InferStatementFromBuilder<TPermissionBuilder>
+  >;
 
   constructor(
     getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>,
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ) {
     super();
     this.getPlugin = getPlugin;
     this.permissionsResolver = permissions;
     // For metadata - resolve static permissions immediately if not a function
     this.permissions =
-      typeof permissions === 'function'
+      typeof permissions === "function"
         ? {}
         : (permissions as unknown as PermissionObject);
   }
@@ -115,16 +124,16 @@ export class HasOrganizationPermissionCheck<
     // Use plugin's assertCheckPermission which throws PermissionAssertionError
     await plugin.assertCheckPermission(
       permissions,
-      `Missing required organization permissions: ${JSON.stringify(permissions)}`
+      `Missing required organization permissions: ${JSON.stringify(permissions)}`,
     );
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'You do not have the required organization permissions.';
+    return "You do not have the required organization permissions.";
   }
 }
 
@@ -140,15 +149,19 @@ export class IsMemberOfCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'isMemberOf' as const;
-  readonly description = 'Checks if user is a member of the specified organization';
+  readonly name = "isMemberOf" as const;
+  readonly description =
+    "Checks if user is a member of the specified organization";
 
-  private readonly getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>;
+  private readonly getPlugin: OrganizationPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  >;
   private readonly organizationIdResolver: ValueOrResolver<string>;
 
   constructor(
     getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>,
-    organizationId: ValueOrResolver<string>
+    organizationId: ValueOrResolver<string>,
   ) {
     super();
     this.getPlugin = getPlugin;
@@ -156,13 +169,16 @@ export class IsMemberOfCheck<
   }
 
   async check(context: MiddlewareContext): Promise<void> {
-    const organizationId = await resolveValue(this.organizationIdResolver, context);
+    const organizationId = await resolveValue(
+      this.organizationIdResolver,
+      context,
+    );
     const plugin = this.getPlugin(context);
 
     // Get session (synchronous - returns cached session)
     const session = plugin.getSession();
     if (!session?.user.id) {
-      throw new Error('Session required to check organization membership');
+      throw new Error("Session required to check organization membership");
     }
 
     const userId = session.user.id;
@@ -175,16 +191,18 @@ export class IsMemberOfCheck<
     const isMember = members.some((member) => member.userId === userId);
 
     if (!isMember) {
-      throw new Error(`User is not a member of organization: ${organizationId}`);
+      throw new Error(
+        `User is not a member of organization: ${organizationId}`,
+      );
     }
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'You are not a member of this organization.';
+    return "You are not a member of this organization.";
   }
 }
 
@@ -200,19 +218,27 @@ export class HasOrganizationRoleCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'hasOrganizationRole' as const;
-  readonly description = 'Checks if user has one of the specified roles in organization';
+  readonly name = "hasOrganizationRole" as const;
+  readonly description =
+    "Checks if user has one of the specified roles in organization";
   readonly requiredRoles: readonly string[];
-  readonly matchMode: 'any' | 'all' = 'any';
+  readonly matchMode: "any" | "all" = "any";
 
-  private readonly getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>;
+  private readonly getPlugin: OrganizationPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  >;
   private readonly organizationIdResolver: ValueOrResolver<string>;
-  private readonly rolesResolver: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>;
+  private readonly rolesResolver: ValueOrResolver<
+    readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+  >;
 
   constructor(
     getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>,
     organizationId: ValueOrResolver<string>,
-    roles: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>
+    roles: ValueOrResolver<
+      readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+    >,
   ) {
     super();
     this.getPlugin = getPlugin;
@@ -220,18 +246,21 @@ export class HasOrganizationRoleCheck<
     this.rolesResolver = roles;
     // For metadata
     this.requiredRoles =
-      typeof roles === 'function' ? [] : (roles as readonly string[]);
+      typeof roles === "function" ? [] : (roles as readonly string[]);
   }
 
   async check(context: MiddlewareContext): Promise<void> {
-    const organizationId = await resolveValue(this.organizationIdResolver, context);
+    const organizationId = await resolveValue(
+      this.organizationIdResolver,
+      context,
+    );
     const roles = await resolveValue(this.rolesResolver, context);
     const plugin = this.getPlugin(context);
 
     // Get session (synchronous - returns cached session)
     const session = plugin.getSession();
     if (!session?.user.id) {
-      throw new Error('Session required to check organization role');
+      throw new Error("Session required to check organization role");
     }
 
     const userId = session.user.id;
@@ -244,7 +273,9 @@ export class HasOrganizationRoleCheck<
     const userMember = members.find((member) => member.userId === userId);
 
     if (!userMember) {
-      throw new Error(`User is not a member of organization: ${organizationId}`);
+      throw new Error(
+        `User is not a member of organization: ${organizationId}`,
+      );
     }
 
     // Check if user's role matches any of the required roles
@@ -254,17 +285,17 @@ export class HasOrganizationRoleCheck<
 
     if (!hasRole) {
       throw new Error(
-        `User does not have required role. Required: ${rolesArray.join(', ')}, Has: ${userRole}`
+        `User does not have required role. Required: ${rolesArray.join(", ")}, Has: ${userRole}`,
       );
     }
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'You do not have the required role in this organization.';
+    return "You do not have the required role in this organization.";
   }
 }
 
@@ -279,15 +310,18 @@ export class IsOrganizationOwnerCheck<
   TPermissionBuilder extends AnyPermissionBuilder,
   TAuth extends OrganizationAuthConstraint<TPermissionBuilder>,
 > extends BaseMiddlewareCheck {
-  readonly name = 'isOrganizationOwner' as const;
-  readonly description = 'Checks if user is the owner of the organization';
+  readonly name = "isOrganizationOwner" as const;
+  readonly description = "Checks if user is the owner of the organization";
 
-  private readonly getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>;
+  private readonly getPlugin: OrganizationPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  >;
   private readonly organizationIdResolver: ValueOrResolver<string>;
 
   constructor(
     getPlugin: OrganizationPluginFactory<TPermissionBuilder, TAuth>,
-    organizationId: ValueOrResolver<string>
+    organizationId: ValueOrResolver<string>,
   ) {
     super();
     this.getPlugin = getPlugin;
@@ -295,7 +329,10 @@ export class IsOrganizationOwnerCheck<
   }
 
   async check(context: MiddlewareContext): Promise<void> {
-    const organizationId = await resolveValue(this.organizationIdResolver, context);
+    const organizationId = await resolveValue(
+      this.organizationIdResolver,
+      context,
+    );
     const plugin = this.getPlugin(context);
 
     // Get organization details
@@ -304,7 +341,7 @@ export class IsOrganizationOwnerCheck<
     // Get session (synchronous - returns cached session)
     const session = plugin.getSession();
     if (!session?.user.id) {
-      throw new Error('Session required to check organization ownership');
+      throw new Error("Session required to check organization ownership");
     }
 
     const userId = session.user.id;
@@ -318,18 +355,20 @@ export class IsOrganizationOwnerCheck<
       const members = result.members as OrganizationMember[];
       const userMember = members.find((member) => member.userId === userId);
 
-      if (userMember?.role !== 'owner') {
-        throw new Error(`User is not the owner of organization: ${organizationId}`);
+      if (userMember?.role !== "owner") {
+        throw new Error(
+          `User is not the owner of organization: ${organizationId}`,
+        );
       }
     }
   }
 
   getErrorCode(): MiddlewareErrorCode {
-    return 'FORBIDDEN';
+    return "FORBIDDEN";
   }
 
   getErrorMessage(): string {
-    return 'You are not the owner of this organization.';
+    return "You are not the owner of this organization.";
   }
 }
 
@@ -374,11 +413,16 @@ export class OrganizationMiddlewareDefinition<
   /**
    * Plugin factory that creates OrganizationsPermissionsPlugin with runtime context.
    */
-  private readonly orgPluginFactory: OrganizationPluginFactory<TPermissionBuilder, TAuth>;
+  private readonly orgPluginFactory: OrganizationPluginFactory<
+    TPermissionBuilder,
+    TAuth
+  >;
 
-  constructor(pluginFactory: OrganizationPluginFactory<TPermissionBuilder, TAuth>) {
+  constructor(
+    pluginFactory: OrganizationPluginFactory<TPermissionBuilder, TAuth>,
+  ) {
     // Pass a base factory to parent (cast since parent accepts BasePluginWrapper factory)
-    super(pluginFactory)
+    super(pluginFactory);
     this.orgPluginFactory = pluginFactory;
   }
 
@@ -412,11 +456,11 @@ export class OrganizationMiddlewareDefinition<
    * ```
    */
   hasOrganizationPermission(
-    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>
+    permissions: ValueOrResolver<InferStatementFromBuilder<TPermissionBuilder>>,
   ): MiddlewareCheck {
     return new HasOrganizationPermissionCheck(
       this.orgPluginFactory,
-      permissions
+      permissions,
     );
   }
 
@@ -439,13 +483,8 @@ export class OrganizationMiddlewareDefinition<
    * middlewares.isMemberOf((ctx) => ctx.params.organizationId)
    * ```
    */
-  isMemberOf(
-    organizationId: ValueOrResolver<string>
-  ): MiddlewareCheck {
-    return new IsMemberOfCheck(
-      this.orgPluginFactory,
-      organizationId
-    );
+  isMemberOf(organizationId: ValueOrResolver<string>): MiddlewareCheck {
+    return new IsMemberOfCheck(this.orgPluginFactory, organizationId);
   }
 
   // ==========================================================================
@@ -474,12 +513,14 @@ export class OrganizationMiddlewareDefinition<
    */
   hasOrganizationRole(
     organizationId: ValueOrResolver<string>,
-    roles: ValueOrResolver<readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]>
+    roles: ValueOrResolver<
+      readonly InferRoleNamesFromBuilder<TPermissionBuilder>[]
+    >,
   ): MiddlewareCheck {
     return new HasOrganizationRoleCheck(
       this.orgPluginFactory,
       organizationId,
-      roles
+      roles,
     );
   }
 
@@ -499,11 +540,8 @@ export class OrganizationMiddlewareDefinition<
    * ```
    */
   isOrganizationOwner(
-    organizationId: ValueOrResolver<string>
+    organizationId: ValueOrResolver<string>,
   ): MiddlewareCheck {
-    return new IsOrganizationOwnerCheck(
-      this.orgPluginFactory,
-      organizationId
-    );
+    return new IsOrganizationOwnerCheck(this.orgPluginFactory, organizationId);
   }
 }

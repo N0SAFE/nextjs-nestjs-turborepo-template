@@ -1,5 +1,14 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { UserRepository, type CreateUserInput, type UpdateUserInput, type GetUsersInput } from '../repositories/user.repository';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import {
+  UserRepository,
+  type CreateUserInput,
+  type UpdateUserInput,
+  type GetUsersInput,
+} from "../repositories/user.repository";
 
 @Injectable()
 export class UserService {
@@ -12,7 +21,7 @@ export class UserService {
     // Check if user already exists with this email
     const existingUser = await this.userRepository.findByEmail(input.email);
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException("User with this email already exists");
     }
 
     return await this.userRepository.create(input);
@@ -63,7 +72,7 @@ export class UserService {
     if (input.email && input.email !== existingUser.email) {
       const emailExists = await this.userRepository.existsByEmail(input.email);
       if (emailExists) {
-        throw new ConflictException('User with this email already exists');
+        throw new ConflictException("User with this email already exists");
       }
     }
 

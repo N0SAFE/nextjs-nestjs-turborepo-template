@@ -20,7 +20,7 @@ RUN ln -sf /usr/local/bin/node /usr/bin/node && \
     ln -sf /usr/local/bin/npx /usr/bin/npx
 
 # Install global tools with cache mount
-RUN --mount=type=cache,target=/root/.bun bun install -g turbo@^2 @nestjs/cli node-gyp
+RUN --mount=type=cache,target=/root/.bun,sharing=locked bun install -g turbo@^2 @nestjs/cli node-gyp
 
 WORKDIR /app
 
@@ -34,7 +34,7 @@ WORKDIR /app
 COPY . .
 
 # Run turbo prune to identify which apps/packages are needed for api
-RUN --mount=type=cache,target=/root/.bun \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
     bun x turbo prune api --docker
 
 # ===================================
@@ -50,8 +50,8 @@ COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/bun.lock ./bun.lock
 
 # Install dependencies for pruned workspaces only
-RUN --mount=type=cache,target=/root/.bun \
-    --mount=type=cache,target=/root/.cache \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
+    --mount=type=cache,target=/root/.cache,sharing=locked \
     bun install --frozen-lockfile || bun install
 
 # ===================================
@@ -120,11 +120,12 @@ RUN --mount=type=bind,from=installer,source=/app,target=/mnt/installer \
         cd /mnt/installer && tar cf - "$relDir" | tar xf - -C /app --owner=root --group=root; \
     done
 
-# Copy turbo cache directories
-COPY --parents --chmod=a+w .turbo/ **/.turbo/ ./
+# Ensure turbo cache directories exist (optional host cache dirs may be absent)
+RUN mkdir -p /app/.turbo /app/apps/api/.turbo && \
+    chmod -R a+w /app/.turbo /app/apps/api/.turbo
 
 # Build api app dependencies (packages that api depends on)
-RUN --mount=type=cache,target=/root/.bun \
+RUN --mount=type=cache,target=/root/.bun,sharing=locked \
     bun x turbo run build --filter=api... --filter=!api
 
 # Start the API dev server at container runtime

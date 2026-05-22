@@ -7,7 +7,7 @@
  * @param url - The URL to normalize
  * @returns The normalized URL without trailing slash
  */
-export const normalizeUrl = (url: string): string => url.replace(/\/$/, '');
+export const normalizeUrl = (url: string): string => url.replace(/\/$/, "");
 
 /**
  * Build list of allowed origins from environment variables
@@ -33,7 +33,7 @@ export const buildAllowedOrigins = (env: {
 
   // Add additional trusted origins
   if (env.TRUSTED_ORIGINS) {
-    env.TRUSTED_ORIGINS.split(',').forEach(origin => {
+    env.TRUSTED_ORIGINS.split(",").forEach((origin) => {
       const trimmed = origin.trim();
       if (trimmed) {
         allowedOrigins.push(normalizeUrl(trimmed));
@@ -43,7 +43,7 @@ export const buildAllowedOrigins = (env: {
 
   // Fallback to localhost:3000 if no origins configured
   if (allowedOrigins.length === 0) {
-    allowedOrigins.push('http://localhost:3000');
+    allowedOrigins.push("http://localhost:3000");
   }
 
   return allowedOrigins;

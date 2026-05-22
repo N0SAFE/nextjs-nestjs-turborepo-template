@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../../core/modules/database/services/database.service';
+import { Injectable } from "@nestjs/common";
+import { DatabaseService } from "../../../core/modules/database/services/database.service";
 
 @Injectable()
 export class HealthRepository {
@@ -10,26 +10,27 @@ export class HealthRepository {
    */
   async checkDatabaseHealth() {
     const startTime = Date.now();
-    
+
     try {
       // Try to perform a simple query
-      await this.databaseService.db.execute('SELECT 1');
-      
+      await this.databaseService.db.execute("SELECT 1");
+
       const responseTime = Date.now() - startTime;
-      
+
       return {
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         responseTime,
       };
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      
+
       return {
-        status: 'error',
+        status: "error",
         timestamp: new Date().toISOString(),
         responseTime,
-        error: error instanceof Error ? error.message : 'Unknown database error',
+        error:
+          error instanceof Error ? error.message : "Unknown database error",
       };
     }
   }
@@ -39,7 +40,7 @@ export class HealthRepository {
    */
   getMemoryInfo() {
     const memUsage = process.memoryUsage();
-    
+
     return {
       used: memUsage.heapUsed,
       free: memUsage.heapTotal - memUsage.heapUsed,

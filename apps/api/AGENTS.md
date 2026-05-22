@@ -17,10 +17,12 @@ Follow the root `AGENTS.md` first. This file adds API-specific guidance.
 ## Workflows
 
 Development (Docker-first):
+
 - `bun run dev:api` — start API + DB
 - Logs: `bun run dev:api:logs`
 
 Database (Mandatory MCP Tools):
+
 - Local (host):
   - `api-db { action: "generate" }` — generate migrations
   - `api-db { action: "push" }` — push schema
@@ -30,9 +32,11 @@ Database (Mandatory MCP Tools):
   - To open a shell inside the API container: `bun run dev:api:run`, then `bun --bun run db:seed`
 
 Auth (Mandatory MCP Tool):
+
 - Local (host): `auth-generate` — regenerate auth schema/types whenever `src/auth.ts` or auth plugins change
 
 Testing and checks:
+
 - Type-check: `bun run api -- type-check`
 - Test: `bun run api -- test`
 

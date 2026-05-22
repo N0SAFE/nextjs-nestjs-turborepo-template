@@ -11,17 +11,21 @@
  * @module middleware-converter
  */
 
-import type { CanActivate, ExecutionContext, Type } from '@nestjs/common';
+import type { CanActivate, ExecutionContext, Type } from "@nestjs/common";
 import {
   Injectable,
   ForbiddenException,
   UnauthorizedException,
   BadRequestException,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { os } from '@orpc/server';
-import type { MiddlewareCheck, MiddlewareContext, MiddlewareErrorCode } from './middleware-check';
-import type { ORPCContextWithAuthOnly } from '@/core/modules/auth/orpc';
+} from "@nestjs/common";
+import { os } from "@orpc/server";
+import type {
+  MiddlewareCheck,
+  MiddlewareContext,
+  MiddlewareErrorCode,
+} from "./middleware-check";
+import type { ORPCContextWithAuthOnly } from "@/core/modules/auth/orpc";
 
 // ============================================================================
 // Error Mapping
@@ -30,15 +34,18 @@ import type { ORPCContextWithAuthOnly } from '@/core/modules/auth/orpc';
 /**
  * Map middleware error codes to NestJS HTTP exceptions.
  */
-function createNestException(code: MiddlewareErrorCode, message: string): Error {
+function createNestException(
+  code: MiddlewareErrorCode,
+  message: string,
+): Error {
   switch (code) {
-    case 'UNAUTHORIZED':
+    case "UNAUTHORIZED":
       return new UnauthorizedException(message);
-    case 'FORBIDDEN':
+    case "FORBIDDEN":
       return new ForbiddenException(message);
-    case 'BAD_REQUEST':
+    case "BAD_REQUEST":
       return new BadRequestException(message);
-    case 'NOT_FOUND':
+    case "NOT_FOUND":
       return new BadRequestException(message); // Map NOT_FOUND to BadRequest for API
     default:
       return new InternalServerErrorException(message);
@@ -51,16 +58,16 @@ function createNestException(code: MiddlewareErrorCode, message: string): Error 
  */
 function mapToOrpcErrorCode(code: MiddlewareErrorCode): string {
   switch (code) {
-    case 'UNAUTHORIZED':
-      return 'UNAUTHORIZED';
-    case 'FORBIDDEN':
-      return 'FORBIDDEN';
-    case 'BAD_REQUEST':
-      return 'BAD_REQUEST';
-    case 'NOT_FOUND':
-      return 'NOT_FOUND';
+    case "UNAUTHORIZED":
+      return "UNAUTHORIZED";
+    case "FORBIDDEN":
+      return "FORBIDDEN";
+    case "BAD_REQUEST":
+      return "BAD_REQUEST";
+    case "NOT_FOUND":
+      return "NOT_FOUND";
     default:
-      return 'INTERNAL_SERVER_ERROR';
+      return "INTERNAL_SERVER_ERROR";
   }
 }
 
@@ -89,7 +96,9 @@ interface NestGuardOptions {
  * Default context extractor for HTTP requests.
  * Extracts params, query, body, and headers from the request.
  */
-function defaultContextExtractor(executionContext: ExecutionContext): MiddlewareContext {
+function defaultContextExtractor(
+  executionContext: ExecutionContext,
+): MiddlewareContext {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const request = executionContext.switchToHttp().getRequest();
 
@@ -134,9 +143,10 @@ function defaultContextExtractor(executionContext: ExecutionContext): Middleware
  */
 export function createNestGuard(
   check: MiddlewareCheck,
-  options: NestGuardOptions = {}
+  options: NestGuardOptions = {},
 ): Type<CanActivate> {
-  const { contextExtractor = defaultContextExtractor, logErrors = false } = options;
+  const { contextExtractor = defaultContextExtractor, logErrors = false } =
+    options;
 
   @Injectable()
   class MiddlewareGuard implements CanActivate {
@@ -161,7 +171,7 @@ export function createNestGuard(
   }
 
   // Set a meaningful name for debugging
-  Object.defineProperty(MiddlewareGuard, 'name', {
+  Object.defineProperty(MiddlewareGuard, "name", {
     value: `${check.name}Guard`,
     writable: false,
   });
@@ -193,9 +203,10 @@ export function createNestGuard(
  */
 export function createCompositeNestGuard(
   checks: MiddlewareCheck[],
-  options: NestGuardOptions = {}
+  options: NestGuardOptions = {},
 ): Type<CanActivate> {
-  const { contextExtractor = defaultContextExtractor, logErrors = false } = options;
+  const { contextExtractor = defaultContextExtractor, logErrors = false } =
+    options;
 
   @Injectable()
   class CompositeMiddlewareGuard implements CanActivate {
@@ -223,8 +234,8 @@ export function createCompositeNestGuard(
   }
 
   // Set a meaningful name showing all check names
-  const checkNames = checks.map((c) => c.name).join('+');
-  Object.defineProperty(CompositeMiddlewareGuard, 'name', {
+  const checkNames = checks.map((c) => c.name).join("+");
+  Object.defineProperty(CompositeMiddlewareGuard, "name", {
     value: `CompositeGuard[${checkNames}]`,
     writable: false,
   });
@@ -239,9 +250,9 @@ export function createCompositeNestGuard(
 /**
  * Context available to NestJS guard resolver functions.
  * Contains the typed HTTP request parts for dynamic value resolution.
- * 
+ *
  * @template TInput - Shape of expected request data
- * 
+ *
  * @example
  * ```typescript
  * // Define expected request structure
@@ -250,7 +261,7 @@ export function createCompositeNestGuard(
  *   query: { filter?: string };
  *   body: { name: string };
  * }
- * 
+ *
  * // Create typed resolver
  * const getOrgId = (ctx: NestGuardOptionsContext<MyRequest>) => ctx.params.organizationId;
  * ```
@@ -269,46 +280,48 @@ interface NestGuardOptionsContext<TInput = unknown> {
 /**
  * Resolver function that extracts a value from typed NestJS guard context.
  * Use this for type-safe access to HTTP request parts in guards.
- * 
+ *
  * @template T - The type of value being resolved
  * @template TInput - The expected request shape
- * 
+ *
  * @example
  * ```typescript
  * // Type-safe params resolver
- * const getOrgId: NestInputResolver<string, { params: { organizationId: string } }> = 
+ * const getOrgId: NestInputResolver<string, { params: { organizationId: string } }> =
  *   (ctx) => ctx.params.organizationId;
- * 
+ *
  * // Type-safe body resolver
- * const getResourceName: NestInputResolver<string, { body: { name: string } }> = 
+ * const getResourceName: NestInputResolver<string, { body: { name: string } }> =
  *   (ctx) => ctx.body.name;
  * ```
  */
 type NestInputResolver<T, TInput = unknown> = (
-  context: NestGuardOptionsContext<TInput>
+  context: NestGuardOptionsContext<TInput>,
 ) => T | Promise<T>;
 
 /**
  * Either a static value or a resolver function for NestJS guard context.
- * 
+ *
  * @template T - The type of value
  * @template TInput - The expected request shape
- * 
+ *
  * @example
  * ```typescript
  * // Static value (no type parameter needed)
  * const orgId: NestValueOrResolver<string> = 'org_123';
- * 
+ *
  * // Dynamic resolver from params
- * const orgId: NestValueOrResolver<string, { params: { organizationId: string } }> = 
+ * const orgId: NestValueOrResolver<string, { params: { organizationId: string } }> =
  *   (ctx) => ctx.params.organizationId;
- * 
+ *
  * // Dynamic resolver from body
- * const permission: NestValueOrResolver<string[], { body: { permissions: string[] } }> = 
+ * const permission: NestValueOrResolver<string[], { body: { permissions: string[] } }> =
  *   (ctx) => ctx.body.permissions;
  * ```
  */
-type NestValueOrResolver<T, TInput = unknown> = T | NestInputResolver<T, TInput>;
+type NestValueOrResolver<T, TInput = unknown> =
+  | T
+  | NestInputResolver<T, TInput>;
 
 /**
  * Resolve a value from NestValueOrResolver.
@@ -316,9 +329,9 @@ type NestValueOrResolver<T, TInput = unknown> = T | NestInputResolver<T, TInput>
  */
 async function resolveNestValue<T, TInput = unknown>(
   valueOrResolver: NestValueOrResolver<T, TInput>,
-  context: NestGuardOptionsContext<TInput>
+  context: NestGuardOptionsContext<TInput>,
 ): Promise<T> {
-  if (typeof valueOrResolver === 'function') {
+  if (typeof valueOrResolver === "function") {
     return (valueOrResolver as NestInputResolver<T, TInput>)(context);
   }
   return valueOrResolver;
@@ -328,17 +341,19 @@ async function resolveNestValue<T, TInput = unknown>(
  * Build NestGuardOptionsContext from NestJS ExecutionContext.
  */
 function buildNestGuardContext<TInput = unknown>(
-  executionContext: ExecutionContext
+  executionContext: ExecutionContext,
 ): NestGuardOptionsContext<TInput> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const request = executionContext.switchToHttp().getRequest();
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const params = (request.params ?? {}) as NestGuardOptionsContext<TInput>['params'];
+  const params = (request.params ??
+    {}) as NestGuardOptionsContext<TInput>["params"];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const query = (request.query ?? {}) as NestGuardOptionsContext<TInput>['query'];
+  const query = (request.query ??
+    {}) as NestGuardOptionsContext<TInput>["query"];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const body = request.body as NestGuardOptionsContext<TInput>['body'];
+  const body = request.body as NestGuardOptionsContext<TInput>["body"];
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   const headers = request.headers as Headers;
 
@@ -347,7 +362,7 @@ function buildNestGuardContext<TInput = unknown>(
 
 /**
  * Create a dynamic NestJS Guard that resolves values from HTTP request at runtime.
- * 
+ *
  * This allows type-safe access to route params, query strings, and body data
  * for determining authorization requirements dynamically.
  *
@@ -362,12 +377,12 @@ function buildNestGuardContext<TInput = unknown>(
  * const OrgMemberGuard = createDynamicNestGuard<{ params: { orgId: string } }>(
  *   async (ctx) => middlewares.organization.isMemberOf(ctx.params.orgId)
  * );
- * 
+ *
  * // Use in controller
  * @UseGuards(OrgMemberGuard)
  * @Get('org/:orgId/projects')
  * getProjects(@Param('orgId') orgId: string) { ... }
- * 
+ *
  * // Guard with multiple resolved values
  * const RoleGuard = createDynamicNestGuard<{ params: { orgId: string }; query: { role: string } }>(
  *   async (ctx) => middlewares.organization.hasOrganizationRole(ctx.params.orgId, [ctx.query.role])
@@ -375,8 +390,10 @@ function buildNestGuardContext<TInput = unknown>(
  * ```
  */
 export function createDynamicNestGuard<TInput = unknown>(
-  checkFactory: (context: NestGuardOptionsContext<TInput>) => MiddlewareCheck | Promise<MiddlewareCheck>,
-  options: NestGuardOptions = {}
+  checkFactory: (
+    context: NestGuardOptionsContext<TInput>,
+  ) => MiddlewareCheck | Promise<MiddlewareCheck>,
+  options: NestGuardOptions = {},
 ): Type<CanActivate> {
   const { logErrors = false } = options;
 
@@ -385,10 +402,10 @@ export function createDynamicNestGuard<TInput = unknown>(
     async canActivate(executionContext: ExecutionContext): Promise<boolean> {
       // Build typed context from HTTP request
       const nestContext = buildNestGuardContext<TInput>(executionContext);
-      
+
       // Create the check using the factory
       const check = await checkFactory(nestContext);
-      
+
       // Build MiddlewareContext for check execution
       const middlewareContext = defaultContextExtractor(executionContext);
 
@@ -410,8 +427,8 @@ export function createDynamicNestGuard<TInput = unknown>(
   }
 
   // Set a dynamic name for debugging
-  Object.defineProperty(DynamicMiddlewareGuard, 'name', {
-    value: 'DynamicGuard',
+  Object.defineProperty(DynamicMiddlewareGuard, "name", {
+    value: "DynamicGuard",
     writable: false,
   });
 
@@ -433,7 +450,7 @@ export function createDynamicNestGuard<TInput = unknown>(
  * ```typescript
  * // Guard that resolves organizationId from route params
  * const OrgMemberGuard = createDynamicNestGuardWithResolver<
- *   string, 
+ *   string,
  *   { params: { organizationId: string } }
  * >(
  *   (orgId) => middlewares.organization.isMemberOf(orgId),
@@ -444,15 +461,12 @@ export function createDynamicNestGuard<TInput = unknown>(
 export function createDynamicNestGuardWithResolver<T, TInput = unknown>(
   checkCreator: (value: T) => MiddlewareCheck,
   resolver: NestValueOrResolver<T, TInput>,
-  options: NestGuardOptions = {}
+  options: NestGuardOptions = {},
 ): Type<CanActivate> {
-  return createDynamicNestGuard<TInput>(
-    async (ctx) => {
-      const value = await resolveNestValue(resolver, ctx);
-      return checkCreator(value);
-    },
-    options
-  );
+  return createDynamicNestGuard<TInput>(async (ctx) => {
+    const value = await resolveNestValue(resolver, ctx);
+    return checkCreator(value);
+  }, options);
 }
 
 // ============================================================================
@@ -462,7 +476,7 @@ export function createDynamicNestGuardWithResolver<T, TInput = unknown>(
 /**
  * ORPC middleware options context - what's available inside middleware.
  * This is used by resolver functions to access input and context.
- * 
+ *
  * @template TInput - The typed input for this procedure
  * @template TContext - The accumulated context from previous middlewares
  * @template TMeta - Metadata type
@@ -470,7 +484,7 @@ export function createDynamicNestGuardWithResolver<T, TInput = unknown>(
 interface OrpcMiddlewareOptionsContext<
   TInput = unknown,
   TContext = unknown,
-  TMeta = unknown
+  TMeta = unknown,
 > {
   /** The typed input from the procedure */
   input: TInput;
@@ -487,49 +501,50 @@ interface OrpcMiddlewareOptionsContext<
 /**
  * Resolver function that extracts a value from typed ORPC context.
  * Use this for type-safe access to procedure input and accumulated context in middleware.
- * 
+ *
  * @template T - The type of value being resolved
  * @template TInput - The typed input object from the ORPC procedure
  * @template TContext - The accumulated context from previous middlewares
- * 
+ *
  * @example
  * ```typescript
  * // Type-safe input resolver
- * const getOrgId: OrpcInputResolver<string, { organizationId: string }> = 
+ * const getOrgId: OrpcInputResolver<string, { organizationId: string }> =
  *   (ctx) => ctx.input.organizationId;
- * 
+ *
  * // Type-safe context resolver (access accumulated context)
- * const getUserId: OrpcInputResolver<string, unknown, { auth: { user: { id: string } } }> = 
+ * const getUserId: OrpcInputResolver<string, unknown, { auth: { user: { id: string } } }> =
  *   (ctx) => ctx.context.auth.user.id;
  * ```
  */
 type OrpcInputResolver<T, TInput = unknown, TContext = unknown> = (
-  context: OrpcMiddlewareOptionsContext<TInput, TContext>
+  context: OrpcMiddlewareOptionsContext<TInput, TContext>,
 ) => T | Promise<T>;
 
 /**
  * Either a static value or a resolver function for ORPC input/context.
- * 
+ *
  * @template T - The type of value
  * @template TInput - The typed input from ORPC procedure (defaults to unknown)
  * @template TContext - The accumulated context from previous middlewares (defaults to unknown)
- * 
+ *
  * @example
  * ```typescript
  * // Static value
  * const orgId: OrpcValueOrResolver<string> = 'org_123';
- * 
+ *
  * // Typed resolver from input
- * const orgId: OrpcValueOrResolver<string, { organizationId: string }> = 
+ * const orgId: OrpcValueOrResolver<string, { organizationId: string }> =
  *   (ctx) => ctx.input.organizationId;
- * 
+ *
  * // Typed resolver from context
- * const userId: OrpcValueOrResolver<string, unknown, { auth: { user: { id: string } } }> = 
+ * const userId: OrpcValueOrResolver<string, unknown, { auth: { user: { id: string } } }> =
  *   (ctx) => ctx.context.auth.user.id;
  * ```
  */
-type OrpcValueOrResolver<T, TInput = unknown, TContext = unknown> = 
-  T | OrpcInputResolver<T, TInput, TContext>;
+type OrpcValueOrResolver<T, TInput = unknown, TContext = unknown> =
+  | T
+  | OrpcInputResolver<T, TInput, TContext>;
 
 /**
  * Resolve a value from OrpcValueOrResolver.
@@ -537,9 +552,9 @@ type OrpcValueOrResolver<T, TInput = unknown, TContext = unknown> =
  */
 async function resolveOrpcValue<T, TInput, TContext = unknown>(
   valueOrResolver: OrpcValueOrResolver<T, TInput, TContext>,
-  context: OrpcMiddlewareOptionsContext<TInput, TContext>
+  context: OrpcMiddlewareOptionsContext<TInput, TContext>,
 ): Promise<T> {
-  if (typeof valueOrResolver === 'function') {
+  if (typeof valueOrResolver === "function") {
     return (valueOrResolver as OrpcInputResolver<T, TInput, TContext>)(context);
   }
   return valueOrResolver;
@@ -554,7 +569,7 @@ class OrpcError extends Error {
 
   constructor(code: string, message: string) {
     super(message);
-    this.name = 'ORPCError';
+    this.name = "ORPCError";
     this.code = code;
     this.status = codeToStatus(code);
   }
@@ -565,13 +580,13 @@ class OrpcError extends Error {
  */
 function codeToStatus(code: string): number {
   switch (code) {
-    case 'UNAUTHORIZED':
+    case "UNAUTHORIZED":
       return 401;
-    case 'FORBIDDEN':
+    case "FORBIDDEN":
       return 403;
-    case 'BAD_REQUEST':
+    case "BAD_REQUEST":
       return 400;
-    case 'NOT_FOUND':
+    case "NOT_FOUND":
       return 404;
     default:
       return 500;
@@ -580,7 +595,7 @@ function codeToStatus(code: string): number {
 
 /**
  * Options for creating ORPC middleware from middleware checks.
- * 
+ *
  * These middlewares are designed to run after requireAuth() in the chain,
  * so the context type is fixed to ORPCContextWithAuthOnly<true> which provides
  * properly typed auth context (ORPCAuthContext<true>).
@@ -591,7 +606,7 @@ interface OrpcMiddlewareOptions {
    * If not provided, uses a default that extracts input as params.
    */
   contextBuilder?: (
-    orpcContext: ORPCContextWithAuthOnly<true>
+    orpcContext: ORPCContextWithAuthOnly<true>,
   ) => MiddlewareContext;
 
   /**
@@ -612,16 +627,18 @@ interface OrpcMiddlewareOptions {
  * Maps ORPC context to MiddlewareContext format.
  */
 function defaultOrpcContextBuilder(
-  orpcContext: ORPCContextWithAuthOnly<true>
+  orpcContext: ORPCContextWithAuthOnly<true>,
 ): MiddlewareContext {
   // Try to extract input from various locations
-  const input = (orpcContext as Record<string, unknown>).input as Record<string, unknown> | undefined;
+  const input = (orpcContext as Record<string, unknown>).input as
+    | Record<string, unknown>
+    | undefined;
 
   // Convert input to string params (for route-like access)
   const params: Record<string, string> = {};
   if (input) {
     for (const [key, value] of Object.entries(input)) {
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         params[key] = value;
       }
     }
@@ -639,8 +656,8 @@ function defaultOrpcContextBuilder(
  * Create an ORPC middleware from a MiddlewareCheck.
  *
  * The returned middleware uses native ORPC types (DecoratedMiddleware) and can be
- * used directly with ORPC's `.use()` method. 
- * 
+ * used directly with ORPC's `.use()` method.
+ *
  * This middleware is designed to run after requireAuth() in the chain, so it
  * declares ORPCContextWithAuthOnly<true> as its context dependency. This ensures
  * that context.auth is properly typed as ORPCAuthContext<true>, not `any`.
@@ -664,40 +681,43 @@ function defaultOrpcContextBuilder(
  */
 export function createOrpcMiddleware(
   check: MiddlewareCheck,
-  options: OrpcMiddlewareOptions = {}
+  options: OrpcMiddlewareOptions = {},
 ) {
-  const { contextBuilder = defaultOrpcContextBuilder, logErrors = false } = options;
+  const { contextBuilder = defaultOrpcContextBuilder, logErrors = false } =
+    options;
 
   // Use os.$context<ORPCContextWithAuthOnly<true>>() to declare the expected input context type.
   // This middleware runs after requireAuth() which provides auth: ORPCAuthContext<true>.
   // By declaring the specific context type, we preserve type information through the chain.
-  return os.$context<ORPCContextWithAuthOnly<true>>().middleware(async ({ context, next }) => {
-    const middlewareContext = contextBuilder(context);
+  return os
+    .$context<ORPCContextWithAuthOnly<true>>()
+    .middleware(async ({ context, next }) => {
+      const middlewareContext = contextBuilder(context);
 
-    // Add headers if provided
-    if (options.headers) {
-      middlewareContext.headers =
-        typeof options.headers === 'function'
-          ? options.headers(context)
-          : options.headers;
-    }
-
-    try {
-      await check.check(middlewareContext);
-      // Pass context through to next middleware unchanged - type is preserved
-      return await next({ context });
-    } catch (error) {
-      if (logErrors) {
-        console.error(`[OrpcMiddleware] ${check.name} failed:`, error);
+      // Add headers if provided
+      if (options.headers) {
+        middlewareContext.headers =
+          typeof options.headers === "function"
+            ? options.headers(context)
+            : options.headers;
       }
 
-      const errorCode = mapToOrpcErrorCode(check.getErrorCode());
-      const errorMessage =
-        error instanceof Error ? error.message : check.getErrorMessage();
+      try {
+        await check.check(middlewareContext);
+        // Pass context through to next middleware unchanged - type is preserved
+        return await next({ context });
+      } catch (error) {
+        if (logErrors) {
+          console.error(`[OrpcMiddleware] ${check.name} failed:`, error);
+        }
 
-      throw new OrpcError(errorCode, errorMessage);
-    }
-  });
+        const errorCode = mapToOrpcErrorCode(check.getErrorCode());
+        const errorMessage =
+          error instanceof Error ? error.message : check.getErrorMessage();
+
+        throw new OrpcError(errorCode, errorMessage);
+      }
+    });
 }
 
 /**
@@ -705,7 +725,7 @@ export function createOrpcMiddleware(
  *
  * All checks must pass before proceeding to the next middleware/handler.
  * Checks are executed in order - first failure stops execution.
- * 
+ *
  * This middleware is designed to run after requireAuth() in the chain, so it
  * declares ORPCContextWithAuthOnly<true> as its context dependency. This ensures
  * that context.auth is properly typed as ORPCAuthContext<true>, not `any`.
@@ -727,42 +747,48 @@ export function createOrpcMiddleware(
  */
 export function createCompositeOrpcMiddleware(
   checks: MiddlewareCheck[],
-  options: OrpcMiddlewareOptions = {}
+  options: OrpcMiddlewareOptions = {},
 ) {
-  const { contextBuilder = defaultOrpcContextBuilder, logErrors = false } = options;
+  const { contextBuilder = defaultOrpcContextBuilder, logErrors = false } =
+    options;
 
   // Use os.$context<ORPCContextWithAuthOnly<true>>() to declare the expected input context type.
   // This middleware runs after requireAuth() which provides auth: ORPCAuthContext<true>.
-  return os.$context<ORPCContextWithAuthOnly<true>>().middleware(async ({ context, next }) => {
-    const middlewareContext = contextBuilder(context);
+  return os
+    .$context<ORPCContextWithAuthOnly<true>>()
+    .middleware(async ({ context, next }) => {
+      const middlewareContext = contextBuilder(context);
 
-    // Add headers if provided
-    if (options.headers) {
-      middlewareContext.headers =
-        typeof options.headers === 'function'
-          ? options.headers(context)
-          : options.headers;
-    }
-
-    for (const check of checks) {
-      try {
-        await check.check(middlewareContext);
-      } catch (error) {
-        if (logErrors) {
-          console.error(`[CompositeOrpcMiddleware] ${check.name} failed:`, error);
-        }
-
-        const errorCode = mapToOrpcErrorCode(check.getErrorCode());
-        const errorMessage =
-          error instanceof Error ? error.message : check.getErrorMessage();
-
-        throw new OrpcError(errorCode, errorMessage);
+      // Add headers if provided
+      if (options.headers) {
+        middlewareContext.headers =
+          typeof options.headers === "function"
+            ? options.headers(context)
+            : options.headers;
       }
-    }
 
-    // Pass context through to next middleware unchanged - type is preserved
-    return next({ context });
-  });
+      for (const check of checks) {
+        try {
+          await check.check(middlewareContext);
+        } catch (error) {
+          if (logErrors) {
+            console.error(
+              `[CompositeOrpcMiddleware] ${check.name} failed:`,
+              error,
+            );
+          }
+
+          const errorCode = mapToOrpcErrorCode(check.getErrorCode());
+          const errorMessage =
+            error instanceof Error ? error.message : check.getErrorMessage();
+
+          throw new OrpcError(errorCode, errorMessage);
+        }
+      }
+
+      // Pass context through to next middleware unchanged - type is preserved
+      return next({ context });
+    });
 }
 
 // ============================================================================
@@ -812,8 +838,14 @@ export function extractCheckMetadata(check: MiddlewareCheck): {
     description: check.description,
     errorCode: check.getErrorCode(),
     errorMessage: check.getErrorMessage(),
-    permissions: 'permissions' in check ? (check.permissions as Record<string, string[]>) : undefined,
-    roles: 'requiredRoles' in check ? (check.requiredRoles as readonly string[]) : undefined,
+    permissions:
+      "permissions" in check
+        ? (check.permissions as Record<string, string[]>)
+        : undefined,
+    roles:
+      "requiredRoles" in check
+        ? (check.requiredRoles as readonly string[])
+        : undefined,
   };
 }
 
@@ -823,7 +855,9 @@ export function extractCheckMetadata(check: MiddlewareCheck): {
  * @param checks - Array of middleware checks
  * @returns Array of metadata objects
  */
-export function extractChecksMetadata(checks: MiddlewareCheck[]): ReturnType<typeof extractCheckMetadata>[] {
+export function extractChecksMetadata(
+  checks: MiddlewareCheck[],
+): ReturnType<typeof extractCheckMetadata>[] {
   return checks.map(extractCheckMetadata);
 }
 
@@ -844,4 +878,8 @@ export type {
 };
 
 // Re-export native ORPC types for convenience
-export type { DecoratedMiddleware, Context as ORPCContext, Meta } from '@orpc/server';
+export type {
+  DecoratedMiddleware,
+  Context as ORPCContext,
+  Meta,
+} from "@orpc/server";

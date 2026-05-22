@@ -861,7 +861,7 @@ export function makeRoute<
 ): PageRouteBuilder<Params, Search> | LayoutRouteBuilder<Params, Search> {
     // For layout-only routes, return a minimal builder without navigation methods
     if (!flags.page) {
-        return makeLayoutRoute(route, info, flags)
+        return makeLayoutRoute(info)
     }
     
     // For page routes, return the full builder with all navigation methods
@@ -1126,10 +1126,7 @@ function makeLayoutRoute<
     Params extends z.ZodType,
     Search extends z.ZodType = typeof emptySchema,
 >(
-    route: string,
     info: RouteInfo<Params, Search>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    flags: RouteFlags
 ): LayoutRouteBuilder<Params, Search> {
     const layoutBuilder = {} as LayoutRouteBuilder<Params, Search>
     

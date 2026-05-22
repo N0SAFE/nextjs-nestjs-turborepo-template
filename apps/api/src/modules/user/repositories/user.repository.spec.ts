@@ -1,27 +1,27 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UserRepository } from './user.repository';
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { UserRepository } from "./user.repository";
 
-describe('UserRepository', () => {
+describe("UserRepository", () => {
   let repository: UserRepository;
   let mockDb: any;
 
   const mockUser = {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
+    id: "1",
+    name: "John Doe",
+    email: "john@example.com",
     image: null,
-    status: 'active',
+    status: "active",
     emailVerified: false,
-    createdAt: new Date('2023-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2023-01-01T00:00:00.000Z'),
+    createdAt: new Date("2023-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2023-01-01T00:00:00.000Z"),
   };
 
   const transformedUser = {
     ...mockUser,
-    createdAt: '2023-01-01T00:00:00.000Z',
-    updatedAt: '2023-01-01T00:00:00.000Z',
+    createdAt: "2023-01-01T00:00:00.000Z",
+    updatedAt: "2023-01-01T00:00:00.000Z",
   };
 
   beforeEach(async () => {
@@ -71,18 +71,18 @@ describe('UserRepository', () => {
     }).compile();
 
     repository = module.get<UserRepository>(UserRepository);
-    
+
     // Reset all mocks
     vi.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(repository).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create a new user', async () => {
-      const input = { name: 'John Doe', email: 'john@example.com', image: "" };
+  describe("create", () => {
+    it("should create a new user", async () => {
+      const input = { name: "John Doe", email: "john@example.com", image: "" };
       const mockInsertBuilder = mockDb.insert();
       mockInsertBuilder.returning.mockResolvedValue([mockUser]);
 
@@ -95,19 +95,19 @@ describe('UserRepository', () => {
           name: input.name,
           email: input.email,
           emailVerified: false,
-        })
+        }),
       );
       expect(mockInsertBuilder.returning).toHaveBeenCalled();
     });
   });
 
-  describe('findById', () => {
-    it('should find user by id', async () => {
+  describe("findById", () => {
+    it("should find user by id", async () => {
       const mockSelectBuilder = mockDb.select();
       // Mock the final execution result
       mockSelectBuilder.limit.mockResolvedValue([mockUser]);
 
-      const result = await repository.findById('1');
+      const result = await repository.findById("1");
 
       expect(result).toEqual(transformedUser);
       expect(mockDb.select).toHaveBeenCalled();
@@ -116,22 +116,22 @@ describe('UserRepository', () => {
       expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
     });
 
-    it('should return null when user not found', async () => {
+    it("should return null when user not found", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.limit.mockResolvedValue([]);
 
-      const result = await repository.findById('nonexistent');
+      const result = await repository.findById("nonexistent");
 
       expect(result).toBeNull();
     });
   });
 
-  describe('findByEmail', () => {
-    it('should find user by email', async () => {
+  describe("findByEmail", () => {
+    it("should find user by email", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.limit.mockResolvedValue([mockUser]);
 
-      const result = await repository.findByEmail('john@example.com');
+      const result = await repository.findByEmail("john@example.com");
 
       expect(result).toEqual(transformedUser);
       expect(mockDb.select).toHaveBeenCalled();
@@ -140,18 +140,18 @@ describe('UserRepository', () => {
       expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
     });
 
-    it('should return null when user not found', async () => {
+    it("should return null when user not found", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.limit.mockResolvedValue([]);
 
-      const result = await repository.findByEmail('nonexistent@example.com');
+      const result = await repository.findByEmail("nonexistent@example.com");
 
       expect(result).toBeNull();
     });
   });
 
-  describe('findMany', () => {
-    it('should find users with pagination', async () => {
+  describe("findMany", () => {
+    it("should find users with pagination", async () => {
       const input = { limit: 10, offset: 0 };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
@@ -186,16 +186,16 @@ describe('UserRepository', () => {
       });
     });
 
-    it('should handle filtering and sorting', async () => {
+    it("should handle filtering and sorting", async () => {
       const input = {
         limit: 10,
         offset: 0,
         filter: {
-          name: { operator: 'like' as const, value: 'John' },
-          email: { operator: 'like' as const, value: 'john' },
+          name: { operator: "like" as const, value: "John" },
+          email: { operator: "like" as const, value: "john" },
         },
-        sortBy: 'name' as const,
-        sortDirection: 'asc' as const,
+        sortBy: "name" as const,
+        sortDirection: "asc" as const,
       };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
@@ -223,7 +223,7 @@ describe('UserRepository', () => {
       expect(mainQueryBuilder.orderBy).toHaveBeenCalled();
     });
 
-    it('should handle default sorting when no sort provided', async () => {
+    it("should handle default sorting when no sort provided", async () => {
       const input = { limit: 10, offset: 0 };
       const users = [mockUser];
       const countResult = [{ count: 1 }];
@@ -248,57 +248,57 @@ describe('UserRepository', () => {
       expect(mainQueryBuilder.orderBy).toHaveBeenCalled();
     });
 
-    it('should throw error for unsupported sort field', async () => {
+    it("should throw error for unsupported sort field", async () => {
       const input = {
         limit: 10,
         offset: 0,
-        sortBy: 'unsupported' as any,
-        sortDirection: 'asc' as const,
+        sortBy: "unsupported" as any,
+        sortDirection: "asc" as const,
       };
 
       await expect(repository.findMany(input)).rejects.toThrow(
-        'Unsupported sort field: unsupported'
+        "Unsupported sort field: unsupported",
       );
     });
   });
 
-  describe('update', () => {
-    it('should update user', async () => {
-      const input = { name: 'Jane Doe' };
-      const updatedUser = { ...mockUser, name: 'Jane Doe' };
+  describe("update", () => {
+    it("should update user", async () => {
+      const input = { name: "Jane Doe" };
+      const updatedUser = { ...mockUser, name: "Jane Doe" };
       const mockUpdateBuilder = mockDb.update();
       mockUpdateBuilder.returning.mockResolvedValue([updatedUser]);
 
-      const result = await repository.update('1', input);
+      const result = await repository.update("1", input);
 
-      expect(result).toEqual({ ...transformedUser, name: 'Jane Doe' });
+      expect(result).toEqual({ ...transformedUser, name: "Jane Doe" });
       expect(mockDb.update).toHaveBeenCalled();
       expect(mockUpdateBuilder.set).toHaveBeenCalledWith(
         expect.objectContaining({
           ...input,
           updatedAt: expect.any(Date),
-        })
+        }),
       );
       expect(mockUpdateBuilder.where).toHaveBeenCalled();
       expect(mockUpdateBuilder.returning).toHaveBeenCalled();
     });
 
-    it('should return null when update fails', async () => {
+    it("should return null when update fails", async () => {
       const mockUpdateBuilder = mockDb.update();
       mockUpdateBuilder.returning.mockResolvedValue([]);
 
-      const result = await repository.update('nonexistent', { name: 'Jane' });
+      const result = await repository.update("nonexistent", { name: "Jane" });
 
       expect(result).toBeNull();
     });
   });
 
-  describe('delete', () => {
-    it('should delete user', async () => {
+  describe("delete", () => {
+    it("should delete user", async () => {
       const mockDeleteBuilder = mockDb.delete();
       mockDeleteBuilder.returning.mockResolvedValue([mockUser]);
 
-      const result = await repository.delete('1');
+      const result = await repository.delete("1");
 
       expect(result).toEqual(transformedUser);
       expect(mockDb.delete).toHaveBeenCalled();
@@ -306,22 +306,22 @@ describe('UserRepository', () => {
       expect(mockDeleteBuilder.returning).toHaveBeenCalled();
     });
 
-    it('should return null when delete fails', async () => {
+    it("should return null when delete fails", async () => {
       const mockDeleteBuilder = mockDb.delete();
       mockDeleteBuilder.returning.mockResolvedValue([]);
 
-      const result = await repository.delete('nonexistent');
+      const result = await repository.delete("nonexistent");
 
       expect(result).toBeNull();
     });
   });
 
-  describe('existsByEmail', () => {
-    it('should return true when user exists', async () => {
+  describe("existsByEmail", () => {
+    it("should return true when user exists", async () => {
       const mockSelectBuilder = mockDb.select();
-      mockSelectBuilder.limit.mockResolvedValue([{ id: '1' }]);
+      mockSelectBuilder.limit.mockResolvedValue([{ id: "1" }]);
 
-      const result = await repository.existsByEmail('john@example.com');
+      const result = await repository.existsByEmail("john@example.com");
 
       expect(result).toBe(true);
       expect(mockDb.select).toHaveBeenCalled();
@@ -330,18 +330,18 @@ describe('UserRepository', () => {
       expect(mockSelectBuilder.limit).toHaveBeenCalledWith(1);
     });
 
-    it('should return false when user does not exist', async () => {
+    it("should return false when user does not exist", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.limit.mockResolvedValue([]);
 
-      const result = await repository.existsByEmail('nonexistent@example.com');
+      const result = await repository.existsByEmail("nonexistent@example.com");
 
       expect(result).toBe(false);
     });
   });
 
-  describe('getCount', () => {
-    it('should return user count', async () => {
+  describe("getCount", () => {
+    it("should return user count", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.from.mockResolvedValue([{ count: 42 }]);
 
@@ -352,7 +352,7 @@ describe('UserRepository', () => {
       expect(mockSelectBuilder.from).toHaveBeenCalled();
     });
 
-    it('should return 0 when no count result', async () => {
+    it("should return 0 when no count result", async () => {
       const mockSelectBuilder = mockDb.select();
       mockSelectBuilder.from.mockResolvedValue([]);
 
@@ -362,33 +362,33 @@ describe('UserRepository', () => {
     });
   });
 
-  describe('transformUser', () => {
-    it('should transform user dates to ISO strings', () => {
+  describe("transformUser", () => {
+    it("should transform user dates to ISO strings", () => {
       // Access the private method through casting
       const result = (repository as any).transformUser(mockUser);
 
       expect(result).toEqual(transformedUser);
     });
 
-    it('should return null for null input', () => {
+    it("should return null for null input", () => {
       const result = (repository as any).transformUser(null);
 
       expect(result).toBeNull();
     });
   });
 
-  describe('transformUsers', () => {
-    it('should transform array of users', () => {
-      const users = [mockUser, { ...mockUser, id: '2' }];
+  describe("transformUsers", () => {
+    it("should transform array of users", () => {
+      const users = [mockUser, { ...mockUser, id: "2" }];
       const result = (repository as any).transformUsers(users);
 
       expect(result).toEqual([
         transformedUser,
-        { ...transformedUser, id: '2' },
+        { ...transformedUser, id: "2" },
       ]);
     });
 
-    it('should handle empty array', () => {
+    it("should handle empty array", () => {
       const result = (repository as any).transformUsers([]);
 
       expect(result).toEqual([]);

@@ -8,7 +8,7 @@
  * this proxy intercepts method calls and automatically applies the wrapper.
  *
  * **Two Usage Patterns**:
- * 
+ *
  * 1. **Static values** - Direct call with static values:
  *    ```typescript
  *    .use(middleware.org.isMemberOf('org-123'))
@@ -40,14 +40,14 @@
  * ```
  */
 
-import { os, type DecoratedMiddleware } from '@orpc/server';
-import type { MiddlewareCheck, ValueOrResolver } from './middleware-check';
+import { os, type DecoratedMiddleware } from "@orpc/server";
+import type { MiddlewareCheck, ValueOrResolver } from "./middleware-check";
 import {
   createOrpcMiddleware,
   createCompositeOrpcMiddleware,
   type OrpcMiddlewareOptions,
-} from './middleware-converter';
-import type { ORPCContextWithAuthOnly } from '@/core/modules/auth/orpc';
+} from "./middleware-converter";
+import type { ORPCContextWithAuthOnly } from "@/core/modules/auth/orpc";
 
 // ============================================================================
 // Types
@@ -63,12 +63,14 @@ export type MiddlewareDefinitionLike = object;
  * Extract method names that return MiddlewareCheck from a definition.
  */
 type MiddlewareMethodNames<T> = {
-  [K in keyof T]: T[K] extends (...args: never[]) => MiddlewareCheck ? K : never;
+  [K in keyof T]: T[K] extends (...args: never[]) => MiddlewareCheck
+    ? K
+    : never;
 }[keyof T];
 
 /**
  * Extract the inner value type from ValueOrResolver<T>.
- * 
+ *
  * ValueOrResolver<T> = T | ContextResolver<T, TContext>
  * This extracts just the T, excluding the resolver function type.
  */
@@ -77,50 +79,71 @@ type UnwrapValueOrResolver<T> = T extends ValueOrResolver<infer V> ? V : T;
 /**
  * Extract the expected input type from a method's first parameter.
  * Unwraps ValueOrResolver to get the actual value type.
- * 
+ *
  * For example:
  * - `isMemberOf(orgId: ValueOrResolver<string>)` → string
  * - `hasRole(roles: ValueOrResolver<string[]>)` → string[]
  */
-type ExtractFirstParamType<TMethod> = TMethod extends (arg: infer T, ...rest: never[]) => MiddlewareCheck
+type ExtractFirstParamType<TMethod> = TMethod extends (
+  arg: infer T,
+  ...rest: never[]
+) => MiddlewareCheck
   ? UnwrapValueOrResolver<T>
   : never;
 
 /**
  * Transform a method to return an ORPC middleware.
- * 
+ *
  * **Context Type Preservation:**
  * These middlewares run after requireAuth() in the chain, so they expect
  * ORPCContextWithAuthOnly<true> as their input context and preserve it as output.
  * This ensures context.auth is properly typed in subsequent handlers.
- * 
+ *
  * **Why `any` for TInput/TOutput?**
  * ORPC's `.use()` overloads require middleware TInput/TOutput to match:
  * - Without mapInput: TInput = InferSchemaOutput<TInputSchema>, TOutput = InferSchemaInput<TOutputSchema>
  * - With mapInput: TInput = UInput (mapped type), TOutput = InferSchemaInput<TOutputSchema>
- * 
+ *
  * Since our middleware is generic and can be used with any procedure, we use `any` for input/output:
  * - `any` is bivariant and assignable to any type (unlike `unknown`)
  * - This allows the same middleware to work across procedures with different schemas
  * - Type safety is still enforced by ORPC at the procedure level
- * 
+ *
  * **Two patterns:**
  * 1. Static call: `middleware.admin.hasRole(['admin'])` → use with any procedure
  * 2. Dynamic with mapInput: `middleware.org.isMemberOf.forInput()` + `input => input.orgId`
- * 
+ *
  * @template TMethod - The original method type
  */
-type OrpcWrappedMethod<TMethod> = TMethod extends (...args: infer TArgs) => MiddlewareCheck
+type OrpcWrappedMethod<TMethod> = TMethod extends (
+  ...args: infer TArgs
+) => MiddlewareCheck
   ? {
       // Static call: pass all args, returns middleware compatible with any procedure
       // Context types preserve ORPCContextWithAuthOnly<true> for proper typing
       // Using `any` for input/output to match any procedure's schema
-      (...args: TArgs): DecoratedMiddleware<ORPCContextWithAuthOnly<true>, ORPCContextWithAuthOnly<true>, any, any, any, any>;
-      
+      (
+        ...args: TArgs
+      ): DecoratedMiddleware<
+        ORPCContextWithAuthOnly<true>,
+        ORPCContextWithAuthOnly<true>,
+        any,
+        any,
+        any,
+        any
+      >;
+
       // Dynamic method: returns middleware expecting the first arg's type for mapInput
       // TInput is typed for use with mapInput callback
       // Context types preserve ORPCContextWithAuthOnly<true>
-      forInput(): DecoratedMiddleware<ORPCContextWithAuthOnly<true>, ORPCContextWithAuthOnly<true>, ExtractFirstParamType<TMethod>, any, any, any>;
+      forInput(): DecoratedMiddleware<
+        ORPCContextWithAuthOnly<true>,
+        ORPCContextWithAuthOnly<true>,
+        ExtractFirstParamType<TMethod>,
+        any,
+        any,
+        any
+      >;
     }
   : never;
 
@@ -132,7 +155,9 @@ export type OrpcMiddlewareProxy<T> = {
   [K in MiddlewareMethodNames<T>]: OrpcWrappedMethod<T[K]>;
 } & {
   /** Create composite middleware from multiple checks */
-  composite(checks: MiddlewareCheck[]): ReturnType<typeof createCompositeOrpcMiddleware>;
+  composite(
+    checks: MiddlewareCheck[],
+  ): ReturnType<typeof createCompositeOrpcMiddleware>;
 };
 
 // ============================================================================
@@ -142,15 +167,18 @@ export type OrpcMiddlewareProxy<T> = {
 /**
  * Build MiddlewareContext from input for check execution.
  */
-function buildMiddlewareContext(
-  input: unknown
-): { headers: Headers; params: Record<string, string>; query: Record<string, string>; body: unknown } {
+function buildMiddlewareContext(input: unknown): {
+  headers: Headers;
+  params: Record<string, string>;
+  query: Record<string, string>;
+  body: unknown;
+} {
   const inputObj = input as Record<string, unknown> | undefined;
 
   const params: Record<string, string> = {};
   if (inputObj) {
     for (const [key, value] of Object.entries(inputObj)) {
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         params[key] = value;
       }
     }
@@ -173,7 +201,7 @@ class OrpcError extends Error {
 
   constructor(code: string, message: string) {
     super(message);
-    this.name = 'ORPCError';
+    this.name = "ORPCError";
     this.code = code;
     this.status = codeToStatus(code);
   }
@@ -184,13 +212,13 @@ class OrpcError extends Error {
  */
 function codeToStatus(code: string): number {
   switch (code) {
-    case 'UNAUTHORIZED':
+    case "UNAUTHORIZED":
       return 401;
-    case 'FORBIDDEN':
+    case "FORBIDDEN":
       return 403;
-    case 'BAD_REQUEST':
+    case "BAD_REQUEST":
       return 400;
-    case 'NOT_FOUND':
+    case "NOT_FOUND":
       return 404;
     default:
       return 500;
@@ -202,11 +230,11 @@ function codeToStatus(code: string): number {
  */
 function mapToOrpcErrorCode(code: string): string {
   switch (code) {
-    case 'PERMISSION_DENIED':
-      return 'FORBIDDEN';
-    case 'MISSING_SESSION':
-    case 'INVALID_SESSION':
-      return 'UNAUTHORIZED';
+    case "PERMISSION_DENIED":
+      return "FORBIDDEN";
+    case "MISSING_SESSION":
+    case "INVALID_SESSION":
+      return "UNAUTHORIZED";
     default:
       return code;
   }
@@ -217,7 +245,8 @@ function mapToOrpcErrorCode(code: string): string {
  */
 function createOrpcError(check: MiddlewareCheck, error: unknown): OrpcError {
   const errorCode = mapToOrpcErrorCode(check.getErrorCode());
-  const errorMessage = error instanceof Error ? error.message : check.getErrorMessage();
+  const errorMessage =
+    error instanceof Error ? error.message : check.getErrorMessage();
   return new OrpcError(errorCode, errorMessage);
 }
 
@@ -258,19 +287,20 @@ function createOrpcError(check: MiddlewareCheck, error: unknown): OrpcError {
  */
 export function createOrpcMiddlewareProxy<T extends MiddlewareDefinitionLike>(
   middlewareDefinition: T,
-  options: OrpcMiddlewareOptions = {}
+  options: OrpcMiddlewareOptions = {},
 ): OrpcMiddlewareProxy<T> {
   const proxy = new Proxy(middlewareDefinition, {
     get(target, prop, receiver) {
       // Handle special 'composite' method
-      if (prop === 'composite') {
-        return (checks: MiddlewareCheck[]) => createCompositeOrpcMiddleware(checks, options);
+      if (prop === "composite") {
+        return (checks: MiddlewareCheck[]) =>
+          createCompositeOrpcMiddleware(checks, options);
       }
 
       const originalValue = Reflect.get(target, prop, receiver);
 
       // If it's a function, wrap it to return ORPC middleware with .forInput() method
-      if (typeof originalValue === 'function') {
+      if (typeof originalValue === "function") {
         // Static case: call original method with args and wrap with createOrpcMiddleware
         const wrappedFn = (...args: unknown[]) => {
           const check = originalValue.apply(target, args) as MiddlewareCheck;
@@ -282,12 +312,18 @@ export function createOrpcMiddlewareProxy<T extends MiddlewareDefinitionLike>(
         // Using Object.assign to properly combine the function with the forInput method
         const withForInput = Object.assign(wrappedFn, {
           forInput: () => {
-            return os.$context<ORPCContextWithAuthOnly<true>>().middleware(
-              async ({ context, next }, input: unknown) => {
+            return os
+              .$context<ORPCContextWithAuthOnly<true>>()
+              .middleware(async ({ context, next }, input: unknown) => {
                 // Input IS the value directly (e.g., organizationId string)
                 // ORPC's mapInput already extracted it from the procedure's input
-                const check = originalValue.call(target, input) as MiddlewareCheck;
-                const middlewareContext = buildMiddlewareContext({ value: input });
+                const check = originalValue.call(
+                  target,
+                  input,
+                ) as MiddlewareCheck;
+                const middlewareContext = buildMiddlewareContext({
+                  value: input,
+                });
 
                 try {
                   await check.check(middlewareContext);
@@ -295,8 +331,7 @@ export function createOrpcMiddlewareProxy<T extends MiddlewareDefinitionLike>(
                 } catch (error) {
                   throw createOrpcError(check, error);
                 }
-              }
-            );
+              });
           },
         });
 
@@ -339,7 +374,7 @@ export function createOrpcMiddlewareProxy<T extends MiddlewareDefinitionLike>(
  */
 export function createCompositeOrpcMiddlewareFromChecks(
   checks: MiddlewareCheck[],
-  options: OrpcMiddlewareOptions = {}
+  options: OrpcMiddlewareOptions = {},
 ) {
   return createCompositeOrpcMiddleware(checks, options);
 }

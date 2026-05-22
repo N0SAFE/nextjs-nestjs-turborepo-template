@@ -9,39 +9,39 @@ import type { Interceptor } from "@orpc/shared";
 export function httpStatusToORPCCode(status: number): ORPCErrorCode {
   switch (status) {
     case 400:
-      return 'BAD_REQUEST';
+      return "BAD_REQUEST";
     case 401:
-      return 'UNAUTHORIZED';
+      return "UNAUTHORIZED";
     case 403:
-      return 'FORBIDDEN';
+      return "FORBIDDEN";
     case 404:
-      return 'NOT_FOUND';
+      return "NOT_FOUND";
     case 405:
-      return 'METHOD_NOT_SUPPORTED';
+      return "METHOD_NOT_SUPPORTED";
     case 408:
-      return 'TIMEOUT';
+      return "TIMEOUT";
     case 409:
-      return 'CONFLICT';
+      return "CONFLICT";
     case 413:
-      return 'PAYLOAD_TOO_LARGE';
+      return "PAYLOAD_TOO_LARGE";
     case 415:
-      return 'UNSUPPORTED_MEDIA_TYPE';
+      return "UNSUPPORTED_MEDIA_TYPE";
     case 422:
-      return 'UNPROCESSABLE_CONTENT';
+      return "UNPROCESSABLE_CONTENT";
     case 429:
-      return 'TOO_MANY_REQUESTS';
+      return "TOO_MANY_REQUESTS";
     case 499:
-      return 'CLIENT_CLOSED_REQUEST';
+      return "CLIENT_CLOSED_REQUEST";
     case 501:
-      return 'NOT_IMPLEMENTED';
+      return "NOT_IMPLEMENTED";
     case 502:
-      return 'BAD_GATEWAY';
+      return "BAD_GATEWAY";
     case 503:
-      return 'SERVICE_UNAVAILABLE';
+      return "SERVICE_UNAVAILABLE";
     case 504:
-      return 'GATEWAY_TIMEOUT';
+      return "GATEWAY_TIMEOUT";
     default:
-      return status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'BAD_REQUEST';
+      return status >= 500 ? "INTERNAL_SERVER_ERROR" : "BAD_REQUEST";
   }
 }
 
@@ -53,14 +53,15 @@ export function transformHttpExceptionToORPCError(error: unknown): void {
   if (error instanceof HttpException) {
     const status = error.getStatus();
     const response = error.getResponse();
-    const message = typeof response === 'string' 
-      ? response 
-      : (response as { message?: string }).message ?? error.message;
-    
+    const message =
+      typeof response === "string"
+        ? response
+        : ((response as { message?: string }).message ?? error.message);
+
     throw new ORPCError(httpStatusToORPCCode(status), {
       status,
       message,
-      data: typeof response === 'object' ? response : undefined,
+      data: typeof response === "object" ? response : undefined,
       cause: error,
     });
   }
@@ -69,7 +70,7 @@ export function transformHttpExceptionToORPCError(error: unknown): void {
 /**
  * ORPC interceptor that transforms NestJS HttpException errors to ORPCError
  * This ensures proper HTTP status codes are returned instead of generic 500 errors
- * 
+ *
  * @example
  * ```ts
  * ORPCModule.forRootAsync({
@@ -90,7 +91,7 @@ export function transformNestJSErrorToOrpcError(): Interceptor<any, any> {
 /**
  * ORPC interceptor that logs errors to console
  * Useful for debugging and monitoring
- * 
+ *
  * @example
  * ```ts
  * ORPCModule.forRootAsync({

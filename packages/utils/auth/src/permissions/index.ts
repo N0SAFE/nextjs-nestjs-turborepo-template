@@ -11,6 +11,7 @@ export * from "./system";
 
 // Platform permission configuration
 export {
+    isPlatformRoleAtLeast,
     platformPermissionConfig,
     platformStatement,
     platformAc,
@@ -42,6 +43,7 @@ export {
 
 // Organization permission configuration
 export {
+    isOrganizationRoleAtLeast,
     organizationPermissionConfig,
     organizationStatement,
     organizationAc,

@@ -1,8 +1,8 @@
-import { Controller } from '@nestjs/common';
-import { Implement, implement } from '@orpc/nest';
-import { appContract } from '@repo/api-contracts';
-import { OrganizationService } from '../services/organization.service';
-import { requireAuth } from '@/core/modules/auth/orpc/middlewares';
+import { Controller } from "@nestjs/common";
+import { Implement, implement } from "@orpc/nest";
+import { appContract } from "@repo/api-contracts";
+import { OrganizationService } from "../services/organization.service";
+import { requireAuth } from "@/core/modules/auth/orpc/middlewares";
 
 @Controller()
 export class OrganizationController {

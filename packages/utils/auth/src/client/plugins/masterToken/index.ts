@@ -15,7 +15,7 @@ import {
  */
 export const masterTokenClient = (): BetterAuthClientPlugin =>
     ({
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         getActions: (_$fetch: BetterFetch, _$store: ClientStore, _options: BetterAuthClientOptions | undefined) => {
             const createMasterTokenSignOut = <TSignOut extends (...args: unknown[]) => Promise<unknown>>(signOutFn: TSignOut) => {
                 return async (...args: Parameters<TSignOut>): Promise<Awaited<ReturnType<TSignOut>> | null> => {

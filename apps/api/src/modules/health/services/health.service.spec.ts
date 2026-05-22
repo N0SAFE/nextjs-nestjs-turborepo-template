@@ -1,9 +1,9 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { HealthService } from './health.service';
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { HealthService } from "./health.service";
 
-describe('HealthService', () => {
+describe("HealthService", () => {
   let service: HealthService;
   let mockRepository: any;
 
@@ -24,33 +24,33 @@ describe('HealthService', () => {
     }).compile();
 
     service = module.get<HealthService>(HealthService);
-    
+
     // Reset mocks
     vi.clearAllMocks();
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  describe('getHealth', () => {
-    it('should return basic health status', () => {
+  describe("getHealth", () => {
+    it("should return basic health status", () => {
       const result = service.getHealth();
 
       expect(result).toMatchObject({
-        status: 'ok',
-        service: 'nestjs-api',
+        status: "ok",
+        service: "nestjs-api",
       });
       expect(result.timestamp).toBeDefined();
-      expect(typeof result.timestamp).toBe('string');
+      expect(typeof result.timestamp).toBe("string");
     });
   });
 
-  describe('getReadiness', () => {
-    it('should return ready status when database is healthy', async () => {
+  describe("getReadiness", () => {
+    it("should return ready status when database is healthy", async () => {
       const mockCheckHealth = mockRepository.checkDatabaseHealth;
       mockCheckHealth.mockResolvedValue({
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         responseTime: 10,
       });
@@ -58,49 +58,49 @@ describe('HealthService', () => {
       const result = await service.getReadiness();
 
       expect(result).toMatchObject({
-        status: 'ready',
-        service: 'nestjs-api',
+        status: "ready",
+        service: "nestjs-api",
       });
       expect(result.timestamp).toBeDefined();
       expect(mockCheckHealth).toHaveBeenCalledOnce();
     });
 
-    it('should return not-ready status when database is unhealthy', async () => {
+    it("should return not-ready status when database is unhealthy", async () => {
       const mockCheckHealth = mockRepository.checkDatabaseHealth;
       mockCheckHealth.mockResolvedValue({
-        status: 'error',
+        status: "error",
         timestamp: new Date().toISOString(),
         responseTime: 1000,
-        error: 'Connection failed',
+        error: "Connection failed",
       });
 
       const result = await service.getReadiness();
 
       expect(result).toMatchObject({
-        status: 'not-ready',
-        service: 'nestjs-api',
+        status: "not-ready",
+        service: "nestjs-api",
       });
       expect(result.timestamp).toBeDefined();
       expect(mockCheckHealth).toHaveBeenCalledOnce();
     });
   });
 
-  describe('getLiveness', () => {
-    it('should return alive status', () => {
+  describe("getLiveness", () => {
+    it("should return alive status", () => {
       const result = service.getLiveness();
 
       expect(result).toMatchObject({
-        status: 'alive',
-        service: 'nestjs-api',
+        status: "alive",
+        service: "nestjs-api",
       });
       expect(result.timestamp).toBeDefined();
     });
   });
 
-  describe('getDetailedHealth', () => {
-    it('should return detailed health when all systems are healthy', async () => {
+  describe("getDetailedHealth", () => {
+    it("should return detailed health when all systems are healthy", async () => {
       const mockDbHealth = {
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         responseTime: 15,
       };
@@ -118,8 +118,8 @@ describe('HealthService', () => {
       const result = await service.getDetailedHealth();
 
       expect(result).toMatchObject({
-        status: 'ok',
-        service: 'nestjs-api',
+        status: "ok",
+        service: "nestjs-api",
         uptime: mockUptime,
         memory: mockMemory,
         database: mockDbHealth,
@@ -130,12 +130,12 @@ describe('HealthService', () => {
       expect(mockGetUptime).toHaveBeenCalledOnce();
     });
 
-    it('should return degraded status when database is unhealthy', async () => {
+    it("should return degraded status when database is unhealthy", async () => {
       const mockDbHealth = {
-        status: 'error',
+        status: "error",
         timestamp: new Date().toISOString(),
         responseTime: 5000,
-        error: 'Connection timeout',
+        error: "Connection timeout",
       };
       const mockMemory = { used: 1000, free: 2000, total: 3000 };
       const mockUptime = 123.45;
@@ -151,8 +151,8 @@ describe('HealthService', () => {
       const result = await service.getDetailedHealth();
 
       expect(result).toMatchObject({
-        status: 'degraded',
-        service: 'nestjs-api',
+        status: "degraded",
+        service: "nestjs-api",
         uptime: mockUptime,
         memory: mockMemory,
         database: mockDbHealth,

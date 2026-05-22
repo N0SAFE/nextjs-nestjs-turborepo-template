@@ -7,9 +7,7 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "vitest.config.mts",
     "node_modules",

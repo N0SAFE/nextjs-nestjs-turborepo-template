@@ -2,6 +2,7 @@ import type { AnySchema } from '@orpc/contract';
 import { getEventIteratorSchemaDetails } from '@orpc/contract';
 import { hasRouteMethodMeta, getRouteMethod } from '../../shared/route-method-meta';
 import { isContractProcedure } from '../../utils/type-helpers';
+import { getObservableSchemaDetails } from '../../utils/observable/contract';
 
 /**
  * Extended operation type supporting all ORPC operation types.
@@ -26,7 +27,7 @@ export type ContractProcedureMetadata = {
  */
 export function isEventIteratorOutput(outputSchema: AnySchema | undefined): boolean {
   if (!outputSchema) return false;
-  return getEventIteratorSchemaDetails(outputSchema) !== undefined;
+  return getEventIteratorSchemaDetails(outputSchema) !== undefined || getObservableSchemaDetails(outputSchema) !== undefined;
 }
 
 /**
@@ -34,7 +35,7 @@ export function isEventIteratorOutput(outputSchema: AnySchema | undefined): bool
  */
 export function detectOperationType(
   procedure: unknown,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _procedureName?: string
 ): OperationType {
   if (!isContractProcedure(procedure)) {

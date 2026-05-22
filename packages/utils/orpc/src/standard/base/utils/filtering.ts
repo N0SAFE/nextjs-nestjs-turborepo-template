@@ -135,7 +135,7 @@ export function createFilteringConfigSchema<
 /**
  * Create a field schema based on operators
  */
-function createFieldFilterSchema(fieldName: string, fieldConfig: FieldFilterConfig): AnySchema {
+function createFieldFilterSchema(fieldConfig: FieldFilterConfig): AnySchema {
     const { operators, allowNull } = fieldConfig;
     const filterShape: Record<string, AnySchema> = {};
 
@@ -195,7 +195,7 @@ export function createFilteringSchema<TConfig>(
     // Build field schemas
     const fieldSchemas: Record<string, AnySchema> = {};
     for (const [fieldName, fieldConfig] of Object.entries(fields)) {
-        fieldSchemas[fieldName] = createFieldFilterSchema(fieldName, fieldConfig);
+        fieldSchemas[fieldName] = createFieldFilterSchema(fieldConfig);
     }
 
     // Create base filter schema

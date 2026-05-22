@@ -84,7 +84,7 @@ Each operation uses the appropriate HTTP method:
 
 Verified against production code:
 - ✅ `/packages/contracts/api/modules/user/` - All contracts use `standard()` successfully
-- ✅ `/apps/web/src/hooks/useUser.orpc-hooks.ts` - Production hook generation works
+- ✅ `/apps/web/src/domains/user/hooks.ts` - Production domain hook usage works
 - ✅ `checkEmail` contract uses `userOps.check('email')` and generates `useCheckEmail` query hook
 
 ### 6. Cache Invalidation

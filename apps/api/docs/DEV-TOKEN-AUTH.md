@@ -11,8 +11,9 @@ DEV_AUTH_KEY=your-secret-dev-key-here
 ```
 
 The plugin will automatically:
+
 - Only work in development mode (`NODE_ENV=development`)
-- Look for the admin user with email `admin@admin.com` 
+- Look for the admin user with email `admin@admin.com`
 - Authenticate requests with `Authorization: Bearer your-secret-dev-key-here`
 
 ## Usage
@@ -47,6 +48,7 @@ fetch('http://localhost:3001/api/protected-endpoint', {
 - **No Session Storage**: Creates temporary sessions, not stored in database
 
 This is perfect for:
+
 - Testing protected endpoints during development
 - Automated testing with a simple auth mechanism
 - Development tools that need admin access

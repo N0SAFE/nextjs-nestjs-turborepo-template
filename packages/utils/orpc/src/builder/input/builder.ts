@@ -9,6 +9,7 @@ import type { ObjectSchema, VoidSchema, SchemaShape, OptionalSchema, ShouldBeOpt
 import { emptyObjectSchema as createEmptyObjectSchema, voidSchema as createVoidSchema, optionalSchema, objectSchema } from "../../shared/standard-schema-helpers";
 import { AsyncIteratorClass, eventIterator } from "@orpc/contract";
 import type { Schema } from "@orpc/contract";
+import { observable, type Observable } from "../../utils/observable/contract";
 import type { PathParam, PathParamBuilderWithExisting, ParamsToSchemaShape } from "../core/params-builder";
 import { createPathParamBuilder } from "../core/params-builder";
 import { ProxyBuilderBase } from "../core/proxy-builder.base";
@@ -201,6 +202,7 @@ export class DetailedInputBuilder<
      * 1. Direct schema: `.body(schema)`
      * 2. Builder callback: `.body(b => b.schema(s => s ...))`
      * 3. Streamed: `.body.streamed(schema)` - wraps schema in EventIterator for streaming
+    * 4. Observable: `.body.observable(schema)` - wraps schema in Observable contract typing
      *
      * @example
      * ```typescript
@@ -225,6 +227,9 @@ export class DetailedInputBuilder<
                 yields: Schema<TYieldIn, TYieldOut>,
                 returns?: Schema<TReturnIn, TReturnOut>,
             ) => DetailedInputBuilder<TParams, TQuery, Schema<AsyncIteratorObject<TYieldIn, TReturnIn, void>, AsyncIteratorClass<TYieldOut, TReturnOut, void>>, THeaders, TEntitySchema>;
+            observable: <TYieldIn, TYieldOut>(
+                yields: Schema<TYieldIn, TYieldOut>,
+            ) => DetailedInputBuilder<TParams, TQuery, Schema<Observable<TYieldIn>, Observable<TYieldOut>>, THeaders, TEntitySchema>;
         };
 
         const callable = (<TNewBody extends AnySchema>(
@@ -241,6 +246,11 @@ export class DetailedInputBuilder<
         callable.streamed = <TYieldIn, TYieldOut, TReturnIn = unknown, TReturnOut = unknown>(yields: Schema<TYieldIn, TYieldOut>, returns?: Schema<TReturnIn, TReturnOut>) => {
             const streamedSchema = eventIterator(yields, returns);
             return new DetailedInputBuilder(this.$params, this.$query, streamedSchema, this.$headers, this.$entitySchema, this._pendingPath);
+        };
+
+        callable.observable = <TYieldIn, TYieldOut>(yields: Schema<TYieldIn, TYieldOut>) => {
+            const observableSchema = observable(yields);
+            return new DetailedInputBuilder(this.$params, this.$query, observableSchema, this.$headers, this.$entitySchema, this._pendingPath);
         };
 
         return callable;

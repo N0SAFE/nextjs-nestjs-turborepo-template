@@ -186,7 +186,7 @@ describe('RoleConfigCollection', () => {
     const collection = new RoleConfigCollection(mockRoles);
 
     it('should filter by custom predicate', () => {
-      const filtered = collection.filter((key, roleConfig) => {
+      const filtered = collection.filter((_key, roleConfig) => {
         const resources = roleConfig.getResources();
         return resources.length > 1;
       });
@@ -211,7 +211,7 @@ describe('RoleConfigCollection', () => {
     });
 
     it('should transform to object structure', () => {
-      const transformed = collection.transform((key, roleConfig) => ({
+      const transformed = collection.transform((_key, roleConfig) => ({
         permissions: roleConfig.all(),
         totalResources: roleConfig.size,
       }));
@@ -488,7 +488,7 @@ describe('RoleConfigCollection - Missing Helper Methods', () => {
     });
 
     // This tests that we can achieve the same with filter
-    const withoutDelete = collection.filter((key, role) => {
+    const withoutDelete = collection.filter((_key, role) => {
       return !role.has('project', 'delete');
     });
 

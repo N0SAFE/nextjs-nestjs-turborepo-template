@@ -1,4 +1,1 @@
-export { 
-  apiEnvSchema as envSchema, 
-  type ApiEnv as Env 
-} from '@repo/env';
+export { apiEnvSchema as envSchema, type ApiEnv as Env } from "@repo/env";
