@@ -1,0 +1,46 @@
+{
+  "name": "@repo/nestjs-events",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RxJS-first NestJS events library providing typed contracts, event registry/buffering, replay-capable streams, and module wiring for workspace apps.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "prettify": "prettier . --write --no-error-on-unmatched-pattern",
+    "format": "bun run prettify",
+    "format:check": "prettier . --check --no-error-on-unmatched-pattern",
+    "lint": "bunx eslint src",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@nestjs/common": "catalog:api:nest",
+    "rxjs": "catalog:api:nest",
+    "zod": "catalog:utils"
+  },
+  "devDependencies": {
+    "@repo/config-eslint": "*",
+    "@repo/config-prettier": "*",
+    "@repo/config-typescript": "*",
+    "@repo/config-vitest": "*",
+    "@types/node": "^25.9.1",
+    "@vitest/coverage-v8": "catalog:testing",
+    "eslint": "catalog:linting",
+    "prettier": "catalog:linting",
+    "typescript": "catalog:build",
+    "vitest": "catalog:testing"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "catalog:api:nest",
+    "rxjs": "catalog:api:nest"
+  }
+}

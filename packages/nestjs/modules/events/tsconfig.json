@@ -1,0 +1,15 @@
+{
+  "extends": "../../../configs/typescript/config/base.json",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "bundler",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/nestjs-events/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "eslint.config.mjs"],
+  "exclude": ["node_modules", "dist"]
+}
