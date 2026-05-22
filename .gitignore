@@ -46,3 +46,4 @@ _experiment
 /.env
 !/.env.template
 !/.env.example
+.env
